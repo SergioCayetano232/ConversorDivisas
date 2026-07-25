@@ -277,6 +277,9 @@ async function init() {
   populateSelects(pair);
   bindEvents();
   refresh();
+
+  el.amount.focus();
+  el.amount.select();
 }
 
 init();
