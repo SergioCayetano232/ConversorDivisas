@@ -55,7 +55,32 @@ function parseAmount(raw) {
   return value;
 }
 
-function populateSelects() {
+const STORAGE_KEY = "lastPair";
+
+const isValidCode = (code) => CURRENCIES.some((c) => c.code === code);
+
+async function loadPair() {
+  try {
+    const stored = await chrome.storage.local.get(STORAGE_KEY);
+    const pair = stored[STORAGE_KEY];
+    if (pair && isValidCode(pair.from) && isValidCode(pair.to)) {
+      return pair;
+    }
+  } catch (error) {
+    console.warn("No se pudo leer el almacenamiento", error);
+  }
+  return DEFAULTS;
+}
+
+async function savePair(from, to) {
+  try {
+    await chrome.storage.local.set({ [STORAGE_KEY]: { from, to } });
+  } catch (error) {
+    console.warn("No se pudo guardar el almacenamiento", error);
+  }
+}
+
+function populateSelects(pair) {
   for (const select of [el.from, el.to]) {
     const fragment = document.createDocumentFragment();
     for (const { code, name } of CURRENCIES) {
@@ -66,8 +91,8 @@ function populateSelects() {
     }
     select.appendChild(fragment);
   }
-  el.from.value = DEFAULTS.from;
-  el.to.value = DEFAULTS.to;
+  el.from.value = pair.from;
+  el.to.value = pair.to;
 }
 
 async function fetchRate(from, to) {
@@ -148,6 +173,23 @@ async function refresh() {
   }
 }
 
+function onSwap() {
+  const from = el.from.value;
+  el.from.value = el.to.value;
+  el.to.value = from;
+
+  el.swap.classList.toggle("is-swapping");
+
+  if (rate !== null && rate !== 0) {
+    rate = 1 / rate;
+    renderRateLine(el.from.value, el.to.value);
+    renderResult();
+  }
+
+  savePair(el.from.value, el.to.value);
+  refresh();
+}
+
 function onAmountInput() {
   const amount = parseAmount(el.amount.value);
   const invalid = el.amount.value.trim() !== "" && amount === null;
@@ -159,15 +201,22 @@ function onAmountInput() {
   renderResult();
 }
 
+function onCurrencyChange() {
+  savePair(el.from.value, el.to.value);
+  refresh();
+}
+
 function bindEvents() {
   el.form.addEventListener("submit", (event) => event.preventDefault());
   el.amount.addEventListener("input", onAmountInput);
-  el.from.addEventListener("change", refresh);
-  el.to.addEventListener("change", refresh);
+  el.from.addEventListener("change", onCurrencyChange);
+  el.to.addEventListener("change", onCurrencyChange);
+  el.swap.addEventListener("click", onSwap);
 }
 
-function init() {
-  populateSelects();
+async function init() {
+  const pair = await loadPair();
+  populateSelects(pair);
   bindEvents();
   refresh();
 }
