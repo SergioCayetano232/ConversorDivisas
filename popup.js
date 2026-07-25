@@ -32,10 +32,15 @@ const el = {
   rateLine: document.getElementById("rate-line"),
   amountError: document.getElementById("amount-error"),
   updated: document.getElementById("updated"),
+  status: document.getElementById("status"),
+  error: document.getElementById("error"),
+  errorMessage: document.getElementById("error-message"),
+  retry: document.getElementById("retry"),
 };
 
 let rate = null;
 let rateDate = null;
+let requestId = 0;
 
 const nf = new Intl.NumberFormat("es-ES", {
   minimumFractionDigits: 2,
@@ -95,16 +100,38 @@ function populateSelects(pair) {
   el.to.value = pair.to;
 }
 
+const TIMEOUT_MS = 8000;
+
 async function fetchRate(from, to) {
   const url = `${API}?base=${from}&symbols=${to}`;
-  const response = await fetch(url);
-  if (!response.ok) throw new Error(`HTTP ${response.status}`);
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), TIMEOUT_MS);
 
-  const data = await response.json();
-  const value = data.rates?.[to];
-  if (typeof value !== "number") throw new Error("Respuesta inesperada");
+  try {
+    const response = await fetch(url, { signal: controller.signal });
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
 
-  return { rate: value, date: data.date };
+    const data = await response.json();
+    const value = data.rates?.[to];
+    if (typeof value !== "number") throw new Error("Respuesta inesperada");
+
+    return { rate: value, date: data.date };
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+function errorMessageFor(error) {
+  if (error.name === "AbortError") {
+    return "La conexión ha tardado demasiado.";
+  }
+  if (!navigator.onLine) {
+    return "Sin conexión a internet.";
+  }
+  if (error.message.startsWith("HTTP")) {
+    return "El servicio de tasas no responde.";
+  }
+  return "No se han podido obtener las tasas.";
 }
 
 function renderRateLine(from, to) {
@@ -117,6 +144,23 @@ function renderRateLine(from, to) {
 
 function renderUpdated() {
   el.updated.textContent = rateDate ? `Act. ${rateDate}` : "";
+}
+
+function showError(message) {
+  el.errorMessage.textContent = message;
+  el.error.hidden = false;
+}
+
+function clearError() {
+  el.error.hidden = true;
+  el.errorMessage.textContent = "";
+}
+
+function setLoading(active) {
+  el.resultBox.classList.toggle("is-loading", active);
+  el.status.hidden = !active;
+  el.status.textContent = active ? "Obteniendo tasas…" : "";
+  el.swap.disabled = active;
 }
 
 function renderResult() {
@@ -148,28 +192,38 @@ async function refresh() {
   if (from === to) {
     rate = 1;
     rateDate = null;
+    clearError();
     renderRateLine(from, to);
     renderUpdated();
     renderResult();
     return;
   }
 
-  el.resultBox.classList.add("is-loading");
+  const currentRequest = ++requestId;
+  setLoading(true);
+  clearError();
 
   try {
     const data = await fetchRate(from, to);
+    if (currentRequest !== requestId) return;
+
     rate = data.rate;
     rateDate = data.date;
     renderRateLine(from, to);
     renderUpdated();
     renderResult();
   } catch (error) {
+    if (currentRequest !== requestId) return;
+
     rate = null;
+    rateDate = null;
     el.result.textContent = "—";
+    el.resultMeta.textContent = "";
     el.rateLine.textContent = "";
-    console.error(error);
+    el.updated.textContent = "";
+    showError(errorMessageFor(error));
   } finally {
-    el.resultBox.classList.remove("is-loading");
+    if (currentRequest === requestId) setLoading(false);
   }
 }
 
@@ -212,6 +266,10 @@ function bindEvents() {
   el.from.addEventListener("change", onCurrencyChange);
   el.to.addEventListener("change", onCurrencyChange);
   el.swap.addEventListener("click", onSwap);
+  el.retry.addEventListener("click", refresh);
+  window.addEventListener("online", () => {
+    if (rate === null) refresh();
+  });
 }
 
 async function init() {
