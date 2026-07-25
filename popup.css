@@ -89,6 +89,12 @@ body {
   gap: var(--s-4);
 }
 
+#converter-form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-4);
+}
+
 .field {
   display: flex;
   flex-direction: column;
@@ -131,7 +137,12 @@ body {
 }
 
 .field__input:focus-visible,
-.field__select:focus-visible,
+.field__select:focus-visible {
+  outline: 2px solid var(--brass);
+  outline-offset: -2px;
+  border-color: var(--brass);
+}
+
 .swap:focus-visible,
 .error__retry:focus-visible,
 .footer__source a:focus-visible {
@@ -247,6 +258,14 @@ body {
   color: var(--brass);
   font-variant-numeric: tabular-nums;
   word-break: break-all;
+}
+
+.result__code {
+  margin-left: 0.28em;
+  font-size: 0.55em;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  color: rgba(212, 162, 76, 0.7);
 }
 
 .result.is-updating .result__value {

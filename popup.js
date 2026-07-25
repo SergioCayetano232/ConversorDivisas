@@ -177,7 +177,13 @@ function renderResult() {
   if (rate === null) return;
 
   const converted = amount * rate;
-  el.result.textContent = `${nf.format(converted)} ${to}`;
+  el.result.replaceChildren(
+    document.createTextNode(nf.format(converted)),
+    Object.assign(document.createElement("span"), {
+      className: "result__code",
+      textContent: to,
+    })
+  );
   el.resultMeta.textContent = `${nf.format(amount)} ${from}`;
 
   el.resultBox.classList.remove("is-updating");
