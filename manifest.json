@@ -5,17 +5,7 @@
   "description": "Conversor de divisas con tasas de cambio en tiempo real. Rápido, sin anuncios y sin seguimiento.",
   "action": {
     "default_popup": "popup.html",
-    "default_title": "ConversorDivisas",
-    "default_icon": {
-      "16": "icons/icon16.png",
-      "48": "icons/icon48.png",
-      "128": "icons/icon128.png"
-    }
-  },
-  "icons": {
-    "16": "icons/icon16.png",
-    "48": "icons/icon48.png",
-    "128": "icons/icon128.png"
+    "default_title": "ConversorDivisas"
   },
   "permissions": ["storage"],
   "host_permissions": ["https://api.frankfurter.dev/*"]
