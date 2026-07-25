@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>ConversorDivisas</title>
+  <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+  <div class="app">
+
+    <header class="header">
+      <h1 class="header__title">ConversorDivisas</h1>
+      <p class="header__rate" id="rate-line" aria-live="polite"></p>
+    </header>
+
+    <main class="converter">
+      <form id="converter-form" novalidate>
+
+        <div class="field">
+          <label class="field__label" for="amount">Cantidad</label>
+          <input
+            class="field__input"
+            type="text"
+            id="amount"
+            name="amount"
+            inputmode="decimal"
+            autocomplete="off"
+            spellcheck="false"
+            value="1"
+            aria-describedby="amount-error">
+          <p class="field__error" id="amount-error" role="alert" hidden></p>
+        </div>
+
+        <div class="pair">
+          <div class="field">
+            <label class="field__label" for="from">De</label>
+            <select class="field__select" id="from" name="from"></select>
+          </div>
+
+          <button
+            class="swap"
+            type="button"
+            id="swap"
+            aria-label="Intercambiar divisas">
+            <span class="swap__icon" aria-hidden="true">⇄</span>
+          </button>
+
+          <div class="field">
+            <label class="field__label" for="to">A</label>
+            <select class="field__select" id="to" name="to"></select>
+          </div>
+        </div>
+
+      </form>
+
+      <section class="result" aria-labelledby="result-label">
+        <h2 class="result__label" id="result-label">Resultado</h2>
+        <output class="result__value" id="result" for="amount from to" aria-live="polite">—</output>
+        <p class="result__meta" id="result-meta"></p>
+      </section>
+
+      <div class="status" id="status" role="status" aria-live="polite" hidden></div>
+
+      <div class="error" id="error" role="alert" hidden>
+        <p class="error__message" id="error-message"></p>
+        <button class="error__retry" type="button" id="retry">Reintentar</button>
+      </div>
+
+    </main>
+
+    <footer class="footer">
+      <p class="footer__source">
+        Tasas de <a href="https://frankfurter.dev" target="_blank" rel="noopener noreferrer">Frankfurter</a>
+      </p>
+      <p class="footer__updated" id="updated"></p>
+    </footer>
+
+  </div>
+
+  <script src="popup.js"></script>
+</body>
+</html>
