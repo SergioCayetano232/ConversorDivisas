@@ -1,4 +1,6 @@
 const API = "https://api.frankfurter.dev/v1/latest";
+const API_HISTORY = "https://api.frankfurter.dev/v1";
+const TREND_DAYS = 30;
 
 const CURRENCIES = [
   { code: "EUR", name: "Euro" },
@@ -36,11 +38,16 @@ const el = {
   error: document.getElementById("error"),
   errorMessage: document.getElementById("error-message"),
   retry: document.getElementById("retry"),
+  trend: document.getElementById("trend"),
+  trendChange: document.getElementById("trend-change"),
+  trendLine: document.getElementById("trend-line"),
+  trendArea: document.getElementById("trend-area"),
 };
 
 let rate = null;
 let rateDate = null;
 let requestId = 0;
+let trendId = 0;
 
 const nf = new Intl.NumberFormat("es-ES", {
   minimumFractionDigits: 2,
@@ -50,6 +57,13 @@ const nf = new Intl.NumberFormat("es-ES", {
 const nfRate = new Intl.NumberFormat("es-ES", {
   minimumFractionDigits: 4,
   maximumFractionDigits: 4,
+});
+
+const nfPercent = new Intl.NumberFormat("es-ES", {
+  style: "percent",
+  minimumFractionDigits: 2,
+  maximumFractionDigits: 2,
+  signDisplay: "exceptZero",
 });
 
 function parseAmount(raw) {
@@ -118,6 +132,104 @@ async function fetchRate(from, to) {
     return { rate: value, date: data.date };
   } finally {
     clearTimeout(timer);
+  }
+}
+
+function startDateFor(days) {
+  const date = new Date();
+  date.setDate(date.getDate() - days);
+  return date.toISOString().slice(0, 10);
+}
+
+async function fetchHistory(from, to) {
+  const url = `${API_HISTORY}/${startDateFor(TREND_DAYS)}..?base=${from}&symbols=${to}`;
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), TIMEOUT_MS);
+
+  try {
+    const response = await fetch(url, { signal: controller.signal });
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+
+    const data = await response.json();
+    // La API devuelve un objeto por fecha; el BCE no publica fines de semana
+    // ni festivos, así que el número de puntos varía entre peticiones.
+    return Object.keys(data.rates ?? {})
+      .sort()
+      .map((date) => data.rates[date]?.[to])
+      .filter((value) => typeof value === "number");
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+// Convierte la serie en dos paths SVG sobre el viewBox de 100x28 del gráfico:
+// la línea y el área sombreada que queda por debajo.
+function buildPaths(values) {
+  const min = Math.min(...values);
+  const max = Math.max(...values);
+  const span = max - min;
+  const stepX = 100 / (values.length - 1);
+
+  const points = values.map((value, index) => {
+    const x = index * stepX;
+    // Si la tasa no se ha movido, span es 0: dibujamos una línea centrada.
+    const y = span === 0 ? 14 : 26 - ((value - min) / span) * 24;
+    return `${x.toFixed(2)},${y.toFixed(2)}`;
+  });
+
+  const line = `M${points.join("L")}`;
+  const area = `${line}L100,28L0,28Z`;
+  return { line, area };
+}
+
+function hideTrend() {
+  el.trend.hidden = true;
+  el.trendLine.setAttribute("d", "");
+  el.trendArea.setAttribute("d", "");
+  el.trendChange.textContent = "";
+  el.trendChange.classList.remove("is-up", "is-down");
+}
+
+function renderTrend(values) {
+  // Con menos de dos puntos no hay nada que dibujar ni con qué comparar.
+  if (values.length < 2) {
+    hideTrend();
+    return;
+  }
+
+  const { line, area } = buildPaths(values);
+  el.trendLine.setAttribute("d", line);
+  el.trendArea.setAttribute("d", area);
+
+  const first = values[0];
+  const last = values[values.length - 1];
+  const change = first === 0 ? 0 : (last - first) / first;
+
+  el.trendChange.textContent = nfPercent.format(change);
+  el.trendChange.classList.toggle("is-up", change > 0);
+  el.trendChange.classList.toggle("is-down", change < 0);
+
+  el.trend.hidden = false;
+}
+
+async function refreshTrend(from, to) {
+  const currentTrend = ++trendId;
+
+  if (from === to) {
+    hideTrend();
+    return;
+  }
+
+  try {
+    const values = await fetchHistory(from, to);
+    if (currentTrend !== trendId) return;
+    renderTrend(values);
+  } catch (error) {
+    if (currentTrend !== trendId) return;
+    // El histórico es un extra: si falla, el conversor sigue funcionando y
+    // no mostramos un segundo mensaje de error.
+    console.warn("No se pudo obtener el histórico", error);
+    hideTrend();
   }
 }
 
@@ -202,6 +314,7 @@ async function refresh() {
     renderRateLine(from, to);
     renderUpdated();
     renderResult();
+    refreshTrend(from, to);
     return;
   }
 
@@ -218,6 +331,7 @@ async function refresh() {
     renderRateLine(from, to);
     renderUpdated();
     renderResult();
+    refreshTrend(from, to);
   } catch (error) {
     if (currentRequest !== requestId) return;
 
@@ -227,6 +341,7 @@ async function refresh() {
     el.resultMeta.textContent = "";
     el.rateLine.textContent = "";
     el.updated.textContent = "";
+    hideTrend();
     showError(errorMessageFor(error));
   } finally {
     if (currentRequest === requestId) setLoading(false);
@@ -245,6 +360,8 @@ function onSwap() {
     renderRateLine(el.from.value, el.to.value);
     renderResult();
   }
+
+  hideTrend();
 
   savePair(el.from.value, el.to.value);
   refresh();

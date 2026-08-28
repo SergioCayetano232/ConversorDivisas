@@ -57,6 +57,24 @@
         <h2 class="result__label" id="result-label">Resultado</h2>
         <output class="result__value" id="result" for="amount from to" aria-live="polite">—</output>
         <p class="result__meta" id="result-meta"></p>
+
+        <div class="trend" id="trend" hidden>
+          <div class="trend__head">
+            <span class="trend__label">30 días</span>
+            <span class="trend__change" id="trend-change"></span>
+          </div>
+          <svg
+            class="trend__chart"
+            id="trend-chart"
+            viewBox="0 0 100 28"
+            preserveAspectRatio="none"
+            role="img"
+            aria-labelledby="trend-desc">
+            <title id="trend-desc">Evolución de la tasa en los últimos 30 días</title>
+            <path class="trend__area" id="trend-area" d=""></path>
+            <path class="trend__line" id="trend-line" d=""></path>
+          </svg>
+        </div>
       </section>
 
       <div class="status" id="status" role="status" aria-live="polite" hidden></div>
