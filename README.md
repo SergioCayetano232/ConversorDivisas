@@ -1,38 +1,43 @@
 # ConversorDivisas
 
-Extensión de Chrome para convertir divisas con tasas de cambio reales.
+Extensión de Chrome para convertir divisas sin salir de lo que estés haciendo.
 
-Lo hice porque me cansé de abrir una pestaña y buscar "euro a dólar" cada vez que
-necesitaba una conversión rápida. Ahora es un clic en la barra del navegador.
+La hice porque me cansé de abrir una pestaña y buscar "euro a dólar" cada vez
+que necesitaba una conversión rápida. Ahora es un clic en la barra del navegador.
 
 ![Captura del popup](docs/screenshot.png)
 
 ## Qué hace
 
-- Convierte entre 15 divisas con tasas actualizadas del Banco Central Europeo
-- Botón para intercambiar origen y destino sin tener que tocar los dos selectores
-- Recuerda la última pareja que usaste
-- Si la API falla te dice por qué, no se queda en blanco
+- Convierte entre 15 divisas con tasas del Banco Central Europeo
+- Un botón para dar la vuelta al par sin tocar los dos desplegables
+- Un pequeño gráfico con cómo ha ido la tasa en el último mes
+- Recuerda la última pareja de divisas que usaste
+- Se abre con `Ctrl+Shift+U` (en Mac, `Cmd+Shift+U`)
+- Si algo falla te dice qué ha pasado, no se queda en blanco
 
-No pide más permisos que `storage` y el acceso a la API. No hay analítica ni
-seguimiento de ningún tipo.
+Solo pide dos permisos: guardar tu última pareja de divisas y hablar con la API
+de las tasas. No hay analítica ni seguimiento de ningún tipo.
 
 ## Instalación
 
-Todavía no está en la Chrome Web Store, así que hay que cargarla a mano:
+No está en la Chrome Web Store, así que se carga a mano:
 
-1. Clona el repo o descarga el ZIP
+1. Descarga el repo (clonándolo o como ZIP)
 2. Abre `chrome://extensions`
-3. Activa el "Modo de desarrollador" (arriba a la derecha)
-4. Pulsa "Cargar descomprimida" y elige la carpeta del proyecto
+3. Activa el **Modo de desarrollador**, arriba a la derecha
+4. Pulsa **Cargar descomprimida** y elige la carpeta del proyecto
 
-El icono aparecerá en la barra. Si no lo ves, está escondido detrás del icono
-de la pieza de puzzle.
+El icono aparecerá en la barra. Si no lo ves, está escondido detrás del icono de
+la pieza de puzzle.
+
+¿El atajo no funciona? Chrome no lo asigna si ya lo está usando otra extensión.
+Se cambia en `chrome://extensions/shortcuts`.
 
 ## Cómo está hecho
 
-JavaScript sin frameworks, sin build y sin dependencias. Son cuatro archivos y
-una carpeta de iconos:
+JavaScript a pelo: sin frameworks, sin build y sin dependencias. Son cuatro
+archivos y una carpeta de iconos:
 
 ```
 manifest.json    configuración de la extensión (Manifest V3)
@@ -42,35 +47,19 @@ popup.js         toda la lógica
 icons/           16, 48 y 128 px
 ```
 
-No hay `package.json` ni `node_modules` porque no hacen falta. Editas un archivo,
-le das a recargar en `chrome://extensions` y ya está.
+No hay `package.json` ni `node_modules` porque no hacen falta. Editas un
+archivo, le das a recargar en `chrome://extensions` y ya está.
 
 Las tasas vienen de [Frankfurter](https://frankfurter.dev), que es gratuita, no
-pide API key y saca los datos del BCE. Solo pido el par que necesito en cada
-momento (`?base=EUR&symbols=USD`) en lugar de traerme las 30 divisas.
-
-Un par de decisiones que igual no son obvias:
-
-- Las cifras van en monoespaciada con `tabular-nums` para que el resultado no
-  baile de lado mientras escribes.
-- Al pulsar el botón de intercambio invierto la tasa en local (`1/rate`) y
-  muestro el resultado al instante, sin esperar a la petición. La API responde
-  después y corrige si hace falta.
-- Hay un contador de peticiones para que, si cambias de divisa muy rápido, una
-  respuesta lenta y antigua no pise a la buena.
+pide API key y saca los datos del BCE. Como el BCE publica una vez al día
+laborable, el gráfico no tiene puntos en fines de semana ni festivos.
 
 ## Divisas soportadas
 
 EUR, USD, GBP, JPY, CHF, CAD, AUD, CNY, MXN, BRL, SEK, NOK, DKK, PLN y TRY.
 
-Añadir una más es meter una línea en el array `CURRENCIES` de `popup.js`,
-siempre que Frankfurter la soporte.
-
-## Pendiente
-
-- [ ] Subirla a la Chrome Web Store
-- [ ] Histórico con la evolución de la tasa
-- [ ] Atajo de teclado para abrir el popup
+Para añadir otra basta con meter una línea en el array `CURRENCIES` de
+`popup.js`, siempre que Frankfurter la soporte.
 
 ## Licencia
 
