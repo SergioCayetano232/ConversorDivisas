@@ -33,8 +33,27 @@
 
         <div class="pair">
           <div class="field">
-            <label class="field__label" for="from">De</label>
-            <select class="field__select" id="from" name="from"></select>
+            <span class="field__label" id="from-label">De</span>
+            <div class="buscador" id="from-caja">
+              <button
+                class="field__select buscador__boton"
+                type="button"
+                id="from"
+                aria-haspopup="listbox"
+                aria-expanded="false"
+                aria-labelledby="from-label from"></button>
+              <div class="buscador__panel" id="from-panel" hidden>
+                <input
+                  class="buscador__campo"
+                  type="text"
+                  id="from-filtro"
+                  placeholder="Buscar divisa"
+                  autocomplete="off"
+                  spellcheck="false"
+                  aria-label="Buscar divisa">
+                <ul class="buscador__lista" id="from-lista" role="listbox"></ul>
+              </div>
+            </div>
           </div>
 
           <button
@@ -46,8 +65,27 @@
           </button>
 
           <div class="field">
-            <label class="field__label" for="to">A</label>
-            <select class="field__select" id="to" name="to"></select>
+            <span class="field__label" id="to-label">A</span>
+            <div class="buscador" id="to-caja">
+              <button
+                class="field__select buscador__boton"
+                type="button"
+                id="to"
+                aria-haspopup="listbox"
+                aria-expanded="false"
+                aria-labelledby="to-label to"></button>
+              <div class="buscador__panel" id="to-panel" hidden>
+                <input
+                  class="buscador__campo"
+                  type="text"
+                  id="to-filtro"
+                  placeholder="Buscar divisa"
+                  autocomplete="off"
+                  spellcheck="false"
+                  aria-label="Buscar divisa">
+                <ul class="buscador__lista" id="to-lista" role="listbox"></ul>
+              </div>
+            </div>
           </div>
         </div>
 

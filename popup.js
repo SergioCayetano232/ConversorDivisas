@@ -94,6 +94,34 @@ const CACHE_MAX = 40;
 
 const isValidCode = (code) => CURRENCIES.some((c) => c.code === code);
 
+const nombreDe = (code) => CURRENCIES.find((c) => c.code === code)?.name ?? code;
+
+// Sin tildes y en minúscula, para que "dolar" encuentre "Dólar" y "peso
+// mexicano" no dependa de cómo lo escribas.
+function normalizar(texto) {
+  return texto
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "");
+}
+
+function filtrarDivisas(consulta) {
+  const q = normalizar(consulta.trim());
+  if (q === "") return CURRENCIES;
+
+  // El código primero: si escribes "usd" quieres el dólar arriba del todo, no
+  // el peso uruguayo porque su nombre lleva una u.
+  const porCodigo = [];
+  const porNombre = [];
+
+  for (const divisa of CURRENCIES) {
+    if (normalizar(divisa.code).startsWith(q)) porCodigo.push(divisa);
+    else if (normalizar(divisa.name).includes(q)) porNombre.push(divisa);
+  }
+
+  return [...porCodigo, ...porNombre];
+}
+
 // Fecha local en formato ISO. No uso toISOString() porque pasa a UTC y aquí,
 // a partir de las dos de la tarde en verano, ya me daba el día siguiente.
 function isoLocal(date) {
@@ -165,19 +193,132 @@ async function saveCache(nuevas) {
   }
 }
 
-function populateSelects(pair) {
-  for (const select of [el.from, el.to]) {
-    const fragment = document.createDocumentFragment();
-    for (const { code, name } of CURRENCIES) {
-      const option = document.createElement("option");
-      option.value = code;
-      option.textContent = `${code} · ${name}`;
-      fragment.appendChild(option);
+// Cada desplegable guarda aqui su divisa. Le pongo un .value al boton para que
+// el resto del codigo lo lea igual que cuando esto era un <select>.
+const buscadores = {};
+
+function crearBuscador(lado) {
+  const boton = document.getElementById(lado);
+  const panel = document.getElementById(`${lado}-panel`);
+  const filtro = document.getElementById(`${lado}-filtro`);
+  const lista = document.getElementById(`${lado}-lista`);
+
+  let abierto = false;
+  let marcado = 0;
+  let visibles = CURRENCIES;
+
+  function pintar() {
+    visibles = filtrarDivisas(filtro.value);
+    if (marcado >= visibles.length) marcado = Math.max(visibles.length - 1, 0);
+
+    lista.replaceChildren();
+    if (visibles.length === 0) {
+      const vacio = document.createElement("li");
+      vacio.className = "buscador__vacio";
+      vacio.textContent = "Ninguna divisa";
+      lista.appendChild(vacio);
+      return;
     }
-    select.appendChild(fragment);
+
+    const trozo = document.createDocumentFragment();
+    visibles.forEach((divisa, i) => {
+      const fila = document.createElement("li");
+      fila.className = "buscador__opcion";
+      fila.setAttribute("role", "option");
+      fila.setAttribute("aria-selected", String(divisa.code === boton.value));
+      fila.dataset.code = divisa.code;
+      if (i === marcado) fila.classList.add("is-marcada");
+      if (divisa.code === boton.value) fila.classList.add("is-elegida");
+
+      const cod = document.createElement("span");
+      cod.className = "buscador__codigo";
+      cod.textContent = divisa.code;
+      const nom = document.createElement("span");
+      nom.className = "buscador__nombre";
+      nom.textContent = divisa.name;
+
+      fila.append(cod, nom);
+      fila.addEventListener("mousedown", (e) => {
+        e.preventDefault();
+        elegir(divisa.code);
+      });
+      trozo.appendChild(fila);
+    });
+    lista.appendChild(trozo);
+
+    const activa = lista.querySelector(".is-marcada");
+    if (activa) activa.scrollIntoView({ block: "nearest" });
   }
-  el.from.value = pair.from;
-  el.to.value = pair.to;
+
+  function abrir() {
+    if (abierto) return;
+    abierto = true;
+    panel.hidden = false;
+    boton.setAttribute("aria-expanded", "true");
+    filtro.value = "";
+    marcado = Math.max(CURRENCIES.findIndex((c) => c.code === boton.value), 0);
+    pintar();
+    filtro.focus();
+  }
+
+  function cerrar() {
+    if (!abierto) return;
+    abierto = false;
+    panel.hidden = true;
+    boton.setAttribute("aria-expanded", "false");
+  }
+
+  function elegir(code) {
+    const cambia = code !== boton.value;
+    poner(code);
+    cerrar();
+    boton.focus();
+    if (cambia) onCurrencyChange();
+  }
+
+  function poner(code) {
+    boton.value = code;
+    boton.textContent = `${code} · ${nombreDe(code)}`;
+  }
+
+  boton.addEventListener("click", () => (abierto ? cerrar() : abrir()));
+  filtro.addEventListener("input", () => {
+    marcado = 0;
+    pintar();
+  });
+
+  filtro.addEventListener("keydown", (event) => {
+    if (event.key === "ArrowDown" || event.key === "ArrowUp") {
+      event.preventDefault();
+      if (visibles.length === 0) return;
+      marcado = (marcado + (event.key === "ArrowDown" ? 1 : -1) + visibles.length) % visibles.length;
+      pintar();
+    } else if (event.key === "Enter") {
+      event.preventDefault();
+      if (visibles[marcado]) elegir(visibles[marcado].code);
+    } else if (event.key === "Escape") {
+      event.preventDefault();
+      cerrar();
+      boton.focus();
+    } else if (event.key === "Tab") {
+      cerrar();
+    }
+  });
+
+  // Un clic fuera lo cierra. Uso mousedown para que llegue antes de que el
+  // panel pierda el foco y se cierre solo a medias.
+  document.addEventListener("mousedown", (event) => {
+    if (abierto && !panel.contains(event.target) && event.target !== boton) cerrar();
+  });
+
+  return { poner, cerrar };
+}
+
+function populateSelects(pair) {
+  buscadores.from = crearBuscador("from");
+  buscadores.to = crearBuscador("to");
+  buscadores.from.poner(pair.from);
+  buscadores.to.poner(pair.to);
 }
 
 const TIMEOUT_MS = 8000;
@@ -499,8 +640,8 @@ async function refresh() {
 
 function onSwap() {
   const from = el.from.value;
-  el.from.value = el.to.value;
-  el.to.value = from;
+  buscadores.from.poner(el.to.value);
+  buscadores.to.poner(from);
 
   restartAnimation(el.swap, "is-swapping");
 
@@ -613,8 +754,6 @@ function bindEvents() {
   el.amount.addEventListener("input", onAmountInput);
   el.result.addEventListener("input", onResultInput);
   el.result.addEventListener("focus", () => el.result.select());
-  el.from.addEventListener("change", onCurrencyChange);
-  el.to.addEventListener("change", onCurrencyChange);
   el.swap.addEventListener("click", onSwap);
   el.retry.addEventListener("click", refresh);
   el.copiar.addEventListener("click", onCopiar);
