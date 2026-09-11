@@ -1,0 +1,9 @@
+{
+  "name": "conversordivisas",
+  "version": "1.0.0",
+  "description": "Extensión de Chrome para convertir divisas",
+  "private": true,
+  "scripts": {
+    "test": "node --test test/*.test.js"
+  }
+}
