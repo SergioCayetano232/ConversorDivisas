@@ -1,6 +1,7 @@
 const API = "https://api.frankfurter.dev/v1/latest";
 const API_HISTORY = "https://api.frankfurter.dev/v1";
-const TREND_DAYS = 30;
+const RANGOS = [7, 30, 90];
+const RANGO_POR_DEFECTO = 30;
 
 const CURRENCIES = [
   { code: "EUR", name: "Euro" },
@@ -43,6 +44,7 @@ const el = {
   retry: document.getElementById("retry"),
   trend: document.getElementById("trend"),
   trendChange: document.getElementById("trend-change"),
+  rangos: document.querySelectorAll(".rango"),
   trendLine: document.getElementById("trend-line"),
   trendArea: document.getElementById("trend-area"),
 };
@@ -52,6 +54,7 @@ let rateDate = null;
 // Que campo manda. Si escribes en el de abajo hay que convertir al reves, y
 // sobre todo no le puedo reescribir lo que esta tecleando.
 let ladoActivo = "amount";
+let dias = RANGO_POR_DEFECTO;
 let requestId = 0;
 let trendId = 0;
 
@@ -89,6 +92,7 @@ function parseAmount(raw) {
 }
 
 const STORAGE_KEY = "lastPair";
+const RANGO_KEY = "rangoGrafico";
 const CACHE_KEY = "rateCache";
 const CACHE_MAX = 40;
 
@@ -348,8 +352,8 @@ function startDateFor(days) {
   return isoLocal(date);
 }
 
-async function fetchHistory(from, to) {
-  const url = `${API_HISTORY}/${startDateFor(TREND_DAYS)}..?base=${from}&symbols=${to}`;
+async function fetchHistory(from, to, desde) {
+  const url = `${API_HISTORY}/${startDateFor(desde)}..?base=${from}&symbols=${to}`;
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), TIMEOUT_MS);
 
@@ -453,16 +457,19 @@ async function refreshTrend(from, to) {
   const cache = await loadCache();
   if (currentTrend !== trendId) return;
 
-  const key = `hist:${from}${to}`;
+  const key = `hist:${from}${to}:${dias}`;
   const cached = cache[key];
   if (isFresh(cached) && Array.isArray(cached.values)) {
     renderTrend(cached.values);
     return;
   }
 
+  el.trend.classList.add("is-cargando");
+
   try {
-    const values = await fetchHistory(from, to);
+    const values = await fetchHistory(from, to, dias);
     if (currentTrend !== trendId) return;
+    el.trend.classList.remove("is-cargando");
     renderTrend(values);
 
     saveCache({ [key]: { values, day: hoy(), saved: Date.now() } });
@@ -471,6 +478,7 @@ async function refreshTrend(from, to) {
     // El histórico es un extra: si falla, el conversor sigue funcionando y
     // no mostramos un segundo mensaje de error.
     console.warn("No se pudo obtener el histórico", error);
+    el.trend.classList.remove("is-cargando");
     hideTrend();
   }
 }
@@ -744,6 +752,43 @@ function avisar(texto) {
   }, 1400);
 }
 
+async function cargarRango() {
+  try {
+    const guardado = await chrome.storage.local.get(RANGO_KEY);
+    const valor = guardado[RANGO_KEY];
+    if (RANGOS.includes(valor)) return valor;
+  } catch (error) {
+    console.warn("No se pudo leer el rango", error);
+  }
+  return RANGO_POR_DEFECTO;
+}
+
+async function guardarRango(valor) {
+  try {
+    await chrome.storage.local.set({ [RANGO_KEY]: valor });
+  } catch (error) {
+    console.warn("No se pudo guardar el rango", error);
+  }
+}
+
+function marcarRango() {
+  for (const boton of el.rangos) {
+    const suyo = Number(boton.dataset.dias) === dias;
+    boton.classList.toggle("is-activo", suyo);
+    boton.setAttribute("aria-pressed", String(suyo));
+  }
+}
+
+function onRango(event) {
+  const nuevos = Number(event.currentTarget.dataset.dias);
+  if (nuevos === dias) return;
+
+  dias = nuevos;
+  marcarRango();
+  guardarRango(dias);
+  refreshTrend(el.from.value, el.to.value);
+}
+
 function onCurrencyChange() {
   savePair(el.from.value, el.to.value);
   refresh();
@@ -757,13 +802,16 @@ function bindEvents() {
   el.swap.addEventListener("click", onSwap);
   el.retry.addEventListener("click", refresh);
   el.copiar.addEventListener("click", onCopiar);
+  for (const boton of el.rangos) boton.addEventListener("click", onRango);
   window.addEventListener("online", () => {
     if (rate === null) refresh();
   });
 }
 
 async function init() {
-  const pair = await loadPair();
+  const [pair, rango] = await Promise.all([loadPair(), cargarRango()]);
+  dias = rango;
+  marcarRango();
   populateSelects(pair);
   bindEvents();
   onAmountInput();

@@ -118,7 +118,11 @@
 
         <div class="trend" id="trend" hidden>
           <div class="trend__head">
-            <span class="trend__label">30 días</span>
+            <div class="rangos" role="group" aria-label="Periodo del gráfico">
+              <button class="rango" type="button" data-dias="7">7D</button>
+              <button class="rango" type="button" data-dias="30">30D</button>
+              <button class="rango" type="button" data-dias="90">90D</button>
+            </div>
             <span class="trend__change" id="trend-change"></span>
           </div>
           <svg
@@ -128,7 +132,7 @@
             preserveAspectRatio="none"
             role="img"
             aria-labelledby="trend-desc">
-            <title id="trend-desc">Evolución de la tasa en los últimos 30 días</title>
+            <title id="trend-desc">Evolución de la tasa</title>
             <defs>
               <linearGradient id="trend-fill" x1="0" y1="0" x2="0" y2="1">
                 <stop offset="0%" stop-color="var(--brass)" stop-opacity="0.28"></stop>

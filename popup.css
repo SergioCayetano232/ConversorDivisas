@@ -132,7 +132,7 @@ body::after {
 .result__label,
 .footer,
 .swap,
-.trend__label {
+.rango {
   user-select: none;
 }
 
@@ -684,12 +684,49 @@ body::after {
   gap: var(--s-2);
 }
 
-.trend__label {
+.rangos {
+  display: flex;
+  gap: 2px;
+  padding: 2px;
+  background: var(--slate);
+  border: 1px solid var(--hairline);
+  border-radius: var(--r-sm);
+}
+
+.rango {
+  padding: 2px 7px;
+  background: transparent;
+  border: none;
+  border-radius: 5px;
+  color: var(--muted);
+  font-family: var(--font-mono);
   font-size: 10px;
   font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-  color: var(--muted);
+  letter-spacing: 0.04em;
+  cursor: pointer;
+  transition: color var(--fast) var(--ease), background-color var(--fast) var(--ease);
+}
+
+.rango:hover:not(.is-activo) {
+  color: var(--mist);
+  background: var(--brass-ghost);
+}
+
+.rango.is-activo {
+  color: var(--graphite);
+  background: var(--brass);
+}
+
+.rango:focus-visible {
+  outline: 2px solid var(--brass);
+  outline-offset: 1px;
+}
+
+/* Mientras llega la serie nueva dejo la vieja a medio gas, que si la escondo
+   el popup pega un salto. */
+.trend.is-cargando .trend__chart {
+  opacity: 0.35;
+  transition: opacity var(--fast) var(--ease);
 }
 
 .trend__change {
