@@ -30,6 +30,8 @@ const el = {
   swap: document.getElementById("swap"),
   result: document.getElementById("result"),
   resultCode: document.getElementById("result-code"),
+  copiar: document.getElementById("copiar"),
+  copiarTexto: document.getElementById("copiar-texto"),
   resultBox: document.querySelector(".result"),
   resultMeta: document.getElementById("result-meta"),
   rateLine: document.getElementById("rate-line"),
@@ -547,6 +549,60 @@ function onResultInput() {
   renderResult();
 }
 
+let avisoCopiado = null;
+
+async function onCopiar() {
+  const valor = parseAmount(el.result.value);
+  if (valor === null || rate === null) return;
+
+  // Copio el número a secas, sin el código ni separadores de miles: lo normal
+  // es que acabe pegado en una hoja de cálculo y ahí el punto estorba.
+  const texto = valor.toFixed(2).replace(".", ",");
+
+  try {
+    await navigator.clipboard.writeText(texto);
+    avisar("Copiado");
+  } catch (error) {
+    // El portapapeles moderno puede negarse según cómo esté el foco. El truco
+    // del campo oculto es viejo pero no pide permisos y aquí siempre funciona.
+    if (copiarALaAntigua(texto)) {
+      avisar("Copiado");
+      return;
+    }
+    console.warn("No se pudo copiar", error);
+    avisar("No se pudo");
+  }
+}
+
+function copiarALaAntigua(texto) {
+  const campo = document.createElement("textarea");
+  campo.value = texto;
+  campo.setAttribute("aria-hidden", "true");
+  campo.style.cssText = "position:fixed;top:-100px;opacity:0";
+  document.body.appendChild(campo);
+
+  try {
+    campo.select();
+    return document.execCommand("copy");
+  } catch (error) {
+    return false;
+  } finally {
+    campo.remove();
+    el.result.focus();
+  }
+}
+
+function avisar(texto) {
+  el.copiarTexto.textContent = texto;
+  el.copiar.classList.add("is-hecho");
+
+  clearTimeout(avisoCopiado);
+  avisoCopiado = setTimeout(() => {
+    el.copiarTexto.textContent = "Copiar";
+    el.copiar.classList.remove("is-hecho");
+  }, 1400);
+}
+
 function onCurrencyChange() {
   savePair(el.from.value, el.to.value);
   refresh();
@@ -561,6 +617,7 @@ function bindEvents() {
   el.to.addEventListener("change", onCurrencyChange);
   el.swap.addEventListener("click", onSwap);
   el.retry.addEventListener("click", refresh);
+  el.copiar.addEventListener("click", onCopiar);
   window.addEventListener("online", () => {
     if (rate === null) refresh();
   });

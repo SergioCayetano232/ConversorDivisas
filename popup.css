@@ -417,6 +417,47 @@ body::after {
   background: linear-gradient(90deg, transparent, var(--sheen), transparent);
 }
 
+.result__head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: var(--s-2);
+}
+
+.copiar {
+  flex-shrink: 0;
+  padding: 3px var(--s-2);
+  background: transparent;
+  border: 1px solid var(--hairline-strong);
+  border-radius: var(--r-sm);
+  color: var(--muted);
+  font-family: inherit;
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  cursor: pointer;
+  transition: color var(--fast) var(--ease), border-color var(--fast) var(--ease),
+    background-color var(--fast) var(--ease), transform var(--fast) var(--ease-spring);
+}
+
+.copiar:hover {
+  color: var(--brass);
+  border-color: var(--brass-dim);
+  background: var(--brass-ghost);
+}
+
+.copiar:active {
+  transform: scale(0.92);
+}
+
+.copiar.is-hecho {
+  color: var(--jade);
+  border-color: rgba(78, 169, 107, 0.5);
+  background: rgba(78, 169, 107, 0.12);
+  animation: beat var(--mid) var(--ease-spring);
+}
+
 .result__label {
   font-size: 11px;
   font-weight: 600;

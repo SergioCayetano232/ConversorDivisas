@@ -54,7 +54,16 @@
       </form>
 
       <section class="result" aria-labelledby="result-label">
-        <h2 class="result__label" id="result-label">Resultado</h2>
+        <div class="result__head">
+          <h2 class="result__label" id="result-label">Resultado</h2>
+          <button
+            class="copiar"
+            type="button"
+            id="copiar"
+            aria-label="Copiar el resultado">
+            <span class="copiar__texto" id="copiar-texto">Copiar</span>
+          </button>
+        </div>
         <div class="result__row">
           <input
             class="result__value"
