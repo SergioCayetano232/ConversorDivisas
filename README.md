@@ -10,14 +10,19 @@ que necesitaba una conversión rápida. Ahora es un clic en la barra del navegad
 ## Qué hace
 
 - Convierte entre 15 divisas con tasas del Banco Central Europeo
+- Escribes en cualquiera de las dos cantidades y calcula la otra
+- Buscas la divisa escribiendo: pones "mex" y sale el peso mexicano
 - Un botón para dar la vuelta al par sin tocar los dos desplegables
-- Un pequeño gráfico con cómo ha ido la tasa en el último mes
-- Recuerda la última pareja de divisas que usaste
+- Un botón para copiar el resultado
+- Un gráfico de cómo ha ido la tasa, a 7, 30 o 90 días
+- Recuerda la última pareja de divisas y el periodo del gráfico
+- Guarda las tasas del día, así que al abrirlo ya está el número puesto
 - Se abre con `Ctrl+Shift+U` (en Mac, `Cmd+Shift+U`)
+- Tiene modo claro y oscuro, según cómo tengas el sistema
 - Si algo falla te dice qué ha pasado, no se queda en blanco
 
-Solo pide dos permisos: guardar tu última pareja de divisas y hablar con la API
-de las tasas. No hay analítica ni seguimiento de ningún tipo.
+Solo pide dos permisos: guardar tus preferencias y hablar con la API de las
+tasas. No hay analítica ni seguimiento de ningún tipo.
 
 ## Instalación
 
@@ -36,30 +41,39 @@ Se cambia en `chrome://extensions/shortcuts`.
 
 ## Cómo está hecho
 
-JavaScript a pelo: sin frameworks, sin build y sin dependencias. Son cuatro
-archivos y una carpeta de iconos:
+JavaScript a pelo: sin frameworks, sin build y sin dependencias.
 
 ```
 manifest.json    configuración de la extensión (Manifest V3)
 popup.html       estructura del popup
 popup.css        estilos
-popup.js         toda la lógica
+logica.js        las cuentas y los formatos, sin tocar la pantalla
+popup.js         lo que reacciona a los clics
+test/            tests de logica.js
 icons/           16, 48 y 128 px
 ```
 
-No hay `package.json` ni `node_modules` porque no hacen falta. Editas un
-archivo, le das a recargar en `chrome://extensions` y ya está.
+Lo que se puede probar solo está en `logica.js`, aparte del resto. Los tests van
+con lo que ya trae Node, así que no hay `node_modules` que instalar:
+
+```
+npm test
+```
+
+Para lo demás, editas un archivo, le das a recargar en `chrome://extensions` y
+ya está.
 
 Las tasas vienen de [Frankfurter](https://frankfurter.dev), que es gratuita, no
 pide API key y saca los datos del BCE. Como el BCE publica una vez al día
-laborable, el gráfico no tiene puntos en fines de semana ni festivos.
+laborable, el gráfico no tiene puntos en fines de semana ni festivos, y las
+tasas guardadas valen hasta el día siguiente.
 
 ## Divisas soportadas
 
 EUR, USD, GBP, JPY, CHF, CAD, AUD, CNY, MXN, BRL, SEK, NOK, DKK, PLN y TRY.
 
 Para añadir otra basta con meter una línea en el array `CURRENCIES` de
-`popup.js`, siempre que Frankfurter la soporte.
+`logica.js`, siempre que Frankfurter la soporte.
 
 ## Licencia
 
