@@ -75,8 +75,29 @@ function parseAmount(raw) {
 }
 
 const STORAGE_KEY = "lastPair";
+const CACHE_KEY = "rateCache";
+const CACHE_MAX = 40;
 
 const isValidCode = (code) => CURRENCIES.some((c) => c.code === code);
+
+// Fecha local en formato ISO. No uso toISOString() porque pasa a UTC y aquí,
+// a partir de las dos de la tarde en verano, ya me daba el día siguiente.
+function isoLocal(date) {
+  const mes = String(date.getMonth() + 1).padStart(2, "0");
+  const dia = String(date.getDate()).padStart(2, "0");
+  return `${date.getFullYear()}-${mes}-${dia}`;
+}
+
+function hoy() {
+  return isoLocal(new Date());
+}
+
+// El BCE saca las tasas una vez al día laborable, sobre las cuatro de la tarde.
+// Guardo el día en que pedí los datos y los doy por buenos mientras siga siendo
+// el mismo día: un TTL de horas me haría pedir de madrugada para nada.
+function isFresh(entry) {
+  return Boolean(entry) && entry.day === hoy();
+}
 
 async function loadPair() {
   try {
@@ -96,6 +117,37 @@ async function savePair(from, to) {
     await chrome.storage.local.set({ [STORAGE_KEY]: { from, to } });
   } catch (error) {
     console.warn("No se pudo guardar el almacenamiento", error);
+  }
+}
+
+// Guardo todo en una sola clave: son cuatro pares y chrome.storage cobra por
+// escritura, no por tamaño.
+async function loadCache() {
+  try {
+    const stored = await chrome.storage.local.get(CACHE_KEY);
+    return stored[CACHE_KEY] ?? {};
+  } catch (error) {
+    console.warn("No se pudo leer la caché", error);
+    return {};
+  }
+}
+
+// Recibe solo lo nuevo y lo fusiona con lo que haya. La tasa y el histórico se
+// guardan casi a la vez, y si cada uno escribiera su copia entera el segundo
+// borraría lo del primero.
+async function saveCache(nuevas) {
+  try {
+    const actual = await loadCache();
+    const mezcla = { ...actual, ...nuevas };
+
+    // Si alguien va probando divisas esto crece sin parar, así que me quedo con
+    // las últimas y tiro el resto.
+    const entries = Object.entries(mezcla)
+      .sort((a, b) => (b[1].saved ?? 0) - (a[1].saved ?? 0))
+      .slice(0, CACHE_MAX);
+    await chrome.storage.local.set({ [CACHE_KEY]: Object.fromEntries(entries) });
+  } catch (error) {
+    console.warn("No se pudo guardar la caché", error);
   }
 }
 
@@ -138,7 +190,7 @@ async function fetchRate(from, to) {
 function startDateFor(days) {
   const date = new Date();
   date.setDate(date.getDate() - days);
-  return date.toISOString().slice(0, 10);
+  return isoLocal(date);
 }
 
 async function fetchHistory(from, to) {
@@ -243,10 +295,22 @@ async function refreshTrend(from, to) {
     return;
   }
 
+  const cache = await loadCache();
+  if (currentTrend !== trendId) return;
+
+  const key = `hist:${from}${to}`;
+  const cached = cache[key];
+  if (isFresh(cached) && Array.isArray(cached.values)) {
+    renderTrend(cached.values);
+    return;
+  }
+
   try {
     const values = await fetchHistory(from, to);
     if (currentTrend !== trendId) return;
     renderTrend(values);
+
+    saveCache({ [key]: { values, day: hoy(), saved: Date.now() } });
   } catch (error) {
     if (currentTrend !== trendId) return;
     // El histórico es un extra: si falla, el conversor sigue funcionando y
@@ -340,8 +404,28 @@ async function refresh() {
   }
 
   const currentRequest = ++requestId;
-  setLoading(true);
   clearError();
+
+  const cache = await loadCache();
+  if (currentRequest !== requestId) return;
+
+  const cached = cache[`${from}${to}`];
+  if (cached) {
+    // Aunque esté caducada la pinto: ver la tasa de ayer un segundo es mejor
+    // que ver un guion. Si sigue valiendo, ya no pido nada.
+    rate = cached.rate;
+    rateDate = cached.date;
+    renderRateLine(from, to);
+    renderUpdated();
+    renderResult();
+  }
+
+  if (isFresh(cached)) {
+    refreshTrend(from, to);
+    return;
+  }
+
+  setLoading(!cached);
 
   try {
     const data = await fetchRate(from, to);
@@ -353,8 +437,19 @@ async function refresh() {
     renderUpdated();
     renderResult();
     refreshTrend(from, to);
+
+    saveCache({
+      [`${from}${to}`]: { rate: data.rate, date: data.date, day: hoy(), saved: Date.now() },
+    });
   } catch (error) {
     if (currentRequest !== requestId) return;
+
+    if (cached) {
+      // Me quedo con lo viejo y aviso, que es más útil que dejarlo en blanco.
+      showError(errorMessageFor(error));
+      refreshTrend(from, to);
+      return;
+    }
 
     rate = null;
     rateDate = null;
