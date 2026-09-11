@@ -55,7 +55,18 @@
 
       <section class="result" aria-labelledby="result-label">
         <h2 class="result__label" id="result-label">Resultado</h2>
-        <output class="result__value" id="result" for="amount from to" aria-live="polite">—</output>
+        <div class="result__row">
+          <input
+            class="result__value"
+            type="text"
+            id="result"
+            inputmode="decimal"
+            autocomplete="off"
+            spellcheck="false"
+            aria-label="Cantidad convertida"
+            value="—">
+          <span class="result__code" id="result-code" aria-hidden="true"></span>
+        </div>
         <p class="result__meta" id="result-meta"></p>
 
         <div class="trend" id="trend" hidden>

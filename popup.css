@@ -425,28 +425,65 @@ body::after {
   color: var(--muted);
 }
 
-.result__value {
-  display: block;
+.result__row {
+  display: flex;
+  align-items: baseline;
+  justify-content: flex-start;
+  gap: 0.28em;
   margin-top: var(--s-3);
+}
+
+/* Es un input, pero hasta que no lo tocas tiene que parecer solo la cifra. */
+.result__value {
+  flex: 0 1 auto;
+  min-width: 1.5em;
+  max-width: 100%;
+  padding: 2px var(--s-2);
+  margin-left: calc(-1 * var(--s-2));
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: var(--r-sm);
   font-family: var(--font-mono);
-  font-size: 34px;
+  font-size: var(--tam-cifra, 34px);
   font-weight: 500;
   line-height: 1.1;
   letter-spacing: -0.02em;
   color: var(--brass);
   font-variant-numeric: tabular-nums;
-  word-break: break-all;
   text-shadow: 0 0 28px var(--brass-glow);
+  cursor: text;
+  transition: background-color var(--fast) var(--ease), border-color var(--fast) var(--ease);
+}
+
+.result__value:hover {
+  background: var(--brass-ghost);
+  border-color: var(--brass-dim);
+}
+
+.result__value:focus {
+  outline: none;
+  background: var(--brass-ghost);
+  border-color: var(--brass);
+}
+
+.result__value::selection {
+  background: var(--brass-ghost);
+}
+
+.result__value[aria-invalid="true"] {
+  color: var(--cinnabar);
+  border-color: var(--cinnabar);
+  text-shadow: none;
 }
 
 .result__code {
-  margin-left: 0.28em;
-  font-size: 0.55em;
+  flex-shrink: 0;
+  font-family: var(--font-mono);
+  font-size: calc(var(--tam-cifra, 34px) * 0.56);
   font-weight: 600;
   letter-spacing: 0.04em;
   color: var(--brass);
   opacity: 0.7;
-  text-shadow: none;
 }
 
 .result.is-updating .result__value {

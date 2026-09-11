@@ -29,6 +29,7 @@ const el = {
   to: document.getElementById("to"),
   swap: document.getElementById("swap"),
   result: document.getElementById("result"),
+  resultCode: document.getElementById("result-code"),
   resultBox: document.querySelector(".result"),
   resultMeta: document.getElementById("result-meta"),
   rateLine: document.getElementById("rate-line"),
@@ -46,6 +47,9 @@ const el = {
 
 let rate = null;
 let rateDate = null;
+// Que campo manda. Si escribes en el de abajo hay que convertir al reves, y
+// sobre todo no le puedo reescribir lo que esta tecleando.
+let ladoActivo = "amount";
 let requestId = 0;
 let trendId = 0;
 
@@ -67,7 +71,15 @@ const nfPercent = new Intl.NumberFormat("es-ES", {
 });
 
 function parseAmount(raw) {
-  const cleaned = raw.trim().replace(/\s/g, "").replace(",", ".");
+  // Ahora que el resultado se puede editar me llega ya formateado ("1.084,70"),
+  // así que el punto de los miles hay que quitarlo antes de nada: sin esto,
+  // "1.000" se leía como un 1.
+  const cleaned = raw
+    .trim()
+    .replace(/\s/g, "")
+    .replace(/\u00A0/g, "")
+    .replace(/\./g, "")
+    .replace(",", ".");
   if (cleaned === "") return null;
   const value = Number(cleaned);
   if (!Number.isFinite(value) || value < 0) return null;
@@ -362,30 +374,48 @@ function setLoading(active) {
   el.swap.disabled = active;
 }
 
+// El ancho de un input lo manda el atributo size, no el CSS. Lo ajusto a lo que
+// hay escrito para que el código de divisa no se vaya al otro extremo, y si la
+// cifra es muy larga encojo la letra: con un millón largo no cabía y se comía
+// el último dígito por debajo del código.
+function ajustarAncho() {
+  const largo = String(el.result.value).length;
+  el.result.size = Math.max(largo, 1);
+
+  const tam = largo > 12 ? 22 : largo > 9 ? 27 : 34;
+  el.resultBox.style.setProperty("--tam-cifra", `${tam}px`);
+}
+
 function renderResult() {
   const from = el.from.value;
   const to = el.to.value;
-  const amount = parseAmount(el.amount.value);
 
-  if (amount === null) {
-    el.result.textContent = "—";
+  el.resultCode.textContent = to;
+
+  // El campo que estas tocando se queda como lo has dejado; relleno el otro.
+  const escribiendoAbajo = ladoActivo === "result";
+  const origen = escribiendoAbajo ? el.result : el.amount;
+  const destino = escribiendoAbajo ? el.amount : el.result;
+  const valor = parseAmount(origen.value);
+
+  if (valor === null) {
+    destino.value = "—";
+    ajustarAncho();
     el.resultMeta.textContent = "";
     return;
   }
 
   if (rate === null) return;
 
-  const converted = amount * rate;
-  el.result.replaceChildren(
-    document.createTextNode(nf.format(converted)),
-    Object.assign(document.createElement("span"), {
-      className: "result__code",
-      textContent: to,
-    })
-  );
-  el.resultMeta.textContent = `${nf.format(amount)} ${from}`;
+  const convertido = escribiendoAbajo ? valor / rate : valor * rate;
+  destino.value = nf.format(convertido);
+  ajustarAncho();
 
-  restartAnimation(el.resultBox, "is-updating");
+  const enviados = escribiendoAbajo ? convertido : valor;
+  el.resultMeta.textContent = `${nf.format(enviados)} ${from}`;
+
+  // El latido solo cuando cambia la cifra grande, que si no parpadea al teclear.
+  if (!escribiendoAbajo) restartAnimation(el.resultBox, "is-updating");
 }
 
 async function refresh() {
@@ -453,7 +483,8 @@ async function refresh() {
 
     rate = null;
     rateDate = null;
-    el.result.textContent = "—";
+    el.result.value = "—";
+    el.resultCode.textContent = "";
     el.resultMeta.textContent = "";
     el.rateLine.textContent = "";
     el.updated.textContent = "";
@@ -484,12 +515,34 @@ function onSwap() {
 }
 
 function onAmountInput() {
+  ladoActivo = "amount";
   const amount = parseAmount(el.amount.value);
   const invalid = el.amount.value.trim() !== "" && amount === null;
 
   el.amount.setAttribute("aria-invalid", String(invalid));
   el.amountError.hidden = !invalid;
   el.amountError.textContent = invalid ? "Introduce una cantidad válida" : "";
+
+  renderResult();
+}
+
+function onResultInput() {
+  ladoActivo = "result";
+  ajustarAncho();
+  const valor = parseAmount(el.result.value);
+  const invalid = el.result.value.trim() !== "" && valor === null;
+
+  el.result.setAttribute("aria-invalid", String(invalid));
+  if (invalid) {
+    el.amount.value = "—";
+    el.resultMeta.textContent = "";
+    return;
+  }
+
+  // Un valor invalido arriba deja de serlo en cuanto escribo aqui abajo.
+  el.amount.setAttribute("aria-invalid", "false");
+  el.amountError.hidden = true;
+  el.amountError.textContent = "";
 
   renderResult();
 }
@@ -502,6 +555,8 @@ function onCurrencyChange() {
 function bindEvents() {
   el.form.addEventListener("submit", (event) => event.preventDefault());
   el.amount.addEventListener("input", onAmountInput);
+  el.result.addEventListener("input", onResultInput);
+  el.result.addEventListener("focus", () => el.result.select());
   el.from.addEventListener("change", onCurrencyChange);
   el.to.addEventListener("change", onCurrencyChange);
   el.swap.addEventListener("click", onSwap);
