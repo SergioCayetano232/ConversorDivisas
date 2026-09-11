@@ -168,18 +168,36 @@ function buildPaths(values) {
   const min = Math.min(...values);
   const max = Math.max(...values);
   const span = max - min;
-  const stepX = 100 / (values.length - 1);
+
+  // Dejo un margen a los lados y arriba: el trazo se pinta centrado sobre la
+  // línea, así que pegado al borde se le come la mitad.
+  const PAD_X = 1.5;
+  const PAD_Y = 3;
+  const width = 100 - PAD_X * 2;
+  const stepX = width / (values.length - 1);
+  const bottom = 28 - PAD_Y;
+  const height = bottom - PAD_Y;
 
   const points = values.map((value, index) => {
-    const x = index * stepX;
+    const x = PAD_X + index * stepX;
     // Si la tasa no se ha movido, span es 0: dibujamos una línea centrada.
-    const y = span === 0 ? 14 : 26 - ((value - min) / span) * 24;
+    const y = span === 0 ? 14 : bottom - ((value - min) / span) * height;
     return `${x.toFixed(2)},${y.toFixed(2)}`;
   });
 
   const line = `M${points.join("L")}`;
-  const area = `${line}L100,28L0,28Z`;
+  const area = `${line}L${(100 - PAD_X).toFixed(2)},28L${PAD_X.toFixed(2)},28Z`;
   return { line, area };
+}
+
+// Quitar y volver a poner la clase no basta: el navegador agrupa los dos
+// cambios y la animación no se reinicia. Leer offsetWidth le obliga a mirar.
+function restartAnimation(node, className) {
+  if (className) node.classList.remove(className);
+  node.style.animation = "none";
+  void node.offsetWidth;
+  node.style.animation = "";
+  if (className) node.classList.add(className);
 }
 
 function hideTrend() {
@@ -200,6 +218,11 @@ function renderTrend(values) {
   const { line, area } = buildPaths(values);
   el.trendLine.setAttribute("d", line);
   el.trendArea.setAttribute("d", area);
+
+  // La animación de dibujo necesita saber lo que mide la línea, y eso solo lo
+  // sabe el SVG una vez tiene el path puesto.
+  el.trendLine.style.setProperty("--len", el.trendLine.getTotalLength());
+  restartAnimation(el.trendLine);
 
   const first = values[0];
   const last = values[values.length - 1];
@@ -298,9 +321,7 @@ function renderResult() {
   );
   el.resultMeta.textContent = `${nf.format(amount)} ${from}`;
 
-  el.resultBox.classList.remove("is-updating");
-  void el.resultBox.offsetWidth;
-  el.resultBox.classList.add("is-updating");
+  restartAnimation(el.resultBox, "is-updating");
 }
 
 async function refresh() {
@@ -353,7 +374,7 @@ function onSwap() {
   el.from.value = el.to.value;
   el.to.value = from;
 
-  el.swap.classList.toggle("is-swapping");
+  restartAnimation(el.swap, "is-swapping");
 
   if (rate !== null && rate !== 0) {
     rate = 1 / rate;
@@ -399,6 +420,7 @@ async function init() {
   const pair = await loadPair();
   populateSelects(pair);
   bindEvents();
+  onAmountInput();
   refresh();
 
   el.amount.focus();
