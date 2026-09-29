@@ -28,12 +28,16 @@ que necesitaba una conversión rápida. Ahora es un clic en la barra del navegad
 - Recuerda la última pareja de divisas, el periodo del gráfico, la pestaña y
   las divisas que tienes puestas
 - Guarda las tasas del día, así que al abrirlo ya está el número puesto
+- La tasa de tu par en el propio icono de la barra, en verde si ha subido desde
+  el día anterior, en rojo si ha bajado. Se actualiza cada hora; si no la
+  quieres, clic derecho en el icono y la quitas
 - Se abre con `Ctrl+Shift+U` (en Mac, `Cmd+Shift+U`)
 - Tiene modo claro y oscuro, según cómo tengas el sistema
 - Si algo falla te dice qué ha pasado, no se queda en blanco
 
-Pide lo justo: guardar tus preferencias, hablar con la API de las tasas y, para
-lo del clic derecho, el menú y poner la tarjeta en la pestaña en la que estás.
+Pide lo justo: guardar tus preferencias, hablar con la API de las tasas, una
+alarma para refrescar el icono cada hora y, para lo del clic derecho, el menú y
+poner la tarjeta en la pestaña en la que estás.
 Esto último solo pasa cuando pulsas **Convertir**; no lee ninguna web por su
 cuenta, y por eso Chrome no avisa de nada al instalarla. No hay analítica ni
 seguimiento de ningún tipo.
