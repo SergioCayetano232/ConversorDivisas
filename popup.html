@@ -251,8 +251,24 @@
       <p class="footer__source">
         Tasas de <a href="https://frankfurter.dev" target="_blank" rel="noopener noreferrer">Frankfurter</a>
       </p>
+      <button class="footer__atajos" type="button" id="abrir-ayuda" aria-haspopup="dialog">
+        <span class="footer__tecla" aria-hidden="true">?</span> Atajos
+      </button>
       <p class="footer__updated" id="updated"></p>
     </footer>
+
+    <div class="ayuda" id="ayuda" hidden>
+      <div class="ayuda__panel" role="dialog" aria-modal="true" aria-labelledby="ayuda-titulo">
+        <div class="ayuda__cabeza">
+          <h2 class="ayuda__titulo" id="ayuda-titulo">Atajos de teclado</h2>
+          <button class="ayuda__cerrar" type="button" id="ayuda-cerrar" aria-label="Cerrar">✕</button>
+        </div>
+        <ul class="ayuda__lista" id="ayuda-lista"></ul>
+        <p class="ayuda__nota" id="ayuda-nota"></p>
+      </div>
+    </div>
+
+    <div class="tecla-flash" id="tecla-flash" aria-hidden="true"></div>
 
   </div>
 

@@ -43,6 +43,12 @@ const el = {
   avisosLista: document.getElementById("avisos-lista"),
   avisoNota: document.getElementById("aviso-nota"),
   campana: document.getElementById("vista-avisos"),
+  abrirAyuda: document.getElementById("abrir-ayuda"),
+  ayuda: document.getElementById("ayuda"),
+  ayudaCerrar: document.getElementById("ayuda-cerrar"),
+  ayudaLista: document.getElementById("ayuda-lista"),
+  ayudaNota: document.getElementById("ayuda-nota"),
+  teclaFlash: document.getElementById("tecla-flash"),
   trendChange: document.getElementById("trend-change"),
   rangos: document.querySelectorAll(".rango"),
   trendLine: document.getElementById("trend-line"),
@@ -1018,6 +1024,112 @@ function onQuitarAviso(id) {
   pastilla.addEventListener("animationend", quitar, { once: true });
 }
 
+const esMac = /mac|iphone|ipad/i.test(navigator.userAgentData?.platform ?? navigator.platform ?? "");
+
+const QUE_HACE = {
+  intercambiar: "Dar la vuelta al par",
+  copiar: "Copiar el resultado",
+  origen: "Elegir la divisa de origen",
+  destino: "Elegir la divisa de destino",
+  "vista:evolucion": "Ver el gráfico",
+  "vista:extras": "Ver otras divisas",
+  "vista:avisos": "Ver los avisos",
+  ayuda: "Esta ayuda",
+};
+
+function hacerAtajo(accion) {
+  if (accion === "intercambiar" && !el.swap.disabled) onSwap();
+  else if (accion === "copiar") onCopiar();
+  else if (accion === "origen") el.from.click();
+  else if (accion === "destino") el.to.click();
+  else if (accion === "ayuda") abrirAyuda();
+  else if (accion.startsWith("vista:")) cambiarVista(accion.slice(6));
+}
+
+let teclaFlash = null;
+
+// La tecla que acabas de pulsar sale un momento abajo, para que se note que
+// ha hecho algo aunque el cambio sea pequeño (un copiar, por ejemplo).
+function mostrarTecla(tecla, texto) {
+  el.teclaFlash.replaceChildren();
+  const kbd = document.createElement("kbd");
+  kbd.textContent = tecla;
+  el.teclaFlash.append(kbd, ` ${texto}`);
+  restartAnimation(el.teclaFlash, "is-visible");
+  clearTimeout(teclaFlash);
+  teclaFlash = setTimeout(() => el.teclaFlash.classList.remove("is-visible"), 1300);
+}
+
+function onAtajo(event) {
+  if (!el.ayuda.hidden) {
+    if (event.key === "Escape" || event.key === "?") {
+      event.preventDefault();
+      cerrarAyuda();
+    }
+    return;
+  }
+  const t = event.target;
+  const enCampo = t instanceof HTMLInputElement || t instanceof HTMLTextAreaElement || t.isContentEditable;
+  const accion = atajoPara({
+    code: event.code, key: event.key, altKey: event.altKey,
+    ctrlKey: event.ctrlKey, metaKey: event.metaKey, enCampo,
+  });
+  if (!accion) return;
+  event.preventDefault();
+  hacerAtajo(accion);
+  if (accion !== "ayuda") {
+    mostrarTecla(event.altKey ? textoAtajo(event.code, esMac) : event.code.replace(/^Key|^Digit/, ""), QUE_HACE[accion]);
+  }
+}
+
+let focoAntesDeAyuda = null;
+
+function pintarAyuda() {
+  const alt = esMac ? "⌥" : "Alt+";
+  el.ayudaLista.replaceChildren(...Object.entries(ATAJOS).map(([code, accion], i) => {
+    const fila = document.createElement("li");
+    fila.className = "ayuda__fila";
+    fila.style.setProperty("--i", i);
+    const kbd = document.createElement("kbd");
+    kbd.textContent = accion === "ayuda" ? "?" : code.replace(/^Key|^Digit/, "");
+    const texto = document.createElement("span");
+    texto.textContent = QUE_HACE[accion];
+    fila.append(kbd, texto);
+    return fila;
+  }));
+  el.ayudaNota.textContent = `Si estás escribiendo en un campo, con ${alt} delante: ${alt}S, ${alt}C… (la ayuda, ${alt}H).`;
+}
+
+function abrirAyuda() {
+  focoAntesDeAyuda = document.activeElement;
+  cerrarBandeja();
+  pintarAyuda();
+  el.ayuda.hidden = false;
+  el.abrirAyuda.setAttribute("aria-expanded", "true");
+  el.ayudaCerrar.focus();
+}
+
+function cerrarAyuda() {
+  if (el.ayuda.hidden) return;
+  el.ayuda.hidden = true;
+  el.abrirAyuda.setAttribute("aria-expanded", "false");
+  focoAntesDeAyuda?.focus?.();
+}
+
+// Las pistas de los botones dicen su atajo, para ir aprendiéndolos sin abrir
+// la ayuda.
+function ponerPistasDeAtajos() {
+  const pista = (accion) => {
+    const code = Object.keys(ATAJOS).find((c) => ATAJOS[c] === accion);
+    return code.replace(/^Key|^Digit/, "");
+  };
+  el.swap.title = `Intercambiar divisas (${pista("intercambiar")})`;
+  el.copiar.title = `Copiar el resultado (${pista("copiar")})`;
+  for (const boton of el.botonesVista) {
+    boton.title = `${boton.title} (${pista(`vista:${boton.dataset.vista}`)})`;
+  }
+}
+
 function renderRateLine(from, to) {
   if (rate === null) {
     el.rateLine.textContent = "";
@@ -1463,6 +1575,23 @@ function bindEvents() {
   el.vistas.addEventListener("keydown", onTeclaVistas);
   el.bandejaCerrar.addEventListener("click", () => cerrarBandeja()?.focus());
   el.bandeja.addEventListener("keydown", onTeclaBandeja);
+  document.addEventListener("keydown", onAtajo);
+  el.abrirAyuda.addEventListener("click", abrirAyuda);
+  el.ayudaCerrar.addEventListener("click", cerrarAyuda);
+  el.ayuda.addEventListener("mousedown", (event) => {
+    if (event.target !== el.ayuda) return;
+    // Sin esto, el propio clic se lleva el foco al body justo después de
+    // devolverlo al botón.
+    event.preventDefault();
+    cerrarAyuda();
+  });
+  // Dentro de la ayuda solo hay un botón: el Tabulador no tiene adónde ir fuera.
+  el.ayuda.addEventListener("keydown", (event) => {
+    if (event.key === "Tab") {
+      event.preventDefault();
+      el.ayudaCerrar.focus();
+    }
+  });
   el.avisoForm.addEventListener("submit", onCrearAviso);
   el.avisoUmbral.addEventListener("input", pintarSentidoAviso);
   el.avisoUmbral.addEventListener("animationend", () => el.avisoUmbral.classList.remove("is-mal"));
@@ -1518,6 +1647,7 @@ async function init() {
   } else {
     pintarRecientes();
   }
+  ponerPistasDeAtajos();
   bindEvents();
   onAmountInput();
   refresh();

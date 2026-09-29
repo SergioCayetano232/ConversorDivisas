@@ -561,6 +561,34 @@ function mensajeAviso(aviso, rate) {
   };
 }
 
+// Por event.code y no por event.key: en Mac, Opción+S escribe "ß", y en otros
+// teclados la tecla de la S puede traer otra letra.
+const ATAJOS = {
+  KeyS: "intercambiar",
+  KeyC: "copiar",
+  KeyD: "origen",
+  KeyA: "destino",
+  Digit1: "vista:evolucion",
+  Digit2: "vista:extras",
+  Digit3: "vista:avisos",
+  KeyH: "ayuda",
+};
+
+// Escribiendo en un campo las letras son letras (la x es "por" en las
+// cuentas), así que ahí hace falta Alt. Cmd y Ctrl no los toco nunca: son
+// copiar, pegar y compañía.
+function atajoPara({ code, key, altKey, ctrlKey, metaKey, enCampo }) {
+  if (ctrlKey || metaKey) return null;
+  if (!enCampo && key === "?") return "ayuda";
+  if (enCampo && !altKey) return null;
+  return ATAJOS[code] ?? null;
+}
+
+function textoAtajo(code, esMac) {
+  const tecla = code.replace(/^Key|^Digit/, "");
+  return esMac ? `⌥${tecla}` : `Alt+${tecla}`;
+}
+
 function errorMessageFor(error) {
   if (error.name === "AbortError") {
     return "La conexión ha tardado demasiado.";
@@ -588,5 +616,6 @@ if (typeof module !== "undefined") {
     extrasVisibles, disponiblesParaAnadir, convertirExtras,
     textoInsignia, cambioDiario, sentidoDe, tituloInsignia,
     AVISOS_MAX, sentidoAviso, crearAviso, leerAvisos, avisoCumplido, repartirAvisos, mensajeAviso,
+    ATAJOS, atajoPara, textoAtajo,
   };
 }
