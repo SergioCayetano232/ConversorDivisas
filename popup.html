@@ -118,49 +118,88 @@
         </div>
         <p class="result__meta" id="result-meta"></p>
 
-        <div class="trend" id="trend" hidden>
-          <div class="trend__head">
-            <div class="rangos" role="group" aria-label="Periodo del gráfico">
-              <button class="rango" type="button" data-dias="7">7D</button>
-              <button class="rango" type="button" data-dias="30">30D</button>
-              <button class="rango" type="button" data-dias="90">90D</button>
+        <div class="panel" id="panel">
+          <div class="panel__head">
+            <div class="vistas" id="vistas" role="tablist" aria-label="Qué ver debajo del resultado" data-vista="evolucion">
+              <span class="vistas__pildora" aria-hidden="true"></span>
+              <button
+                class="vista is-activa"
+                type="button"
+                role="tab"
+                id="vista-evolucion"
+                data-vista="evolucion"
+                aria-selected="true"
+                aria-controls="trend"
+                title="Evolución de la tasa">
+                <svg viewBox="0 0 14 14" aria-hidden="true"><path d="M1 11l3.5-4 3 2L13 3"/></svg>
+              </button>
+              <button
+                class="vista"
+                type="button"
+                role="tab"
+                id="vista-extras"
+                data-vista="extras"
+                aria-selected="false"
+                aria-controls="extras"
+                tabindex="-1"
+                title="Otras divisas">
+                <svg viewBox="0 0 14 14" aria-hidden="true"><rect x="1.5" y="1.5" width="4.5" height="4.5" rx="1"/><rect x="8" y="1.5" width="4.5" height="4.5" rx="1"/><rect x="1.5" y="8" width="4.5" height="4.5" rx="1"/><rect x="8" y="8" width="4.5" height="4.5" rx="1"/></svg>
+              </button>
             </div>
-            <span class="trend__change" id="trend-change"></span>
-          </div>
-          <div
-            class="trend__lienzo"
-            id="trend-lienzo"
-            tabindex="0"
-            aria-label="Gráfico de la tasa. Con las flechas vas día a día.">
-            <svg
-              class="trend__chart"
-              id="trend-chart"
-              viewBox="0 0 100 28"
-              preserveAspectRatio="none"
-              role="img"
-              aria-labelledby="trend-desc">
-              <title id="trend-desc">Evolución de la tasa</title>
-              <defs>
-                <linearGradient id="trend-fill" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stop-color="var(--brass)" stop-opacity="0.28"></stop>
-                  <stop offset="100%" stop-color="var(--brass)" stop-opacity="0"></stop>
-                </linearGradient>
-              </defs>
-              <path class="trend__area" id="trend-area" d=""></path>
-              <path class="trend__line" id="trend-line" d=""></path>
-            </svg>
-            <span class="trend__marca trend__marca--max" id="marca-max" aria-hidden="true"></span>
-            <span class="trend__marca trend__marca--min" id="marca-min" aria-hidden="true"></span>
-            <span class="trend__guia" id="trend-guia" aria-hidden="true"></span>
-            <span class="trend__punto" id="trend-punto" aria-hidden="true"></span>
-            <div class="trend__tip" id="trend-tip" role="status" aria-live="polite">
-              <span class="trend__tip-fecha" id="tip-fecha"></span>
-              <span class="trend__tip-valor" id="tip-valor"></span>
+            <div class="trend__controles" id="trend-controles" hidden>
+              <div class="rangos" role="group" aria-label="Periodo del gráfico">
+                <button class="rango" type="button" data-dias="7">7D</button>
+                <button class="rango" type="button" data-dias="30">30D</button>
+                <button class="rango" type="button" data-dias="90">90D</button>
+              </div>
+              <span class="trend__change" id="trend-change"></span>
             </div>
           </div>
-          <div class="trend__pie" id="trend-pie">
-            <span class="trend__extremo trend__extremo--min" id="pie-min"></span>
-            <span class="trend__extremo trend__extremo--max" id="pie-max"></span>
+
+          <div class="trend" id="trend" role="tabpanel" aria-labelledby="vista-evolucion" hidden>
+            <div
+              class="trend__lienzo"
+              id="trend-lienzo"
+              tabindex="0"
+              aria-label="Gráfico de la tasa. Con las flechas vas día a día.">
+              <svg
+                class="trend__chart"
+                id="trend-chart"
+                viewBox="0 0 100 28"
+                preserveAspectRatio="none"
+                role="img"
+                aria-labelledby="trend-desc">
+                <title id="trend-desc">Evolución de la tasa</title>
+                <defs>
+                  <linearGradient id="trend-fill" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stop-color="var(--brass)" stop-opacity="0.28"></stop>
+                    <stop offset="100%" stop-color="var(--brass)" stop-opacity="0"></stop>
+                  </linearGradient>
+                </defs>
+                <path class="trend__area" id="trend-area" d=""></path>
+                <path class="trend__line" id="trend-line" d=""></path>
+              </svg>
+              <span class="trend__marca trend__marca--max" id="marca-max" aria-hidden="true"></span>
+              <span class="trend__marca trend__marca--min" id="marca-min" aria-hidden="true"></span>
+              <span class="trend__guia" id="trend-guia" aria-hidden="true"></span>
+              <span class="trend__punto" id="trend-punto" aria-hidden="true"></span>
+              <div class="trend__tip" id="trend-tip" role="status" aria-live="polite">
+                <span class="trend__tip-fecha" id="tip-fecha"></span>
+                <span class="trend__tip-valor" id="tip-valor"></span>
+              </div>
+            </div>
+            <div class="trend__pie" id="trend-pie">
+              <span class="trend__extremo trend__extremo--min" id="pie-min"></span>
+              <span class="trend__extremo trend__extremo--max" id="pie-max"></span>
+            </div>
+          </div>
+
+          <div class="extras" id="extras" role="tabpanel" aria-labelledby="vista-extras" hidden>
+            <ul class="extras__rejilla" id="extras-rejilla"></ul>
+            <div class="bandeja" id="bandeja" hidden>
+              <div class="bandeja__opciones" id="bandeja-opciones" role="group" aria-label="Añadir divisa"></div>
+              <button class="bandeja__cerrar" type="button" id="bandeja-cerrar" aria-label="Cerrar">✕</button>
+            </div>
           </div>
         </div>
       </section>

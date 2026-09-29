@@ -25,6 +25,14 @@ const el = {
   errorMessage: document.getElementById("error-message"),
   retry: document.getElementById("retry"),
   trend: document.getElementById("trend"),
+  trendControles: document.getElementById("trend-controles"),
+  vistas: document.getElementById("vistas"),
+  botonesVista: document.querySelectorAll(".vista"),
+  extras: document.getElementById("extras"),
+  rejilla: document.getElementById("extras-rejilla"),
+  bandeja: document.getElementById("bandeja"),
+  bandejaOpciones: document.getElementById("bandeja-opciones"),
+  bandejaCerrar: document.getElementById("bandeja-cerrar"),
   trendChange: document.getElementById("trend-change"),
   rangos: document.querySelectorAll(".rango"),
   trendLine: document.getElementById("trend-line"),
@@ -56,6 +64,13 @@ let recientes = [];
 let serie = [];
 let coords = [];
 let mirando = null;
+let hayGrafico = false;
+let vista = "evolucion";
+let extras = [];
+// Las tasas de la divisa de origen a todas las demás, y de qué origen son: si
+// cambias el origen, las viejas no valen ni un segundo.
+let tasasBase = null;
+let extrasId = 0;
 
 const nf = new Intl.NumberFormat("es-ES", {
   minimumFractionDigits: 2,
@@ -78,6 +93,8 @@ const nfPercent = new Intl.NumberFormat("es-ES", {
 const STORAGE_KEY = "lastPair";
 const RANGO_KEY = "rangoGrafico";
 const RECIENTES_KEY = "paresRecientes";
+const EXTRAS_KEY = "divisasExtra";
+const VISTA_KEY = "vistaPanel";
 const CACHE_KEY = "rateCache";
 const CACHE_MAX = 40;
 
@@ -119,6 +136,34 @@ async function tomarPendiente() {
   return null;
 }
 
+async function cargarExtras() {
+  try {
+    const guardado = await chrome.storage.local.get(EXTRAS_KEY);
+    return leerExtras(guardado[EXTRAS_KEY]);
+  } catch (error) {
+    console.warn("No se pudieron leer las divisas extra", error);
+    return leerExtras(undefined);
+  }
+}
+
+async function guardarExtras() {
+  try {
+    await chrome.storage.local.set({ [EXTRAS_KEY]: extras });
+  } catch (error) {
+    console.warn("No se pudieron guardar las divisas extra", error);
+  }
+}
+
+async function cargarVista() {
+  try {
+    const guardado = await chrome.storage.local.get(VISTA_KEY);
+    if (guardado[VISTA_KEY] === "extras") return "extras";
+  } catch (error) {
+    console.warn("No se pudo leer la pestaña", error);
+  }
+  return "evolucion";
+}
+
 async function cargarRecientes() {
   try {
     const guardado = await chrome.storage.local.get(RECIENTES_KEY);
@@ -151,8 +196,16 @@ async function loadCache() {
 
 // Recibe solo lo nuevo y lo fusiona con lo que haya. La tasa y el histórico se
 // guardan casi a la vez, y si cada uno escribiera su copia entera el segundo
-// borraría lo del primero.
-async function saveCache(nuevas) {
+// borraría lo del primero. Y en cola: fusionar no basta si dos leen a la vez
+// antes de que ninguno haya escrito.
+let colaCache = Promise.resolve();
+
+function saveCache(nuevas) {
+  colaCache = colaCache.then(() => guardarEnCache(nuevas));
+  return colaCache;
+}
+
+async function guardarEnCache(nuevas) {
   try {
     const actual = await loadCache();
     const mezcla = { ...actual, ...nuevas };
@@ -318,6 +371,23 @@ async function fetchRate(from, to) {
 }
 
 
+// Sin symbols la API devuelve todas las divisas de golpe: una petición al día
+// por origen sirve para todas las filas, añadas las que añadas.
+async function fetchTodas(from) {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), TIMEOUT_MS);
+
+  try {
+    const response = await fetch(`${API}?base=${from}`, { signal: controller.signal });
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+    const data = await response.json();
+    if (!data.rates || typeof data.rates !== "object") throw new Error("Respuesta inesperada");
+    return data.rates;
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
 async function fetchHistory(from, to, desde) {
   const url = `${API_HISTORY}/${startDateFor(desde)}..?base=${from}&symbols=${to}`;
   const controller = new AbortController();
@@ -354,7 +424,8 @@ function hideTrend() {
   dejarDeMirar();
   serie = [];
   coords = [];
-  el.trend.hidden = true;
+  hayGrafico = false;
+  pintarVista();
   el.trendLine.setAttribute("d", "");
   el.trendArea.setAttribute("d", "");
   el.trendChange.textContent = "";
@@ -464,15 +535,19 @@ function renderTrend(puntos) {
   el.trendChange.classList.toggle("is-up", change > 0);
   el.trendChange.classList.toggle("is-down", change < 0);
 
-  el.trend.hidden = false;
+  hayGrafico = true;
+  pintarVista();
+  if (!el.trend.hidden) dibujarLinea();
+}
 
-  // Se mide ya visible: con el gráfico oculto el SVG tiene ancho cero. El +1
-  // es para que el redondeo no deje una rendija al final.
+// Se mide ya visible: con el gráfico oculto el SVG tiene ancho cero. El +1 es
+// para que el redondeo no deje una rendija al final. Por eso también se llama
+// al volver a la pestaña del gráfico, y de paso la línea se vuelve a dibujar.
+function dibujarLinea() {
   const { width, height } = el.trendLine.ownerSVGElement.getBoundingClientRect();
   el.trendLine.style.setProperty("--len", Math.ceil(largoEnPantalla(coords, width, height)) + 1);
   restartAnimation(el.trendLine);
-
-  pintarExtremos(values);
+  pintarExtremos(serie.map((p) => p.valor));
 }
 
 async function refreshTrend(from, to) {
@@ -515,6 +590,233 @@ async function refreshTrend(from, to) {
   }
 }
 
+
+function pintarVista() {
+  const enEvolucion = vista === "evolucion";
+  el.trend.hidden = !(enEvolucion && hayGrafico);
+  el.trendControles.hidden = !(enEvolucion && hayGrafico);
+  el.extras.hidden = enEvolucion;
+  el.vistas.dataset.vista = vista;
+  for (const boton of el.botonesVista) {
+    const suya = boton.dataset.vista === vista;
+    boton.classList.toggle("is-activa", suya);
+    boton.setAttribute("aria-selected", String(suya));
+    boton.tabIndex = suya ? 0 : -1;
+  }
+}
+
+function cambiarVista(nueva) {
+  if (nueva === vista) return;
+  vista = nueva;
+  cerrarBandeja();
+  dejarDeMirar();
+  pintarVista();
+  if (vista === "evolucion" && hayGrafico) dibujarLinea();
+  // Al entrar en la rejilla las casillas vuelven a llegar en cascada.
+  if (vista === "extras") {
+    for (const celda of el.rejilla.children) celda.classList.add("is-nueva");
+    restartAnimation(el.extras);
+  }
+  try {
+    chrome.storage.local.set({ [VISTA_KEY]: vista });
+  } catch (error) {
+    console.warn("No se pudo guardar la pestaña", error);
+  }
+}
+
+// El patrón de pestañas de siempre: con las flechas cambias, y el foco va con
+// la pestaña elegida.
+function onTeclaVistas(event) {
+  if (event.key !== "ArrowLeft" && event.key !== "ArrowRight") return;
+  event.preventDefault();
+  const nueva = vista === "evolucion" ? "extras" : "evolucion";
+  cambiarVista(nueva);
+  document.getElementById(`vista-${nueva}`).focus();
+}
+
+// Lo que hay arriba, lo hayas escrito tú o salga de lo que tecleas abajo.
+function cantidadOrigen() {
+  if (ladoActivo === "result") {
+    const valor = parseAmount(el.result.value);
+    return valor === null || !rate ? null : valor / rate;
+  }
+  return parseAmount(el.amount.value);
+}
+
+function crearCelda(code) {
+  const celda = document.createElement("li");
+  celda.className = "extra is-nueva";
+  celda.dataset.code = code;
+
+  const elegir = document.createElement("button");
+  elegir.type = "button";
+  elegir.className = "extra__elegir";
+  elegir.title = `${nombreDe(code)}. Pulsa para ponerla como destino`;
+  const cod = document.createElement("span");
+  cod.className = "extra__codigo";
+  cod.textContent = code;
+  const valor = document.createElement("span");
+  valor.className = "extra__valor";
+  valor.textContent = "—";
+  elegir.append(cod, valor);
+  elegir.addEventListener("click", () => onElegirExtra(code));
+
+  const quitar = document.createElement("button");
+  quitar.type = "button";
+  quitar.className = "extra__quitar";
+  quitar.setAttribute("aria-label", `Quitar ${nombreDe(code)}`);
+  quitar.textContent = "✕";
+  quitar.addEventListener("click", () => onQuitarExtra(code));
+
+  celda.append(elegir, quitar);
+  // Igual que las pastillas: si no la quito, reordenar la haría entrar otra vez.
+  celda.addEventListener("animationend", (event) => {
+    if (event.target === celda) celda.classList.remove("is-nueva");
+  });
+  valor.addEventListener("animationend", () => valor.classList.remove("is-tic"));
+  return celda;
+}
+
+function crearCeldaAnadir() {
+  const celda = document.createElement("li");
+  celda.className = "extra extra--anadir is-nueva";
+  celda.dataset.code = "anadir";
+  const boton = document.createElement("button");
+  boton.type = "button";
+  boton.className = "extra__elegir";
+  boton.setAttribute("aria-expanded", "false");
+  boton.setAttribute("aria-controls", "bandeja");
+  boton.innerHTML = '<span class="extra__mas" aria-hidden="true">+</span> Añadir';
+  boton.addEventListener("click", abrirBandeja);
+  celda.append(boton);
+  celda.addEventListener("animationend", (event) => {
+    if (event.target === celda) celda.classList.remove("is-nueva");
+  });
+  return celda;
+}
+
+function pintarExtras() {
+  const from = el.from.value;
+  const to = el.to.value;
+  const codes = extrasVisibles(extras, from, to);
+  const tasas = tasasBase?.de === from ? tasasBase.rates : null;
+  const filas = convertirExtras(cantidadOrigen(), tasas, codes);
+
+  const celdas = filas.map(({ code, valor }, i) => {
+    const celda = el.rejilla.querySelector(`[data-code="${code}"]`) ?? crearCelda(code);
+    celda.style.setProperty("--i", i);
+    const texto = valor === null ? "—" : nf.format(valor);
+    const cifra = celda.querySelector(".extra__valor");
+    if (cifra.textContent !== texto) {
+      cifra.textContent = texto;
+      // El tic solo en las que ya estaban; las nuevas ya entran con su rebote.
+      if (!celda.classList.contains("is-nueva") && texto !== "—") restartAnimation(cifra, "is-tic");
+    }
+    celda.querySelector(".extra__elegir").setAttribute(
+      "aria-label",
+      `${nombreDe(code)}: ${texto}. Ponerla como destino`,
+    );
+    return celda;
+  });
+
+  const puedeAnadir = extras.length < EXTRAS_MAX && disponiblesParaAnadir(extras, from, to).length > 0;
+  if (puedeAnadir) {
+    const anadir = el.rejilla.querySelector('[data-code="anadir"]') ?? crearCeldaAnadir();
+    anadir.style.setProperty("--i", celdas.length);
+    celdas.push(anadir);
+  }
+
+  // Solo muevo nodos si cambia qué hay o en qué orden: sacarlos y meterlos otra
+  // vez reinicia sus animaciones, y al teclear se pintaba en cada tecla.
+  const antes = [...el.rejilla.children].map((c) => c.dataset.code).join();
+  const ahora = celdas.map((c) => c.dataset.code).join();
+  if (antes !== ahora) el.rejilla.replaceChildren(...celdas);
+}
+
+async function refreshExtras(from) {
+  const actual = ++extrasId;
+  const key = `todas:${from}`;
+
+  const cache = await loadCache();
+  if (actual !== extrasId) return;
+
+  const cached = cache[key];
+  if (cached?.rates) {
+    tasasBase = { de: from, rates: cached.rates };
+  } else if (tasasBase?.de !== from) {
+    tasasBase = null;
+  }
+  pintarExtras();
+  if (isFresh(cached)) return;
+
+  el.extras.classList.toggle("is-cargando", !cached);
+  try {
+    const rates = await fetchTodas(from);
+    if (actual !== extrasId) return;
+    tasasBase = { de: from, rates };
+    pintarExtras();
+    saveCache({ [key]: { rates, day: hoy(), saved: Date.now() } });
+  } catch (error) {
+    // Como el gráfico, es un extra: si falla, sin segundo mensaje de error.
+    if (actual === extrasId) console.warn("No se pudieron obtener las demás tasas", error);
+  } finally {
+    if (actual === extrasId) el.extras.classList.remove("is-cargando");
+  }
+}
+
+function onElegirExtra(code) {
+  buscadores.to.poner(code);
+  restartAnimation(el.to, "is-cambiado");
+  onCurrencyChange();
+}
+
+function onQuitarExtra(code) {
+  const celda = el.rejilla.querySelector(`[data-code="${code}"]`);
+  const quitar = () => {
+    extras = quitarExtra(extras, code);
+    guardarExtras();
+    pintarExtras();
+  };
+  if (!celda || sinMovimiento.matches) return quitar();
+  celda.classList.remove("is-nueva");
+  celda.classList.add("is-saliendo");
+  celda.addEventListener("animationend", quitar, { once: true });
+}
+
+function abrirBandeja() {
+  const disponibles = disponiblesParaAnadir(extras, el.from.value, el.to.value);
+  el.bandejaOpciones.replaceChildren(...disponibles.map((code, i) => {
+    const opcion = document.createElement("button");
+    opcion.type = "button";
+    opcion.className = "bandeja__opcion";
+    opcion.style.setProperty("--i", i);
+    opcion.textContent = code;
+    opcion.title = nombreDe(code);
+    opcion.setAttribute("aria-label", `Añadir ${nombreDe(code)}`);
+    opcion.addEventListener("click", () => onAnadirExtra(code));
+    return opcion;
+  }));
+  el.bandeja.hidden = false;
+  el.rejilla.querySelector('[data-code="anadir"] button')?.setAttribute("aria-expanded", "true");
+  el.bandejaOpciones.firstElementChild?.focus();
+}
+
+function cerrarBandeja() {
+  if (el.bandeja.hidden) return;
+  el.bandeja.hidden = true;
+  const boton = el.rejilla.querySelector('[data-code="anadir"] button');
+  boton?.setAttribute("aria-expanded", "false");
+  return boton;
+}
+
+function onAnadirExtra(code) {
+  extras = anadirExtra(extras, code);
+  guardarExtras();
+  cerrarBandeja();
+  pintarExtras();
+  // La nueva cae donde estaba el botón de añadir; que el foco no se pierda.
+  el.rejilla.querySelector(`[data-code="${code}"] .extra__elegir`)?.focus();
+}
 
 function renderRateLine(from, to) {
   if (rate === null) {
@@ -569,6 +871,8 @@ function renderResult() {
   const destino = escribiendoAbajo ? el.amount : el.result;
   const valor = parseAmount(origen.value);
 
+  pintarExtras();
+
   if (valor === null) {
     destino.value = "—";
     ajustarAncho();
@@ -595,6 +899,7 @@ async function refresh() {
   // Sube también con la misma divisa en los dos lados: si no, la petición que
   // estuviera en vuelo llegaba después y me pisaba el 1 con la tasa vieja.
   const currentRequest = ++requestId;
+  refreshExtras(from);
 
   if (from === to) {
     rate = 1;
@@ -913,17 +1218,35 @@ function bindEvents() {
     if (serie.length >= 2 && mirando === null) mirar(serie.length - 1);
   });
   el.lienzo.addEventListener("blur", dejarDeMirar);
+  for (const boton of el.botonesVista) {
+    boton.addEventListener("click", () => cambiarVista(boton.dataset.vista));
+  }
+  el.vistas.addEventListener("keydown", onTeclaVistas);
+  el.bandejaCerrar.addEventListener("click", () => cerrarBandeja()?.focus());
+  document.addEventListener("keydown", (event) => {
+    if (event.key === "Escape" && !el.bandeja.hidden) {
+      // Que el Escape cierre la bandeja y no el popup entero.
+      event.preventDefault();
+      cerrarBandeja()?.focus();
+    }
+  });
+  document.addEventListener("mousedown", (event) => {
+    if (!el.bandeja.hidden && !el.bandeja.contains(event.target)) cerrarBandeja();
+  });
   window.addEventListener("online", () => {
     if (rate === null) refresh();
   });
 }
 
 async function init() {
-  const [pair, rango, guardados, pendiente] = await Promise.all([
-    loadPair(), cargarRango(), cargarRecientes(), tomarPendiente(),
+  const [pair, rango, guardados, pendiente, guardadas, vistaGuardada] = await Promise.all([
+    loadPair(), cargarRango(), cargarRecientes(), tomarPendiente(), cargarExtras(), cargarVista(),
   ]);
   dias = rango;
   marcarRango();
+  extras = guardadas;
+  vista = vistaGuardada;
+  pintarVista();
   populateSelects(pendiente ?? pair);
   // El par de ahora entra en la lista, pero no lo guardo hasta que cambies:
   // abrir el popup no es elegir nada.

@@ -187,6 +187,42 @@ function recientesVisibles(lista, from, to) {
   return lista.filter((p) => p.from !== from || p.to !== to).slice(0, RECIENTES_MAX - 1);
 }
 
+// Más de cinco filas y el popup se hace más alto que la pantalla de un portátil.
+const EXTRAS_MAX = 5;
+const EXTRAS_POR_DEFECTO = ["GBP", "JPY", "CHF"];
+
+// Si no hay nada guardado es que nunca lo has tocado: le pongo unas cuantas
+// para que se vea para qué sirve. Una lista vacía guardada sí la respeto.
+function leerExtras(guardado) {
+  if (!Array.isArray(guardado)) return [...EXTRAS_POR_DEFECTO];
+  return [...new Set(guardado.filter(isValidCode))].slice(0, EXTRAS_MAX);
+}
+
+function anadirExtra(lista, code) {
+  if (!isValidCode(code) || lista.includes(code) || lista.length >= EXTRAS_MAX) return lista;
+  return [...lista, code];
+}
+
+function quitarExtra(lista, code) {
+  return lista.filter((c) => c !== code);
+}
+
+// Las del par que tienes puesto ya salen arriba, no las repito.
+function extrasVisibles(lista, from, to) {
+  return lista.filter((c) => c !== from && c !== to);
+}
+
+function disponiblesParaAnadir(lista, from, to) {
+  return CURRENCIES.map((c) => c.code).filter((c) => !lista.includes(c) && c !== from && c !== to);
+}
+
+function convertirExtras(cantidad, tasas, codes) {
+  return codes.map((code) => ({
+    code,
+    valor: cantidad === null || typeof tasas?.[code] !== "number" ? null : cantidad * tasas[code],
+  }));
+}
+
 // En una web cualquiera no sé si "1.234" son mil o uno con algo, así que no
 // vale parseAmount. Regla: si hay punto y coma, el último es el decimal; si solo
 // hay uno y lleva tres cifras detrás, son miles.
@@ -292,5 +328,7 @@ if (typeof module !== "undefined") {
     RECIENTES_MAX, apuntarReciente, leerRecientes, recientesVisibles,
     coordenadas, indiceCercano, extremos, fechaCorta, largoEnPantalla,
     leerNumero, divisaDe, leerSeleccion, destinoPara,
+    EXTRAS_MAX, EXTRAS_POR_DEFECTO, leerExtras, anadirExtra, quitarExtra,
+    extrasVisibles, disponiblesParaAnadir, convertirExtras,
   };
 }
