@@ -76,3 +76,17 @@ test("el mensaje dice cuánto vale y qué pediste", () => {
   assert.equal(limpio(m.cuerpo), "Ha subido de 1,1500, como pediste.");
   assert.equal(mensajeAviso(aviso({ sentido: "baja", umbral: 1.1 }), 1.09).cuerpo, "Ha bajado de 1,1000, como pediste.");
 });
+
+test("compara con la tasa como se ve, a cuatro decimales", () => {
+  // El caso de la captura: 1 AUD = 0,70049… USD se enseña como 0,7005.
+  assert.equal(sentidoAviso(0.7005, 0.700494), null);
+  assert.equal(sentidoAviso(0.7005, 0.700512), null);
+  assert.equal(sentidoAviso(0.7006, 0.700494), "sube");
+  assert.equal(sentidoAviso(0.7004, 0.700512), "baja");
+  assert.equal(crearAviso("AUD", "USD", 0.7005, 0.700494, "x"), null);
+});
+
+test("con tasas grandes también redondea a cuatro decimales", () => {
+  assert.equal(sentidoAviso(20350.09, 20350.090004), null);
+  assert.equal(sentidoAviso(20351, 20350.09), "sube");
+});

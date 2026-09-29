@@ -516,9 +516,13 @@ const AVISOS_MAX = 4;
 
 // El sentido sale solo: si pides un valor por encima de lo que vale ahora es
 // que esperas que suba, y al revés. Así no hay que elegirlo en ningún sitio.
+// Comparo con la tasa como se ve, a cuatro decimales: si no, con la tasa real
+// en 0,70049 y el campo en 0,7005, decía "sube de" lo que ya estaba ahí.
 function sentidoAviso(umbral, rate) {
-  if (typeof umbral !== "number" || typeof rate !== "number" || umbral === rate) return null;
-  return umbral > rate ? "sube" : "baja";
+  if (typeof umbral !== "number" || typeof rate !== "number") return null;
+  const vista = Math.round(rate * 1e4) / 1e4;
+  if (umbral === vista) return null;
+  return umbral > vista ? "sube" : "baja";
 }
 
 function crearAviso(from, to, umbral, rate, id) {

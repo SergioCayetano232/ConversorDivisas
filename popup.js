@@ -985,7 +985,7 @@ function onCrearAviso(event) {
   let problema = null;
   if (umbral === null) problema = "Escribe una tasa, por ejemplo 1,15.";
   else if (avisos.length >= AVISOS_MAX) problema = `Ya tienes ${AVISOS_MAX} avisos: quita alguno.`;
-  else if (umbral === rate) problema = "Pon un valor distinto de la tasa de ahora.";
+  else if (sentidoAviso(umbral, rate) === null) problema = "Pon un valor distinto de la tasa de ahora.";
 
   const aviso = problema ? null
     : crearAviso(from, to, umbral, rate, `${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`);
