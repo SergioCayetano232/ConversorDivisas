@@ -447,10 +447,14 @@ function renderResult() {
 async function refresh() {
   const from = el.from.value;
   const to = el.to.value;
+  // Sube también con la misma divisa en los dos lados: si no, la petición que
+  // estuviera en vuelo llegaba después y me pisaba el 1 con la tasa vieja.
+  const currentRequest = ++requestId;
 
   if (from === to) {
     rate = 1;
     rateDate = null;
+    setLoading(false);
     clearError();
     renderRateLine(from, to);
     renderUpdated();
@@ -459,7 +463,6 @@ async function refresh() {
     return;
   }
 
-  const currentRequest = ++requestId;
   clearError();
 
   const cache = await loadCache();
