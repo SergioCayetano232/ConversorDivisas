@@ -9,7 +9,7 @@ que necesitaba una conversión rápida. Ahora es un clic en la barra del navegad
 
 ## Qué hace
 
-- Convierte entre 15 divisas con tasas del Banco Central Europeo
+- Convierte entre las 30 divisas que publica el Banco Central Europeo
 - Escribes en cualquiera de las dos cantidades y calcula la otra
 - Puedes escribir una cuenta en vez de un número: `20+15`, `3*12,50`,
   `(40+60)/4` o `100-15%`. Mientras escribes te enseña el total, y al darle a
@@ -89,10 +89,18 @@ tasas guardadas valen hasta el día siguiente.
 
 ## Divisas soportadas
 
+Las 30 que publica el BCE. Primero las de siempre:
+
 EUR, USD, GBP, JPY, CHF, CAD, AUD, CNY, MXN, BRL, SEK, NOK, DKK, PLN y TRY.
 
-Para añadir otra basta con meter una línea en el array `CURRENCIES` de
-`logica.js`, siempre que Frankfurter la soporte.
+Y detrás el resto:
+
+CZK, HKD, HUF, IDR, ILS, INR, ISK, KRW, MYR, NZD, PHP, RON, SGD, THB y ZAR.
+
+Si el BCE añade alguna, basta con meter una línea en el array `CURRENCIES` de
+`logica.js` (hay un test que comprueba que la lista es justo la del BCE, así
+que habrá que tocarlo también). Para que la tarjeta del clic derecho la
+reconozca por su símbolo o su nombre, va en `PISTAS`, en el mismo archivo.
 
 ## Licencia
 
