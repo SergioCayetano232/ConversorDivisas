@@ -84,32 +84,64 @@ function filtrarDivisas(consulta) {
   return [...porCodigo, ...porNombre];
 }
 
-// Convierte la serie en dos paths SVG sobre el viewBox de 100x28 del gráfico:
-// la línea y el área sombreada que queda por debajo.
-function buildPaths(values) {
+// Dejo un margen a los lados y arriba: el trazo se pinta centrado sobre la
+// línea, así que pegado al borde se le come la mitad.
+const PAD_X = 1.5;
+const PAD_Y = 3;
+
+// Dónde cae cada valor en el viewBox de 100x28 del gráfico.
+function coordenadas(values) {
   const min = Math.min(...values);
   const max = Math.max(...values);
   const span = max - min;
 
-  // Dejo un margen a los lados y arriba: el trazo se pinta centrado sobre la
-  // línea, así que pegado al borde se le come la mitad.
-  const PAD_X = 1.5;
-  const PAD_Y = 3;
-  const width = 100 - PAD_X * 2;
-  const stepX = width / (values.length - 1);
+  const stepX = (100 - PAD_X * 2) / (values.length - 1);
   const bottom = 28 - PAD_Y;
   const height = bottom - PAD_Y;
 
-  const points = values.map((value, index) => {
-    const x = PAD_X + index * stepX;
+  return values.map((value, index) => ({
+    x: PAD_X + index * stepX,
     // Si la tasa no se ha movido, span es 0: dibujamos una línea centrada.
-    const y = span === 0 ? 14 : bottom - ((value - min) / span) * height;
-    return `${x.toFixed(2)},${y.toFixed(2)}`;
-  });
+    y: span === 0 ? 14 : bottom - ((value - min) / span) * height,
+  }));
+}
+
+// La línea y el área sombreada que queda por debajo.
+function buildPaths(values) {
+  const points = coordenadas(values).map(({ x, y }) => `${x.toFixed(2)},${y.toFixed(2)}`);
 
   const line = `M${points.join("L")}`;
   const area = `${line}L${(100 - PAD_X).toFixed(2)},28L${PAD_X.toFixed(2)},28Z`;
   return { line, area };
+}
+
+// Lo contrario de coordenadas: de una x del viewBox al punto más cercano.
+function indiceCercano(x, total) {
+  if (total < 2) return 0;
+  const paso = (100 - PAD_X * 2) / (total - 1);
+  const i = Math.round((x - PAD_X) / paso);
+  return Math.min(Math.max(i, 0), total - 1);
+}
+
+// Si se repite el máximo me quedo con el primero; da igual cuál, pero que sea
+// siempre el mismo para que la marca no salte al recargar.
+function extremos(values) {
+  let max = 0;
+  let min = 0;
+  values.forEach((v, i) => {
+    if (v > values[max]) max = i;
+    if (v < values[min]) min = i;
+  });
+  return { max, min };
+}
+
+const nfFecha = new Intl.DateTimeFormat("es-ES", { day: "numeric", month: "short" });
+
+// new Date("2026-09-29") lo lee como medianoche en UTC, y en América eso
+// todavía es el día 28. Montándola a mano sale el día que pone.
+function fechaCorta(iso) {
+  const [a, m, d] = iso.split("-").map(Number);
+  return nfFecha.format(new Date(a, m - 1, d)).replace(".", "");
 }
 
 function startDateFor(days) {
@@ -161,5 +193,6 @@ if (typeof module !== "undefined") {
     CURRENCIES, isValidCode, nombreDe, parseAmount, isoLocal, hoy, isFresh,
     normalizar, filtrarDivisas, buildPaths, startDateFor, errorMessageFor,
     RECIENTES_MAX, apuntarReciente, leerRecientes, recientesVisibles,
+    coordenadas, indiceCercano, extremos, fechaCorta,
   };
 }

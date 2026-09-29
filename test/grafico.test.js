@@ -1,6 +1,6 @@
 const { test } = require("node:test");
 const assert = require("node:assert");
-const { buildPaths } = require("../logica.js");
+const { buildPaths, coordenadas, indiceCercano, extremos, fechaCorta } = require("../logica.js");
 
 // Saca los pares x,y de un path "M1.50,3.00L6.12,6.18L..."
 function puntos(d) {
@@ -49,4 +49,54 @@ test("los puntos van repartidos de izquierda a derecha", () => {
 test("subir la tasa baja la y, que el SVG cuenta al revés", () => {
   const { ys } = puntos(buildPaths([1, 2, 3]).line);
   assert.ok(ys[0] > ys[2], "el valor más alto debe quedar más arriba");
+});
+
+test("coordenadas y el path dicen lo mismo", () => {
+  // El punto del tooltip tiene que caer encima de la línea, no al lado.
+  const valores = [1.08, 1.1, 1.09, 1.12];
+  const { xs, ys } = puntos(buildPaths(valores).line);
+  coordenadas(valores).forEach(({ x, y }, i) => {
+    assert.ok(Math.abs(x - xs[i]) < 0.01 && Math.abs(y - ys[i]) < 0.01, `punto ${i}`);
+  });
+});
+
+test("indiceCercano devuelve el punto que tiene debajo", () => {
+  const valores = [1, 2, 3, 4, 5];
+  coordenadas(valores).forEach(({ x }, i) => {
+    assert.equal(indiceCercano(x, valores.length), i);
+    assert.equal(indiceCercano(x + 0.5, valores.length), i, "un poco a la derecha");
+    assert.equal(indiceCercano(x - 0.5, valores.length), i, "un poco a la izquierda");
+  });
+});
+
+test("indiceCercano no se sale por los lados", () => {
+  // El ratón puede estar en el margen, fuera de la zona de puntos.
+  assert.equal(indiceCercano(0, 30), 0);
+  assert.equal(indiceCercano(-10, 30), 0);
+  assert.equal(indiceCercano(100, 30), 29);
+  assert.equal(indiceCercano(150, 30), 29);
+  assert.equal(indiceCercano(50, 1), 0);
+});
+
+test("extremos encuentra el máximo y el mínimo", () => {
+  assert.deepEqual(extremos([3, 1, 4, 1.5, 9, 2]), { max: 4, min: 1 });
+  assert.deepEqual(extremos([5, 4, 3]), { max: 0, min: 2 });
+});
+
+test("con valores repetidos se queda con el primero", () => {
+  assert.deepEqual(extremos([2, 5, 1, 5, 1]), { max: 1, min: 2 });
+  assert.deepEqual(extremos([7, 7, 7]), { max: 0, min: 0 });
+});
+
+test("fechaCorta da día y mes, sin punto", () => {
+  assert.equal(fechaCorta("2026-01-05"), "5 ene");
+  assert.equal(fechaCorta("2026-09-29"), "29 sept");
+  assert.ok(!fechaCorta("2026-12-31").includes("."));
+});
+
+test("fechaCorta no se va al día anterior", () => {
+  // Con new Date(iso) en una zona al oeste de UTC salía el 31 de diciembre.
+  for (const iso of ["2026-01-01", "2026-03-01", "2026-10-25"]) {
+    assert.ok(fechaCorta(iso).startsWith(String(Number(iso.slice(8)))), iso);
+  }
 });

@@ -30,6 +30,17 @@ const el = {
   trendLine: document.getElementById("trend-line"),
   trendArea: document.getElementById("trend-area"),
   recientes: document.getElementById("recientes"),
+  lienzo: document.getElementById("trend-lienzo"),
+  marcaMax: document.getElementById("marca-max"),
+  marcaMin: document.getElementById("marca-min"),
+  guia: document.getElementById("trend-guia"),
+  punto: document.getElementById("trend-punto"),
+  tip: document.getElementById("trend-tip"),
+  tipFecha: document.getElementById("tip-fecha"),
+  tipValor: document.getElementById("tip-valor"),
+  pie: document.getElementById("trend-pie"),
+  pieMin: document.getElementById("pie-min"),
+  pieMax: document.getElementById("pie-max"),
 };
 
 let rate = null;
@@ -41,6 +52,10 @@ let dias = RANGO_POR_DEFECTO;
 let requestId = 0;
 let trendId = 0;
 let recientes = [];
+// Lo que está dibujado ahora, para que el tooltip no tenga que recalcularlo.
+let serie = [];
+let coords = [];
+let mirando = null;
 
 const nf = new Intl.NumberFormat("es-ES", {
   minimumFractionDigits: 2,
@@ -301,8 +316,8 @@ async function fetchHistory(from, to, desde) {
     // ni festivos, así que el número de puntos varía entre peticiones.
     return Object.keys(data.rates ?? {})
       .sort()
-      .map((date) => data.rates[date]?.[to])
-      .filter((value) => typeof value === "number");
+      .map((fecha) => ({ fecha, valor: data.rates[fecha]?.[to] }))
+      .filter((p) => typeof p.valor === "number");
   } finally {
     clearTimeout(timer);
   }
@@ -320,6 +335,9 @@ function restartAnimation(node, className) {
 }
 
 function hideTrend() {
+  dejarDeMirar();
+  serie = [];
+  coords = [];
   el.trend.hidden = true;
   el.trendLine.setAttribute("d", "");
   el.trendArea.setAttribute("d", "");
@@ -327,12 +345,96 @@ function hideTrend() {
   el.trendChange.classList.remove("is-up", "is-down");
 }
 
-function renderTrend(values) {
+// Las coordenadas van sobre el viewBox de 100x28; en porcentaje valen tal cual
+// para colocar encima cosas en HTML.
+function colocar(nodo, { x, y }) {
+  nodo.style.left = `${x}%`;
+  nodo.style.top = `${(y / 28) * 100}%`;
+}
+
+function mirar(i) {
+  const punto = serie[i];
+  colocar(el.punto, coords[i]);
+  el.guia.style.left = `${coords[i].x}%`;
+  el.tipFecha.textContent = fechaCorta(punto.fecha);
+  el.tipValor.textContent = nfRate.format(punto.valor);
+
+  // Centrado sobre el punto, pero pegado al borde si no cabe: en los extremos
+  // se salía de la tarjeta y lo cortaba el overflow.
+  const ancho = el.lienzo.clientWidth;
+  const tip = el.tip.offsetWidth;
+  const centro = (coords[i].x / 100) * ancho;
+  el.tip.style.left = `${Math.min(Math.max(centro - tip / 2, 0), ancho - tip)}px`;
+  el.tip.style.top = el.punto.style.top;
+
+  // La primera vez no quiero que venga deslizándose desde donde se quedó la
+  // última: coloco, obligo a pintar y luego ya enciendo las transiciones.
+  if (mirando === null) void el.lienzo.offsetWidth;
+  el.lienzo.classList.add("is-mirando");
+  mirando = i;
+}
+
+function dejarDeMirar() {
+  el.lienzo.classList.remove("is-mirando");
+  mirando = null;
+}
+
+function onPunteroGrafico(event) {
+  if (serie.length < 2) return;
+  const rect = el.lienzo.getBoundingClientRect();
+  const x = ((event.clientX - rect.left) / rect.width) * 100;
+  const i = indiceCercano(x, serie.length);
+  if (i !== mirando) mirar(i);
+}
+
+function onTeclaGrafico(event) {
+  if (serie.length < 2) return;
+  const ultimo = serie.length - 1;
+  const actual = mirando ?? ultimo;
+  const destino = {
+    ArrowLeft: Math.max(actual - 1, 0),
+    ArrowRight: Math.min(actual + 1, ultimo),
+    Home: 0,
+    End: ultimo,
+  }[event.key];
+  if (destino === undefined) return;
+  event.preventDefault();
+  mirar(destino);
+}
+
+function pintarExtremos(values) {
+  const { max, min } = extremos(values);
+  // Con la tasa quieta máximo y mínimo son el mismo punto, y dos marcas una
+  // encima de otra solo confunden.
+  const plano = values[max] === values[min];
+  el.marcaMax.hidden = plano;
+  el.marcaMin.hidden = plano;
+  el.pie.hidden = plano;
+  if (plano) return;
+
+  colocar(el.marcaMax, coords[max]);
+  colocar(el.marcaMin, coords[min]);
+  el.pieMin.textContent = `${nfRate.format(values[min])} · ${fechaCorta(serie[min].fecha)}`;
+  el.pieMax.textContent = `${nfRate.format(values[max])} · ${fechaCorta(serie[max].fecha)}`;
+  el.pieMin.setAttribute("aria-label", `Mínimo ${el.pieMin.textContent}`);
+  el.pieMax.setAttribute("aria-label", `Máximo ${el.pieMax.textContent}`);
+
+  restartAnimation(el.marcaMax);
+  restartAnimation(el.marcaMin);
+  restartAnimation(el.pie);
+}
+
+function renderTrend(puntos) {
   // Con menos de dos puntos no hay nada que dibujar ni con qué comparar.
-  if (values.length < 2) {
+  if (puntos.length < 2) {
     hideTrend();
     return;
   }
+
+  dejarDeMirar();
+  serie = puntos;
+  const values = puntos.map((p) => p.valor);
+  coords = coordenadas(values);
 
   const { line, area } = buildPaths(values);
   el.trendLine.setAttribute("d", line);
@@ -352,6 +454,7 @@ function renderTrend(values) {
   el.trendChange.classList.toggle("is-down", change < 0);
 
   el.trend.hidden = false;
+  pintarExtremos(values);
 }
 
 async function refreshTrend(from, to) {
@@ -367,20 +470,23 @@ async function refreshTrend(from, to) {
 
   const key = `hist:${from}${to}:${dias}`;
   const cached = cache[key];
-  if (isFresh(cached) && Array.isArray(cached.values)) {
-    renderTrend(cached.values);
+  // Lo guardado antes del tooltip trae values sin fechas: no me vale, lo pido
+  // otra vez y se sobrescribe.
+  if (isFresh(cached) && Array.isArray(cached.puntos)) {
+    renderTrend(cached.puntos);
     return;
   }
 
   el.trend.classList.add("is-cargando");
+  dejarDeMirar();
 
   try {
-    const values = await fetchHistory(from, to, dias);
+    const puntos = await fetchHistory(from, to, dias);
     if (currentTrend !== trendId) return;
     el.trend.classList.remove("is-cargando");
-    renderTrend(values);
+    renderTrend(puntos);
 
-    saveCache({ [key]: { values, day: hoy(), saved: Date.now() } });
+    saveCache({ [key]: { puntos, day: hoy(), saved: Date.now() } });
   } catch (error) {
     if (currentTrend !== trendId) return;
     // El histórico es un extra: si falla, el conversor sigue funcionando y
@@ -781,6 +887,14 @@ function bindEvents() {
   el.retry.addEventListener("click", refresh);
   el.copiar.addEventListener("click", onCopiar);
   for (const boton of el.rangos) boton.addEventListener("click", onRango);
+  el.lienzo.addEventListener("pointermove", onPunteroGrafico);
+  el.lienzo.addEventListener("pointerdown", onPunteroGrafico);
+  el.lienzo.addEventListener("pointerleave", dejarDeMirar);
+  el.lienzo.addEventListener("keydown", onTeclaGrafico);
+  el.lienzo.addEventListener("focus", () => {
+    if (serie.length >= 2 && mirando === null) mirar(serie.length - 1);
+  });
+  el.lienzo.addEventListener("blur", dejarDeMirar);
   window.addEventListener("online", () => {
     if (rate === null) refresh();
   });

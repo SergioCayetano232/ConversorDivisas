@@ -127,23 +127,41 @@
             </div>
             <span class="trend__change" id="trend-change"></span>
           </div>
-          <svg
-            class="trend__chart"
-            id="trend-chart"
-            viewBox="0 0 100 28"
-            preserveAspectRatio="none"
-            role="img"
-            aria-labelledby="trend-desc">
-            <title id="trend-desc">Evolución de la tasa</title>
-            <defs>
-              <linearGradient id="trend-fill" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stop-color="var(--brass)" stop-opacity="0.28"></stop>
-                <stop offset="100%" stop-color="var(--brass)" stop-opacity="0"></stop>
-              </linearGradient>
-            </defs>
-            <path class="trend__area" id="trend-area" d=""></path>
-            <path class="trend__line" id="trend-line" d=""></path>
-          </svg>
+          <div
+            class="trend__lienzo"
+            id="trend-lienzo"
+            tabindex="0"
+            aria-label="Gráfico de la tasa. Con las flechas vas día a día.">
+            <svg
+              class="trend__chart"
+              id="trend-chart"
+              viewBox="0 0 100 28"
+              preserveAspectRatio="none"
+              role="img"
+              aria-labelledby="trend-desc">
+              <title id="trend-desc">Evolución de la tasa</title>
+              <defs>
+                <linearGradient id="trend-fill" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stop-color="var(--brass)" stop-opacity="0.28"></stop>
+                  <stop offset="100%" stop-color="var(--brass)" stop-opacity="0"></stop>
+                </linearGradient>
+              </defs>
+              <path class="trend__area" id="trend-area" d=""></path>
+              <path class="trend__line" id="trend-line" d=""></path>
+            </svg>
+            <span class="trend__marca trend__marca--max" id="marca-max" aria-hidden="true"></span>
+            <span class="trend__marca trend__marca--min" id="marca-min" aria-hidden="true"></span>
+            <span class="trend__guia" id="trend-guia" aria-hidden="true"></span>
+            <span class="trend__punto" id="trend-punto" aria-hidden="true"></span>
+            <div class="trend__tip" id="trend-tip" role="status" aria-live="polite">
+              <span class="trend__tip-fecha" id="tip-fecha"></span>
+              <span class="trend__tip-valor" id="tip-valor"></span>
+            </div>
+          </div>
+          <div class="trend__pie" id="trend-pie">
+            <span class="trend__extremo trend__extremo--min" id="pie-min"></span>
+            <span class="trend__extremo trend__extremo--max" id="pie-max"></span>
+          </div>
         </div>
       </section>
 
