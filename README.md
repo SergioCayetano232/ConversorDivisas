@@ -14,15 +14,26 @@ que necesitaba una conversión rápida. Ahora es un clic en la barra del navegad
 - Buscas la divisa escribiendo: pones "mex" y sale el peso mexicano
 - Un botón para dar la vuelta al par sin tocar los dos desplegables
 - Un botón para copiar el resultado
-- Un gráfico de cómo ha ido la tasa, a 7, 30 o 90 días
+- Seleccionas un precio en cualquier web, clic derecho, **Convertir**, y te sale
+  el resultado en una tarjeta al lado del texto. Entiende "1.299,00 €",
+  "$1,049.99", "R$ 10,50" o "20 euros"
+- Pastillas con tus últimos pares, para cambiar de uno a otro con un clic
+- Un gráfico de cómo ha ido la tasa, a 7, 30 o 90 días. Pasando el ratón ves la
+  tasa de cada día, y marca el máximo y el mínimo del periodo
 - Recuerda la última pareja de divisas y el periodo del gráfico
 - Guarda las tasas del día, así que al abrirlo ya está el número puesto
 - Se abre con `Ctrl+Shift+U` (en Mac, `Cmd+Shift+U`)
 - Tiene modo claro y oscuro, según cómo tengas el sistema
 - Si algo falla te dice qué ha pasado, no se queda en blanco
 
-Solo pide dos permisos: guardar tus preferencias y hablar con la API de las
-tasas. No hay analítica ni seguimiento de ningún tipo.
+Pide lo justo: guardar tus preferencias, hablar con la API de las tasas y, para
+lo del clic derecho, el menú y poner la tarjeta en la pestaña en la que estás.
+Esto último solo pasa cuando pulsas **Convertir**; no lee ninguna web por su
+cuenta, y por eso Chrome no avisa de nada al instalarla. No hay analítica ni
+seguimiento de ningún tipo.
+
+En las páginas donde Chrome no deja meter nada (las de `chrome://`, la Web Store
+o el visor de PDF) se abre el popup con la cantidad ya puesta.
 
 ## Instalación
 
@@ -49,6 +60,8 @@ popup.html       estructura del popup
 popup.css        estilos
 logica.js        las cuentas y los formatos, sin tocar la pantalla
 popup.js         lo que reacciona a los clics
+background.js    el menú del clic derecho y la tasa para la tarjeta
+tarjeta.js       la tarjeta que sale en la web, en un shadow DOM
 test/            tests de logica.js
 icons/           16, 48 y 128 px
 ```
