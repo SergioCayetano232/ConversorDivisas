@@ -35,6 +35,9 @@ que necesitaba una conversión rápida. Ahora es un clic en la barra del navegad
   de 1,15") y te salta una notificación cuando pase, aunque tengas el popup
   cerrado. Hasta cuatro a la vez
 - Se abre con `Ctrl+Shift+U` (en Mac, `Cmd+Shift+U`)
+- Atajos dentro del popup: `S` da la vuelta al par, `C` copia, `D` y `A` abren
+  los desplegables y `1`, `2`, `3` cambian de pestaña. Si estás escribiendo en
+  un campo, con `Alt` delante (`⌥` en Mac). Con `?` salen todos
 - Tiene modo claro y oscuro, según cómo tengas el sistema
 - Si algo falla te dice qué ha pasado, no se queda en blanco
 
