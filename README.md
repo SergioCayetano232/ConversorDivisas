@@ -11,6 +11,9 @@ que necesitaba una conversión rápida. Ahora es un clic en la barra del navegad
 
 - Convierte entre 15 divisas con tasas del Banco Central Europeo
 - Escribes en cualquiera de las dos cantidades y calcula la otra
+- Puedes escribir una cuenta en vez de un número: `20+15`, `3*12,50`,
+  `(40+60)/4` o `100-15%`. Mientras escribes te enseña el total, y al darle a
+  Enter se queda con él
 - Buscas la divisa escribiendo: pones "mex" y sale el peso mexicano
 - Un botón para dar la vuelta al par sin tocar los dos desplegables
 - Un botón para copiar el resultado
@@ -20,7 +23,10 @@ que necesitaba una conversión rápida. Ahora es un clic en la barra del navegad
 - Pastillas con tus últimos pares, para cambiar de uno a otro con un clic
 - Un gráfico de cómo ha ido la tasa, a 7, 30 o 90 días. Pasando el ratón ves la
   tasa de cada día, y marca el máximo y el mínimo del periodo
-- Recuerda la última pareja de divisas y el periodo del gráfico
+- En la pestaña de al lado, la misma cantidad en otras divisas a la vez (hasta
+  cinco, las eliges tú). Pulsando una la pones como destino
+- Recuerda la última pareja de divisas, el periodo del gráfico, la pestaña y
+  las divisas que tienes puestas
 - Guarda las tasas del día, así que al abrirlo ya está el número puesto
 - Se abre con `Ctrl+Shift+U` (en Mac, `Cmd+Shift+U`)
 - Tiene modo claro y oscuro, según cómo tengas el sistema
