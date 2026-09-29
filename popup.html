@@ -18,16 +18,20 @@
 
         <div class="field">
           <label class="field__label" for="amount">Cantidad</label>
-          <input
-            class="field__input"
-            type="text"
-            id="amount"
-            name="amount"
-            inputmode="decimal"
-            autocomplete="off"
-            spellcheck="false"
-            value="1"
-            aria-describedby="amount-error">
+          <div class="field__caja">
+            <input
+              class="field__input"
+              type="text"
+              id="amount"
+              name="amount"
+              inputmode="decimal"
+              autocomplete="off"
+              spellcheck="false"
+              value="1"
+              title="También vale una cuenta: 20+15, 3*12,50, (40+60)/4, 100-15%"
+              aria-describedby="amount-error">
+            <span class="calculo" id="calculo" aria-hidden="true"></span>
+          </div>
           <p class="field__error" id="amount-error" role="alert" hidden></p>
         </div>
 

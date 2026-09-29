@@ -39,6 +39,130 @@ function parseAmount(raw) {
   return value;
 }
 
+// Acepto los signos que salen en un teclado de móvil o copiando de otro sitio,
+// y la x como "por", que es como lo escribe todo el mundo.
+const OPERADORES = { "+": "+", "-": "-", "−": "-", "*": "*", "×": "*", x: "*", X: "*", "/": "/", "÷": "/", ":": "/" };
+const HAY_OPERACION = /[-+−*×xX/÷:()%]/;
+
+function trocear(texto) {
+  const fichas = [];
+  let i = 0;
+  while (i < texto.length) {
+    const c = texto[i];
+    if (/\s/.test(c)) {
+      i++;
+      continue;
+    }
+    // Un número puede llevar espacios de miles ("1 000"); los números se
+    // leen con parseAmount, así que "1.000,50" vale igual aquí que suelto.
+    const num = texto.slice(i).match(/^\d[\d.,]*(?:[  ]\d[\d.,]*)*/);
+    if (num) {
+      const v = parseAmount(num[0]);
+      if (v === null) return null;
+      fichas.push({ tipo: "num", v });
+      i += num[0].length;
+    } else if (OPERADORES[c]) {
+      fichas.push({ tipo: "op", v: OPERADORES[c] });
+      i++;
+    } else if (c === "(" || c === ")" || c === "%") {
+      fichas.push({ tipo: c });
+      i++;
+    } else {
+      return null;
+    }
+  }
+  return fichas;
+}
+
+// Suma, resta, multiplicación, división, paréntesis y porcentajes, con la
+// prioridad de siempre. Sin eval: lo que pegues en el campo no se ejecuta.
+function evaluar(texto) {
+  if (typeof texto !== "string") return null;
+  if (!HAY_OPERACION.test(texto)) return parseAmount(texto);
+
+  const fichas = trocear(texto);
+  if (!fichas || fichas.length === 0) return null;
+  let pos = 0;
+  const es = (tipo, cuales) =>
+    fichas[pos]?.tipo === tipo && (cuales === undefined || cuales.includes(fichas[pos].v));
+  // Un porcentaje suelto vale su centésima; sumado o restado va sobre lo de antes.
+  const valorDe = (t) => (t.pct ? t.v / 100 : t.v);
+
+  function primario() {
+    if (es("num")) return fichas[pos++].v;
+    if (!es("(")) return null;
+    pos++;
+    const dentro = suma();
+    if (!dentro || !es(")")) return null;
+    pos++;
+    return valorDe(dentro);
+  }
+
+  function factor() {
+    if (es("op", "+-")) {
+      const signo = fichas[pos++].v;
+      const f = factor();
+      return f && { v: signo === "-" ? -f.v : f.v, pct: f.pct };
+    }
+    const v = primario();
+    if (v === null) return null;
+    if (es("%")) {
+      pos++;
+      return { v, pct: true };
+    }
+    return { v, pct: false };
+  }
+
+  function producto() {
+    let izq = factor();
+    while (izq && es("op", "*/")) {
+      const op = fichas[pos++].v;
+      const der = factor();
+      if (!der) return null;
+      const a = valorDe(izq);
+      const b = valorDe(der);
+      izq = { v: op === "*" ? a * b : a / b, pct: false };
+    }
+    return izq;
+  }
+
+  function suma() {
+    let izq = producto();
+    while (izq && es("op", "+-")) {
+      const op = fichas[pos++].v;
+      const der = producto();
+      if (!der) return null;
+      const base = valorDe(izq);
+      // "100 + 10 %" es 110, como en cualquier calculadora de bolsillo.
+      const d = der.pct ? (base * der.v) / 100 : der.v;
+      izq = { v: op === "+" ? base + d : base - d, pct: false };
+    }
+    return izq;
+  }
+
+  const r = suma();
+  if (!r || pos !== fichas.length) return null;
+  const valor = valorDe(r);
+  return Number.isFinite(valor) && valor >= 0 ? valor : null;
+}
+
+// Mientras escribes "20+" la operación está a medias: cuento hasta el último
+// número y cierro los paréntesis que falten, para que el resultado no salte a
+// un guion con cada signo que tecleas.
+function completar(texto) {
+  const t = String(texto).replace(/[\s+\-−*×xX/÷:(]+$/, "");
+  const abiertos = (t.match(/\(/g) || []).length - (t.match(/\)/g) || []).length;
+  return abiertos > 0 ? t + ")".repeat(abiertos) : t;
+}
+
+function leerImporte(texto) {
+  return evaluar(completar(texto));
+}
+
+function esOperacion(texto) {
+  return HAY_OPERACION.test(String(texto).trim());
+}
+
 // Fecha local en formato ISO. No uso toISOString() porque pasa a UTC y aquí,
 // a partir de las dos de la tarde en verano, ya me daba el día siguiente.
 function isoLocal(date) {
@@ -324,6 +448,7 @@ function errorMessageFor(error) {
 if (typeof module !== "undefined") {
   module.exports = {
     CURRENCIES, isValidCode, nombreDe, parseAmount, isoLocal, hoy, isFresh,
+    evaluar, completar, leerImporte, esOperacion,
     normalizar, filtrarDivisas, buildPaths, startDateFor, errorMessageFor,
     RECIENTES_MAX, apuntarReciente, leerRecientes, recientesVisibles,
     coordenadas, indiceCercano, extremos, fechaCorta, largoEnPantalla,

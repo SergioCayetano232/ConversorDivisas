@@ -8,6 +8,7 @@ const DEFAULTS = { from: "EUR", to: "USD" };
 const el = {
   form: document.getElementById("converter-form"),
   amount: document.getElementById("amount"),
+  calculo: document.getElementById("calculo"),
   from: document.getElementById("from"),
   to: document.getElementById("to"),
   swap: document.getElementById("swap"),
@@ -637,10 +638,10 @@ function onTeclaVistas(event) {
 // Lo que hay arriba, lo hayas escrito tú o salga de lo que tecleas abajo.
 function cantidadOrigen() {
   if (ladoActivo === "result") {
-    const valor = parseAmount(el.result.value);
+    const valor = leerImporte(el.result.value);
     return valor === null || !rate ? null : valor / rate;
   }
-  return parseAmount(el.amount.value);
+  return leerImporte(el.amount.value);
 }
 
 function crearCelda(code) {
@@ -869,7 +870,7 @@ function renderResult() {
   const escribiendoAbajo = ladoActivo === "result";
   const origen = escribiendoAbajo ? el.result : el.amount;
   const destino = escribiendoAbajo ? el.amount : el.result;
-  const valor = parseAmount(origen.value);
+  const valor = leerImporte(origen.value);
 
   pintarExtras();
 
@@ -998,9 +999,39 @@ function onSwap() {
   refresh();
 }
 
+// El "= 35,00" que sale dentro del campo mientras escribes una cuenta. Le dejo
+// sitio al texto con padding para que lo que tecleas no se meta por debajo.
+function pintarCalculo() {
+  const texto = el.amount.value;
+  const valor = esOperacion(texto) ? leerImporte(texto) : null;
+  const hay = valor !== null;
+  if (hay) el.calculo.textContent = `= ${nf.format(valor)}`;
+  el.calculo.classList.toggle("is-visible", hay);
+  el.amount.classList.toggle("is-calculando", hay);
+  el.amount.style.setProperty("--hueco-calculo", hay ? `${el.calculo.offsetWidth + 20}px` : "");
+}
+
+// Con Enter o al salir del campo, la cuenta se queda en su resultado.
+function resolverCalculo(campo) {
+  if (!esOperacion(campo.value)) return;
+  const valor = leerImporte(campo.value);
+  if (valor === null) return;
+
+  campo.value = nf.format(valor);
+  if (campo === el.amount) {
+    onAmountInput();
+    // El fantasma se va hacia la izquierda como si se metiera en el número.
+    restartAnimation(el.calculo, "is-resuelto");
+  } else {
+    onResultInput();
+  }
+  restartAnimation(campo, "is-resuelto");
+}
+
 function onAmountInput() {
   ladoActivo = "amount";
-  const amount = parseAmount(el.amount.value);
+  pintarCalculo();
+  const amount = leerImporte(el.amount.value);
   const invalid = el.amount.value.trim() !== "" && amount === null;
 
   el.amount.setAttribute("aria-invalid", String(invalid));
@@ -1013,7 +1044,7 @@ function onAmountInput() {
 function onResultInput() {
   ladoActivo = "result";
   ajustarAncho();
-  const valor = parseAmount(el.result.value);
+  const valor = leerImporte(el.result.value);
   const invalid = el.result.value.trim() !== "" && valor === null;
 
   el.result.setAttribute("aria-invalid", String(invalid));
@@ -1034,7 +1065,7 @@ function onResultInput() {
 let avisoCopiado = null;
 
 async function onCopiar() {
-  const valor = parseAmount(el.result.value);
+  const valor = leerImporte(el.result.value);
   if (valor === null || rate === null) return;
 
   // Copio el número a secas, sin el código ni separadores de miles: lo normal
@@ -1206,6 +1237,14 @@ function bindEvents() {
   el.amount.addEventListener("input", onAmountInput);
   el.result.addEventListener("input", onResultInput);
   el.result.addEventListener("focus", () => el.result.select());
+  for (const campo of [el.amount, el.result]) {
+    campo.addEventListener("keydown", (event) => {
+      if (event.key === "Enter") resolverCalculo(campo);
+    });
+    campo.addEventListener("blur", () => resolverCalculo(campo));
+    campo.addEventListener("animationend", () => campo.classList.remove("is-resuelto"));
+  }
+  el.calculo.addEventListener("animationend", () => el.calculo.classList.remove("is-resuelto"));
   el.swap.addEventListener("click", onSwap);
   el.retry.addEventListener("click", refresh);
   el.copiar.addEventListener("click", onCopiar);

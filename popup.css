@@ -252,6 +252,67 @@ body::after {
   letter-spacing: -0.01em;
 }
 
+.field__caja {
+  position: relative;
+}
+
+.field__input.is-calculando {
+  padding-right: var(--hueco-calculo, var(--s-3));
+}
+
+.calculo {
+  position: absolute;
+  top: 50%;
+  right: var(--s-3);
+  max-width: 60%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-family: var(--font-mono);
+  font-size: 14px;
+  font-variant-numeric: tabular-nums;
+  color: var(--brass);
+  text-shadow: 0 0 12px var(--brass-glow);
+  pointer-events: none;
+  opacity: 0;
+  transform: translate(8px, -50%);
+  transition: opacity var(--fast) var(--ease), transform var(--mid) var(--ease-spring);
+}
+
+.calculo.is-visible {
+  opacity: 0.9;
+  transform: translate(0, -50%);
+}
+
+.calculo.is-resuelto {
+  animation: absorber 420ms var(--ease-out);
+}
+
+@keyframes absorber {
+  from {
+    opacity: 0.9;
+    transform: translate(0, -50%);
+  }
+  to {
+    opacity: 0;
+    transform: translate(-120%, -50%) scale(0.85);
+  }
+}
+
+/* El número recién salido de la cuenta se enciende un momento. */
+.field__input.is-resuelto,
+.result__value.is-resuelto {
+  animation: resuelto 700ms var(--ease-out);
+}
+
+@keyframes resuelto {
+  from {
+    color: var(--brass);
+    border-color: var(--brass);
+    text-shadow: 0 0 18px var(--brass-glow);
+  }
+}
+
 .field__input:hover,
 .field__select:hover {
   border-color: var(--brass-dim);
