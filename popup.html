@@ -149,6 +149,18 @@
                 title="Otras divisas">
                 <svg viewBox="0 0 14 14" aria-hidden="true"><rect x="1.5" y="1.5" width="4.5" height="4.5" rx="1"/><rect x="8" y="1.5" width="4.5" height="4.5" rx="1"/><rect x="1.5" y="8" width="4.5" height="4.5" rx="1"/><rect x="8" y="8" width="4.5" height="4.5" rx="1"/></svg>
               </button>
+              <button
+                class="vista"
+                type="button"
+                role="tab"
+                id="vista-avisos"
+                data-vista="avisos"
+                aria-selected="false"
+                aria-controls="avisos"
+                tabindex="-1"
+                title="Avisos de tasa">
+                <svg viewBox="0 0 14 14" aria-hidden="true"><path d="M3.5 10V6.5a3.5 3.5 0 0 1 7 0V10l1 1h-9z"/><path d="M5.8 12.6a1.3 1.3 0 0 0 2.4 0"/></svg>
+              </button>
             </div>
             <div class="trend__controles" id="trend-controles" hidden>
               <div class="rangos" role="group" aria-label="Periodo del gráfico">
@@ -204,6 +216,24 @@
               <div class="bandeja__opciones" id="bandeja-opciones" role="group" aria-label="Añadir divisa"></div>
               <button class="bandeja__cerrar" type="button" id="bandeja-cerrar" aria-label="Cerrar">✕</button>
             </div>
+          </div>
+
+          <div class="avisos" id="avisos" role="tabpanel" aria-labelledby="vista-avisos" hidden>
+            <form class="aviso-form" id="aviso-form" novalidate>
+              <label class="aviso-form__sentido" id="aviso-sentido" for="aviso-umbral"></label>
+              <input
+                class="aviso-form__umbral"
+                type="text"
+                id="aviso-umbral"
+                inputmode="decimal"
+                autocomplete="off"
+                spellcheck="false"
+                aria-describedby="aviso-nota">
+              <span class="aviso-form__codigo" id="aviso-codigo" aria-hidden="true"></span>
+              <button class="aviso-form__boton" type="submit" id="aviso-boton">Avisar</button>
+            </form>
+            <ul class="avisos__lista" id="avisos-lista" aria-label="Tus avisos"></ul>
+            <p class="avisos__nota" id="aviso-nota" aria-live="polite"></p>
           </div>
         </div>
       </section>

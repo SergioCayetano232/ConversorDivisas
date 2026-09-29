@@ -511,6 +511,56 @@ function tituloInsignia(par, rate, cambio) {
   return cambio === null ? tasa : `${tasa} · ${nfCambio.format(cambio)} desde el día anterior`;
 }
 
+// Cuatro caben en dos filas de la pestaña sin que el popup crezca.
+const AVISOS_MAX = 4;
+
+// El sentido sale solo: si pides un valor por encima de lo que vale ahora es
+// que esperas que suba, y al revés. Así no hay que elegirlo en ningún sitio.
+function sentidoAviso(umbral, rate) {
+  if (typeof umbral !== "number" || typeof rate !== "number" || umbral === rate) return null;
+  return umbral > rate ? "sube" : "baja";
+}
+
+function crearAviso(from, to, umbral, rate, id) {
+  const sentido = sentidoAviso(umbral, rate);
+  if (!isValidCode(from) || !isValidCode(to) || from === to || !sentido || !(umbral > 0)) return null;
+  return { id, from, to, sentido, umbral };
+}
+
+function leerAvisos(guardado) {
+  if (!Array.isArray(guardado)) return [];
+  return guardado
+    .filter((a) => a && typeof a.id === "string" && isValidCode(a.from) && isValidCode(a.to)
+      && (a.sentido === "sube" || a.sentido === "baja") && typeof a.umbral === "number" && a.umbral > 0)
+    .slice(0, AVISOS_MAX);
+}
+
+function avisoCumplido(aviso, rate) {
+  if (typeof rate !== "number") return false;
+  return aviso.sentido === "sube" ? rate >= aviso.umbral : rate <= aviso.umbral;
+}
+
+// tasas va por base: { EUR: { USD: 1.13, … } }. Los que no tienen tasa (la
+// petición de esa base falló) se quedan esperando a la próxima vuelta.
+function repartirAvisos(avisos, tasas) {
+  const cumplidos = [];
+  const pendientes = [];
+  for (const aviso of avisos) {
+    const rate = tasas?.[aviso.from]?.[aviso.to];
+    if (avisoCumplido(aviso, rate)) cumplidos.push({ aviso, rate });
+    else pendientes.push(aviso);
+  }
+  return { cumplidos, pendientes };
+}
+
+function mensajeAviso(aviso, rate) {
+  const verbo = aviso.sentido === "sube" ? "subido" : "bajado";
+  return {
+    titulo: `1 ${aviso.from} ya está a ${nfTasaLarga.format(rate)} ${aviso.to}`,
+    cuerpo: `Ha ${verbo} de ${nfTasaLarga.format(aviso.umbral)}, como pediste.`,
+  };
+}
+
 function errorMessageFor(error) {
   if (error.name === "AbortError") {
     return "La conexión ha tardado demasiado.";
@@ -537,5 +587,6 @@ if (typeof module !== "undefined") {
     EXTRAS_MAX, EXTRAS_POR_DEFECTO, leerExtras, anadirExtra, quitarExtra,
     extrasVisibles, disponiblesParaAnadir, convertirExtras,
     textoInsignia, cambioDiario, sentidoDe, tituloInsignia,
+    AVISOS_MAX, sentidoAviso, crearAviso, leerAvisos, avisoCumplido, repartirAvisos, mensajeAviso,
   };
 }

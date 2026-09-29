@@ -894,6 +894,37 @@ body::after {
   transform: translateX(28px);
 }
 
+.vistas[data-vista="avisos"] .vistas__pildora {
+  transform: translateX(56px);
+}
+
+/* El punto de la campana cuando hay avisos puestos. */
+.vista.tiene-avisos::after {
+  content: "";
+  position: absolute;
+  top: 1px;
+  right: 5px;
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--jade);
+  box-shadow: 0 0 0 1.5px var(--graphite), 0 0 6px var(--jade-glow);
+  animation: pop var(--mid) var(--ease-spring);
+}
+
+.vista.is-sonando svg {
+  transform-origin: 50% 10%;
+  animation: campana 800ms var(--ease);
+}
+
+@keyframes campana {
+  15% { transform: rotate(16deg); }
+  30% { transform: rotate(-14deg); }
+  45% { transform: rotate(10deg); }
+  60% { transform: rotate(-6deg); }
+  75% { transform: rotate(3deg); }
+}
+
 .vista {
   position: relative;
   display: grid;
@@ -1106,6 +1137,245 @@ body::after {
 
 .extra--anadir .extra__elegir:hover .extra__mas {
   transform: rotate(90deg);
+}
+
+/* Mismo alto que la rejilla y que el gráfico: la línea del formulario y dos
+   filas de pastillas. */
+.avisos {
+  position: relative;
+  height: 63px;
+  margin-top: var(--s-2);
+  animation: enter var(--mid) var(--ease-out);
+}
+
+.aviso-form {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  height: 22px;
+}
+
+.aviso-form__sentido {
+  flex-shrink: 0;
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  font-weight: 600;
+  color: var(--muted);
+  white-space: nowrap;
+  transition: color var(--fast) var(--ease);
+}
+
+.aviso-form__sentido[data-sentido="sube"] {
+  color: var(--jade);
+}
+
+.aviso-form__sentido[data-sentido="baja"] {
+  color: var(--cinnabar);
+}
+
+.aviso-form__umbral {
+  flex: 1;
+  min-width: 0;
+  height: 22px;
+  padding: 0 7px;
+  background: var(--slate);
+  border: 1px solid var(--hairline-strong);
+  border-radius: 6px;
+  color: var(--mist);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+  transition: border-color var(--fast) var(--ease), box-shadow var(--fast) var(--ease);
+}
+
+.aviso-form__umbral:focus {
+  outline: none;
+  border-color: var(--brass);
+  box-shadow: 0 0 0 3px var(--brass-ghost);
+}
+
+.aviso-form__umbral.is-mal {
+  border-color: var(--cinnabar);
+  animation: shake 400ms var(--ease);
+}
+
+.aviso-form__codigo {
+  flex-shrink: 0;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--muted);
+}
+
+.aviso-form__boton {
+  flex-shrink: 0;
+  height: 22px;
+  padding: 0 10px;
+  background: var(--brass);
+  border: none;
+  border-radius: 6px;
+  color: var(--graphite);
+  font-family: inherit;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  cursor: pointer;
+  box-shadow: 0 0 12px -4px var(--brass-glow);
+  transition: transform var(--fast) var(--ease-spring), box-shadow var(--fast) var(--ease),
+    opacity var(--fast) var(--ease);
+}
+
+.aviso-form__boton:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 14px -4px var(--brass-glow);
+}
+
+.aviso-form__boton:active:not(:disabled) {
+  transform: scale(0.94);
+}
+
+.aviso-form__boton:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+.aviso-form__boton:focus-visible,
+.aviso__ir:focus-visible,
+.aviso__quitar:focus-visible {
+  outline: 2px solid var(--brass);
+  outline-offset: 1px;
+}
+
+.avisos__lista {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  grid-template-rows: repeat(2, 17px);
+  gap: 3px 6px;
+  margin-top: 4px;
+  list-style: none;
+}
+
+.aviso {
+  position: relative;
+  min-width: 0;
+}
+
+.aviso.is-nueva {
+  animation: pop var(--mid) var(--ease-spring) backwards;
+  animation-delay: calc(var(--i, 0) * 40ms);
+}
+
+.aviso.is-saliendo {
+  animation: fuera 220ms var(--ease) forwards;
+  pointer-events: none;
+}
+
+.aviso__ir {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  width: 100%;
+  height: 100%;
+  padding: 0 20px 0 7px;
+  background: var(--slate);
+  border: 1px solid var(--hairline);
+  border-radius: 999px;
+  color: var(--mist);
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  overflow: hidden;
+  cursor: pointer;
+  transition: border-color var(--fast) var(--ease), background-color var(--fast) var(--ease),
+    transform var(--fast) var(--ease-spring);
+}
+
+.aviso__ir:hover {
+  border-color: var(--brass-dim);
+  background: var(--brass-ghost);
+  transform: translateY(-1px);
+}
+
+.aviso__par {
+  font-weight: 600;
+  color: var(--muted);
+}
+
+.aviso__flecha[data-sentido="sube"] {
+  color: var(--jade);
+}
+
+.aviso__flecha[data-sentido="baja"] {
+  color: var(--cinnabar);
+}
+
+.aviso__umbral {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.aviso__quitar {
+  position: absolute;
+  top: 50%;
+  right: 3px;
+  display: grid;
+  place-items: center;
+  width: 13px;
+  height: 13px;
+  padding: 0;
+  background: transparent;
+  border: none;
+  border-radius: 50%;
+  color: var(--muted);
+  font-size: 7px;
+  line-height: 1;
+  cursor: pointer;
+  transform: translateY(-50%);
+  transition: color var(--fast) var(--ease), background-color var(--fast) var(--ease);
+}
+
+.aviso__quitar:hover {
+  color: var(--cinnabar);
+  background: rgba(229, 83, 75, 0.14);
+}
+
+.avisos__nota {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 30px;
+  font-size: 10.5px;
+  color: var(--muted);
+  pointer-events: none;
+}
+
+/* Los mensajes flotan encima de las pastillas un par de segundos y se van. */
+.avisos__nota.is-mensaje {
+  top: auto;
+  bottom: 0;
+  padding: 5px 8px;
+  background: color-mix(in srgb, var(--graphite) 94%, transparent);
+  border: 1px solid var(--hairline-strong);
+  border-radius: var(--r-sm);
+  box-shadow: var(--shadow-md);
+  animation: mensaje 2600ms var(--ease-out) forwards;
+}
+
+.avisos__nota[data-tipo="ok"] {
+  color: var(--jade);
+}
+
+.avisos__nota[data-tipo="error"] {
+  color: var(--cinnabar);
+}
+
+@keyframes mensaje {
+  0% { opacity: 0; transform: translateY(6px); }
+  10% { opacity: 1; transform: none; }
+  85% { opacity: 1; transform: none; }
+  100% { opacity: 0; transform: translateY(-2px); }
 }
 
 /* La bandeja se abre encima de la rejilla en vez de empujarla hacia abajo. */
@@ -1563,10 +1833,17 @@ body::after {
      invisibles un rato. */
   .reciente.is-nueva,
   .extra.is-nueva,
+  .aviso.is-nueva,
   .bandeja__opcion,
   .trend__marca,
   .trend__pie {
     animation-delay: 0s;
+  }
+
+  /* Aquí la animación es la que lo esconde al final; sin ella el mensaje se
+     queda hasta que el JS lo quita. */
+  .avisos__nota.is-mensaje {
+    animation: none;
   }
 
   .trend__line {

@@ -34,6 +34,15 @@ const el = {
   bandeja: document.getElementById("bandeja"),
   bandejaOpciones: document.getElementById("bandeja-opciones"),
   bandejaCerrar: document.getElementById("bandeja-cerrar"),
+  avisos: document.getElementById("avisos"),
+  avisoForm: document.getElementById("aviso-form"),
+  avisoSentido: document.getElementById("aviso-sentido"),
+  avisoUmbral: document.getElementById("aviso-umbral"),
+  avisoCodigo: document.getElementById("aviso-codigo"),
+  avisoBoton: document.getElementById("aviso-boton"),
+  avisosLista: document.getElementById("avisos-lista"),
+  avisoNota: document.getElementById("aviso-nota"),
+  campana: document.getElementById("vista-avisos"),
   trendChange: document.getElementById("trend-change"),
   rangos: document.querySelectorAll(".rango"),
   trendLine: document.getElementById("trend-line"),
@@ -72,6 +81,10 @@ let extras = [];
 // cambias el origen, las viejas no valen ni un segundo.
 let tasasBase = null;
 let extrasId = 0;
+let avisos = [];
+// De qué par es lo que hay en el campo del aviso: al cambiar de par le pongo
+// la tasa nueva, pero mientras sea el mismo no le toco lo que hayas escrito.
+let parDelUmbral = null;
 
 const nf = new Intl.NumberFormat("es-ES", {
   minimumFractionDigits: 2,
@@ -96,6 +109,7 @@ const RANGO_KEY = "rangoGrafico";
 const RECIENTES_KEY = "paresRecientes";
 const EXTRAS_KEY = "divisasExtra";
 const VISTA_KEY = "vistaPanel";
+const AVISOS_KEY = "avisos";
 const CACHE_KEY = "rateCache";
 const CACHE_MAX = 40;
 
@@ -155,10 +169,20 @@ async function guardarExtras() {
   }
 }
 
+async function cargarAvisos() {
+  try {
+    const guardado = await chrome.storage.local.get(AVISOS_KEY);
+    return leerAvisos(guardado[AVISOS_KEY]);
+  } catch (error) {
+    console.warn("No se pudieron leer los avisos", error);
+    return [];
+  }
+}
+
 async function cargarVista() {
   try {
     const guardado = await chrome.storage.local.get(VISTA_KEY);
-    if (guardado[VISTA_KEY] === "extras") return "extras";
+    if (VISTAS.includes(guardado[VISTA_KEY])) return guardado[VISTA_KEY];
   } catch (error) {
     console.warn("No se pudo leer la pestaña", error);
   }
@@ -596,7 +620,8 @@ function pintarVista() {
   const enEvolucion = vista === "evolucion";
   el.trend.hidden = !(enEvolucion && hayGrafico);
   el.trendControles.hidden = !(enEvolucion && hayGrafico);
-  el.extras.hidden = enEvolucion;
+  el.extras.hidden = vista !== "extras";
+  el.avisos.hidden = vista !== "avisos";
   el.vistas.dataset.vista = vista;
   for (const boton of el.botonesVista) {
     const suya = boton.dataset.vista === vista;
@@ -618,6 +643,10 @@ function cambiarVista(nueva) {
     for (const celda of el.rejilla.children) celda.classList.add("is-nueva");
     restartAnimation(el.extras);
   }
+  if (vista === "avisos") {
+    for (const pastilla of el.avisosLista.children) pastilla.classList.add("is-nueva");
+    restartAnimation(el.avisos);
+  }
   try {
     chrome.storage.local.set({ [VISTA_KEY]: vista });
   } catch (error) {
@@ -627,10 +656,13 @@ function cambiarVista(nueva) {
 
 // El patrón de pestañas de siempre: con las flechas cambias, y el foco va con
 // la pestaña elegida.
+const VISTAS = ["evolucion", "extras", "avisos"];
+
 function onTeclaVistas(event) {
   if (event.key !== "ArrowLeft" && event.key !== "ArrowRight") return;
   event.preventDefault();
-  const nueva = vista === "evolucion" ? "extras" : "evolucion";
+  const paso = event.key === "ArrowRight" ? 1 : -1;
+  const nueva = VISTAS[(VISTAS.indexOf(vista) + paso + VISTAS.length) % VISTAS.length];
   cambiarVista(nueva);
   document.getElementById(`vista-${nueva}`).focus();
 }
@@ -838,6 +870,154 @@ function onAnadirExtra(code) {
   el.rejilla.querySelector(`[data-code="${code}"] .extra__elegir`)?.focus();
 }
 
+async function guardarAvisos() {
+  try {
+    await chrome.storage.local.set({ [AVISOS_KEY]: avisos });
+  } catch (error) {
+    console.warn("No se pudieron guardar los avisos", error);
+  }
+}
+
+function pintarSentidoAviso() {
+  const from = el.from.value;
+  const to = el.to.value;
+  const par = `${from}${to}`;
+  if (par !== parDelUmbral && rate !== null && from !== to) {
+    el.avisoUmbral.value = nfRate.format(rate);
+    parDelUmbral = par;
+  }
+
+  el.avisoCodigo.textContent = to;
+  const sentido = from === to ? null : sentidoAviso(leerImporte(el.avisoUmbral.value), rate);
+  el.avisoSentido.textContent = sentido === "sube" ? `▲ ${from} sube de`
+    : sentido === "baja" ? `▼ ${from} baja de`
+    : `${from} llega a`;
+  el.avisoSentido.dataset.sentido = sentido ?? "";
+  el.avisoBoton.disabled = from === to || rate === null;
+}
+
+let notaAviso = null;
+
+// Lo de abajo del panel: si no tienes avisos, una pista; si acabas de hacer
+// algo, un mensaje que se va solo.
+function pintarNota() {
+  if (el.avisoNota.classList.contains("is-mensaje")) return;
+  el.avisoNota.dataset.tipo = "pista";
+  el.avisoNota.textContent = avisos.length ? "" : "Te aviso aunque tengas el popup cerrado.";
+}
+
+function decir(texto, tipo) {
+  el.avisoNota.textContent = texto;
+  el.avisoNota.dataset.tipo = tipo;
+  restartAnimation(el.avisoNota, "is-mensaje");
+  clearTimeout(notaAviso);
+  notaAviso = setTimeout(() => {
+    el.avisoNota.classList.remove("is-mensaje");
+    pintarNota();
+  }, 2600);
+}
+
+function crearPastillaAviso(aviso) {
+  const pastilla = document.createElement("li");
+  pastilla.className = "aviso is-nueva";
+  pastilla.dataset.id = aviso.id;
+
+  const ir = document.createElement("button");
+  ir.type = "button";
+  ir.className = "aviso__ir";
+  const umbral = nfRate.format(aviso.umbral);
+  ir.setAttribute(
+    "aria-label",
+    `Aviso: ${aviso.from} ${aviso.sentido === "sube" ? "sube de" : "baja de"} ${umbral} ${aviso.to}. Ir a ese par`,
+  );
+  const par = document.createElement("span");
+  par.className = "aviso__par";
+  par.textContent = `${aviso.from}→${aviso.to}`;
+  const flecha = document.createElement("span");
+  flecha.className = "aviso__flecha";
+  flecha.dataset.sentido = aviso.sentido;
+  flecha.textContent = aviso.sentido === "sube" ? "▲" : "▼";
+  const cifra = document.createElement("span");
+  cifra.className = "aviso__umbral";
+  cifra.textContent = umbral;
+  ir.append(par, flecha, cifra);
+  ir.addEventListener("click", () => onIrAviso(aviso));
+
+  const quitar = document.createElement("button");
+  quitar.type = "button";
+  quitar.className = "aviso__quitar";
+  quitar.setAttribute("aria-label", "Quitar el aviso");
+  quitar.textContent = "✕";
+  quitar.addEventListener("click", () => onQuitarAviso(aviso.id));
+
+  pastilla.append(ir, quitar);
+  pastilla.addEventListener("animationend", (event) => {
+    if (event.target === pastilla) pastilla.classList.remove("is-nueva");
+  });
+  return pastilla;
+}
+
+function pintarAvisos() {
+  const pastillas = avisos.map((aviso, i) => {
+    const pastilla = el.avisosLista.querySelector(`[data-id="${aviso.id}"]`) ?? crearPastillaAviso(aviso);
+    pastilla.style.setProperty("--i", i);
+    return pastilla;
+  });
+  const antes = [...el.avisosLista.children].map((p) => p.dataset.id).join();
+  if (antes !== avisos.map((a) => a.id).join()) el.avisosLista.replaceChildren(...pastillas);
+  // Un punto en la campana para que se vea que hay avisos sin entrar a mirar.
+  el.campana.classList.toggle("tiene-avisos", avisos.length > 0);
+  pintarNota();
+}
+
+function onCrearAviso(event) {
+  event.preventDefault();
+  const from = el.from.value;
+  const to = el.to.value;
+  const umbral = leerImporte(el.avisoUmbral.value);
+
+  let problema = null;
+  if (umbral === null) problema = "Escribe una tasa, por ejemplo 1,15.";
+  else if (avisos.length >= AVISOS_MAX) problema = `Ya tienes ${AVISOS_MAX} avisos: quita alguno.`;
+  else if (umbral === rate) problema = "Pon un valor distinto de la tasa de ahora.";
+
+  const aviso = problema ? null
+    : crearAviso(from, to, umbral, rate, `${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`);
+  if (!aviso) {
+    decir(problema ?? "Ese aviso no se puede crear.", "error");
+    restartAnimation(el.avisoUmbral, "is-mal");
+    return;
+  }
+
+  avisos = [...avisos, aviso];
+  guardarAvisos();
+  pintarAvisos();
+  el.avisoUmbral.value = nfRate.format(aviso.umbral);
+  restartAnimation(el.campana, "is-sonando");
+  decir("Hecho. Te aviso aunque cierres el popup.", "ok");
+}
+
+function onIrAviso(aviso) {
+  buscadores.from.poner(aviso.from);
+  buscadores.to.poner(aviso.to);
+  restartAnimation(el.from, "is-cambiado");
+  restartAnimation(el.to, "is-cambiado");
+  onCurrencyChange();
+}
+
+function onQuitarAviso(id) {
+  const pastilla = el.avisosLista.querySelector(`[data-id="${id}"]`);
+  const quitar = () => {
+    avisos = avisos.filter((a) => a.id !== id);
+    guardarAvisos();
+    pintarAvisos();
+  };
+  if (!pastilla || sinMovimiento.matches) return quitar();
+  pastilla.classList.remove("is-nueva");
+  pastilla.classList.add("is-saliendo");
+  pastilla.addEventListener("animationend", quitar, { once: true });
+}
+
 function renderRateLine(from, to) {
   if (rate === null) {
     el.rateLine.textContent = "";
@@ -892,6 +1072,7 @@ function renderResult() {
   const valor = leerImporte(origen.value);
 
   pintarExtras();
+  pintarSentidoAviso();
 
   if (valor === null) {
     destino.value = "—";
@@ -1282,6 +1463,21 @@ function bindEvents() {
   el.vistas.addEventListener("keydown", onTeclaVistas);
   el.bandejaCerrar.addEventListener("click", () => cerrarBandeja()?.focus());
   el.bandeja.addEventListener("keydown", onTeclaBandeja);
+  el.avisoForm.addEventListener("submit", onCrearAviso);
+  el.avisoUmbral.addEventListener("input", pintarSentidoAviso);
+  el.avisoUmbral.addEventListener("animationend", () => el.avisoUmbral.classList.remove("is-mal"));
+  // Solo al acabar el vaivén: el punto verde tiene su propia animación, más
+  // corta, y su animationend también llega aquí y cortaba la campana a medias.
+  el.campana.addEventListener("animationend", (event) => {
+    if (event.animationName === "campana") el.campana.classList.remove("is-sonando");
+  });
+  // Cuando salta un aviso lo borra el service worker; si tienes el popup
+  // abierto, que la pastilla desaparezca también.
+  chrome.storage.onChanged.addListener((cambios, zona) => {
+    if (zona !== "local" || !cambios[AVISOS_KEY]) return;
+    avisos = leerAvisos(cambios[AVISOS_KEY].newValue);
+    pintarAvisos();
+  });
   document.addEventListener("keydown", (event) => {
     if (event.key === "Escape" && !el.bandeja.hidden) {
       // Que el Escape cierre la bandeja y no el popup entero.
@@ -1298,12 +1494,14 @@ function bindEvents() {
 }
 
 async function init() {
-  const [pair, rango, guardados, pendiente, guardadas, vistaGuardada] = await Promise.all([
-    loadPair(), cargarRango(), cargarRecientes(), tomarPendiente(), cargarExtras(), cargarVista(),
+  const [pair, rango, guardados, pendiente, guardadas, vistaGuardada, avisosGuardados] = await Promise.all([
+    loadPair(), cargarRango(), cargarRecientes(), tomarPendiente(), cargarExtras(), cargarVista(), cargarAvisos(),
   ]);
   dias = rango;
   marcarRango();
   extras = guardadas;
+  avisos = avisosGuardados;
+  pintarAvisos();
   vista = vistaGuardada;
   pintarVista();
   populateSelects(pendiente ?? pair);

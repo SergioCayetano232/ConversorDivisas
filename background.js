@@ -27,14 +27,23 @@ chrome.runtime.onInstalled.addListener(async () => {
     checked: insigniaActiva,
     contexts: ["action"],
   });
-  chrome.alarms.create("insignia", { periodInMinutes: 60 });
+  // Antes se llamaba "insignia"; si vienes de esa versión, fuera la vieja para
+  // no tener dos sonando a la vez.
+  await chrome.alarms.clear("insignia");
+  chrome.alarms.create("cada-hora", { periodInMinutes: 60 });
   actualizarInsignia();
+  revisarAvisos();
 });
 
-chrome.runtime.onStartup.addListener(() => actualizarInsignia());
+chrome.runtime.onStartup.addListener(() => {
+  actualizarInsignia();
+  revisarAvisos();
+});
 
 chrome.alarms.onAlarm.addListener((alarma) => {
-  if (alarma.name === "insignia") actualizarInsignia();
+  if (alarma.name !== "cada-hora") return;
+  actualizarInsignia();
+  revisarAvisos();
 });
 
 // El popup guarda el par al cambiarlo; con esto el icono cambia a la vez.
@@ -190,6 +199,71 @@ async function convertirSeleccion(info, tab) {
   await enPagina(tab.id, { estado: "cargando", original: info.selectionText });
   await enPagina(tab.id, await calcular(info.selectionText));
 }
+
+// Aquí no uso la caché del popup: guarda la tasa de la mañana hasta el día
+// siguiente, y el BCE publica por la tarde. Un aviso tiene que ver la nueva.
+async function todasLasTasas(base) {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), TIMEOUT_MS);
+  try {
+    const response = await fetch(`${API}?base=${base}`, { signal: controller.signal });
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+    const data = await response.json();
+    return data.rates ?? {};
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+async function revisarAvisos() {
+  const { avisos: guardados } = await chrome.storage.local.get("avisos");
+  const avisos = leerAvisos(guardados);
+  if (avisos.length === 0) return;
+
+  // Una petición por divisa de origen, aunque haya varios avisos con la misma.
+  const tasas = {};
+  for (const base of new Set(avisos.map((a) => a.from))) {
+    try {
+      tasas[base] = await todasLasTasas(base);
+    } catch (error) {
+      console.warn(`No se pudieron revisar los avisos de ${base}`, error);
+    }
+  }
+
+  const { cumplidos } = repartirAvisos(avisos, tasas);
+  if (cumplidos.length === 0) return;
+
+  // Vuelvo a leer antes de guardar: si mientras pedía las tasas has creado uno
+  // en el popup, con la lista de antes lo borraría.
+  const hechos = new Set(cumplidos.map(({ aviso }) => aviso.id));
+  const { avisos: ahora } = await chrome.storage.local.get("avisos");
+  await chrome.storage.local.set({ avisos: leerAvisos(ahora).filter((a) => !hechos.has(a.id)) });
+
+  // Las espero: si la función acaba antes, Chrome puede dormir el service
+  // worker con alguna notificación sin crear.
+  await Promise.all(cumplidos.map(({ aviso, rate }) => {
+    const { titulo, cuerpo } = mensajeAviso(aviso, rate);
+    // El par va en el id para saber cuál abrir si pulsas la notificación.
+    return chrome.notifications.create(`aviso:${aviso.from}:${aviso.to}:${aviso.id}`, {
+      type: "basic",
+      iconUrl: "icons/icon128.png",
+      title: titulo,
+      message: cuerpo,
+      priority: 2,
+    });
+  }));
+}
+
+chrome.notifications.onClicked.addListener(async (id) => {
+  chrome.notifications.clear(id);
+  const [, from, to] = id.split(":");
+  if (isValidCode(from) && isValidCode(to)) await chrome.storage.local.set({ lastPair: { from, to } });
+  try {
+    await chrome.action.openPopup();
+  } catch (error) {
+    console.warn("No se pudo abrir el popup", error);
+  }
+});
 
 chrome.contextMenus.onClicked.addListener((info, tab) => {
   if (info.menuItemId === "convertir") convertirSeleccion(info, tab);
