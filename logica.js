@@ -164,8 +164,9 @@ function startDateFor(days) {
 }
 
 // Guardo uno más de los que enseño, porque el par que tienes puesto está en la
-// lista pero no sale como pastilla.
-const RECIENTES_MAX = 5;
+// lista pero no sale como pastilla. Tres pastillas caben en una fila; con
+// cuatro saltaba a dos y el popup pasaba de 600 px, que es donde Chrome corta.
+const RECIENTES_MAX = 4;
 
 function apuntarReciente(lista, from, to) {
   if (from === to) return lista;
