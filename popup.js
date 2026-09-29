@@ -810,6 +810,25 @@ function cerrarBandeja() {
   return boton;
 }
 
+// Con la bandeja abierta, teclear "hu" salta al forinto, como en un <select>.
+let tecleado = "";
+let borrarTecleado = null;
+
+function onTeclaBandeja(event) {
+  if (event.key.length !== 1 || !/\p{L}/u.test(event.key) || event.metaKey || event.ctrlKey) return;
+  tecleado += event.key.toUpperCase();
+  clearTimeout(borrarTecleado);
+  borrarTecleado = setTimeout(() => (tecleado = ""), 700);
+
+  const opciones = [...el.bandejaOpciones.children];
+  const destino = opciones.find((o) => o.textContent.startsWith(tecleado))
+    ?? opciones.find((o) => normalizar(nombreDe(o.textContent)).startsWith(normalizar(tecleado)));
+  if (destino) {
+    destino.focus();
+    destino.scrollIntoView({ block: "nearest" });
+  }
+}
+
 function onAnadirExtra(code) {
   extras = anadirExtra(extras, code);
   guardarExtras();
@@ -1262,6 +1281,7 @@ function bindEvents() {
   }
   el.vistas.addEventListener("keydown", onTeclaVistas);
   el.bandejaCerrar.addEventListener("click", () => cerrarBandeja()?.focus());
+  el.bandeja.addEventListener("keydown", onTeclaBandeja);
   document.addEventListener("keydown", (event) => {
     if (event.key === "Escape" && !el.bandeja.hidden) {
       // Que el Escape cierre la bandeja y no el popup entero.

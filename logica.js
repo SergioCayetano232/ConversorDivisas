@@ -17,6 +17,24 @@ const CURRENCIES = [
   { code: "DKK", name: "Corona danesa" },
   { code: "PLN", name: "Esloti polaco" },
   { code: "TRY", name: "Lira turca" },
+  // Las que se usan menos van detrás, para que el desplegable empiece por las
+  // de siempre. Son todas las que publica el BCE; el lev búlgaro ya no está
+  // desde que Bulgaria entró en el euro.
+  { code: "CZK", name: "Corona checa" },
+  { code: "HKD", name: "Dólar de Hong Kong" },
+  { code: "HUF", name: "Forinto húngaro" },
+  { code: "IDR", name: "Rupia indonesia" },
+  { code: "ILS", name: "Séquel israelí" },
+  { code: "INR", name: "Rupia india" },
+  { code: "ISK", name: "Corona islandesa" },
+  { code: "KRW", name: "Won surcoreano" },
+  { code: "MYR", name: "Ringgit malayo" },
+  { code: "NZD", name: "Dólar neozelandés" },
+  { code: "PHP", name: "Peso filipino" },
+  { code: "RON", name: "Leu rumano" },
+  { code: "SGD", name: "Dólar de Singapur" },
+  { code: "THB", name: "Baht tailandés" },
+  { code: "ZAR", name: "Rand sudafricano" },
 ];
 
 const isValidCode = (code) => CURRENCIES.some((c) => c.code === code);
@@ -379,22 +397,44 @@ function leerNumero(texto) {
 // Lo más concreto primero: "R$" y "US$" también llevan un "$", y el dólar a
 // secas me lo quedo para el final.
 const PISTAS = [
+  // "us$" antes que "s$", que si no los dólares de EEUU salían de Singapur.
   [/r\$/, "BRL"], [/mx\$/, "MXN"], [/(ca|c)\$/, "CAD"], [/(au|a)\$/, "AUD"], [/us\$/, "USD"],
+  [/hk\$/, "HKD"], [/nz\$/, "NZD"], [/s\$/, "SGD"],
   [/cn¥|元|rmb/, "CNY"],
   [/€/, "EUR"], [/£/, "GBP"], [/¥|円/, "JPY"], [/₺/, "TRY"], [/zł/, "PLN"],
+  [/₹/, "INR"], [/₩/, "KRW"], [/₪/, "ILS"], [/฿/, "THB"], [/₱/, "PHP"],
+  // Kč llega sin el acento de la c porque normalizar lo quita.
+  [/\bkc\b/, "CZK"], [/\brp\b/, "IDR"], [/\brm\b/, "MYR"],
   // Un símbolo es más fiable que una palabra: "real estate $500" son dólares.
   [/\$/, "USD"],
   [/\beuros?\b/, "EUR"],
+  // Los dólares con apellido antes que el dólar a secas.
+  [/\bdolar(es)? canadienses?\b/, "CAD"],
+  [/\bdolar(es)? australianos?\b/, "AUD"],
+  [/\bdolar(es)? neozelandes(es)?\b/, "NZD"],
+  [/\bdolar(es)? (de )?hong kong\b|\bhongkones(es)?\b/, "HKD"],
+  [/\bdolar(es)? (de )?singapur\b|\bsingapurenses?\b/, "SGD"],
   [/\b(dolar(es)?|dollars?)\b/, "USD"],
   [/\b(libras?|pounds?)\b/, "GBP"],
   [/\byen(es)?\b/, "JPY"],
   [/\byuan(es)?\b/, "CNY"],
   [/\bfrancos?\b/, "CHF"],
+  [/\bpesos? filipinos?\b/, "PHP"],
   [/\bpesos?\b/, "MXN"],
   [/\b(real|reales|reais)\b/, "BRL"],
   [/\bcoronas? suecas?\b/, "SEK"], [/\bcoronas? noruegas?\b/, "NOK"], [/\bcoronas? danesas?\b/, "DKK"],
+  [/\bcoronas? checas?\b/, "CZK"], [/\bcoronas? islandesas?\b/, "ISK"],
   [/\b(eslotis?|zlotys?)\b/, "PLN"],
   [/\bliras?\b/, "TRY"],
+  [/\brupias? indonesias?\b/, "IDR"],
+  [/\b(rupias?|rupees?)\b/, "INR"],
+  [/\bforint(o|os|s)?\b/, "HUF"],
+  [/\bwon(es)?\b/, "KRW"],
+  [/\bringgits?\b/, "MYR"],
+  [/\b(sequel(es)?|shekels?)\b/, "ILS"],
+  [/\b(leu|lei)\b/, "RON"],
+  [/\bbahts?\b/, "THB"],
+  [/\brands?\b/, "ZAR"],
 ];
 
 function divisaDe(texto) {

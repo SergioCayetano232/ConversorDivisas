@@ -1134,12 +1134,21 @@ body::after {
   }
 }
 
+/* Con treinta divisas no caben todas: scroll, y un degradado abajo para que se
+   note que hay más. */
 .bandeja__opciones {
   flex: 1;
+  align-self: stretch;
   display: flex;
   flex-wrap: wrap;
   align-content: flex-start;
   gap: 4px;
+  padding-bottom: 8px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
+  scrollbar-color: var(--hairline-strong) transparent;
+  mask-image: linear-gradient(to bottom, black calc(100% - 12px), transparent);
 }
 
 .bandeja__opcion {
@@ -1155,7 +1164,8 @@ body::after {
   letter-spacing: 0.04em;
   cursor: pointer;
   animation: pop var(--mid) var(--ease-spring) backwards;
-  animation-delay: calc(var(--i, 0) * 25ms);
+  /* Tope al escalonado: con treinta, las últimas tardaban casi un segundo. */
+  animation-delay: calc(min(var(--i, 0), 12) * 25ms);
   transition: border-color var(--fast) var(--ease), color var(--fast) var(--ease),
     background-color var(--fast) var(--ease), transform var(--fast) var(--ease-spring);
 }

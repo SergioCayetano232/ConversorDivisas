@@ -108,3 +108,50 @@ test("destinoPara usa tu par y le da la vuelta si hace falta", () => {
   assert.deepEqual(destinoPara("EUR", par), { from: "EUR", to: "USD" });
   assert.deepEqual(destinoPara(null, par), { from: "EUR", to: "USD" });
 });
+
+test("los símbolos de las divisas nuevas", () => {
+  assert.equal(divisaDe("₹ 499"), "INR");
+  assert.equal(divisaDe("₩12,000"), "KRW");
+  assert.equal(divisaDe("₪ 90"), "ILS");
+  assert.equal(divisaDe("฿350"), "THB");
+  assert.equal(divisaDe("₱ 250"), "PHP");
+  assert.equal(divisaDe("1 299 Kč"), "CZK");
+  assert.equal(divisaDe("Rp 150.000"), "IDR");
+  assert.equal(divisaDe("RM 45"), "MYR");
+});
+
+test("HK$, NZ$ y S$ no se confunden con el dólar de EEUU", () => {
+  assert.equal(divisaDe("HK$ 88"), "HKD");
+  assert.equal(divisaDe("NZ$30"), "NZD");
+  assert.equal(divisaDe("S$ 12.90"), "SGD");
+  assert.equal(divisaDe("US$ 12.90"), "USD", "us$ lleva una s$ dentro");
+});
+
+test("los dólares con apellido", () => {
+  assert.equal(divisaDe("20 dólares canadienses"), "CAD");
+  assert.equal(divisaDe("20 dólares australianos"), "AUD");
+  assert.equal(divisaDe("20 dólares neozelandeses"), "NZD");
+  assert.equal(divisaDe("20 dólares de Hong Kong"), "HKD");
+  assert.equal(divisaDe("20 dólares de Singapur"), "SGD");
+  assert.equal(divisaDe("20 dólares"), "USD");
+});
+
+test("los nombres de las divisas nuevas", () => {
+  assert.equal(divisaDe("500 rupias"), "INR");
+  assert.equal(divisaDe("500 rupias indonesias"), "IDR");
+  assert.equal(divisaDe("3000 forintos"), "HUF");
+  assert.equal(divisaDe("50 pesos filipinos"), "PHP");
+  assert.equal(divisaDe("50 pesos"), "MXN");
+  assert.equal(divisaDe("200 coronas checas"), "CZK");
+  assert.equal(divisaDe("200 coronas islandesas"), "ISK");
+  assert.equal(divisaDe("100 lei"), "RON");
+  assert.equal(divisaDe("100 rand"), "ZAR");
+  assert.equal(divisaDe("100 baht"), "THB");
+  assert.equal(divisaDe("100 ringgit"), "MYR");
+  assert.equal(divisaDe("100 séqueles"), "ILS");
+});
+
+test("los códigos nuevos en mayúsculas", () => {
+  assert.equal(divisaDe("1500 INR"), "INR");
+  assert.equal(divisaDe("ZAR 99"), "ZAR");
+});
