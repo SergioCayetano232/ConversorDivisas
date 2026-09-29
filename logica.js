@@ -186,6 +186,89 @@ function recientesVisibles(lista, from, to) {
   return lista.filter((p) => p.from !== from || p.to !== to).slice(0, RECIENTES_MAX - 1);
 }
 
+// En una web cualquiera no sé si "1.234" son mil o uno con algo, así que no
+// vale parseAmount. Regla: si hay punto y coma, el último es el decimal; si solo
+// hay uno y lleva tres cifras detrás, son miles.
+function leerNumero(texto) {
+  const limpio = texto.replace(/[\s  ']/g, "");
+  const ultimoPunto = limpio.lastIndexOf(".");
+  const ultimaComa = limpio.lastIndexOf(",");
+
+  let decimal = null;
+  if (ultimoPunto !== -1 && ultimaComa !== -1) {
+    decimal = ultimoPunto > ultimaComa ? "." : ",";
+  } else if (ultimoPunto !== -1 || ultimaComa !== -1) {
+    const sep = ultimoPunto !== -1 ? "." : ",";
+    const trozos = limpio.split(sep);
+    const detras = trozos[trozos.length - 1];
+    // "0,125" no son ciento veinticinco.
+    const esMiles = trozos.length > 2 || (detras.length === 3 && trozos[0] !== "0");
+    if (!esMiles) decimal = sep;
+  }
+
+  const miles = decimal === "." ? "," : ".";
+  let normal = limpio.split(miles).join("");
+  if (decimal === ",") normal = normal.replace(",", ".");
+  if (decimal === null) normal = normal.replace(/[.,]/g, "");
+
+  const valor = Number(normal);
+  return Number.isFinite(valor) ? valor : null;
+}
+
+// Lo más concreto primero: "R$" y "US$" también llevan un "$", y el dólar a
+// secas me lo quedo para el final.
+const PISTAS = [
+  [/r\$/, "BRL"], [/mx\$/, "MXN"], [/(ca|c)\$/, "CAD"], [/(au|a)\$/, "AUD"], [/us\$/, "USD"],
+  [/cn¥|元|rmb/, "CNY"],
+  [/€/, "EUR"], [/£/, "GBP"], [/¥|円/, "JPY"], [/₺/, "TRY"], [/zł/, "PLN"],
+  // Un símbolo es más fiable que una palabra: "real estate $500" son dólares.
+  [/\$/, "USD"],
+  [/\beuros?\b/, "EUR"],
+  [/\b(dolar(es)?|dollars?)\b/, "USD"],
+  [/\b(libras?|pounds?)\b/, "GBP"],
+  [/\byen(es)?\b/, "JPY"],
+  [/\byuan(es)?\b/, "CNY"],
+  [/\bfrancos?\b/, "CHF"],
+  [/\bpesos?\b/, "MXN"],
+  [/\b(real|reales|reais)\b/, "BRL"],
+  [/\bcoronas? suecas?\b/, "SEK"], [/\bcoronas? noruegas?\b/, "NOK"], [/\bcoronas? danesas?\b/, "DKK"],
+  [/\b(eslotis?|zlotys?)\b/, "PLN"],
+  [/\bliras?\b/, "TRY"],
+];
+
+function divisaDe(texto) {
+  // Un código ISO gana a cualquier símbolo, pero solo en mayúsculas: en
+  // minúscula "try it for $5" salía en liras turcas.
+  for (const { code } of CURRENCIES) {
+    if (new RegExp(`\\b${code}\\b`).test(texto)) return code;
+  }
+  const t = normalizar(texto);
+  for (const [patron, code] of PISTAS) {
+    if (patron.test(t)) return code;
+  }
+  return null;
+}
+
+// Los espacios solo cuentan como separador si detrás van tres cifras justas:
+// así "20 30" es un 20 y no un 2030.
+const NUMERO = /\d{1,3}(?:[\s  '.,]\d{3})+(?:[.,]\d{1,2})?(?!\d)|\d+(?:[.,]\d+)?/;
+
+function leerSeleccion(texto) {
+  if (typeof texto !== "string") return null;
+  const hallado = texto.match(NUMERO);
+  if (!hallado) return null;
+  const cantidad = leerNumero(hallado[0]);
+  if (cantidad === null) return null;
+  return { cantidad, divisa: divisaDe(texto) };
+}
+
+// Si lo que he leído ya está en el lado de destino, le doy la vuelta al par: nadie
+// quiere pasar dólares a dólares.
+function destinoPara(divisa, par) {
+  if (!divisa) return { from: par.from, to: par.to };
+  return { from: divisa, to: divisa === par.to ? par.from : par.to };
+}
+
 function errorMessageFor(error) {
   if (error.name === "AbortError") {
     return "La conexión ha tardado demasiado.";
@@ -207,5 +290,6 @@ if (typeof module !== "undefined") {
     normalizar, filtrarDivisas, buildPaths, startDateFor, errorMessageFor,
     RECIENTES_MAX, apuntarReciente, leerRecientes, recientesVisibles,
     coordenadas, indiceCercano, extremos, fechaCorta, largoEnPantalla,
+    leerNumero, divisaDe, leerSeleccion, destinoPara,
   };
 }

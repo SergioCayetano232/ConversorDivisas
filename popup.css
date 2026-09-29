@@ -314,8 +314,10 @@ body::after {
   text-overflow: ellipsis;
 }
 
-/* Cuando el par cambia desde una pastilla, que se vea dónde ha caído. */
-.buscador__boton.is-cambiado {
+/* Cuando algo cambia sin que lo toques (una pastilla, el menú de la web), que
+   se vea dónde ha caído. */
+.buscador__boton.is-cambiado,
+.field__input.is-cambiado {
   animation: destello 900ms var(--ease-out);
 }
 

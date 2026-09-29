@@ -103,6 +103,22 @@ async function savePair(from, to) {
   }
 }
 
+// Lo deja el menú de «Convertir» cuando no puede poner la tarjeta en la página.
+// Lo borro al leerlo, que si no cada vez que abres el popup volvería a salir.
+async function tomarPendiente() {
+  try {
+    const { pendiente } = await chrome.storage.session.get("pendiente");
+    if (!pendiente) return null;
+    await chrome.storage.session.remove("pendiente");
+    if (isValidCode(pendiente.from) && isValidCode(pendiente.to) && typeof pendiente.cantidad === "number") {
+      return pendiente;
+    }
+  } catch (error) {
+    console.warn("No se pudo leer la conversión pendiente", error);
+  }
+  return null;
+}
+
 async function cargarRecientes() {
   try {
     const guardado = await chrome.storage.local.get(RECIENTES_KEY);
@@ -903,16 +919,25 @@ function bindEvents() {
 }
 
 async function init() {
-  const [pair, rango, guardados] = await Promise.all([
-    loadPair(), cargarRango(), cargarRecientes(),
+  const [pair, rango, guardados, pendiente] = await Promise.all([
+    loadPair(), cargarRango(), cargarRecientes(), tomarPendiente(),
   ]);
   dias = rango;
   marcarRango();
-  populateSelects(pair);
+  populateSelects(pendiente ?? pair);
   // El par de ahora entra en la lista, pero no lo guardo hasta que cambies:
   // abrir el popup no es elegir nada.
   recientes = apuntarReciente(guardados, pair.from, pair.to);
-  pintarRecientes();
+
+  if (pendiente) {
+    // Esto sí es elegir: viene de lo que has seleccionado en la página.
+    el.amount.value = nf.format(pendiente.cantidad);
+    savePair(pendiente.from, pendiente.to);
+    apuntarPar();
+    restartAnimation(el.amount, "is-cambiado");
+  } else {
+    pintarRecientes();
+  }
   bindEvents();
   onAmountInput();
   refresh();
