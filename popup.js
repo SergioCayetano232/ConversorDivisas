@@ -462,7 +462,7 @@ function renderResult() {
   el.resultMeta.textContent = `${nf.format(enviados)} ${from}`;
 
   // El latido solo cuando cambia la cifra grande, que si no parpadea al teclear.
-  if (!escribiendoAbajo) restartAnimation(el.resultBox, "is-updating");
+  if (!escribiendoAbajo) restartAnimation(el.result, "is-updating");
 }
 
 async function refresh() {

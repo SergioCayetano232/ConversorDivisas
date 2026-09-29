@@ -736,7 +736,9 @@ body::after {
   opacity: 0.7;
 }
 
-.result.is-updating .result__value {
+/* La clase va en la cifra y no en la tarjeta: reiniciar la tarjeta le
+   reiniciaba también la entrada, y desaparecía un momento en cada tecla. */
+.result__value.is-updating {
   animation: beat var(--mid) var(--ease-spring);
 }
 
