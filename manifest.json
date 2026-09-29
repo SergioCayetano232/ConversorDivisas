@@ -20,7 +20,7 @@
   "background": {
     "service_worker": "background.js"
   },
-  "permissions": ["storage", "contextMenus", "activeTab", "scripting"],
+  "permissions": ["storage", "contextMenus", "activeTab", "scripting", "alarms"],
   "host_permissions": ["https://api.frankfurter.dev/*"],
   "commands": {
     "_execute_action": {

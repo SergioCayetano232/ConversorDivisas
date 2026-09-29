@@ -470,6 +470,47 @@ function destinoPara(divisa, par) {
   return { from: divisa, to: divisa === par.to ? par.from : par.to };
 }
 
+// La insignia del icono corta a partir de unos cuatro caracteres, así que los
+// decimales se van quitando según crece la tasa: 1,14 · 20,3 · 178 · 20k.
+function textoInsignia(rate) {
+  if (typeof rate !== "number" || !Number.isFinite(rate) || rate <= 0) return "";
+  const es = (n, dec) => n.toFixed(dec).replace(".", ",");
+  if (rate >= 999500) return `${Math.round(rate / 1e6)}M`;
+  if (rate >= 9999.5) return `${Math.round(rate / 1000)}k`;
+  if (rate >= 99.95) return String(Math.round(rate));
+  if (rate >= 9.995) return es(rate, 1);
+  if (rate >= 0.00995) return es(rate, 2);
+  // 1 JPY son 0,0056 EUR: sin el cero de delante cabe una cifra que diga algo.
+  return es(rate, 3).replace(/^0/, "");
+}
+
+// Lo que ha cambiado del penúltimo día publicado al último. Con la serie de
+// varios días y no solo de ayer, porque el lunes el anterior es el viernes.
+function cambioDiario(valores) {
+  if (!Array.isArray(valores) || valores.length < 2) return null;
+  const antes = valores[valores.length - 2];
+  const ahora = valores[valores.length - 1];
+  if (!antes) return null;
+  return (ahora - antes) / antes;
+}
+
+// Por debajo de medio punto básico lo doy por igual: son movimientos del
+// cuarto decimal que no interesan a nadie.
+function sentidoDe(cambio) {
+  if (cambio === null || Math.abs(cambio) < 0.00005) return "igual";
+  return cambio > 0 ? "sube" : "baja";
+}
+
+const nfTasaLarga = new Intl.NumberFormat("es-ES", { minimumFractionDigits: 4, maximumFractionDigits: 4 });
+const nfCambio = new Intl.NumberFormat("es-ES", {
+  style: "percent", minimumFractionDigits: 2, maximumFractionDigits: 2, signDisplay: "exceptZero",
+});
+
+function tituloInsignia(par, rate, cambio) {
+  const tasa = `1 ${par.from} = ${nfTasaLarga.format(rate)} ${par.to}`;
+  return cambio === null ? tasa : `${tasa} · ${nfCambio.format(cambio)} desde el día anterior`;
+}
+
 function errorMessageFor(error) {
   if (error.name === "AbortError") {
     return "La conexión ha tardado demasiado.";
@@ -495,5 +536,6 @@ if (typeof module !== "undefined") {
     leerNumero, divisaDe, leerSeleccion, destinoPara,
     EXTRAS_MAX, EXTRAS_POR_DEFECTO, leerExtras, anadirExtra, quitarExtra,
     extrasVisibles, disponiblesParaAnadir, convertirExtras,
+    textoInsignia, cambioDiario, sentidoDe, tituloInsignia,
   };
 }
