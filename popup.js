@@ -29,6 +29,7 @@ const el = {
   rangos: document.querySelectorAll(".rango"),
   trendLine: document.getElementById("trend-line"),
   trendArea: document.getElementById("trend-area"),
+  recientes: document.getElementById("recientes"),
 };
 
 let rate = null;
@@ -39,6 +40,7 @@ let ladoActivo = "amount";
 let dias = RANGO_POR_DEFECTO;
 let requestId = 0;
 let trendId = 0;
+let recientes = [];
 
 const nf = new Intl.NumberFormat("es-ES", {
   minimumFractionDigits: 2,
@@ -60,6 +62,7 @@ const nfPercent = new Intl.NumberFormat("es-ES", {
 
 const STORAGE_KEY = "lastPair";
 const RANGO_KEY = "rangoGrafico";
+const RECIENTES_KEY = "paresRecientes";
 const CACHE_KEY = "rateCache";
 const CACHE_MAX = 40;
 
@@ -82,6 +85,24 @@ async function savePair(from, to) {
     await chrome.storage.local.set({ [STORAGE_KEY]: { from, to } });
   } catch (error) {
     console.warn("No se pudo guardar el almacenamiento", error);
+  }
+}
+
+async function cargarRecientes() {
+  try {
+    const guardado = await chrome.storage.local.get(RECIENTES_KEY);
+    return leerRecientes(guardado[RECIENTES_KEY]);
+  } catch (error) {
+    console.warn("No se pudieron leer los recientes", error);
+    return [];
+  }
+}
+
+async function guardarRecientes() {
+  try {
+    await chrome.storage.local.set({ [RECIENTES_KEY]: recientes });
+  } catch (error) {
+    console.warn("No se pudieron guardar los recientes", error);
   }
 }
 
@@ -544,6 +565,7 @@ function onSwap() {
   hideTrend();
 
   savePair(el.from.value, el.to.value);
+  apuntarPar();
   refresh();
 }
 
@@ -634,6 +656,79 @@ function avisar(texto) {
   }, 1400);
 }
 
+const sinMovimiento = matchMedia("(prefers-reduced-motion: reduce)");
+
+function crearPastilla(par) {
+  const boton = document.createElement("button");
+  boton.type = "button";
+  boton.className = "reciente is-nueva";
+  boton.dataset.par = `${par.from}${par.to}`;
+  boton.setAttribute("aria-label", `Cambiar a ${nombreDe(par.from)} → ${nombreDe(par.to)}`);
+
+  const de = document.createElement("span");
+  de.textContent = par.from;
+  const flecha = document.createElement("span");
+  flecha.className = "reciente__flecha";
+  flecha.setAttribute("aria-hidden", "true");
+  flecha.textContent = "→";
+  const a = document.createElement("span");
+  a.textContent = par.to;
+
+  boton.append(de, flecha, a);
+  boton.addEventListener("click", () => onReciente(par));
+  // Si no la quito, al reordenar vuelve a entrar con rebote: sacar un nodo del
+  // DOM y meterlo otra vez reinicia sus animaciones.
+  boton.addEventListener("animationend", () => boton.classList.remove("is-nueva"));
+  return boton;
+}
+
+function pintarRecientes() {
+  const visibles = recientesVisibles(recientes, el.from.value, el.to.value);
+
+  const antes = new Map();
+  for (const p of el.recientes.children) antes.set(p.dataset.par, p.getBoundingClientRect());
+
+  const pastillas = visibles.map((par, i) => {
+    const vieja = el.recientes.querySelector(`[data-par="${par.from}${par.to}"]`);
+    const pastilla = vieja ?? crearPastilla(par);
+    pastilla.style.setProperty("--i", i);
+    return pastilla;
+  });
+  el.recientes.replaceChildren(...pastillas);
+  el.recientes.hidden = pastillas.length === 0;
+
+  if (sinMovimiento.matches) return;
+
+  // Las que ya estaban se deslizan desde donde estaban hasta su sitio nuevo, en
+  // vez de saltar de golpe.
+  for (const pastilla of pastillas) {
+    const donde = antes.get(pastilla.dataset.par);
+    if (!donde) continue;
+    const ahora = pastilla.getBoundingClientRect();
+    const dx = donde.left - ahora.left;
+    const dy = donde.top - ahora.top;
+    if (dx === 0 && dy === 0) continue;
+    pastilla.animate(
+      [{ transform: `translate(${dx}px, ${dy}px)` }, { transform: "none" }],
+      { duration: 380, easing: "cubic-bezier(0.16, 1, 0.3, 1)" },
+    );
+  }
+}
+
+function apuntarPar() {
+  recientes = apuntarReciente(recientes, el.from.value, el.to.value);
+  guardarRecientes();
+  pintarRecientes();
+}
+
+function onReciente(par) {
+  buscadores.from.poner(par.from);
+  buscadores.to.poner(par.to);
+  restartAnimation(el.from, "is-cambiado");
+  restartAnimation(el.to, "is-cambiado");
+  onCurrencyChange();
+}
+
 async function cargarRango() {
   try {
     const guardado = await chrome.storage.local.get(RANGO_KEY);
@@ -673,6 +768,7 @@ function onRango(event) {
 
 function onCurrencyChange() {
   savePair(el.from.value, el.to.value);
+  apuntarPar();
   refresh();
 }
 
@@ -691,10 +787,16 @@ function bindEvents() {
 }
 
 async function init() {
-  const [pair, rango] = await Promise.all([loadPair(), cargarRango()]);
+  const [pair, rango, guardados] = await Promise.all([
+    loadPair(), cargarRango(), cargarRecientes(),
+  ]);
   dias = rango;
   marcarRango();
   populateSelects(pair);
+  // El par de ahora entra en la lista, pero no lo guardo hasta que cambies:
+  // abrir el popup no es elegir nada.
+  recientes = apuntarReciente(guardados, pair.from, pair.to);
+  pintarRecientes();
   bindEvents();
   onAmountInput();
   refresh();

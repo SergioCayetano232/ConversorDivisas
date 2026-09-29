@@ -118,6 +118,29 @@ function startDateFor(days) {
   return isoLocal(date);
 }
 
+// Guardo uno más de los que enseño, porque el par que tienes puesto está en la
+// lista pero no sale como pastilla.
+const RECIENTES_MAX = 5;
+
+function apuntarReciente(lista, from, to) {
+  if (from === to) return lista;
+  const resto = lista.filter((p) => p.from !== from || p.to !== to);
+  return [{ from, to }, ...resto].slice(0, RECIENTES_MAX);
+}
+
+// Lo que venga del almacenamiento no me lo creo: puede no existir (versiones
+// de antes) o traer una divisa que ya he quitado del array.
+function leerRecientes(guardado) {
+  if (!Array.isArray(guardado)) return [];
+  return guardado
+    .filter((p) => p && isValidCode(p.from) && isValidCode(p.to) && p.from !== p.to)
+    .slice(0, RECIENTES_MAX);
+}
+
+function recientesVisibles(lista, from, to) {
+  return lista.filter((p) => p.from !== from || p.to !== to).slice(0, RECIENTES_MAX - 1);
+}
+
 function errorMessageFor(error) {
   if (error.name === "AbortError") {
     return "La conexión ha tardado demasiado.";
@@ -137,5 +160,6 @@ if (typeof module !== "undefined") {
   module.exports = {
     CURRENCIES, isValidCode, nombreDe, parseAmount, isoLocal, hoy, isFresh,
     normalizar, filtrarDivisas, buildPaths, startDateFor, errorMessageFor,
+    RECIENTES_MAX, apuntarReciente, leerRecientes, recientesVisibles,
   };
 }
