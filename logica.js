@@ -115,6 +115,19 @@ function buildPaths(values) {
   return { line, area };
 }
 
+// Lo que mide la línea ya estirada en pantalla. Con non-scaling-stroke el guion
+// de la animación va en píxeles, y getTotalLength da unidades del viewBox: se
+// quedaba en 104 para una línea de 266 px y dejaba un hueco en medio.
+function largoEnPantalla(puntos, ancho, alto) {
+  const sx = ancho / 100;
+  const sy = alto / 28;
+  let total = 0;
+  for (let i = 1; i < puntos.length; i++) {
+    total += Math.hypot((puntos[i].x - puntos[i - 1].x) * sx, (puntos[i].y - puntos[i - 1].y) * sy);
+  }
+  return total;
+}
+
 // Lo contrario de coordenadas: de una x del viewBox al punto más cercano.
 function indiceCercano(x, total) {
   if (total < 2) return 0;
@@ -193,6 +206,6 @@ if (typeof module !== "undefined") {
     CURRENCIES, isValidCode, nombreDe, parseAmount, isoLocal, hoy, isFresh,
     normalizar, filtrarDivisas, buildPaths, startDateFor, errorMessageFor,
     RECIENTES_MAX, apuntarReciente, leerRecientes, recientesVisibles,
-    coordenadas, indiceCercano, extremos, fechaCorta,
+    coordenadas, indiceCercano, extremos, fechaCorta, largoEnPantalla,
   };
 }

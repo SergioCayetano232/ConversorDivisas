@@ -440,11 +440,6 @@ function renderTrend(puntos) {
   el.trendLine.setAttribute("d", line);
   el.trendArea.setAttribute("d", area);
 
-  // La animación de dibujo necesita saber lo que mide la línea, y eso solo lo
-  // sabe el SVG una vez tiene el path puesto.
-  el.trendLine.style.setProperty("--len", el.trendLine.getTotalLength());
-  restartAnimation(el.trendLine);
-
   const first = values[0];
   const last = values[values.length - 1];
   const change = first === 0 ? 0 : (last - first) / first;
@@ -454,6 +449,13 @@ function renderTrend(puntos) {
   el.trendChange.classList.toggle("is-down", change < 0);
 
   el.trend.hidden = false;
+
+  // Se mide ya visible: con el gráfico oculto el SVG tiene ancho cero. El +1
+  // es para que el redondeo no deje una rendija al final.
+  const { width, height } = el.trendLine.ownerSVGElement.getBoundingClientRect();
+  el.trendLine.style.setProperty("--len", Math.ceil(largoEnPantalla(coords, width, height)) + 1);
+  restartAnimation(el.trendLine);
+
   pintarExtremos(values);
 }
 

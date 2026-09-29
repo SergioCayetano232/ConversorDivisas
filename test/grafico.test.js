@@ -1,6 +1,8 @@
 const { test } = require("node:test");
 const assert = require("node:assert");
-const { buildPaths, coordenadas, indiceCercano, extremos, fechaCorta } = require("../logica.js");
+const {
+  buildPaths, coordenadas, indiceCercano, extremos, fechaCorta, largoEnPantalla,
+} = require("../logica.js");
 
 // Saca los pares x,y de un path "M1.50,3.00L6.12,6.18L..."
 function puntos(d) {
@@ -99,4 +101,24 @@ test("fechaCorta no se va al día anterior", () => {
   for (const iso of ["2026-01-01", "2026-03-01", "2026-10-25"]) {
     assert.ok(fechaCorta(iso).startsWith(String(Number(iso.slice(8)))), iso);
   }
+});
+
+test("largoEnPantalla mide la línea estirada", () => {
+  // Plana de x=1.5 a x=98.5: 97 unidades, que en 266 px de ancho son 258 px.
+  const plana = coordenadas([5, 5, 5]);
+  assert.ok(Math.abs(largoEnPantalla(plana, 266, 40) - 97 * 2.66) < 0.01);
+});
+
+test("sin estirar coincide con lo que mide el viewBox", () => {
+  const p = [{ x: 0, y: 0 }, { x: 3, y: 4 }, { x: 3, y: 10 }];
+  assert.equal(largoEnPantalla(p, 100, 28), 11);
+});
+
+test("con una línea que sube, estirar el alto también cuenta", () => {
+  const p = [{ x: 0, y: 28 }, { x: 0, y: 0 }];
+  assert.equal(largoEnPantalla(p, 266, 40), 40);
+});
+
+test("con un solo punto mide cero", () => {
+  assert.equal(largoEnPantalla([{ x: 50, y: 14 }], 266, 40), 0);
 });
