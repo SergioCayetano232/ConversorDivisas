@@ -25,6 +25,10 @@ que necesitaba una conversión rápida. Ahora es un clic en la barra del navegad
   tasa de cada día, y marca el máximo y el mínimo del periodo
 - En la pestaña de al lado, la misma cantidad en otras divisas a la vez (hasta
   cinco, las eliges tú). Pulsando una la pones como destino
+- Una chuleta de viaje en otra pestaña: 1, 5, 10, 20, 50 y 100 en las dos
+  divisas, para mirar precios de un vistazo. Si la divisa es muy pequeña (yenes,
+  rupias…) empieza en 100 o en 10.000, que si no la tabla no sirve. Pulsando una
+  fila la pones como cantidad
 - Recuerda la última pareja de divisas, el periodo del gráfico, la pestaña y
   las divisas que tienes puestas
 - Guarda las tasas del día, así que al abrirlo ya está el número puesto
@@ -36,7 +40,7 @@ que necesitaba una conversión rápida. Ahora es un clic en la barra del navegad
   cerrado. Hasta cuatro a la vez
 - Se abre con `Ctrl+Shift+U` (en Mac, `Cmd+Shift+U`)
 - Atajos dentro del popup: `S` da la vuelta al par, `C` copia, `D` y `A` abren
-  los desplegables y `1`, `2`, `3` cambian de pestaña. Si estás escribiendo en
+  los desplegables y del `1` al `4` cambian de pestaña. Si estás escribiendo en
   un campo, con `Alt` delante (`⌥` en Mac). Con `?` salen todos
 - Tiene modo claro y oscuro, según cómo tengas el sistema
 - Si algo falla te dice qué ha pasado, no se queda en blanco

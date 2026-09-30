@@ -42,6 +42,8 @@ const el = {
   avisoBoton: document.getElementById("aviso-boton"),
   avisosLista: document.getElementById("avisos-lista"),
   avisoNota: document.getElementById("aviso-nota"),
+  chuleta: document.getElementById("chuleta"),
+  chuletaTabla: document.getElementById("chuleta-tabla"),
   campana: document.getElementById("vista-avisos"),
   abrirAyuda: document.getElementById("abrir-ayuda"),
   ayuda: document.getElementById("ayuda"),
@@ -101,6 +103,10 @@ const nfRate = new Intl.NumberFormat("es-ES", {
   minimumFractionDigits: 4,
   maximumFractionDigits: 4,
 });
+
+// Sin "always" el español deja "1000" sin punto pero "10.000" con él, y en la
+// tabla quedaba raro uno debajo del otro.
+const nfEntero = new Intl.NumberFormat("es-ES", { maximumFractionDigits: 0, useGrouping: "always" });
 
 const nfPercent = new Intl.NumberFormat("es-ES", {
   style: "percent",
@@ -628,6 +634,7 @@ function pintarVista() {
   el.trendControles.hidden = !(enEvolucion && hayGrafico);
   el.extras.hidden = vista !== "extras";
   el.avisos.hidden = vista !== "avisos";
+  el.chuleta.hidden = vista !== "chuleta";
   el.vistas.dataset.vista = vista;
   for (const boton of el.botonesVista) {
     const suya = boton.dataset.vista === vista;
@@ -653,6 +660,9 @@ function cambiarVista(nueva) {
     for (const pastilla of el.avisosLista.children) pastilla.classList.add("is-nueva");
     restartAnimation(el.avisos);
   }
+  if (vista === "chuleta") {
+    for (const fila of el.chuletaTabla.children) fila.classList.add("is-nueva");
+  }
   try {
     chrome.storage.local.set({ [VISTA_KEY]: vista });
   } catch (error) {
@@ -662,7 +672,7 @@ function cambiarVista(nueva) {
 
 // El patrón de pestañas de siempre: con las flechas cambias, y el foco va con
 // la pestaña elegida.
-const VISTAS = ["evolucion", "extras", "avisos"];
+const VISTAS = ["evolucion", "extras", "avisos", "chuleta"];
 
 function onTeclaVistas(event) {
   if (event.key !== "ArrowLeft" && event.key !== "ArrowRight") return;
@@ -876,6 +886,64 @@ function onAnadirExtra(code) {
   el.rejilla.querySelector(`[data-code="${code}"] .extra__elegir`)?.focus();
 }
 
+function crearFilaChuleta() {
+  const fila = document.createElement("li");
+  fila.className = "chuleta__fila is-nueva";
+  const boton = document.createElement("button");
+  boton.type = "button";
+  boton.className = "chuleta__boton";
+  boton.innerHTML =
+    '<span class="chuleta__cantidad"></span><span class="chuleta__flecha" aria-hidden="true">→</span><span class="chuleta__valor"></span>';
+  boton.addEventListener("click", () => onElegirChuleta(Number(fila.dataset.cantidad)));
+  fila.append(boton);
+  fila.addEventListener("animationend", (event) => {
+    if (event.target === fila) fila.classList.remove("is-nueva");
+  });
+  const valor = boton.querySelector(".chuleta__valor");
+  valor.addEventListener("animationend", () => valor.classList.remove("is-tic"));
+  return fila;
+}
+
+function pintarChuleta() {
+  const from = el.from.value;
+  const to = el.to.value;
+  const filas = chuleta(rate);
+  const tuya = cantidadOrigen();
+  if (el.chuletaTabla.children.length !== filas.length) {
+    el.chuletaTabla.replaceChildren(...filas.map(crearFilaChuleta));
+  }
+  // Si cambia la escala (de euros a yenes, por ejemplo) es otra tabla: que
+  // entre de nuevo en cascada en vez de cambiar los números sin más.
+  const otraEscala = el.chuletaTabla.dataset.primera !== String(filas[0].cantidad);
+  el.chuletaTabla.dataset.primera = filas[0].cantidad;
+
+  filas.forEach(({ cantidad, valor }, i) => {
+    const fila = el.chuletaTabla.children[i];
+    fila.style.setProperty("--i", i);
+    fila.dataset.cantidad = cantidad;
+    if (otraEscala && !el.chuleta.hidden) restartAnimation(fila, "is-nueva");
+    fila.classList.toggle("is-tuya", tuya !== null && Math.abs(tuya - cantidad) < 1e-9);
+
+    const texto = valor === null ? "—" : nf.format(valor);
+    fila.querySelector(".chuleta__cantidad").textContent = nfEntero.format(cantidad);
+    const cifra = fila.querySelector(".chuleta__valor");
+    if (cifra.textContent !== texto) {
+      cifra.textContent = texto;
+      if (!otraEscala && texto !== "—") restartAnimation(cifra, "is-tic");
+    }
+    fila.querySelector("button").setAttribute(
+      "aria-label",
+      `${nfEntero.format(cantidad)} ${from} son ${texto} ${to}. Ponerlo como cantidad`,
+    );
+  });
+}
+
+function onElegirChuleta(cantidad) {
+  el.amount.value = nfEntero.format(cantidad);
+  restartAnimation(el.amount, "is-cambiado");
+  onAmountInput();
+}
+
 async function guardarAvisos() {
   try {
     await chrome.storage.local.set({ [AVISOS_KEY]: avisos });
@@ -1034,6 +1102,7 @@ const QUE_HACE = {
   "vista:evolucion": "Ver el gráfico",
   "vista:extras": "Ver otras divisas",
   "vista:avisos": "Ver los avisos",
+  "vista:chuleta": "Ver la chuleta de viaje",
   ayuda: "Esta ayuda",
 };
 
@@ -1185,6 +1254,7 @@ function renderResult() {
 
   pintarExtras();
   pintarSentidoAviso();
+  pintarChuleta();
 
   if (valor === null) {
     destino.value = "—";
@@ -1280,6 +1350,7 @@ async function refresh() {
     el.resultMeta.textContent = "";
     el.rateLine.textContent = "";
     el.updated.textContent = "";
+    pintarChuleta();
     hideTrend();
     showError(errorMessageFor(error));
   } finally {

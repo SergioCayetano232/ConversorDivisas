@@ -855,7 +855,8 @@ body::after {
 }
 
 .trend,
-.extras {
+.extras,
+.chuleta {
   animation: enter var(--mid) var(--ease-out);
 }
 
@@ -896,6 +897,10 @@ body::after {
 
 .vistas[data-vista="avisos"] .vistas__pildora {
   transform: translateX(56px);
+}
+
+.vistas[data-vista="chuleta"] .vistas__pildora {
+  transform: translateX(84px);
 }
 
 /* El punto de la campana cuando hay avisos puestos. */
@@ -1065,7 +1070,8 @@ body::after {
   outline-offset: 1px;
 }
 
-.extra__valor.is-tic {
+.extra__valor.is-tic,
+.chuleta__valor.is-tic {
   animation: tic 260ms var(--ease-out);
 }
 
@@ -1141,6 +1147,127 @@ body::after {
 
 /* Mismo alto que la rejilla y que el gráfico: la línea del formulario y dos
    filas de pastillas. */
+/* Mismo alto que la rejilla de extras. Va por columnas para que se lea de
+   arriba abajo: 1, 5, 10 a la izquierda y 20, 50, 100 a la derecha. */
+.chuleta {
+  margin-top: var(--s-2);
+}
+
+.chuleta__tabla {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  grid-template-rows: repeat(3, 19px);
+  grid-auto-flow: column;
+  gap: 3px 6px;
+  list-style: none;
+}
+
+.chuleta__fila {
+  min-width: 0;
+}
+
+.chuleta__fila.is-nueva {
+  animation: pop var(--mid) var(--ease-spring) backwards;
+  animation-delay: calc(var(--i, 0) * 40ms);
+}
+
+.chuleta__boton {
+  position: relative;
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  gap: 5px;
+  width: 100%;
+  height: 100%;
+  padding: 0 var(--s-2);
+  overflow: hidden;
+  background: var(--slate);
+  border: 1px solid var(--hairline);
+  border-radius: 6px;
+  color: var(--mist);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: border-color var(--fast) var(--ease), background-color var(--fast) var(--ease),
+    transform var(--fast) var(--ease-spring);
+}
+
+.chuleta__cantidad {
+  font-weight: 600;
+  color: var(--muted);
+  transition: color var(--fast) var(--ease);
+}
+
+.chuleta__flecha {
+  font-size: 9px;
+  color: var(--brass-dim);
+  transition: transform var(--fast) var(--ease-spring), color var(--fast) var(--ease);
+}
+
+.chuleta__valor {
+  display: inline-block;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  text-align: right;
+}
+
+.chuleta__boton:hover {
+  border-color: var(--brass-dim);
+  background: var(--brass-ghost);
+  transform: translateY(-1px);
+}
+
+.chuleta__boton:hover .chuleta__cantidad {
+  color: var(--brass);
+}
+
+.chuleta__boton:hover .chuleta__flecha {
+  color: var(--brass);
+  transform: translateX(2px);
+}
+
+.chuleta__boton:active {
+  transform: scale(0.96);
+}
+
+.chuleta__boton:focus-visible {
+  outline: 2px solid var(--brass);
+  outline-offset: 1px;
+}
+
+/* La fila de la cantidad que tienes escrita arriba, con un brillo que la
+   recorre al encenderse. */
+.chuleta__fila.is-tuya .chuleta__boton {
+  border-color: var(--brass-dim);
+  background: var(--brass-ghost);
+  box-shadow: 0 0 10px -3px var(--brass-glow);
+}
+
+.chuleta__fila.is-tuya .chuleta__cantidad,
+.chuleta__fila.is-tuya .chuleta__flecha,
+.chuleta__fila.is-tuya .chuleta__valor {
+  color: var(--brass);
+}
+
+.chuleta__fila.is-tuya .chuleta__boton::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(100deg, transparent 30%, var(--sheen) 50%, transparent 70%);
+  transform: translateX(-100%);
+  animation: barrido 700ms var(--ease-out);
+  pointer-events: none;
+}
+
+@keyframes barrido {
+  to {
+    transform: translateX(100%);
+  }
+}
+
 .avisos {
   position: relative;
   height: 63px;
@@ -2036,6 +2163,7 @@ kbd {
      invisibles un rato. */
   .reciente.is-nueva,
   .extra.is-nueva,
+  .chuleta__fila.is-nueva,
   .aviso.is-nueva,
   .ayuda__fila,
   .bandeja__opcion,

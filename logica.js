@@ -365,6 +365,24 @@ function convertirExtras(cantidad, tasas, codes) {
   }));
 }
 
+const CHULETA = [1, 5, 10, 20, 50, 100];
+
+// Con yenes o rupias una tabla de 1 a 100 no sirve para nada (100 JPY son
+// céntimos), así que la subo de diez en diez hasta que la primera fila valga
+// al menos medio en la otra divisa.
+function escalaChuleta(rate) {
+  if (!Number.isFinite(rate) || rate <= 0) return 1;
+  let escala = 1;
+  while (escala * rate < 0.5) escala *= 10;
+  return escala;
+}
+
+function chuleta(rate) {
+  const escala = escalaChuleta(rate);
+  const hay = Number.isFinite(rate) && rate > 0;
+  return CHULETA.map((n) => ({ cantidad: n * escala, valor: hay ? n * escala * rate : null }));
+}
+
 // En una web cualquiera no sé si "1.234" son mil o uno con algo, así que no
 // vale parseAmount. Regla: si hay punto y coma, el último es el decimal; si solo
 // hay uno y lleva tres cifras detrás, son miles.
@@ -575,6 +593,7 @@ const ATAJOS = {
   Digit1: "vista:evolucion",
   Digit2: "vista:extras",
   Digit3: "vista:avisos",
+  Digit4: "vista:chuleta",
   KeyH: "ayuda",
 };
 
@@ -617,7 +636,7 @@ if (typeof module !== "undefined") {
     coordenadas, indiceCercano, extremos, fechaCorta, largoEnPantalla,
     leerNumero, divisaDe, leerSeleccion, destinoPara,
     EXTRAS_MAX, EXTRAS_POR_DEFECTO, leerExtras, anadirExtra, quitarExtra,
-    extrasVisibles, disponiblesParaAnadir, convertirExtras,
+    extrasVisibles, disponiblesParaAnadir, convertirExtras, CHULETA, escalaChuleta, chuleta,
     textoInsignia, cambioDiario, sentidoDe, tituloInsignia,
     AVISOS_MAX, sentidoAviso, crearAviso, leerAvisos, avisoCumplido, repartirAvisos, mensajeAviso,
     ATAJOS, atajoPara, textoAtajo,
