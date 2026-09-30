@@ -315,8 +315,9 @@ function textoMomento(m, dias, from, to) {
   const detalle = pct < 0.05
     ? "en la media"
     : `${nfMomento.format(pct)} % ${m.diferencia > 0 ? "sobre" : "bajo"} la media`;
+  const periodo = dias === 365 ? "del último año" : `de los últimos ${dias}`;
   const explicacion = `Hoy la tasa es mejor que el ${Math.round(m.posicion * 100)} % de los días `
-    + `de los últimos ${dias}. Cuanto más alta, más ${to} te dan por cada ${from}.`;
+    + `${periodo}. Cuanto más alta, más ${to} te dan por cada ${from}.`;
   return { titulo: TITULOS_MOMENTO[m.veredicto], detalle, explicacion };
 }
 
@@ -324,9 +325,21 @@ const nfFecha = new Intl.DateTimeFormat("es-ES", { day: "numeric", month: "short
 
 // new Date("2026-09-29") lo lee como medianoche en UTC, y en América eso
 // todavía es el día 28. Montándola a mano sale el día que pone.
-function fechaCorta(iso) {
+// Con el gráfico de un año, "3 oct" puede ser de este o del pasado: el año solo
+// cuando no es el de ahora, que si no sobra.
+function fechaCorta(iso, anoActual = new Date().getFullYear()) {
   const [a, m, d] = iso.split("-").map(Number);
-  return nfFecha.format(new Date(a, m - 1, d)).replace(".", "");
+  const corta = nfFecha.format(new Date(a, m - 1, d)).replace(".", "");
+  return a === anoActual ? corta : `${corta} ${a}`;
+}
+
+// En días, que es lo que pide la API. El año son 365 y no "un año atrás
+// exacto": los bisiestos dan igual para un gráfico.
+const RANGOS = [7, 30, 90, 365];
+const RANGO_POR_DEFECTO = 30;
+
+function leerRango(guardado) {
+  return RANGOS.includes(guardado) ? guardado : RANGO_POR_DEFECTO;
 }
 
 // El primer día que publicó el BCE; antes la API contesta "not found".
@@ -743,7 +756,7 @@ if (typeof module !== "undefined") {
     evaluar, completar, leerImporte, esOperacion,
     normalizar, filtrarDivisas, buildPaths, startDateFor, errorMessageFor,
     RECIENTES_MAX, apuntarReciente, leerRecientes, recientesVisibles,
-    coordenadas, alturaEn, MOMENTO_UMBRAL, momento, textoMomento, indiceCercano, extremos, fechaCorta, largoEnPantalla,
+    RANGOS, RANGO_POR_DEFECTO, leerRango, coordenadas, alturaEn, MOMENTO_UMBRAL, momento, textoMomento, indiceCercano, extremos, fechaCorta, largoEnPantalla,
     leerNumero, divisaDe, leerSeleccion, destinoPara,
     EXTRAS_MAX, EXTRAS_POR_DEFECTO, leerExtras, anadirExtra, quitarExtra,
     extrasVisibles, disponiblesParaAnadir, convertirExtras, CHULETA, escalaChuleta, chuleta,

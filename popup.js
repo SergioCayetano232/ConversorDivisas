@@ -1,7 +1,5 @@
 const API = "https://api.frankfurter.dev/v1/latest";
 const API_HISTORY = "https://api.frankfurter.dev/v1";
-const RANGOS = [7, 30, 90];
-const RANGO_POR_DEFECTO = 30;
 
 const DEFAULTS = { from: "EUR", to: "USD" };
 
@@ -66,6 +64,7 @@ const el = {
   teclaFlash: document.getElementById("tecla-flash"),
   trendChange: document.getElementById("trend-change"),
   rangos: document.querySelectorAll(".rango"),
+  grupoRangos: document.getElementById("rangos"),
   trendLine: document.getElementById("trend-line"),
   trendArea: document.getElementById("trend-area"),
   recientes: document.getElementById("recientes"),
@@ -1901,8 +1900,7 @@ function onReciente(par) {
 async function cargarRango() {
   try {
     const guardado = await chrome.storage.local.get(RANGO_KEY);
-    const valor = guardado[RANGO_KEY];
-    if (RANGOS.includes(valor)) return valor;
+    return leerRango(guardado[RANGO_KEY]);
   } catch (error) {
     console.warn("No se pudo leer el rango", error);
   }
@@ -1918,6 +1916,7 @@ async function guardarRango(valor) {
 }
 
 function marcarRango() {
+  el.grupoRangos.style.setProperty("--indice", RANGOS.indexOf(dias));
   for (const boton of el.rangos) {
     const suyo = Number(boton.dataset.dias) === dias;
     boton.classList.toggle("is-activo", suyo);

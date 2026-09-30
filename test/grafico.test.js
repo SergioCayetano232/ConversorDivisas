@@ -91,15 +91,21 @@ test("con valores repetidos se queda con el primero", () => {
 });
 
 test("fechaCorta da día y mes, sin punto", () => {
-  assert.equal(fechaCorta("2026-01-05"), "5 ene");
-  assert.equal(fechaCorta("2026-09-29"), "29 sept");
-  assert.ok(!fechaCorta("2026-12-31").includes("."));
+  assert.equal(fechaCorta("2026-01-05", 2026), "5 ene");
+  assert.equal(fechaCorta("2026-09-29", 2026), "29 sept");
+  assert.ok(!fechaCorta("2026-12-31", 2026).includes("."));
+});
+
+test("fechaCorta pone el año solo si no es el de ahora", () => {
+  assert.equal(fechaCorta("2025-10-03", 2026), "3 oct 2025");
+  assert.equal(fechaCorta("2026-10-03", 2026), "3 oct");
+  assert.equal(fechaCorta(`${new Date().getFullYear()}-03-01`), "1 mar", "por defecto, el año de hoy");
 });
 
 test("fechaCorta no se va al día anterior", () => {
   // Con new Date(iso) en una zona al oeste de UTC salía el 31 de diciembre.
   for (const iso of ["2026-01-01", "2026-03-01", "2026-10-25"]) {
-    assert.ok(fechaCorta(iso).startsWith(String(Number(iso.slice(8)))), iso);
+    assert.ok(fechaCorta(iso, 2026).startsWith(String(Number(iso.slice(8)))), iso);
   }
 });
 

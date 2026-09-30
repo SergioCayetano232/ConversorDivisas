@@ -222,10 +222,12 @@
               </button>
             </div>
             <div class="trend__controles" id="trend-controles" hidden>
-              <div class="rangos" role="group" aria-label="Periodo del gráfico">
-                <button class="rango" type="button" data-dias="7">7D</button>
-                <button class="rango" type="button" data-dias="30">30D</button>
-                <button class="rango" type="button" data-dias="90">90D</button>
+              <div class="rangos" id="rangos" role="group" aria-label="Periodo del gráfico">
+                <span class="rangos__pildora" aria-hidden="true"></span>
+                <button class="rango" type="button" data-dias="7" title="7 días" aria-label="7 días">7D</button>
+                <button class="rango" type="button" data-dias="30" title="1 mes" aria-label="1 mes">1M</button>
+                <button class="rango" type="button" data-dias="90" title="3 meses" aria-label="3 meses">3M</button>
+                <button class="rango" type="button" data-dias="365" title="1 año" aria-label="1 año">1A</button>
               </div>
               <span class="trend__change" id="trend-change"></span>
             </div>

@@ -2087,6 +2087,7 @@ body::after {
 }
 
 .rangos {
+  position: relative;
   display: flex;
   gap: 2px;
   padding: 2px;
@@ -2095,8 +2096,24 @@ body::after {
   border-radius: var(--r-sm);
 }
 
+/* Los cuatro miden lo mismo, así la píldora solo tiene que saltar de 20 en 20. */
+.rangos__pildora {
+  position: absolute;
+  top: 2px;
+  bottom: 2px;
+  left: 2px;
+  width: 18px;
+  border-radius: 5px;
+  background: var(--brass);
+  box-shadow: 0 0 10px -2px var(--brass-glow);
+  transform: translateX(calc(var(--indice, 1) * 20px));
+  transition: transform var(--mid) var(--ease-spring);
+}
+
 .rango {
-  padding: 2px 4px;
+  position: relative;
+  width: 18px;
+  padding: 2px 0;
   background: transparent;
   border: none;
   border-radius: 5px;
@@ -2106,7 +2123,12 @@ body::after {
   font-weight: 600;
   letter-spacing: 0.04em;
   cursor: pointer;
-  transition: color var(--fast) var(--ease), background-color var(--fast) var(--ease);
+  transition: color var(--fast) var(--ease), background-color var(--fast) var(--ease),
+    transform var(--fast) var(--ease-spring);
+}
+
+.rango:active {
+  transform: scale(0.9);
 }
 
 .rango:hover:not(.is-activo) {
@@ -2116,7 +2138,6 @@ body::after {
 
 .rango.is-activo {
   color: var(--graphite);
-  background: var(--brass);
 }
 
 .rango:focus-visible {

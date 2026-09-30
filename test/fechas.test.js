@@ -27,7 +27,7 @@ test("una entrada vieja o rota no lo está", () => {
 });
 
 test("startDateFor cuenta hacia atrás en formato ISO", () => {
-  for (const dias of [7, 30, 90]) {
+  for (const dias of [7, 30, 90, 365]) {
     const esperado = new Date();
     esperado.setDate(esperado.getDate() - dias);
     assert.equal(startDateFor(dias), isoLocal(esperado));

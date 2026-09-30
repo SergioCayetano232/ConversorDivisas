@@ -55,6 +55,11 @@ test("el texto dice por encima o por debajo", () => {
   assert.equal(abajo.detalle, "0,9 % bajo la media");
 });
 
+test("con el año no dice 'los últimos 365'", () => {
+  const t = textoMomento({ veredicto: "bueno", diferencia: 0.02, posicion: 0.9 }, 365, "EUR", "USD");
+  assert.match(t.explicacion, /de los días del último año\./);
+});
+
 test("casi en la media lo dice así", () => {
   const t = textoMomento({ veredicto: "normal", diferencia: 0.0004, posicion: 0.5 }, 90, "EUR", "USD");
   assert.equal(t.titulo, "Momento normal");
