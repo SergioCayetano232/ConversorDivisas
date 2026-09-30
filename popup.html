@@ -21,7 +21,7 @@
       <form id="converter-form" novalidate>
 
         <div class="field">
-          <label class="field__label" for="amount">Cantidad</label>
+          <label class="field__label" for="amount" data-t="cantidad">Cantidad</label>
           <div class="field__caja">
             <input
               class="field__input"
@@ -33,6 +33,7 @@
               spellcheck="false"
               value="1"
               title="También vale una cuenta: 20+15, 3*12,50, (40+60)/4, 100-15%"
+              data-t-title="cantidad.pista"
               aria-describedby="amount-error">
             <span class="calculo" id="calculo" aria-hidden="true"></span>
           </div>
@@ -41,7 +42,7 @@
 
         <div class="pair">
           <div class="field">
-            <span class="field__label" id="from-label">De</span>
+            <span class="field__label" id="from-label" data-t="de">De</span>
             <div class="buscador" id="from-caja">
               <button
                 class="field__select buscador__boton"
@@ -58,7 +59,9 @@
                   placeholder="Buscar divisa"
                   autocomplete="off"
                   spellcheck="false"
-                  aria-label="Buscar divisa">
+                  aria-label="Buscar divisa"
+                  data-t-placeholder="buscar"
+                  data-t-aria-label="buscar">
                 <ul class="buscador__lista" id="from-lista" role="listbox"></ul>
               </div>
             </div>
@@ -68,12 +71,13 @@
             class="swap"
             type="button"
             id="swap"
-            aria-label="Intercambiar divisas">
+            aria-label="Intercambiar divisas"
+            data-t-aria-label="intercambiar">
             <span class="swap__icon" aria-hidden="true">⇄</span>
           </button>
 
           <div class="field">
-            <span class="field__label" id="to-label">A</span>
+            <span class="field__label" id="to-label" data-t="a">A</span>
             <div class="buscador" id="to-caja">
               <button
                 class="field__select buscador__boton"
@@ -90,7 +94,9 @@
                   placeholder="Buscar divisa"
                   autocomplete="off"
                   spellcheck="false"
-                  aria-label="Buscar divisa">
+                  aria-label="Buscar divisa"
+                  data-t-placeholder="buscar"
+                  data-t-aria-label="buscar">
                 <ul class="buscador__lista" id="to-lista" role="listbox"></ul>
               </div>
             </div>
@@ -99,11 +105,11 @@
 
       </form>
 
-      <div class="recientes" id="recientes" role="group" aria-label="Pares recientes" hidden></div>
+      <div class="recientes" id="recientes" role="group" aria-label="Pares recientes" data-t-aria-label="recientes" hidden></div>
 
       <section class="result" aria-labelledby="result-label">
         <div class="result__head">
-          <h2 class="result__label" id="result-label">Resultado</h2>
+          <h2 class="result__label" id="result-label" data-t="resultado">Resultado</h2>
           <div class="result__acciones">
             <button
               class="reloj"
@@ -113,7 +119,8 @@
               aria-expanded="false"
               aria-controls="historial"
               aria-label="Últimas conversiones"
-              title="Últimas conversiones">
+              title="Últimas conversiones"
+              data-t-title="historial">
               <svg viewBox="0 0 14 14" aria-hidden="true"><circle cx="7" cy="7" r="5.5"/><path class="reloj__agujas" d="M7 4v3l2 1.4"/></svg>
               <span class="reloj__cuenta" id="historial-cuenta" aria-hidden="true" hidden></span>
             </button>
@@ -121,18 +128,19 @@
               class="copiar"
               type="button"
               id="copiar"
-              aria-label="Copiar el resultado">
-              <span class="copiar__texto" id="copiar-texto">Copiar</span>
+              aria-label="Copiar el resultado"
+              data-t-aria-label="copiar.aria">
+              <span class="copiar__texto" id="copiar-texto" data-t="copiar">Copiar</span>
             </button>
           </div>
         </div>
         <div class="historial" id="historial" role="dialog" aria-labelledby="historial-titulo" hidden>
           <div class="historial__cabeza">
-            <p class="historial__titulo" id="historial-titulo">Últimas conversiones</p>
-            <button class="historial__borrar" type="button" id="historial-borrar">Borrar</button>
+            <p class="historial__titulo" id="historial-titulo" data-t="historial">Últimas conversiones</p>
+            <button class="historial__borrar" type="button" id="historial-borrar" data-t="historial.borrar">Borrar</button>
           </div>
           <ul class="historial__lista" id="historial-lista"></ul>
-          <p class="historial__vacio" id="historial-vacio">Aún no has convertido nada. Lo que conviertas irá saliendo aquí.</p>
+          <p class="historial__vacio" id="historial-vacio" data-t="historial.vacio">Aún no has convertido nada. Lo que conviertas irá saliendo aquí.</p>
         </div>
         <div class="result__row">
           <input
@@ -143,6 +151,7 @@
             autocomplete="off"
             spellcheck="false"
             aria-label="Cantidad convertida"
+            data-t-aria-label="resultado.aria"
             value="—">
           <span class="result__code" id="result-code" aria-hidden="true"></span>
         </div>
@@ -159,9 +168,9 @@
             <span class="comision__total" id="comision-total"></span>
           </button>
           <div class="burbuja" id="comision-burbuja" role="dialog" aria-labelledby="burbuja-titulo" hidden>
-            <p class="burbuja__titulo" id="burbuja-titulo">Comisión de tu banco</p>
+            <p class="burbuja__titulo" id="burbuja-titulo" data-t="comision.titulo">Comisión de tu banco</p>
             <div class="burbuja__fila">
-              <div class="burbuja__rapidas" id="comision-rapidas" role="group" aria-label="Comisiones habituales"></div>
+              <div class="burbuja__rapidas" id="comision-rapidas" role="group" aria-label="Comisiones habituales" data-t-aria-label="comision.rapidas"></div>
               <label class="burbuja__otra">
                 <input
                   class="burbuja__campo"
@@ -171,17 +180,19 @@
                   autocomplete="off"
                   spellcheck="false"
                   placeholder="otra"
-                  aria-label="Otra comisión, en tanto por ciento">
+                  aria-label="Otra comisión, en tanto por ciento"
+                  data-t-placeholder="comision.otra"
+                  data-t-aria-label="comision.otraAria">
                 <span aria-hidden="true">%</span>
               </label>
             </div>
-            <p class="burbuja__nota">Se suma a lo convertido. Las tarjetas suelen cobrar entre un 1 y un 3 %.</p>
+            <p class="burbuja__nota" data-t="comision.nota">Se suma a lo convertido. Las tarjetas suelen cobrar entre un 1 y un 3 %.</p>
           </div>
         </div>
 
         <div class="panel" id="panel">
           <div class="panel__head">
-            <div class="vistas" id="vistas" role="tablist" aria-label="Qué ver debajo del resultado" data-vista="evolucion">
+            <div class="vistas" id="vistas" role="tablist" aria-label="Qué ver debajo del resultado" data-t-aria-label="vistas" data-vista="evolucion">
               <span class="vistas__pildora" aria-hidden="true"></span>
               <button
                 class="vista is-activa"
@@ -191,7 +202,8 @@
                 data-vista="evolucion"
                 aria-selected="true"
                 aria-controls="trend"
-                title="Evolución de la tasa">
+                title="Evolución de la tasa"
+                data-t-title="vista.evolucion">
                 <svg viewBox="0 0 14 14" aria-hidden="true"><path d="M1 11l3.5-4 3 2L13 3"/></svg>
               </button>
               <button
@@ -203,7 +215,8 @@
                 aria-selected="false"
                 aria-controls="extras"
                 tabindex="-1"
-                title="Otras divisas">
+                title="Otras divisas"
+                data-t-title="vista.extras">
                 <svg viewBox="0 0 14 14" aria-hidden="true"><rect x="1.5" y="1.5" width="4.5" height="4.5" rx="1"/><rect x="8" y="1.5" width="4.5" height="4.5" rx="1"/><rect x="1.5" y="8" width="4.5" height="4.5" rx="1"/><rect x="8" y="8" width="4.5" height="4.5" rx="1"/></svg>
               </button>
               <button
@@ -215,7 +228,8 @@
                 aria-selected="false"
                 aria-controls="avisos"
                 tabindex="-1"
-                title="Avisos de tasa">
+                title="Avisos de tasa"
+                data-t-title="vista.avisos">
                 <svg viewBox="0 0 14 14" aria-hidden="true"><path d="M3.5 10V6.5a3.5 3.5 0 0 1 7 0V10l1 1h-9z"/><path d="M5.8 12.6a1.3 1.3 0 0 0 2.4 0"/></svg>
               </button>
               <button
@@ -227,7 +241,8 @@
                 aria-selected="false"
                 aria-controls="chuleta"
                 tabindex="-1"
-                title="Chuleta de viaje">
+                title="Chuleta de viaje"
+                data-t-title="vista.chuleta">
                 <svg viewBox="0 0 14 14" aria-hidden="true"><rect x="1.5" y="1.5" width="11" height="11" rx="2"/><path d="M1.5 5.2h11M1.5 8.8h11M7 1.5v11"/></svg>
               </button>
               <button
@@ -239,17 +254,18 @@
                 aria-selected="false"
                 aria-controls="fecha"
                 tabindex="-1"
-                title="Tasa de un día">
+                title="Tasa de un día"
+                data-t-title="vista.fecha">
                 <svg viewBox="0 0 14 14" aria-hidden="true"><rect x="1.5" y="2.5" width="11" height="10" rx="2"/><path d="M1.5 6h11M4.5 1v3M9.5 1v3"/><circle cx="9.3" cy="9.3" r="0.6"/></svg>
               </button>
             </div>
             <div class="trend__controles" id="trend-controles" hidden>
-              <div class="rangos" id="rangos" role="group" aria-label="Periodo del gráfico">
+              <div class="rangos" id="rangos" role="group" aria-label="Periodo del gráfico" data-t-aria-label="rangos">
                 <span class="rangos__pildora" aria-hidden="true"></span>
-                <button class="rango" type="button" data-dias="7" title="7 días" aria-label="7 días">7D</button>
-                <button class="rango" type="button" data-dias="30" title="1 mes" aria-label="1 mes">1M</button>
-                <button class="rango" type="button" data-dias="90" title="3 meses" aria-label="3 meses">3M</button>
-                <button class="rango" type="button" data-dias="365" title="1 año" aria-label="1 año">1A</button>
+                <button class="rango" type="button" data-dias="7" title="7 días" aria-label="7 días" data-t="rango.7" data-t-title="rango.7.largo" data-t-aria-label="rango.7.largo">7D</button>
+                <button class="rango" type="button" data-dias="30" title="1 mes" aria-label="1 mes" data-t="rango.30" data-t-title="rango.30.largo" data-t-aria-label="rango.30.largo">1M</button>
+                <button class="rango" type="button" data-dias="90" title="3 meses" aria-label="3 meses" data-t="rango.90" data-t-title="rango.90.largo" data-t-aria-label="rango.90.largo">3M</button>
+                <button class="rango" type="button" data-dias="365" title="1 año" aria-label="1 año" data-t="rango.365" data-t-title="rango.365.largo" data-t-aria-label="rango.365.largo">1A</button>
               </div>
               <span class="trend__change" id="trend-change"></span>
             </div>
@@ -260,7 +276,8 @@
               class="trend__lienzo"
               id="trend-lienzo"
               tabindex="0"
-              aria-label="Gráfico de la tasa. Con las flechas vas día a día.">
+              aria-label="Gráfico de la tasa. Con las flechas vas día a día."
+              data-t-aria-label="grafico">
               <svg
                 class="trend__chart"
                 id="trend-chart"
@@ -268,7 +285,7 @@
                 preserveAspectRatio="none"
                 role="img"
                 aria-labelledby="trend-desc">
-                <title id="trend-desc">Evolución de la tasa</title>
+                <title id="trend-desc" data-t="vista.evolucion">Evolución de la tasa</title>
                 <defs>
                   <linearGradient id="trend-fill" x1="0" y1="0" x2="0" y2="1">
                     <stop offset="0%" stop-color="var(--brass)" stop-opacity="0.28"></stop>
@@ -279,7 +296,7 @@
                 <line class="trend__media" id="trend-media" x1="1.5" x2="98.5" y1="14" y2="14"></line>
                 <path class="trend__line" id="trend-line" d=""></path>
               </svg>
-              <span class="trend__media-texto" id="media-texto" aria-hidden="true">media</span>
+              <span class="trend__media-texto" id="media-texto" aria-hidden="true" data-t="media">media</span>
               <span class="trend__marca trend__marca--max" id="marca-max" aria-hidden="true"></span>
               <span class="trend__marca trend__marca--min" id="marca-min" aria-hidden="true"></span>
               <span class="trend__guia" id="trend-guia" aria-hidden="true"></span>
@@ -298,8 +315,8 @@
           <div class="extras" id="extras" role="tabpanel" aria-labelledby="vista-extras" hidden>
             <ul class="extras__rejilla" id="extras-rejilla"></ul>
             <div class="bandeja" id="bandeja" hidden>
-              <div class="bandeja__opciones" id="bandeja-opciones" role="group" aria-label="Añadir divisa"></div>
-              <button class="bandeja__cerrar" type="button" id="bandeja-cerrar" aria-label="Cerrar">✕</button>
+              <div class="bandeja__opciones" id="bandeja-opciones" role="group" aria-label="Añadir divisa" data-t-aria-label="bandeja"></div>
+              <button class="bandeja__cerrar" type="button" id="bandeja-cerrar" aria-label="Cerrar" data-t-aria-label="cerrar">✕</button>
             </div>
           </div>
 
@@ -315,9 +332,9 @@
                 spellcheck="false"
                 aria-describedby="aviso-nota">
               <span class="aviso-form__codigo" id="aviso-codigo" aria-hidden="true"></span>
-              <button class="aviso-form__boton" type="submit" id="aviso-boton">Avisar</button>
+              <button class="aviso-form__boton" type="submit" id="aviso-boton" data-t="avisos.avisar">Avisar</button>
             </form>
-            <ul class="avisos__lista" id="avisos-lista" aria-label="Tus avisos"></ul>
+            <ul class="avisos__lista" id="avisos-lista" aria-label="Tus avisos" data-t-aria-label="avisos.lista"></ul>
             <p class="avisos__nota" id="aviso-nota" aria-live="polite"></p>
           </div>
 
@@ -327,8 +344,8 @@
 
           <div class="fecha" id="fecha" role="tabpanel" aria-labelledby="vista-fecha" hidden>
             <div class="fecha__fila">
-              <input class="fecha__campo" type="date" id="fecha-campo" aria-label="Día que quieres consultar">
-              <div class="fecha__rapidas" id="fecha-rapidas" role="group" aria-label="Hace cuánto"></div>
+              <input class="fecha__campo" type="date" id="fecha-campo" aria-label="Día que quieres consultar" data-t-aria-label="fecha.campo">
+              <div class="fecha__rapidas" id="fecha-rapidas" role="group" aria-label="Hace cuánto" data-t-aria-label="fecha.rapidas"></div>
             </div>
             <div class="fecha__fila" aria-live="polite">
               <span class="fecha__valor" id="fecha-valor">—</span>
@@ -346,17 +363,17 @@
 
       <div class="error" id="error" role="alert" hidden>
         <p class="error__message" id="error-message"></p>
-        <button class="error__retry" type="button" id="retry">Reintentar</button>
+        <button class="error__retry" type="button" id="retry" data-t="reintentar">Reintentar</button>
       </div>
 
     </main>
 
     <footer class="footer">
       <p class="footer__source">
-        Tasas de <a href="https://frankfurter.dev" target="_blank" rel="noopener noreferrer">Frankfurter</a>
+        <span data-t="pie.tasasDe">Tasas de</span> <a href="https://frankfurter.dev" target="_blank" rel="noopener noreferrer">Frankfurter</a>
       </p>
       <button class="footer__atajos" type="button" id="abrir-ayuda" aria-haspopup="dialog">
-        <span class="footer__tecla" aria-hidden="true">?</span> Atajos
+        <span class="footer__tecla" aria-hidden="true">?</span> <span data-t="atajos">Atajos</span>
       </button>
       <p class="footer__updated" id="updated"></p>
     </footer>
@@ -364,8 +381,8 @@
     <div class="ayuda" id="ayuda" hidden>
       <div class="ayuda__panel" role="dialog" aria-modal="true" aria-labelledby="ayuda-titulo">
         <div class="ayuda__cabeza">
-          <h2 class="ayuda__titulo" id="ayuda-titulo">Atajos de teclado</h2>
-          <button class="ayuda__cerrar" type="button" id="ayuda-cerrar" aria-label="Cerrar">✕</button>
+          <h2 class="ayuda__titulo" id="ayuda-titulo" data-t="ayuda.titulo">Atajos de teclado</h2>
+          <button class="ayuda__cerrar" type="button" id="ayuda-cerrar" aria-label="Cerrar" data-t-aria-label="cerrar">✕</button>
         </div>
         <ul class="ayuda__lista" id="ayuda-lista"></ul>
         <p class="ayuda__nota" id="ayuda-nota"></p>
@@ -376,6 +393,7 @@
 
   </div>
 
+  <script src="textos.js"></script>
   <script src="logica.js"></script>
   <script src="popup.js"></script>
 </body>

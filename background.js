@@ -1,13 +1,17 @@
 // El service worker no carga logica.js solo; importScripts sí vale porque no es
 // un módulo, igual que en el popup.
-importScripts("logica.js");
+importScripts("textos.js", "logica.js");
+
+ponerIdioma(idiomaPara(chrome.i18n.getUILanguage()));
 
 const API = "https://api.frankfurter.dev/v1/latest";
 const API_HISTORY = "https://api.frankfurter.dev/v1";
 const TIMEOUT_MS = 8000;
 
-const nf = new Intl.NumberFormat("es-ES", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-const nfRate = new Intl.NumberFormat("es-ES", { minimumFractionDigits: 4, maximumFractionDigits: 4 });
+// Pedidos en el momento y no guardados al arrancar: numeros() ya los cachea, y
+// así siguen el idioma aunque cambie con el service worker vivo.
+const nf = { format: (n) => numeros({ minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(n) };
+const nfRate = { format: (n) => numeros({ minimumFractionDigits: 4, maximumFractionDigits: 4 }).format(n) };
 
 chrome.runtime.onInstalled.addListener(async () => {
   // Al actualizar la extensión los menús de antes pueden seguir ahí, y crear
@@ -15,14 +19,14 @@ chrome.runtime.onInstalled.addListener(async () => {
   await chrome.contextMenus.removeAll();
   chrome.contextMenus.create({
     id: "convertir",
-    title: "Convertir «%s»",
+    title: tr("menu.convertir"),
     contexts: ["selection"],
   });
   // Este sale al hacer clic derecho en el icono de la barra, no en la página.
   const { insigniaActiva = true } = await chrome.storage.local.get("insigniaActiva");
   chrome.contextMenus.create({
     id: "insignia",
-    title: "Mostrar la tasa en el icono",
+    title: tr("menu.insignia"),
     type: "checkbox",
     checked: insigniaActiva,
     contexts: ["action"],
@@ -145,9 +149,26 @@ async function tasa(from, to) {
   }
 }
 
+// La tarjeta vive en la página y no carga textos.js: le mando ya traducido lo
+// que va a enseñar y el idioma para los números.
+function paraLaTarjeta(datos) {
+  return {
+    ...datos,
+    locale: localeActual(),
+    textos: {
+      dialogo: tr("tarjeta"),
+      cerrar: tr("cerrar"),
+      copiar: tr("copiar"),
+      copiado: tr("copiado"),
+      fallo: tr("copiar.fallo"),
+      cita: tr("tarjeta.cita"),
+    },
+  };
+}
+
 async function calcular(texto) {
   const leido = leerSeleccion(texto);
-  if (!leido) return { estado: "nada", original: texto };
+  if (!leido) return { estado: "nada", original: texto, mensaje: tr("tarjeta.nada") };
 
   const { from, to } = destinoPara(leido.divisa, await leerPar());
   try {
@@ -156,8 +177,9 @@ async function calcular(texto) {
     return {
       estado: "ok",
       original: `${nf.format(leido.cantidad)} ${from}`,
-      adivinada: !leido.divisa,
+      nota: leido.divisa ? "" : tr("tarjeta.sinDivisa", { from }),
       resultado,
+      copia: textoParaCopiar(resultado),
       texto: nf.format(resultado),
       from,
       to,
@@ -198,8 +220,8 @@ async function convertirSeleccion(info, tab) {
   }
 
   // La tarjeta sale ya, cargando; la cifra llega cuando responda la API.
-  await enPagina(tab.id, { estado: "cargando", original: info.selectionText });
-  await enPagina(tab.id, await calcular(info.selectionText));
+  await enPagina(tab.id, paraLaTarjeta({ estado: "cargando", original: info.selectionText }));
+  await enPagina(tab.id, paraLaTarjeta(await calcular(info.selectionText)));
 }
 
 // Aquí no uso la caché del popup: guarda la tasa de la mañana hasta el día

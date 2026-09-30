@@ -1,3 +1,7 @@
+// Chrome decide el idioma por el suyo. Va lo primero porque los formatos de
+// número de más abajo ya se crean en ese idioma.
+ponerIdioma(idiomaPara(chrome.i18n?.getUILanguage?.() ?? navigator.language));
+
 const API = "https://api.frankfurter.dev/v1/latest";
 const API_HISTORY = "https://api.frankfurter.dev/v1";
 
@@ -126,23 +130,23 @@ let fecha = null;
 let tasaDelDia = null;
 let fechaId = 0;
 
-const nf = new Intl.NumberFormat("es-ES", {
+const nf = new Intl.NumberFormat(localeActual(), {
   minimumFractionDigits: 2,
   maximumFractionDigits: 2,
 });
 
-const nfRate = new Intl.NumberFormat("es-ES", {
+const nfRate = new Intl.NumberFormat(localeActual(), {
   minimumFractionDigits: 4,
   maximumFractionDigits: 4,
 });
 
 // Sin "always" el español deja "1000" sin punto pero "10.000" con él, y en la
-// tabla quedaba raro uno debajo del otro.
-const nfEntero = new Intl.NumberFormat("es-ES", { maximumFractionDigits: 0, useGrouping: "always" });
+// tabla quedaba raro uno debajo del otro. En inglés da igual, ya agrupa siempre.
+const nfEntero = new Intl.NumberFormat(localeActual(), { maximumFractionDigits: 0, useGrouping: "always" });
 
-const nfComision = new Intl.NumberFormat("es-ES", { maximumFractionDigits: 2 });
+const nfComision = new Intl.NumberFormat(localeActual(), { maximumFractionDigits: 2 });
 
-const nfPercent = new Intl.NumberFormat("es-ES", {
+const nfPercent = new Intl.NumberFormat(localeActual(), {
   style: "percent",
   minimumFractionDigits: 2,
   maximumFractionDigits: 2,
@@ -352,7 +356,7 @@ function crearBuscador(lado) {
     if (visibles.length === 0) {
       const vacio = document.createElement("li");
       vacio.className = "buscador__vacio";
-      vacio.textContent = "Ninguna divisa";
+      vacio.textContent = tr("buscar.nada");
       lista.appendChild(vacio);
       return;
     }
@@ -372,7 +376,7 @@ function crearBuscador(lado) {
       cod.textContent = divisa.code;
       const nom = document.createElement("span");
       nom.className = "buscador__nombre";
-      nom.textContent = divisa.name;
+      nom.textContent = nombreDe(divisa.code);
 
       fila.append(cod, nom);
       fila.addEventListener("mousedown", (e) => {
@@ -629,8 +633,8 @@ function pintarExtremos(values) {
   colocar(el.marcaMin, coords[min]);
   el.pieMin.textContent = `${nfRate.format(values[min])} · ${fechaCorta(serie[min].fecha)}`;
   el.pieMax.textContent = `${nfRate.format(values[max])} · ${fechaCorta(serie[max].fecha)}`;
-  el.pieMin.setAttribute("aria-label", `Mínimo ${el.pieMin.textContent}`);
-  el.pieMax.setAttribute("aria-label", `Máximo ${el.pieMax.textContent}`);
+  el.pieMin.setAttribute("aria-label", tr("grafico.minimo", { valor: el.pieMin.textContent }));
+  el.pieMax.setAttribute("aria-label", tr("grafico.maximo", { valor: el.pieMax.textContent }));
 
   restartAnimation(el.marcaMax);
   restartAnimation(el.marcaMin);
@@ -685,7 +689,7 @@ function pintarMomento(values) {
   el.momentoTitulo.textContent = texto.titulo;
   el.momentoDetalle.textContent = texto.detalle;
   el.momento.title = texto.explicacion;
-  el.momento.setAttribute("aria-label", `${texto.titulo}, ${texto.detalle} de ${dias} días. ${texto.explicacion}`);
+  el.momento.setAttribute("aria-label", tr("momento.aria", { ...texto, dias }));
   if (cambia) restartAnimation(el.momento, "is-nuevo");
 
   const y = alturaEn(values)(m.media);
@@ -821,7 +825,7 @@ function crearCelda(code) {
   const elegir = document.createElement("button");
   elegir.type = "button";
   elegir.className = "extra__elegir";
-  elegir.title = `${nombreDe(code)}. Pulsa para ponerla como destino`;
+  elegir.title = tr("extras.elegir", { nombre: nombreDe(code) });
   const cod = document.createElement("span");
   cod.className = "extra__codigo";
   cod.textContent = code;
@@ -834,7 +838,7 @@ function crearCelda(code) {
   const quitar = document.createElement("button");
   quitar.type = "button";
   quitar.className = "extra__quitar";
-  quitar.setAttribute("aria-label", `Quitar ${nombreDe(code)}`);
+  quitar.setAttribute("aria-label", tr("extras.quitar", { nombre: nombreDe(code) }));
   quitar.textContent = "✕";
   quitar.addEventListener("click", () => onQuitarExtra(code));
 
@@ -856,7 +860,8 @@ function crearCeldaAnadir() {
   boton.className = "extra__elegir";
   boton.setAttribute("aria-expanded", "false");
   boton.setAttribute("aria-controls", "bandeja");
-  boton.innerHTML = '<span class="extra__mas" aria-hidden="true">+</span> Añadir';
+  boton.innerHTML = '<span class="extra__mas" aria-hidden="true">+</span> ';
+  boton.append(tr("extras.anadir"));
   boton.addEventListener("click", abrirBandeja);
   celda.append(boton);
   celda.addEventListener("animationend", (event) => {
@@ -884,7 +889,7 @@ function pintarExtras() {
     }
     celda.querySelector(".extra__elegir").setAttribute(
       "aria-label",
-      `${nombreDe(code)}: ${texto}. Ponerla como destino`,
+      tr("extras.aria", { nombre: nombreDe(code), valor: texto }),
     );
     return celda;
   });
@@ -962,7 +967,7 @@ function abrirBandeja() {
     opcion.style.setProperty("--i", i);
     opcion.textContent = code;
     opcion.title = nombreDe(code);
-    opcion.setAttribute("aria-label", `Añadir ${nombreDe(code)}`);
+    opcion.setAttribute("aria-label", tr("bandeja.opcion", { nombre: nombreDe(code) }));
     opcion.addEventListener("click", () => onAnadirExtra(code));
     return opcion;
   }));
@@ -1054,7 +1059,7 @@ function pintarChuleta() {
     }
     fila.querySelector("button").setAttribute(
       "aria-label",
-      `${nfEntero.format(cantidad)} ${from} son ${texto} ${to}. Ponerlo como cantidad`,
+      tr("chuleta.aria", { cantidad: nfEntero.format(cantidad), from, valor: texto, to }),
     );
   });
 }
@@ -1128,11 +1133,11 @@ function pintarFecha() {
     el.fechaValor.textContent = texto;
     if (datos) restartAnimation(el.fechaValor, "is-tic");
   }
-  el.fechaValor.title = datos ? `${nf.format(cantidad)} ${from} el ${fechaLarga(fecha)}` : "";
+  el.fechaValor.title = datos ? tr("fecha.valor", { cantidad: nf.format(cantidad), from, fecha: fechaLarga(fecha) }) : "";
 
   if (datos) {
     const nota = notaDiaHabil(fecha, datos.date);
-    el.fechaTasa.textContent = nota ? `del ${fechaLarga(datos.date)}` : `1 ${from} = ${nfRate.format(datos.rate)}`;
+    el.fechaTasa.textContent = nota ? tr("fecha.del", { fecha: fechaLarga(datos.date) }) : `1 ${from} = ${nfRate.format(datos.rate)}`;
     el.fechaTasa.classList.toggle("is-otro-dia", Boolean(nota));
     el.fechaTasa.title = nota || "";
   } else if (!el.fecha.classList.contains("is-cargando")) {
@@ -1140,7 +1145,7 @@ function pintarFecha() {
   }
 
   const cambio = datos && rate !== null ? cambioDesde(datos.rate, rate) : null;
-  el.fechaHoy.textContent = rate === null ? "" : `hoy ${nf.format(cantidad * rate)} ${to}`;
+  el.fechaHoy.textContent = rate === null ? "" : tr("fecha.hoy", { valor: `${nf.format(cantidad * rate)} ${to}` });
   const sentido = sentidoDe(cambio);
   // La flecha ya dice si sube o baja; el signo de delante sobraba.
   const flecha = { sube: "▲", baja: "▼", igual: "=" }[sentido];
@@ -1150,7 +1155,7 @@ function pintarFecha() {
     if (textoCambio) restartAnimation(el.fechaCambio, "is-nueva");
   }
   el.fechaCambio.dataset.sentido = sentido;
-  el.fechaCambio.title = cambio === null ? "" : `Lo que ha cambiado la tasa desde el ${fechaLarga(fecha)}`;
+  el.fechaCambio.title = cambio === null ? "" : tr("fecha.cambio", { fecha: fechaLarga(fecha) });
 }
 
 function ponerFecha(nueva) {
@@ -1166,13 +1171,14 @@ function ponerFecha(nueva) {
 }
 
 function crearFechasRapidas() {
-  el.fechaRapidas.replaceChildren(...FECHAS_RAPIDAS.map(({ meses, texto }) => {
+  el.fechaRapidas.replaceChildren(...FECHAS_RAPIDAS.map(({ meses, clave }) => {
+    const texto = tr(clave);
     const boton = document.createElement("button");
     boton.type = "button";
     boton.className = "fecha__rapida";
     boton.dataset.meses = meses;
     boton.textContent = texto;
-    boton.setAttribute("aria-label", `Hace ${texto}`);
+    boton.setAttribute("aria-label", tr("fecha.hace", { texto }));
     boton.addEventListener("click", () => ponerFecha(mesesAtras(hoy(), meses)));
     return boton;
   }));
@@ -1202,11 +1208,12 @@ function pintarComision() {
   const texto = total === null ? "—" : `${nf.format(total)} ${el.to.value}`;
 
   el.comision.classList.toggle("is-puesta", hay);
-  el.comisionPct.textContent = hay ? `+${nfComision.format(comision)} %` : "+ comisión";
+  const pct = tr("pct", { n: nfComision.format(comision) });
+  el.comisionPct.textContent = hay ? `+${pct}` : tr("comision.anadir");
   if (!hay) {
     el.comisionTotal.textContent = "";
-    el.comision.setAttribute("aria-label", "Añadir la comisión de tu banco");
-    el.comision.title = "Añade lo que te cobra el banco por pagar en otra divisa";
+    el.comision.setAttribute("aria-label", tr("comision.anadirAria"));
+    el.comision.title = tr("comision.anadirTitulo");
     return;
   }
   if (el.comisionTotal.textContent !== texto) {
@@ -1214,8 +1221,8 @@ function pintarComision() {
     el.comisionTotal.textContent = texto;
     if (habia && texto !== "—") restartAnimation(el.comisionTotal, "is-tic");
   }
-  el.comision.setAttribute("aria-label", `Con la comisión del ${nfComision.format(comision)} % pagarías ${texto}. Cambiarla`);
-  el.comision.title = `Con la comisión de tu banco pagarías ${texto}`;
+  el.comision.setAttribute("aria-label", tr("comision.aria", { pct, total: texto }));
+  el.comision.title = tr("comision.conTitulo", { total: texto });
 }
 
 function ponerComision(pct) {
@@ -1243,8 +1250,8 @@ function abrirBurbuja() {
     boton.className = "burbuja__rapida";
     boton.style.setProperty("--i", i);
     boton.dataset.pct = pct;
-    boton.textContent = pct === 0 ? "Sin" : `${pct} %`;
-    boton.setAttribute("aria-label", pct === 0 ? "Sin comisión" : `${pct} %`);
+    boton.textContent = pct === 0 ? tr("comision.sin") : tr("pct", { n: pct });
+    boton.setAttribute("aria-label", pct === 0 ? tr("comision.sinAria") : tr("pct", { n: pct }));
     boton.setAttribute("aria-pressed", String(pct === comision));
     boton.addEventListener("click", () => {
       ponerComision(pct);
@@ -1338,14 +1345,17 @@ function crearFilaHistorial(entrada, i) {
   cuando.className = "historial__cuando";
   cuando.textContent = haceCuanto(entrada.cuando);
   botonCopiar.append(cuenta, cuando);
-  botonCopiar.title = "Copiar el resultado";
+  botonCopiar.title = tr("copiar.aria");
   botonCopiar.setAttribute(
     "aria-label",
-    `${nf.format(entrada.cantidad)} ${entrada.from} son ${nf.format(entrada.resultado)} ${entrada.to}, ${cuando.textContent}. Copiar`,
+    tr("historial.fila", {
+      cantidad: nf.format(entrada.cantidad), from: entrada.from,
+      resultado: nf.format(entrada.resultado), to: entrada.to, cuando: cuando.textContent,
+    }),
   );
   botonCopiar.addEventListener("click", async () => {
     const bien = await copiar(textoParaCopiar(entrada.resultado));
-    cuando.textContent = bien ? "✓ copiado" : "no se pudo";
+    cuando.textContent = tr(bien ? "historial.copiado" : "historial.fallo");
     fila.classList.add(bien ? "is-copiada" : "is-fallo");
     restartAnimation(cuando, "is-tic");
     setTimeout(() => {
@@ -1357,8 +1367,8 @@ function crearFilaHistorial(entrada, i) {
   const usar = document.createElement("button");
   usar.type = "button";
   usar.className = "historial__usar";
-  usar.title = "Volver a ponerla";
-  usar.setAttribute("aria-label", `Volver a poner ${nf.format(entrada.cantidad)} ${entrada.from} a ${entrada.to}`);
+  usar.title = tr("historial.usar");
+  usar.setAttribute("aria-label", tr("historial.usarAria", { cantidad: nf.format(entrada.cantidad), from: entrada.from, to: entrada.to }));
   usar.innerHTML = '<svg viewBox="0 0 14 14" aria-hidden="true"><path d="M2.5 7a4.5 4.5 0 1 0 1.4-3.3"/><path d="M2 1.8v2.6h2.6"/></svg>';
   usar.addEventListener("click", () => onUsarHistorial(entrada));
 
@@ -1370,7 +1380,7 @@ function pintarHistorial() {
   const hay = historial.length > 0;
   el.historialCuenta.hidden = !hay;
   el.historialCuenta.textContent = historial.length;
-  el.abrirHistorial.setAttribute("aria-label", hay ? `Últimas conversiones (${historial.length})` : "Últimas conversiones");
+  el.abrirHistorial.setAttribute("aria-label", hay ? tr("historial.cuenta", { n: historial.length }) : tr("historial"));
   if (el.historial.hidden) return;
   el.historialLista.replaceChildren(...historial.map(crearFilaHistorial));
   el.historialVacio.hidden = hay;
@@ -1445,9 +1455,7 @@ function pintarSentidoAviso() {
 
   el.avisoCodigo.textContent = to;
   const sentido = from === to ? null : sentidoAviso(leerImporte(el.avisoUmbral.value), rate);
-  el.avisoSentido.textContent = sentido === "sube" ? `▲ ${from} sube de`
-    : sentido === "baja" ? `▼ ${from} baja de`
-    : `${from} llega a`;
+  el.avisoSentido.textContent = tr(sentido === "sube" ? "avisos.sube" : sentido === "baja" ? "avisos.baja" : "avisos.llega", { from });
   el.avisoSentido.dataset.sentido = sentido ?? "";
   el.avisoBoton.disabled = from === to || rate === null;
 }
@@ -1459,7 +1467,7 @@ let notaAviso = null;
 function pintarNota() {
   if (el.avisoNota.classList.contains("is-mensaje")) return;
   el.avisoNota.dataset.tipo = "pista";
-  el.avisoNota.textContent = avisos.length ? "" : "Te aviso aunque tengas el popup cerrado.";
+  el.avisoNota.textContent = avisos.length ? "" : tr("avisos.nota");
 }
 
 function decir(texto, tipo) {
@@ -1484,7 +1492,9 @@ function crearPastillaAviso(aviso) {
   const umbral = nfRate.format(aviso.umbral);
   ir.setAttribute(
     "aria-label",
-    `Aviso: ${aviso.from} ${aviso.sentido === "sube" ? "sube de" : "baja de"} ${umbral} ${aviso.to}. Ir a ese par`,
+    tr("avisos.pastilla", {
+      from: aviso.from, sentido: tr(aviso.sentido === "sube" ? "avisos.subeDe" : "avisos.bajaDe"), umbral, to: aviso.to,
+    }),
   );
   const par = document.createElement("span");
   par.className = "aviso__par";
@@ -1502,7 +1512,7 @@ function crearPastillaAviso(aviso) {
   const quitar = document.createElement("button");
   quitar.type = "button";
   quitar.className = "aviso__quitar";
-  quitar.setAttribute("aria-label", "Quitar el aviso");
+  quitar.setAttribute("aria-label", tr("avisos.quitar"));
   quitar.textContent = "✕";
   quitar.addEventListener("click", () => onQuitarAviso(aviso.id));
 
@@ -1533,14 +1543,14 @@ function onCrearAviso(event) {
   const umbral = leerImporte(el.avisoUmbral.value);
 
   let problema = null;
-  if (umbral === null) problema = "Escribe una tasa, por ejemplo 1,15.";
-  else if (avisos.length >= AVISOS_MAX) problema = `Ya tienes ${AVISOS_MAX} avisos: quita alguno.`;
-  else if (sentidoAviso(umbral, rate) === null) problema = "Pon un valor distinto de la tasa de ahora.";
+  if (umbral === null) problema = tr("avisos.escribe", { ejemplo: nf.format(1.15) });
+  else if (avisos.length >= AVISOS_MAX) problema = tr("avisos.lleno", { max: AVISOS_MAX });
+  else if (sentidoAviso(umbral, rate) === null) problema = tr("avisos.igual");
 
   const aviso = problema ? null
     : crearAviso(from, to, umbral, rate, `${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`);
   if (!aviso) {
-    decir(problema ?? "Ese aviso no se puede crear.", "error");
+    decir(problema ?? tr("avisos.noSe"), "error");
     restartAnimation(el.avisoUmbral, "is-mal");
     return;
   }
@@ -1550,7 +1560,7 @@ function onCrearAviso(event) {
   pintarAvisos();
   el.avisoUmbral.value = nfRate.format(aviso.umbral);
   restartAnimation(el.campana, "is-sonando");
-  decir("Hecho. Te aviso aunque cierres el popup.", "ok");
+  decir(tr("avisos.hecho"), "ok");
 }
 
 function onIrAviso(aviso) {
@@ -1576,18 +1586,7 @@ function onQuitarAviso(id) {
 
 const esMac = /mac|iphone|ipad/i.test(navigator.userAgentData?.platform ?? navigator.platform ?? "");
 
-const QUE_HACE = {
-  intercambiar: "Dar la vuelta al par",
-  copiar: "Copiar el resultado",
-  origen: "Elegir la divisa de origen",
-  destino: "Elegir la divisa de destino",
-  "vista:evolucion": "Ver el gráfico",
-  "vista:extras": "Ver otras divisas",
-  "vista:avisos": "Ver los avisos",
-  "vista:chuleta": "Ver la chuleta de viaje",
-  "vista:fecha": "Ver la tasa de un día",
-  ayuda: "Esta ayuda",
-};
+const queHace = (accion) => tr(`atajo.${accion}`);
 
 function hacerAtajo(accion) {
   if (accion === "intercambiar" && !el.swap.disabled) onSwap();
@@ -1627,7 +1626,7 @@ function saludarPorIdioma({ from, idioma }) {
   restartAnimation(el.from, "is-cambiado");
   restartAnimation(el.to, "is-cambiado");
   // Espero a que acabe la entrada del popup, que si no se pierde entre todo.
-  setTimeout(() => mostrarFlash([bandera, kbd, " puesta por tu idioma"], 3200), 550);
+  setTimeout(() => mostrarFlash([bandera, kbd, ` ${tr("idioma.puesta")}`], 3200), 550);
 }
 
 function onAtajo(event) {
@@ -1648,7 +1647,7 @@ function onAtajo(event) {
   event.preventDefault();
   hacerAtajo(accion);
   if (accion !== "ayuda") {
-    mostrarTecla(event.altKey ? textoAtajo(event.code, esMac) : event.code.replace(/^Key|^Digit/, ""), QUE_HACE[accion]);
+    mostrarTecla(event.altKey ? textoAtajo(event.code, esMac) : event.code.replace(/^Key|^Digit/, ""), queHace(accion));
   }
 }
 
@@ -1663,11 +1662,11 @@ function pintarAyuda() {
     const kbd = document.createElement("kbd");
     kbd.textContent = accion === "ayuda" ? "?" : code.replace(/^Key|^Digit/, "");
     const texto = document.createElement("span");
-    texto.textContent = QUE_HACE[accion];
+    texto.textContent = queHace(accion);
     fila.append(kbd, texto);
     return fila;
   }));
-  el.ayudaNota.textContent = `Si estás escribiendo en un campo, con ${alt} delante: ${alt}S, ${alt}C… (la ayuda, ${alt}H).`;
+  el.ayudaNota.textContent = tr("ayuda.nota", { alt });
 }
 
 function abrirAyuda() {
@@ -1695,10 +1694,22 @@ function ponerPistasDeAtajos() {
     const code = Object.keys(ATAJOS).find((c) => ATAJOS[c] === accion);
     return code.replace(/^Key|^Digit/, "");
   };
-  el.swap.title = `Intercambiar divisas (${pista("intercambiar")})`;
-  el.copiar.title = `Copiar el resultado (${pista("copiar")})`;
+  el.swap.title = tr("intercambiar.titulo", { tecla: pista("intercambiar") });
+  el.copiar.title = tr("copiar.titulo", { tecla: pista("copiar") });
   for (const boton of el.botonesVista) {
     boton.title = `${boton.title} (${pista(`vista:${boton.dataset.vista}`)})`;
+  }
+}
+
+// Lo fijo del HTML lleva la clave en data-t (el texto) o data-t-title y
+// compañía (los atributos). El español se queda escrito por si esto fallara.
+function traducirPagina() {
+  document.documentElement.lang = idiomaActual();
+  for (const nodo of document.querySelectorAll("[data-t]")) nodo.textContent = tr(nodo.dataset.t);
+  for (const atributo of ["title", "aria-label", "placeholder"]) {
+    for (const nodo of document.querySelectorAll(`[data-t-${atributo}]`)) {
+      nodo.setAttribute(atributo, tr(nodo.getAttribute(`data-t-${atributo}`)));
+    }
   }
 }
 
@@ -1711,7 +1722,7 @@ function renderRateLine(from, to) {
 }
 
 function renderUpdated() {
-  el.updated.textContent = rateDate ? `Act. ${rateDate}` : "";
+  el.updated.textContent = rateDate ? tr("actualizado", { fecha: rateDate }) : "";
 }
 
 function showError(message) {
@@ -1727,7 +1738,7 @@ function clearError() {
 function setLoading(active) {
   el.resultBox.classList.toggle("is-loading", active);
   el.status.hidden = !active;
-  el.status.textContent = active ? "Obteniendo tasas…" : "";
+  el.status.textContent = active ? tr("cargando") : "";
   el.swap.disabled = active;
 }
 
@@ -1932,7 +1943,7 @@ function onAmountInput() {
 
   el.amount.setAttribute("aria-invalid", String(invalid));
   el.amountError.hidden = !invalid;
-  el.amountError.textContent = invalid ? "Introduce una cantidad válida" : "";
+  el.amountError.textContent = invalid ? tr("cantidad.invalida") : "";
 
   renderResult();
 }
@@ -1966,7 +1977,7 @@ async function onCopiar() {
   // Si lo copias es que era esa: la apunto ya, sin esperar.
   tocado = true;
   apuntarAhora();
-  avisar(await copiar(textoParaCopiar(valor)) ? "Copiado" : "No se pudo");
+  avisar(tr(await copiar(textoParaCopiar(valor)) ? "copiado" : "copiar.fallo"));
 }
 
 async function copiar(texto) {
@@ -2006,7 +2017,7 @@ function avisar(texto) {
 
   clearTimeout(avisoCopiado);
   avisoCopiado = setTimeout(() => {
-    el.copiarTexto.textContent = "Copiar";
+    el.copiarTexto.textContent = tr("copiar");
     el.copiar.classList.remove("is-hecho");
   }, 1400);
 }
@@ -2018,7 +2029,7 @@ function crearPastilla(par) {
   boton.type = "button";
   boton.className = "reciente is-nueva";
   boton.dataset.par = `${par.from}${par.to}`;
-  boton.setAttribute("aria-label", `Cambiar a ${nombreDe(par.from)} → ${nombreDe(par.to)}`);
+  boton.setAttribute("aria-label", tr("reciente.aria", { de: nombreDe(par.from), a: nombreDe(par.to) }));
 
   const de = document.createElement("span");
   de.textContent = par.from;
@@ -2248,6 +2259,7 @@ function bindEvents() {
 }
 
 async function init() {
+  traducirPagina();
   const [pair, rango, guardados, pendiente, guardadas, vistaGuardada, avisosGuardados, comisionGuardada, fechaGuardada, historialGuardado] = await Promise.all([
     loadPair(), cargarRango(), cargarRecientes(), tomarPendiente(), cargarExtras(), cargarVista(), cargarAvisos(),
     cargarComision(), cargarFecha(), cargarHistorial(),

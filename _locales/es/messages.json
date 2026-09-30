@@ -1,0 +1,8 @@
+{
+  "descripcion": {
+    "message": "Conversor de divisas con tasas de cambio en tiempo real. Rápido, sin anuncios y sin seguimiento."
+  },
+  "abrir": {
+    "message": "Abrir ConversorDivisas"
+  }
+}

@@ -2,7 +2,8 @@
   "manifest_version": 3,
   "name": "ConversorDivisas",
   "version": "1.0.0",
-  "description": "Conversor de divisas con tasas de cambio en tiempo real. Rápido, sin anuncios y sin seguimiento.",
+  "description": "__MSG_descripcion__",
+  "default_locale": "en",
   "action": {
     "default_popup": "popup.html",
     "default_title": "ConversorDivisas (Ctrl+Shift+U)",
@@ -28,7 +29,7 @@
         "default": "Ctrl+Shift+U",
         "mac": "Command+Shift+U"
       },
-      "description": "Abrir ConversorDivisas"
+      "description": "__MSG_abrir__"
     }
   }
 }

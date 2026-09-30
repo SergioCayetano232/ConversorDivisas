@@ -1,47 +1,83 @@
 // La lógica que no toca la pantalla, separada para poder probarla con node.
 // popup.js la carga antes que a sí mismo; en los tests se importa tal cual.
 
+// En el navegador textos.js ya va cargado delante; en Node hay que pedirlo.
+if (typeof module !== "undefined" && typeof tr === "undefined") {
+  Object.assign(globalThis, require("./textos.js"));
+}
+
 const CURRENCIES = [
-  { code: "EUR", name: "Euro" },
-  { code: "USD", name: "Dólar estadounidense" },
-  { code: "GBP", name: "Libra esterlina" },
-  { code: "JPY", name: "Yen japonés" },
-  { code: "CHF", name: "Franco suizo" },
-  { code: "CAD", name: "Dólar canadiense" },
-  { code: "AUD", name: "Dólar australiano" },
-  { code: "CNY", name: "Yuan chino" },
-  { code: "MXN", name: "Peso mexicano" },
-  { code: "BRL", name: "Real brasileño" },
-  { code: "SEK", name: "Corona sueca" },
-  { code: "NOK", name: "Corona noruega" },
-  { code: "DKK", name: "Corona danesa" },
-  { code: "PLN", name: "Esloti polaco" },
-  { code: "TRY", name: "Lira turca" },
+  { code: "EUR", name: "Euro", en: "Euro" },
+  { code: "USD", name: "Dólar estadounidense", en: "US dollar" },
+  { code: "GBP", name: "Libra esterlina", en: "British pound" },
+  { code: "JPY", name: "Yen japonés", en: "Japanese yen" },
+  { code: "CHF", name: "Franco suizo", en: "Swiss franc" },
+  { code: "CAD", name: "Dólar canadiense", en: "Canadian dollar" },
+  { code: "AUD", name: "Dólar australiano", en: "Australian dollar" },
+  { code: "CNY", name: "Yuan chino", en: "Chinese yuan" },
+  { code: "MXN", name: "Peso mexicano", en: "Mexican peso" },
+  { code: "BRL", name: "Real brasileño", en: "Brazilian real" },
+  { code: "SEK", name: "Corona sueca", en: "Swedish krona" },
+  { code: "NOK", name: "Corona noruega", en: "Norwegian krone" },
+  { code: "DKK", name: "Corona danesa", en: "Danish krone" },
+  { code: "PLN", name: "Esloti polaco", en: "Polish zloty" },
+  { code: "TRY", name: "Lira turca", en: "Turkish lira" },
   // Las que se usan menos van detrás, para que el desplegable empiece por las
   // de siempre. Son todas las que publica el BCE; el lev búlgaro ya no está
   // desde que Bulgaria entró en el euro.
-  { code: "CZK", name: "Corona checa" },
-  { code: "HKD", name: "Dólar de Hong Kong" },
-  { code: "HUF", name: "Forinto húngaro" },
-  { code: "IDR", name: "Rupia indonesia" },
-  { code: "ILS", name: "Séquel israelí" },
-  { code: "INR", name: "Rupia india" },
-  { code: "ISK", name: "Corona islandesa" },
-  { code: "KRW", name: "Won surcoreano" },
-  { code: "MYR", name: "Ringgit malayo" },
-  { code: "NZD", name: "Dólar neozelandés" },
-  { code: "PHP", name: "Peso filipino" },
-  { code: "RON", name: "Leu rumano" },
-  { code: "SGD", name: "Dólar de Singapur" },
-  { code: "THB", name: "Baht tailandés" },
-  { code: "ZAR", name: "Rand sudafricano" },
+  { code: "CZK", name: "Corona checa", en: "Czech koruna" },
+  { code: "HKD", name: "Dólar de Hong Kong", en: "Hong Kong dollar" },
+  { code: "HUF", name: "Forinto húngaro", en: "Hungarian forint" },
+  { code: "IDR", name: "Rupia indonesia", en: "Indonesian rupiah" },
+  { code: "ILS", name: "Séquel israelí", en: "Israeli shekel" },
+  { code: "INR", name: "Rupia india", en: "Indian rupee" },
+  { code: "ISK", name: "Corona islandesa", en: "Icelandic krona" },
+  { code: "KRW", name: "Won surcoreano", en: "South Korean won" },
+  { code: "MYR", name: "Ringgit malayo", en: "Malaysian ringgit" },
+  { code: "NZD", name: "Dólar neozelandés", en: "New Zealand dollar" },
+  { code: "PHP", name: "Peso filipino", en: "Philippine peso" },
+  { code: "RON", name: "Leu rumano", en: "Romanian leu" },
+  { code: "SGD", name: "Dólar de Singapur", en: "Singapore dollar" },
+  { code: "THB", name: "Baht tailandés", en: "Thai baht" },
+  { code: "ZAR", name: "Rand sudafricano", en: "South African rand" },
 ];
 
 const isValidCode = (code) => CURRENCIES.some((c) => c.code === code);
 
-const nombreDe = (code) => CURRENCIES.find((c) => c.code === code)?.name ?? code;
+const nombreDe = (code) => {
+  const divisa = CURRENCIES.find((c) => c.code === code);
+  if (!divisa) return code;
+  return idiomaActual() === "en" ? divisa.en : divisa.name;
+};
+
+// En inglés el decimal es el punto, pero mucha gente en Europa tiene el Chrome
+// en inglés y escribe "12,50". Así que una coma sola es decimal, salvo que
+// lleve tres cifras justas detrás ("1,000"), que entonces son miles.
+function importeEnIngles(limpio) {
+  const comas = (limpio.match(/,/g) || []).length;
+  const puntos = (limpio.match(/\./g) || []).length;
+  let normal;
+  if (comas && puntos) {
+    const decimal = limpio.lastIndexOf(".") > limpio.lastIndexOf(",") ? "." : ",";
+    const miles = decimal === "." ? "," : ".";
+    normal = limpio.split(miles).join("").replace(",", ".");
+  } else if (comas === 1 && !/,\d{3}$/.test(limpio)) {
+    normal = limpio.replace(",", ".");
+  } else if (puntos > 1) {
+    normal = limpio.replace(/\./g, "");
+  } else {
+    normal = limpio.replace(/,/g, "");
+  }
+  return normal;
+}
 
 function parseAmount(raw) {
+  if (idiomaActual() === "en") {
+    const limpio = raw.trim().replace(/[\s\u00A0]/g, "");
+    if (limpio === "") return null;
+    const value = Number(importeEnIngles(limpio));
+    return Number.isFinite(value) && value >= 0 ? value : null;
+  }
   // Ahora que el resultado se puede editar me llega ya formateado ("1.084,70"),
   // así que el punto de los miles hay que quitarlo antes de nada: sin esto,
   // "1.000" se leía como un 1.
@@ -219,8 +255,9 @@ function filtrarDivisas(consulta) {
   const porNombre = [];
 
   for (const divisa of CURRENCIES) {
+    // Busco en los dos idiomas: "dollar" y "dólar" encuentran lo mismo.
     if (normalizar(divisa.code).startsWith(q)) porCodigo.push(divisa);
-    else if (normalizar(divisa.name).includes(q)) porNombre.push(divisa);
+    else if ([divisa.name, divisa.en].some((n) => normalizar(n).includes(q))) porNombre.push(divisa);
   }
 
   return [...porCodigo, ...porNombre];
@@ -307,21 +344,19 @@ function momento(values) {
   return { media, diferencia: media ? (hoyV - media) / media : 0, posicion, veredicto };
 }
 
-const nfMomento = new Intl.NumberFormat("es-ES", { maximumFractionDigits: 1 });
-const TITULOS_MOMENTO = { bueno: "Buen momento", normal: "Momento normal", malo: "Mal momento" };
+const porCiento = (n) => tr("pct", { n });
 
 function textoMomento(m, dias, from, to) {
   const pct = Math.abs(m.diferencia * 100);
+  const cuanto = porCiento(numeros({ maximumFractionDigits: 1 }).format(pct));
   const detalle = pct < 0.05
-    ? "en la media"
-    : `${nfMomento.format(pct)} % ${m.diferencia > 0 ? "sobre" : "bajo"} la media`;
-  const periodo = dias === 365 ? "del último año" : `de los últimos ${dias}`;
-  const explicacion = `Hoy la tasa es mejor que el ${Math.round(m.posicion * 100)} % de los días `
-    + `${periodo}. Cuanto más alta, más ${to} te dan por cada ${from}.`;
-  return { titulo: TITULOS_MOMENTO[m.veredicto], detalle, explicacion };
+    ? tr("momento.enLaMedia")
+    : tr(m.diferencia > 0 ? "momento.sobre" : "momento.bajo", { pct: cuanto });
+  const periodo = dias === 365 ? tr("momento.anio") : tr("momento.dias", { dias });
+  const explicacion = tr("momento.explicacion", { pct: porCiento(Math.round(m.posicion * 100)), periodo, from, to });
+  return { titulo: tr(`momento.${m.veredicto}`), detalle, explicacion };
 }
 
-const nfFecha = new Intl.DateTimeFormat("es-ES", { day: "numeric", month: "short" });
 
 // new Date("2026-09-29") lo lee como medianoche en UTC, y en América eso
 // todavía es el día 28. Montándola a mano sale el día que pone.
@@ -329,8 +364,10 @@ const nfFecha = new Intl.DateTimeFormat("es-ES", { day: "numeric", month: "short
 // cuando no es el de ahora, que si no sobra.
 function fechaCorta(iso, anoActual = new Date().getFullYear()) {
   const [a, m, d] = iso.split("-").map(Number);
-  const corta = nfFecha.format(new Date(a, m - 1, d)).replace(".", "");
-  return a === anoActual ? corta : `${corta} ${a}`;
+  const opciones = a === anoActual
+    ? { day: "numeric", month: "short" }
+    : { day: "numeric", month: "short", year: "numeric" };
+  return fechas(opciones).format(new Date(a, m - 1, d)).replace(".", "");
 }
 
 // En días, que es lo que pide la API. El año son 365 y no "un año atrás
@@ -345,13 +382,11 @@ function leerRango(guardado) {
 // El primer día que publicó el BCE; antes la API contesta "not found".
 const FECHA_MINIMA = "1999-01-04";
 
-const nfFechaLarga = new Intl.DateTimeFormat("es-ES", {
-  weekday: "short", day: "numeric", month: "short", year: "numeric",
-});
-
 function fechaLarga(iso) {
   const [a, m, d] = iso.split("-").map(Number);
-  return nfFechaLarga.format(new Date(a, m - 1, d)).replace(".", "");
+  return fechas({ weekday: "short", day: "numeric", month: "short", year: "numeric" })
+    .format(new Date(a, m - 1, d))
+    .replace(".", "");
 }
 
 // El Date se traga el 30 de febrero y lo pasa a marzo, así que compruebo que
@@ -374,9 +409,9 @@ function mesesAtras(iso, meses) {
 }
 
 const FECHAS_RAPIDAS = [
-  { meses: 1, texto: "1 mes" },
-  { meses: 6, texto: "6 meses" },
-  { meses: 12, texto: "1 año" },
+  { meses: 1, clave: "fecha.1" },
+  { meses: 6, clave: "fecha.6" },
+  { meses: 12, clave: "fecha.12" },
 ];
 
 function leerFecha(guardado, hoyIso = hoy()) {
@@ -392,7 +427,7 @@ function cambioDesde(antes, ahora) {
 // Los fines de semana y festivos la API da la del último día con tasa.
 function notaDiaHabil(pedida, real) {
   if (!real || real === pedida) return "";
-  return `Ese día no hubo tasa; es la del ${fechaLarga(real)}`;
+  return tr("fecha.otroDia", { fecha: fechaLarga(real) });
 }
 
 function startDateFor(days) {
@@ -549,21 +584,23 @@ const PISTAS = [
   [/\$/, "USD"],
   [/\beuros?\b/, "EUR"],
   // Los dólares con apellido antes que el dólar a secas.
-  [/\bdolar(es)? canadienses?\b/, "CAD"],
-  [/\bdolar(es)? australianos?\b/, "AUD"],
-  [/\bdolar(es)? neozelandes(es)?\b/, "NZD"],
-  [/\bdolar(es)? (de )?hong kong\b|\bhongkones(es)?\b/, "HKD"],
-  [/\bdolar(es)? (de )?singapur\b|\bsingapurenses?\b/, "SGD"],
+  [/\bdolar(es)? canadienses?\b|\bcanadian dollars?\b/, "CAD"],
+  [/\bdolar(es)? australianos?\b|\baustralian dollars?\b/, "AUD"],
+  [/\bdolar(es)? neozelandes(es)?\b|\bnew zealand dollars?\b/, "NZD"],
+  [/\bdolar(es)? (de )?hong kong\b|\bhongkones(es)?\b|\bhong kong dollars?\b/, "HKD"],
+  [/\bdolar(es)? (de )?singapur\b|\bsingapurenses?\b|\bsingapore dollars?\b/, "SGD"],
   [/\b(dolar(es)?|dollars?)\b/, "USD"],
   [/\b(libras?|pounds?)\b/, "GBP"],
   [/\byen(es)?\b/, "JPY"],
   [/\byuan(es)?\b/, "CNY"],
-  [/\bfrancos?\b/, "CHF"],
-  [/\bpesos? filipinos?\b/, "PHP"],
+  [/\b(francos?|francs?)\b/, "CHF"],
+  [/\bpesos? filipinos?\b|\bphilippine pesos?\b/, "PHP"],
   [/\bpesos?\b/, "MXN"],
   [/\b(real|reales|reais)\b/, "BRL"],
   [/\bcoronas? suecas?\b/, "SEK"], [/\bcoronas? noruegas?\b/, "NOK"], [/\bcoronas? danesas?\b/, "DKK"],
   [/\bcoronas? checas?\b/, "CZK"], [/\bcoronas? islandesas?\b/, "ISK"],
+  [/\bswedish kron(a|or)\b/, "SEK"], [/\bnorwegian kron(e|er)\b/, "NOK"], [/\bdanish kron(e|er)\b/, "DKK"],
+  [/\bczech korun(a|y)\b/, "CZK"], [/\bicelandic kron(a|ur)\b/, "ISK"],
   [/\b(eslotis?|zlotys?)\b/, "PLN"],
   [/\bliras?\b/, "TRY"],
   [/\brupias? indonesias?\b/, "IDR"],
@@ -689,20 +726,20 @@ function apuntarConversion(lista, entrada) {
 // es "ayer" aunque sean las nueve de la mañana.
 function haceCuanto(cuando, ahora = Date.now()) {
   const min = Math.floor((ahora - cuando) / 60000);
-  if (min < 1) return "ahora";
-  if (min < 60) return `hace ${min} min`;
+  if (min < 1) return tr("hace.ahora");
+  if (min < 60) return tr("hace.min", { n: min });
   const dia = (t) => new Date(t).setHours(0, 0, 0, 0);
   const dias = Math.round((dia(ahora) - dia(cuando)) / 86400000);
-  if (dias === 0) return `hace ${Math.floor(min / 60)} h`;
-  if (dias === 1) return "ayer";
-  if (dias < 7) return `hace ${dias} días`;
+  if (dias === 0) return tr("hace.horas", { n: Math.floor(min / 60) });
+  if (dias === 1) return tr("hace.ayer");
+  if (dias < 7) return tr("hace.dias", { n: dias });
   return fechaCorta(isoLocal(new Date(cuando)), new Date(ahora).getFullYear());
 }
 
-// El número a secas, sin código ni puntos de miles: lo normal es que acabe
-// pegado en una hoja de cálculo y ahí el punto estorba.
+// El número a secas, sin código ni separador de miles: lo normal es que acabe
+// pegado en una hoja de cálculo y ahí estorba. El decimal, el del idioma.
 function textoParaCopiar(valor) {
-  return valor.toFixed(2).replace(".", ",");
+  return valor.toFixed(2).replace(".", separadorDecimal());
 }
 
 function destinoPara(divisa, par) {
@@ -714,7 +751,7 @@ function destinoPara(divisa, par) {
 // decimales se van quitando según crece la tasa: 1,14 · 20,3 · 178 · 20k.
 function textoInsignia(rate) {
   if (typeof rate !== "number" || !Number.isFinite(rate) || rate <= 0) return "";
-  const es = (n, dec) => n.toFixed(dec).replace(".", ",");
+  const es = (n, dec) => n.toFixed(dec).replace(".", separadorDecimal());
   if (rate >= 999500) return `${Math.round(rate / 1e6)}M`;
   if (rate >= 9999.5) return `${Math.round(rate / 1000)}k`;
   if (rate >= 99.95) return String(Math.round(rate));
@@ -741,14 +778,15 @@ function sentidoDe(cambio) {
   return cambio > 0 ? "sube" : "baja";
 }
 
-const nfTasaLarga = new Intl.NumberFormat("es-ES", { minimumFractionDigits: 4, maximumFractionDigits: 4 });
-const nfCambio = new Intl.NumberFormat("es-ES", {
-  style: "percent", minimumFractionDigits: 2, maximumFractionDigits: 2, signDisplay: "exceptZero",
-});
+const tasaLarga = (n) => numeros({ minimumFractionDigits: 4, maximumFractionDigits: 4 }).format(n);
 
 function tituloInsignia(par, rate, cambio) {
-  const tasa = `1 ${par.from} = ${nfTasaLarga.format(rate)} ${par.to}`;
-  return cambio === null ? tasa : `${tasa} · ${nfCambio.format(cambio)} desde el día anterior`;
+  const tasa = `1 ${par.from} = ${tasaLarga(rate)} ${par.to}`;
+  if (cambio === null) return tasa;
+  const pct = numeros({
+    style: "percent", minimumFractionDigits: 2, maximumFractionDigits: 2, signDisplay: "exceptZero",
+  }).format(cambio);
+  return tr("insignia.cambio", { tasa, cambio: pct });
 }
 
 // Cuatro caben en dos filas de la pestaña sin que el popup crezca.
@@ -798,10 +836,9 @@ function repartirAvisos(avisos, tasas) {
 }
 
 function mensajeAviso(aviso, rate) {
-  const verbo = aviso.sentido === "sube" ? "subido" : "bajado";
   return {
-    titulo: `1 ${aviso.from} ya está a ${nfTasaLarga.format(rate)} ${aviso.to}`,
-    cuerpo: `Ha ${verbo} de ${nfTasaLarga.format(aviso.umbral)}, como pediste.`,
+    titulo: tr("avisos.notiTitulo", { from: aviso.from, tasa: tasaLarga(rate), to: aviso.to }),
+    cuerpo: tr(aviso.sentido === "sube" ? "avisos.notiSube" : "avisos.notiBaja", { umbral: tasaLarga(aviso.umbral) }),
   };
 }
 
@@ -836,16 +873,10 @@ function textoAtajo(code, esMac) {
 }
 
 function errorMessageFor(error) {
-  if (error.name === "AbortError") {
-    return "La conexión ha tardado demasiado.";
-  }
-  if (!navigator.onLine) {
-    return "Sin conexión a internet.";
-  }
-  if (error.message.startsWith("HTTP")) {
-    return "El servicio de tasas no responde.";
-  }
-  return "No se han podido obtener las tasas.";
+  if (error.name === "AbortError") return tr("error.tiempo");
+  if (!navigator.onLine) return tr("error.sinRed");
+  if (error.message.startsWith("HTTP")) return tr("error.servicio");
+  return tr("error.otro");
 }
 
 // El popup lo carga como script normal y lo lee del ámbito global; Node necesita

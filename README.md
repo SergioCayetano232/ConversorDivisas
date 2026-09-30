@@ -58,6 +58,8 @@ que necesitaba una conversión rápida. Ahora es un clic en la barra del navegad
   los desplegables y del `1` al `5` cambian de pestaña. Si estás escribiendo en
   un campo, con `Alt` delante (`⌥` en Mac). Con `?` salen todos
 - Tiene modo claro y oscuro, según cómo tengas el sistema
+- En español o en inglés, según el idioma de Chrome. En inglés los números van
+  a la inglesa (1,084.70), pero si escribes "12,50" también lo entiende
 - Si algo falla te dice qué ha pasado, no se queda en blanco
 
 Pide lo justo: guardar tus preferencias, hablar con la API de las tasas, una
@@ -97,12 +99,14 @@ JavaScript a pelo: sin frameworks, sin build y sin dependencias.
 manifest.json    configuración de la extensión (Manifest V3)
 popup.html       estructura del popup
 popup.css        estilos
+textos.js        todos los textos, en español y en inglés
 logica.js        las cuentas y los formatos, sin tocar la pantalla
 popup.js         lo que reacciona a los clics
 background.js    el menú del clic derecho y la tasa para la tarjeta
 tarjeta.js       la tarjeta que sale en la web, en un shadow DOM
 test/            tests de logica.js
 icons/           16, 48 y 128 px
+_locales/        el nombre y la descripción que enseña Chrome, en los dos idiomas
 ```
 
 Lo que se puede probar solo está en `logica.js`, aparte del resto. Los tests van
@@ -131,9 +135,10 @@ Y detrás el resto:
 CZK, HKD, HUF, IDR, ILS, INR, ISK, KRW, MYR, NZD, PHP, RON, SGD, THB y ZAR.
 
 Si el BCE añade alguna, basta con meter una línea en el array `CURRENCIES` de
-`logica.js` (hay un test que comprueba que la lista es justo la del BCE, así
-que habrá que tocarlo también). Para que la tarjeta del clic derecho la
-reconozca por su símbolo o su nombre, va en `PISTAS`, en el mismo archivo.
+`logica.js`, con el nombre en español y en inglés (hay un test que comprueba
+que la lista es justo la del BCE, así que habrá que tocarlo también). Para que
+la tarjeta del clic derecho la reconozca por su símbolo o su nombre, va en
+`PISTAS`, en el mismo archivo.
 
 ## Licencia
 

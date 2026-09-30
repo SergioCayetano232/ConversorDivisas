@@ -358,7 +358,8 @@
     </div>
   `;
 
-  const nf = new Intl.NumberFormat("es-ES", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  // Los números, en el idioma que diga el background; hasta que llegue, español.
+  let nf = new Intl.NumberFormat("es-ES", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
   const sinMovimiento = matchMedia("(prefers-reduced-motion: reduce)");
 
   let host = null;
@@ -444,11 +445,23 @@
     requestAnimationFrame(paso);
   }
 
+  const citar = (texto) => (datos.textos?.cita ?? "«{texto}»").replace("{texto}", recortar(texto));
+
+  function traducir(d) {
+    if (d.locale) nf = new Intl.NumberFormat(d.locale, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    if (!d.textos) return;
+    $(".tarjeta").setAttribute("aria-label", d.textos.dialogo);
+    $(".cerrar").setAttribute("aria-label", d.textos.cerrar);
+    const copiar = $(".copiar");
+    if (!copiar.classList.contains("is-hecho")) copiar.textContent = d.textos.copiar;
+  }
+
   function mostrar(d) {
     if (!host) crear();
     const tarjeta = $(".tarjeta");
     tarjeta.classList.remove("is-saliendo");
     datos = d;
+    traducir(d);
 
     if (d.estado === "cargando") {
       ancla = medirSeleccion();
@@ -466,15 +479,13 @@
       $(".original").textContent = d.original;
       $(".codigo").textContent = d.to;
       $(".meta").textContent = d.fecha ? `${d.tasa} · ${d.fecha}` : d.tasa;
-      $(".nota").textContent = d.adivinada ? `Sin divisa en el texto: uso ${d.from}` : "";
+      $(".nota").textContent = d.nota ?? "";
       contar(d.resultado);
     } else if (d.estado === "cargando") {
-      $(".original").textContent = `«${recortar(d.original)}»`;
+      $(".original").textContent = citar(d.original);
     } else {
-      $(".original").textContent = `«${recortar(d.original)}»`;
-      $(".aviso").textContent = d.estado === "nada"
-        ? "No veo ninguna cantidad en lo que has seleccionado."
-        : d.mensaje;
+      $(".original").textContent = citar(d.original);
+      $(".aviso").textContent = d.mensaje;
     }
 
     colocar();
@@ -506,11 +517,11 @@
     if (event.key === "Escape") cerrar();
   }
 
-  // Igual que el botón del popup: el número a secas y con coma, que es lo que
-  // quieres al pegarlo en una hoja de cálculo.
+  // Igual que el botón del popup: el número a secas, que es lo que quieres al
+  // pegarlo en una hoja de cálculo. Me llega hecho, con el decimal del idioma.
   async function copiar() {
     if (!datos || datos.estado !== "ok") return;
-    const texto = datos.resultado.toFixed(2).replace(".", ",");
+    const texto = datos.copia ?? datos.resultado.toFixed(2).replace(".", ",");
     let hecho = false;
     try {
       await navigator.clipboard.writeText(texto);
@@ -530,12 +541,12 @@
     }
 
     const boton = $(".copiar");
-    boton.textContent = hecho ? "Copiado" : "No se pudo";
+    boton.textContent = hecho ? datos.textos?.copiado ?? "Copiado" : datos.textos?.fallo ?? "No se pudo";
     boton.classList.toggle("is-hecho", hecho);
     clearTimeout(avisoCopiado);
     avisoCopiado = setTimeout(() => {
       if (!raiz) return;
-      boton.textContent = "Copiar";
+      boton.textContent = datos?.textos?.copiar ?? "Copiar";
       boton.classList.remove("is-hecho");
     }, 1400);
   }
