@@ -862,8 +862,9 @@ body::after {
   gap: 6px;
   flex-shrink: 0;
   max-width: 62%;
-  /* Ni un píxel más que la línea de al lado: el popup va justo en 600. */
-  height: 18px;
+  /* Ni un píxel más que la línea de al lado: el popup va justo en 600, y con
+     18 ya se pasaba en las pestañas que no son el gráfico. */
+  height: 16px;
   padding: 0 8px;
   background: transparent;
   border: 1px dashed var(--hairline-strong);
@@ -908,7 +909,8 @@ body::after {
 }
 
 .comision.is-puesta .comision__pct {
-  padding: 1px 5px;
+  padding: 0 5px;
+  line-height: 12px;
   border-radius: 999px;
   background: var(--brass);
   color: var(--graphite);
@@ -1089,7 +1091,8 @@ body::after {
 
 .trend,
 .extras,
-.chuleta {
+.chuleta,
+.fecha {
   animation: enter var(--mid) var(--ease-out);
 }
 
@@ -1134,6 +1137,10 @@ body::after {
 
 .vistas[data-vista="chuleta"] .vistas__pildora {
   transform: translateX(84px);
+}
+
+.vistas[data-vista="fecha"] .vistas__pildora {
+  transform: translateX(112px);
 }
 
 /* El punto de la campana cuando hay avisos puestos. */
@@ -1499,6 +1506,174 @@ body::after {
   to {
     transform: translateX(100%);
   }
+}
+
+/* Otra vez tres filas de 19 px, para que cambiar de pestaña no mueva nada. */
+.fecha {
+  display: grid;
+  grid-template-rows: repeat(3, 19px);
+  gap: 3px;
+  margin-top: var(--s-2);
+  color-scheme: dark;
+}
+
+@media (prefers-color-scheme: light) {
+  .fecha {
+    color-scheme: light;
+  }
+}
+
+.fecha__fila {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: var(--s-2);
+  min-width: 0;
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+}
+
+.fecha__campo {
+  height: 19px;
+  padding: 0 6px;
+  background: var(--slate);
+  border: 1px solid var(--hairline);
+  border-radius: 6px;
+  color: var(--mist);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+  transition: border-color var(--fast) var(--ease);
+}
+
+.fecha__campo:hover,
+.fecha__campo:focus {
+  border-color: var(--brass-dim);
+}
+
+.fecha__campo:focus-visible,
+.fecha__rapida:focus-visible {
+  outline: 2px solid var(--brass);
+  outline-offset: 1px;
+}
+
+.fecha__campo::-webkit-calendar-picker-indicator {
+  opacity: 0.55;
+  cursor: pointer;
+  transition: opacity var(--fast) var(--ease), transform var(--fast) var(--ease-spring);
+}
+
+.fecha__campo::-webkit-calendar-picker-indicator:hover {
+  opacity: 1;
+  transform: scale(1.15);
+}
+
+.fecha__campo[aria-invalid="true"] {
+  border-color: var(--cinnabar);
+}
+
+.fecha__campo.is-mal {
+  animation: shake 400ms var(--ease);
+}
+
+.fecha__rapidas {
+  display: flex;
+  gap: 3px;
+}
+
+.fecha__rapida {
+  height: 19px;
+  padding: 0 6px;
+  background: transparent;
+  border: 1px solid var(--hairline);
+  border-radius: 999px;
+  color: var(--muted);
+  font-family: var(--font-mono);
+  font-size: 10px;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: border-color var(--fast) var(--ease), background-color var(--fast) var(--ease),
+    color var(--fast) var(--ease), transform var(--fast) var(--ease-spring);
+}
+
+.fecha__rapida:hover {
+  border-color: var(--brass-dim);
+  color: var(--brass);
+}
+
+.fecha__rapida:active {
+  transform: scale(0.92);
+}
+
+.fecha__rapida[aria-pressed="true"] {
+  background: var(--brass);
+  border-color: var(--brass);
+  color: var(--graphite);
+  font-weight: 700;
+  box-shadow: 0 0 10px -2px var(--brass-glow);
+}
+
+.fecha__valor {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--brass);
+}
+
+.fecha__valor.is-tic {
+  animation: tic 260ms var(--ease-out);
+}
+
+.fecha__tasa,
+.fecha__hoy {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 10px;
+  color: var(--muted);
+}
+
+/* Cuando la tasa es del viernes y no del domingo que pediste, que se note. */
+.fecha__tasa.is-otro-dia {
+  color: var(--brass);
+  cursor: help;
+}
+
+.fecha__tasa.is-otro-dia::before {
+  content: "";
+  display: inline-block;
+  width: 5px;
+  height: 5px;
+  margin-right: 5px;
+  border-radius: 50%;
+  background: var(--brass);
+  box-shadow: 0 0 6px var(--brass-glow);
+  vertical-align: 1px;
+  animation: pop var(--mid) var(--ease-spring);
+}
+
+.fecha__cambio {
+  flex-shrink: 0;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--muted);
+}
+
+.fecha__cambio[data-sentido="sube"] { color: var(--jade); }
+.fecha__cambio[data-sentido="baja"] { color: var(--cinnabar); }
+
+.fecha__cambio.is-nueva {
+  animation: pop var(--mid) var(--ease-spring);
+}
+
+.fecha.is-cargando .fecha__valor,
+.fecha.is-cargando .fecha__tasa {
+  color: var(--muted);
+  animation: pulse 1.2s var(--ease) infinite;
 }
 
 .avisos {

@@ -32,6 +32,9 @@ que necesitaba una conversión rápida. Ahora es un clic en la barra del navegad
   divisas, para mirar precios de un vistazo. Si la divisa es muy pequeña (yenes,
   rupias…) empieza en 100 o en 10.000, que si no la tabla no sirve. Pulsando una
   fila la pones como cantidad
+- La tasa de un día concreto: eliges la fecha (o "hace 1 mes, 6 meses, 1 año")
+  y te dice cuánto era tu cantidad entonces y cuánto ha cambiado hasta hoy. Si
+  ese día fue fin de semana o festivo, te avisa y usa la del último día con tasa
 - Recuerda la última pareja de divisas, el periodo del gráfico, la pestaña y
   las divisas que tienes puestas
 - Guarda las tasas del día, así que al abrirlo ya está el número puesto
@@ -43,7 +46,7 @@ que necesitaba una conversión rápida. Ahora es un clic en la barra del navegad
   cerrado. Hasta cuatro a la vez
 - Se abre con `Ctrl+Shift+U` (en Mac, `Cmd+Shift+U`)
 - Atajos dentro del popup: `S` da la vuelta al par, `C` copia, `D` y `A` abren
-  los desplegables y del `1` al `4` cambian de pestaña. Si estás escribiendo en
+  los desplegables y del `1` al `5` cambian de pestaña. Si estás escribiendo en
   un campo, con `Alt` delante (`⌥` en Mac). Con `?` salen todos
 - Tiene modo claro y oscuro, según cómo tengas el sistema
 - Si algo falla te dice qué ha pasado, no se queda en blanco

@@ -43,6 +43,13 @@ const el = {
   avisosLista: document.getElementById("avisos-lista"),
   avisoNota: document.getElementById("aviso-nota"),
   chuleta: document.getElementById("chuleta"),
+  fecha: document.getElementById("fecha"),
+  fechaCampo: document.getElementById("fecha-campo"),
+  fechaRapidas: document.getElementById("fecha-rapidas"),
+  fechaValor: document.getElementById("fecha-valor"),
+  fechaTasa: document.getElementById("fecha-tasa"),
+  fechaHoy: document.getElementById("fecha-hoy"),
+  fechaCambio: document.getElementById("fecha-cambio"),
   comision: document.getElementById("comision"),
   comisionPct: document.getElementById("comision-pct"),
   comisionTotal: document.getElementById("comision-total"),
@@ -100,6 +107,10 @@ let avisos = [];
 // la tasa nueva, pero mientras sea el mismo no le toco lo que hayas escrito.
 let parDelUmbral = null;
 let comision = 0;
+let fecha = null;
+// La tasa del día que miras y de qué par y fecha es, para no pintar la de otro.
+let tasaDelDia = null;
+let fechaId = 0;
 
 const nf = new Intl.NumberFormat("es-ES", {
   minimumFractionDigits: 2,
@@ -132,6 +143,7 @@ const EXTRAS_KEY = "divisasExtra";
 const VISTA_KEY = "vistaPanel";
 const AVISOS_KEY = "avisos";
 const COMISION_KEY = "comisionBanco";
+const FECHA_KEY = "fechaConsulta";
 const CACHE_KEY = "rateCache";
 const CACHE_MAX = 40;
 
@@ -208,6 +220,16 @@ async function cargarComision() {
   } catch (error) {
     console.warn("No se pudo leer la comisión", error);
     return 0;
+  }
+}
+
+async function cargarFecha() {
+  try {
+    const guardado = await chrome.storage.local.get(FECHA_KEY);
+    return leerFecha(guardado[FECHA_KEY]);
+  } catch (error) {
+    console.warn("No se pudo leer la fecha", error);
+    return leerFecha(undefined);
   }
 }
 
@@ -445,6 +467,22 @@ async function fetchTodas(from) {
   }
 }
 
+async function fetchDia(from, to, dia) {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), TIMEOUT_MS);
+
+  try {
+    const response = await fetch(`${API_HISTORY}/${dia}?base=${from}&symbols=${to}`, { signal: controller.signal });
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+    const data = await response.json();
+    const value = data.rates?.[to];
+    if (typeof value !== "number") throw new Error("Respuesta inesperada");
+    return { rate: value, date: data.date };
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
 async function fetchHistory(from, to, desde) {
   const url = `${API_HISTORY}/${startDateFor(desde)}..?base=${from}&symbols=${to}`;
   const controller = new AbortController();
@@ -655,6 +693,7 @@ function pintarVista() {
   el.extras.hidden = vista !== "extras";
   el.avisos.hidden = vista !== "avisos";
   el.chuleta.hidden = vista !== "chuleta";
+  el.fecha.hidden = vista !== "fecha";
   el.vistas.dataset.vista = vista;
   for (const boton of el.botonesVista) {
     const suya = boton.dataset.vista === vista;
@@ -683,6 +722,7 @@ function cambiarVista(nueva) {
   if (vista === "chuleta") {
     for (const fila of el.chuletaTabla.children) fila.classList.add("is-nueva");
   }
+  if (vista === "fecha") refreshFecha();
   try {
     chrome.storage.local.set({ [VISTA_KEY]: vista });
   } catch (error) {
@@ -692,7 +732,7 @@ function cambiarVista(nueva) {
 
 // El patrón de pestañas de siempre: con las flechas cambias, y el foco va con
 // la pestaña elegida.
-const VISTAS = ["evolucion", "extras", "avisos", "chuleta"];
+const VISTAS = ["evolucion", "extras", "avisos", "chuleta", "fecha"];
 
 function onTeclaVistas(event) {
   if (event.key !== "ArrowLeft" && event.key !== "ArrowRight") return;
@@ -964,6 +1004,135 @@ function onElegirChuleta(cantidad) {
   onAmountInput();
 }
 
+// Solo pido cuando la pestaña está a la vista: cada fecha es una petición, y
+// abrir el popup para convertir no debería gastarla.
+async function refreshFecha() {
+  if (vista !== "fecha") return;
+  const from = el.from.value;
+  const to = el.to.value;
+  const dia = fecha;
+  const clave = `dia:${dia}:${from}${to}`;
+  const actual = ++fechaId;
+
+  if (from === to) {
+    tasaDelDia = { clave, rate: 1, date: dia };
+    pintarFecha();
+    return;
+  }
+
+  const cache = await loadCache();
+  if (actual !== fechaId) return;
+  const cached = cache[clave];
+  // Una tasa pasada ya no cambia; solo la de hoy caduca.
+  if (cached && (dia < hoy() || isFresh(cached))) {
+    tasaDelDia = { clave, rate: cached.rate, date: cached.date };
+    pintarFecha();
+    return;
+  }
+
+  tasaDelDia = null;
+  pintarFecha();
+  el.fecha.classList.add("is-cargando");
+  try {
+    const data = await fetchDia(from, to, dia);
+    if (actual !== fechaId) return;
+    tasaDelDia = { clave, ...data };
+    pintarFecha();
+    saveCache({ [clave]: { rate: data.rate, date: data.date, day: hoy(), saved: Date.now() } });
+  } catch (error) {
+    if (actual !== fechaId) return;
+    console.warn("No se pudo obtener la tasa de ese día", error);
+    el.fechaTasa.textContent = errorMessageFor(error);
+  } finally {
+    if (actual === fechaId) el.fecha.classList.remove("is-cargando");
+  }
+}
+
+function pintarFecha() {
+  const from = el.from.value;
+  const to = el.to.value;
+  const hoyIso = hoy();
+  el.fechaCampo.min = FECHA_MINIMA;
+  el.fechaCampo.max = hoyIso;
+  if (el.fechaCampo.value !== fecha) el.fechaCampo.value = fecha;
+  for (const boton of el.fechaRapidas.children) {
+    boton.setAttribute("aria-pressed", String(mesesAtras(hoyIso, Number(boton.dataset.meses)) === fecha));
+  }
+
+  const datos = tasaDelDia?.clave === `dia:${fecha}:${from}${to}` ? tasaDelDia : null;
+  const cantidad = cantidadOrigen() ?? 1;
+  const texto = datos ? `${nf.format(cantidad * datos.rate)} ${to}` : "—";
+  if (el.fechaValor.textContent !== texto) {
+    el.fechaValor.textContent = texto;
+    if (datos) restartAnimation(el.fechaValor, "is-tic");
+  }
+  el.fechaValor.title = datos ? `${nf.format(cantidad)} ${from} el ${fechaLarga(fecha)}` : "";
+
+  if (datos) {
+    const nota = notaDiaHabil(fecha, datos.date);
+    el.fechaTasa.textContent = nota ? `del ${fechaLarga(datos.date)}` : `1 ${from} = ${nfRate.format(datos.rate)}`;
+    el.fechaTasa.classList.toggle("is-otro-dia", Boolean(nota));
+    el.fechaTasa.title = nota || "";
+  } else if (!el.fecha.classList.contains("is-cargando")) {
+    el.fechaTasa.classList.remove("is-otro-dia");
+  }
+
+  const cambio = datos && rate !== null ? cambioDesde(datos.rate, rate) : null;
+  el.fechaHoy.textContent = rate === null ? "" : `hoy ${nf.format(cantidad * rate)} ${to}`;
+  const sentido = sentidoDe(cambio);
+  // La flecha ya dice si sube o baja; el signo de delante sobraba.
+  const flecha = { sube: "▲", baja: "▼", igual: "=" }[sentido];
+  const textoCambio = cambio === null ? "" : `${flecha} ${nfPercent.format(Math.abs(cambio)).replace("+", "")}`;
+  if (el.fechaCambio.textContent !== textoCambio) {
+    el.fechaCambio.textContent = textoCambio;
+    if (textoCambio) restartAnimation(el.fechaCambio, "is-nueva");
+  }
+  el.fechaCambio.dataset.sentido = sentido;
+  el.fechaCambio.title = cambio === null ? "" : `Lo que ha cambiado la tasa desde el ${fechaLarga(fecha)}`;
+}
+
+function ponerFecha(nueva) {
+  if (nueva === fecha) return;
+  fecha = nueva;
+  pintarFecha();
+  refreshFecha();
+  try {
+    chrome.storage.local.set({ [FECHA_KEY]: fecha });
+  } catch (error) {
+    console.warn("No se pudo guardar la fecha", error);
+  }
+}
+
+function crearFechasRapidas() {
+  el.fechaRapidas.replaceChildren(...FECHAS_RAPIDAS.map(({ meses, texto }) => {
+    const boton = document.createElement("button");
+    boton.type = "button";
+    boton.className = "fecha__rapida";
+    boton.dataset.meses = meses;
+    boton.textContent = texto;
+    boton.setAttribute("aria-label", `Hace ${texto}`);
+    boton.addEventListener("click", () => ponerFecha(mesesAtras(hoy(), meses)));
+    return boton;
+  }));
+}
+
+// Con el teclado el campo de fecha va soltando días a medias ("0002-03-01"
+// mientras escribes el año), así que solo hago caso cuando es una fecha buena.
+function onCampoFecha() {
+  const valor = el.fechaCampo.value;
+  if (fechaValida(valor)) {
+    el.fechaCampo.removeAttribute("aria-invalid");
+    ponerFecha(valor);
+  }
+}
+
+function onSalirCampoFecha() {
+  if (fechaValida(el.fechaCampo.value)) return;
+  el.fechaCampo.setAttribute("aria-invalid", "true");
+  restartAnimation(el.fechaCampo, "is-mal");
+  el.fechaCampo.value = fecha;
+}
+
 // Lo de abajo más la comisión: lo que te cobra el banco de verdad.
 function pintarComision() {
   const hay = comision > 0;
@@ -1213,6 +1382,7 @@ const QUE_HACE = {
   "vista:extras": "Ver otras divisas",
   "vista:avisos": "Ver los avisos",
   "vista:chuleta": "Ver la chuleta de viaje",
+  "vista:fecha": "Ver la tasa de un día",
   ayuda: "Esta ayuda",
 };
 
@@ -1366,6 +1536,7 @@ function renderResult() {
   pintarExtras();
   pintarSentidoAviso();
   pintarChuleta();
+  pintarFecha();
 
   if (valor === null) {
     destino.value = "—";
@@ -1399,6 +1570,7 @@ async function refresh() {
   // estuviera en vuelo llegaba después y me pisaba el 1 con la tasa vieja.
   const currentRequest = ++requestId;
   refreshExtras(from);
+  refreshFecha();
 
   if (from === to) {
     rate = 1;
@@ -1467,6 +1639,7 @@ async function refresh() {
     el.rateLine.textContent = "";
     el.updated.textContent = "";
     pintarChuleta();
+    pintarFecha();
     pintarComision();
     hideTrend();
     showError(errorMessageFor(error));
@@ -1780,6 +1953,14 @@ function bindEvents() {
       el.ayudaCerrar.focus();
     }
   });
+  el.fechaCampo.addEventListener("input", onCampoFecha);
+  el.fechaCampo.addEventListener("blur", onSalirCampoFecha);
+  el.fechaCampo.addEventListener("animationend", () => {
+    el.fechaCampo.classList.remove("is-mal");
+    el.fechaCampo.removeAttribute("aria-invalid");
+  });
+  el.fechaValor.addEventListener("animationend", () => el.fechaValor.classList.remove("is-tic"));
+  el.fechaCambio.addEventListener("animationend", () => el.fechaCambio.classList.remove("is-nueva"));
   el.comision.addEventListener("click", () => (el.burbuja.hidden ? abrirBurbuja() : cerrarBurbuja()));
   el.comision.addEventListener("animationend", () => el.comision.classList.remove("is-estrenada"));
   el.comisionTotal.addEventListener("animationend", () => el.comisionTotal.classList.remove("is-tic"));
@@ -1826,11 +2007,13 @@ function bindEvents() {
 }
 
 async function init() {
-  const [pair, rango, guardados, pendiente, guardadas, vistaGuardada, avisosGuardados, comisionGuardada] = await Promise.all([
+  const [pair, rango, guardados, pendiente, guardadas, vistaGuardada, avisosGuardados, comisionGuardada, fechaGuardada] = await Promise.all([
     loadPair(), cargarRango(), cargarRecientes(), tomarPendiente(), cargarExtras(), cargarVista(), cargarAvisos(),
-    cargarComision(),
+    cargarComision(), cargarFecha(),
   ]);
   comision = comisionGuardada;
+  fecha = fechaGuardada;
+  crearFechasRapidas();
   dias = rango;
   marcarRango();
   extras = guardadas;

@@ -299,6 +299,59 @@ function fechaCorta(iso) {
   return nfFecha.format(new Date(a, m - 1, d)).replace(".", "");
 }
 
+// El primer día que publicó el BCE; antes la API contesta "not found".
+const FECHA_MINIMA = "1999-01-04";
+
+const nfFechaLarga = new Intl.DateTimeFormat("es-ES", {
+  weekday: "short", day: "numeric", month: "short", year: "numeric",
+});
+
+function fechaLarga(iso) {
+  const [a, m, d] = iso.split("-").map(Number);
+  return nfFechaLarga.format(new Date(a, m - 1, d)).replace(".", "");
+}
+
+// El Date se traga el 30 de febrero y lo pasa a marzo, así que compruebo que
+// al montarla sigue siendo el mismo día.
+function fechaValida(iso, hoyIso = hoy()) {
+  if (typeof iso !== "string" || !/^\d{4}-\d{2}-\d{2}$/.test(iso)) return false;
+  const [a, m, d] = iso.split("-").map(Number);
+  const fecha = new Date(a, m - 1, d);
+  if (fecha.getFullYear() !== a || fecha.getMonth() !== m - 1 || fecha.getDate() !== d) return false;
+  return iso >= FECHA_MINIMA && iso <= hoyIso;
+}
+
+// Del 31 de marzo un mes atrás es el 28 (o 29) de febrero, no el 3 de marzo.
+function mesesAtras(iso, meses) {
+  const [a, m, d] = iso.split("-").map(Number);
+  const fecha = new Date(a, m - 1 - meses, 1);
+  const ultimo = new Date(fecha.getFullYear(), fecha.getMonth() + 1, 0).getDate();
+  fecha.setDate(Math.min(d, ultimo));
+  return isoLocal(fecha);
+}
+
+const FECHAS_RAPIDAS = [
+  { meses: 1, texto: "1 mes" },
+  { meses: 6, texto: "6 meses" },
+  { meses: 12, texto: "1 año" },
+];
+
+function leerFecha(guardado, hoyIso = hoy()) {
+  return fechaValida(guardado, hoyIso) ? guardado : mesesAtras(hoyIso, 1);
+}
+
+// Cuánto ha cambiado desde entonces lo mismo que tenías.
+function cambioDesde(antes, ahora) {
+  if (!Number.isFinite(antes) || !Number.isFinite(ahora) || antes <= 0) return null;
+  return (ahora - antes) / antes;
+}
+
+// Los fines de semana y festivos la API da la del último día con tasa.
+function notaDiaHabil(pedida, real) {
+  if (!real || real === pedida) return "";
+  return `Ese día no hubo tasa; es la del ${fechaLarga(real)}`;
+}
+
 function startDateFor(days) {
   const date = new Date();
   date.setDate(date.getDate() - days);
@@ -620,6 +673,7 @@ const ATAJOS = {
   Digit2: "vista:extras",
   Digit3: "vista:avisos",
   Digit4: "vista:chuleta",
+  Digit5: "vista:fecha",
   KeyH: "ayuda",
 };
 
@@ -664,6 +718,7 @@ if (typeof module !== "undefined") {
     EXTRAS_MAX, EXTRAS_POR_DEFECTO, leerExtras, anadirExtra, quitarExtra,
     extrasVisibles, disponiblesParaAnadir, convertirExtras, CHULETA, escalaChuleta, chuleta,
     COMISION_MAX, COMISIONES_RAPIDAS, leerComision, leerPorcentaje, conComision,
+    FECHA_MINIMA, fechaLarga, fechaValida, mesesAtras, FECHAS_RAPIDAS, leerFecha, cambioDesde, notaDiaHabil,
     textoInsignia, cambioDiario, sentidoDe, tituloInsignia,
     AVISOS_MAX, sentidoAviso, crearAviso, leerAvisos, avisoCumplido, repartirAvisos, mensajeAviso,
     ATAJOS, atajoPara, textoAtajo,

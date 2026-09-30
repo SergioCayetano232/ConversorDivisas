@@ -204,6 +204,18 @@
                 title="Chuleta de viaje">
                 <svg viewBox="0 0 14 14" aria-hidden="true"><rect x="1.5" y="1.5" width="11" height="11" rx="2"/><path d="M1.5 5.2h11M1.5 8.8h11M7 1.5v11"/></svg>
               </button>
+              <button
+                class="vista"
+                type="button"
+                role="tab"
+                id="vista-fecha"
+                data-vista="fecha"
+                aria-selected="false"
+                aria-controls="fecha"
+                tabindex="-1"
+                title="Tasa de un día">
+                <svg viewBox="0 0 14 14" aria-hidden="true"><rect x="1.5" y="2.5" width="11" height="10" rx="2"/><path d="M1.5 6h11M4.5 1v3M9.5 1v3"/><circle cx="9.3" cy="9.3" r="0.6"/></svg>
+              </button>
             </div>
             <div class="trend__controles" id="trend-controles" hidden>
               <div class="rangos" role="group" aria-label="Periodo del gráfico">
@@ -281,6 +293,21 @@
 
           <div class="chuleta" id="chuleta" role="tabpanel" aria-labelledby="vista-chuleta" hidden>
             <ul class="chuleta__tabla" id="chuleta-tabla"></ul>
+          </div>
+
+          <div class="fecha" id="fecha" role="tabpanel" aria-labelledby="vista-fecha" hidden>
+            <div class="fecha__fila">
+              <input class="fecha__campo" type="date" id="fecha-campo" aria-label="Día que quieres consultar">
+              <div class="fecha__rapidas" id="fecha-rapidas" role="group" aria-label="Hace cuánto"></div>
+            </div>
+            <div class="fecha__fila" aria-live="polite">
+              <span class="fecha__valor" id="fecha-valor">—</span>
+              <span class="fecha__tasa" id="fecha-tasa"></span>
+            </div>
+            <div class="fecha__fila">
+              <span class="fecha__hoy" id="fecha-hoy"></span>
+              <span class="fecha__cambio" id="fecha-cambio"></span>
+            </div>
           </div>
         </div>
       </section>
