@@ -351,7 +351,9 @@ function formato(Tipo, opciones) {
   return formatos.get(clave);
 }
 
-const numeros = (opciones) => formato(Intl.NumberFormat, opciones);
+// El español de Intl deja "1650" sin punto y "16.500" con él; en una misma
+// pantalla parecía un fallo, así que agrupo siempre.
+const numeros = (opciones) => formato(Intl.NumberFormat, { useGrouping: "always", ...opciones });
 const fechas = (opciones) => formato(Intl.DateTimeFormat, opciones);
 const separadorDecimal = () => (idioma === "en" ? "." : ",");
 

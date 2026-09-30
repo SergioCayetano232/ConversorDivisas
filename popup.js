@@ -130,18 +130,20 @@ let fecha = null;
 let tasaDelDia = null;
 let fechaId = 0;
 
+// Con "always" en todos: sin él el español deja "1000,00" sin punto pero
+// "10.000,00" con él, y uno debajo del otro parecía un fallo.
 const nf = new Intl.NumberFormat(localeActual(), {
   minimumFractionDigits: 2,
   maximumFractionDigits: 2,
+  useGrouping: "always",
 });
 
 const nfRate = new Intl.NumberFormat(localeActual(), {
   minimumFractionDigits: 4,
   maximumFractionDigits: 4,
+  useGrouping: "always",
 });
 
-// Sin "always" el español deja "1000" sin punto pero "10.000" con él, y en la
-// tabla quedaba raro uno debajo del otro. En inglés da igual, ya agrupa siempre.
 const nfEntero = new Intl.NumberFormat(localeActual(), { maximumFractionDigits: 0, useGrouping: "always" });
 
 const nfComision = new Intl.NumberFormat(localeActual(), { maximumFractionDigits: 2 });

@@ -359,7 +359,9 @@
   `;
 
   // Los números, en el idioma que diga el background; hasta que llegue, español.
-  let nf = new Intl.NumberFormat("es-ES", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  const formatoDe = (locale) =>
+    new Intl.NumberFormat(locale, { minimumFractionDigits: 2, maximumFractionDigits: 2, useGrouping: "always" });
+  let nf = formatoDe("es-ES");
   const sinMovimiento = matchMedia("(prefers-reduced-motion: reduce)");
 
   let host = null;
@@ -448,7 +450,7 @@
   const citar = (texto) => (datos.textos?.cita ?? "«{texto}»").replace("{texto}", recortar(texto));
 
   function traducir(d) {
-    if (d.locale) nf = new Intl.NumberFormat(d.locale, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    if (d.locale) nf = formatoDe(d.locale);
     if (!d.textos) return;
     $(".tarjeta").setAttribute("aria-label", d.textos.dialogo);
     $(".cerrar").setAttribute("aria-label", d.textos.cerrar);

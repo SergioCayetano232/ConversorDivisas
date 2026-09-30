@@ -70,3 +70,8 @@ test("el título dice la tasa entera y el cambio", () => {
   assert.equal(tituloInsignia(par, 1.1355, -0.0005), "1 EUR = 1,1355 USD · -0,05 % desde el día anterior");
   assert.equal(tituloInsignia(par, 1.1355, null), "1 EUR = 1,1355 USD");
 });
+
+test("las tasas de cuatro cifras llevan el punto de los miles", () => {
+  // En español Intl deja "1650,1200" sin punto, y al lado de "20.315,3400" quedaba raro.
+  assert.equal(titulo({ from: "EUR", to: "KRW" }, 1650.12, null), "1 EUR = 1.650,1200 KRW");
+});
