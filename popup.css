@@ -453,7 +453,8 @@ body::after {
 /* Cuando algo cambia sin que lo toques (una pastilla, el menú de la web), que
    se vea dónde ha caído. */
 .buscador__boton.is-cambiado,
-.field__input.is-cambiado {
+.field__input.is-cambiado,
+.fecha__campo.is-cambiado {
   animation: destello 900ms var(--ease-out);
 }
 
@@ -2586,6 +2587,36 @@ body::after {
 .is-mirando .trend__punto {
   opacity: 1;
   transform: scale(1);
+}
+
+/* Mirando un día se puede pulsar: la mano en vez de la cruz. */
+.trend__lienzo.is-mirando {
+  cursor: pointer;
+}
+
+/* El latido al pulsarlo, justo antes de saltar a la pestaña del día. */
+.trend__punto.is-pulsado {
+  animation: pulsado 220ms var(--ease-spring);
+}
+
+@keyframes pulsado {
+  50% {
+    transform: scale(1.9);
+    box-shadow: 0 0 0 4px var(--brass-ghost), 0 0 18px var(--brass-glow);
+  }
+}
+
+.trend__tip-ir {
+  margin-left: -2px;
+  font-size: 12px;
+  line-height: 1;
+  color: var(--muted);
+  transition: transform var(--fast) var(--ease-spring), color var(--fast) var(--ease);
+}
+
+.trend__lienzo:hover .trend__tip-ir {
+  color: var(--brass);
+  transform: translateX(2px);
 }
 
 .is-mirando .trend__tip {

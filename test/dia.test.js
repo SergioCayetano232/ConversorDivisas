@@ -1,7 +1,7 @@
 const { test } = require("node:test");
 const assert = require("node:assert");
 const {
-  FECHA_MINIMA, fechaLarga, fechaValida, mesesAtras, FECHAS_RAPIDAS, leerFecha, cambioDesde, notaDiaHabil,
+  FECHA_MINIMA, fechaLarga, fechaValida, diaDelGrafico, mesesAtras, FECHAS_RAPIDAS, leerFecha, cambioDesde, notaDiaHabil,
 } = require("../logica.js");
 
 const HOY = "2026-09-30";
@@ -28,6 +28,21 @@ test("lo que no es una fecha no vale", () => {
   for (const mala of ["", "2024-3-1", "01/03/2024", null, undefined, 20240301]) {
     assert.equal(fechaValida(mala, HOY), false, String(mala));
   }
+});
+
+test("el día de un punto del gráfico", () => {
+  const serie = [{ fecha: "2026-09-28", valor: 1.13 }, { fecha: "2026-09-29", valor: 1.14 }];
+  assert.equal(diaDelGrafico(serie, 0, HOY), "2026-09-28");
+  assert.equal(diaDelGrafico(serie, 1, HOY), "2026-09-29");
+});
+
+test("un punto que no existe o sin fecha buena no da día", () => {
+  const serie = [{ fecha: "2026-09-28", valor: 1.13 }, { valor: 1.14 }, { fecha: "2026-10-05", valor: 1.15 }];
+  assert.equal(diaDelGrafico(serie, 5, HOY), null);
+  assert.equal(diaDelGrafico(serie, -1, HOY), null);
+  assert.equal(diaDelGrafico(serie, 1, HOY), null, "sin fecha");
+  assert.equal(diaDelGrafico(serie, 2, HOY), null, "del futuro");
+  assert.equal(diaDelGrafico(null, 0, HOY), null);
 });
 
 test("meses atrás, con los finales de mes bien", () => {

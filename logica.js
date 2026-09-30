@@ -408,6 +408,13 @@ function mesesAtras(iso, meses) {
   return isoLocal(fecha);
 }
 
+// El día de un punto del gráfico, para abrirlo en la pestaña del día. Pasa por
+// fechaValida porque esa pestaña no acepta otra cosa.
+function diaDelGrafico(serie, indice, hoyIso = hoy()) {
+  const fecha = Array.isArray(serie) ? serie[indice]?.fecha : undefined;
+  return fechaValida(fecha, hoyIso) ? fecha : null;
+}
+
 const FECHAS_RAPIDAS = [
   { meses: 1, clave: "fecha.1" },
   { meses: 6, clave: "fecha.6" },
@@ -897,7 +904,7 @@ if (typeof module !== "undefined") {
     EXTRAS_MAX, EXTRAS_POR_DEFECTO, leerExtras, anadirExtra, quitarExtra,
     extrasVisibles, disponiblesParaAnadir, convertirExtras, CHULETA, escalaChuleta, chuleta,
     COMISION_MAX, COMISIONES_RAPIDAS, leerComision, leerPorcentaje, conComision,
-    FECHA_MINIMA, fechaLarga, fechaValida, mesesAtras, FECHAS_RAPIDAS, leerFecha, cambioDesde, notaDiaHabil,
+    FECHA_MINIMA, fechaLarga, fechaValida, diaDelGrafico, mesesAtras, FECHAS_RAPIDAS, leerFecha, cambioDesde, notaDiaHabil,
     textoInsignia, cambioDiario, sentidoDe, tituloInsignia,
     AVISOS_MAX, sentidoAviso, crearAviso, leerAvisos, avisoCumplido, repartirAvisos, mensajeAviso,
     ATAJOS, atajoPara, textoAtajo,

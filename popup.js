@@ -596,8 +596,30 @@ function onPunteroGrafico(event) {
   if (i !== mirando) mirar(i);
 }
 
+// Al pulsar un día, a la pestaña del día con esa fecha puesta. Antes, un latido
+// en el punto para que se vea qué has pulsado.
+function irAlDia(conTeclado) {
+  const dia = mirando === null ? null : diaDelGrafico(serie, mirando);
+  if (!dia) return;
+  restartAnimation(el.punto, "is-pulsado");
+  const ir = () => {
+    // Primero la fecha y luego la pestaña: al revés pedía la tasa dos veces.
+    ponerFecha(dia);
+    cambiarVista("fecha");
+    restartAnimation(el.fechaCampo, "is-cambiado");
+    if (conTeclado) el.fechaCampo.focus();
+  };
+  if (sinMovimiento.matches) ir();
+  else setTimeout(ir, 200);
+}
+
 function onTeclaGrafico(event) {
   if (serie.length < 2) return;
+  if (event.key === "Enter") {
+    event.preventDefault();
+    irAlDia(true);
+    return;
+  }
   const ultimo = serie.length - 1;
   const actual = mirando ?? ultimo;
   const destino = {
@@ -2171,6 +2193,8 @@ function bindEvents() {
   el.lienzo.addEventListener("pointerdown", onPunteroGrafico);
   el.lienzo.addEventListener("pointerleave", dejarDeMirar);
   el.lienzo.addEventListener("keydown", onTeclaGrafico);
+  el.lienzo.addEventListener("click", () => irAlDia(false));
+  el.punto.addEventListener("animationend", () => el.punto.classList.remove("is-pulsado"));
   el.lienzo.addEventListener("focus", () => {
     if (serie.length >= 2 && mirando === null) mirar(serie.length - 1);
   });
