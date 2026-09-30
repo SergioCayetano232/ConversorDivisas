@@ -51,6 +51,8 @@ const TEXTOS = {
     "comision.conTitulo": "Con la comisión de tu banco pagarías {total}",
     "comision.sin": "Sin",
     "comision.sinAria": "Sin comisión",
+    "comision.incluida": "con comisión +{pct}",
+    "comision.incluidaTitulo": "Las cifras de abajo ya llevan la comisión de tu banco",
 
     "vistas": "Qué ver debajo del resultado",
     "vista.evolucion": "Evolución de la tasa",
@@ -209,6 +211,8 @@ const TEXTOS = {
     "comision.conTitulo": "With your bank's fee you'd pay {total}",
     "comision.sin": "None",
     "comision.sinAria": "No fee",
+    "comision.incluida": "incl. +{pct} fee",
+    "comision.incluidaTitulo": "The figures below already include your bank's fee",
 
     "vistas": "What to show below the result",
     "vista.evolucion": "Rate history",

@@ -1468,6 +1468,22 @@ body::after {
   animation: enter var(--mid) var(--ease-out);
 }
 
+/* El mismo dorado que la pastilla de la comisión, para que se vea que es eso. */
+.panel__comision {
+  margin-left: auto;
+  padding: 1px 7px;
+  border: 1px solid var(--brass-dim);
+  border-radius: 999px;
+  background: var(--brass-ghost);
+  color: var(--brass);
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  cursor: help;
+  animation: pop var(--mid) var(--ease-spring);
+}
+
 .trend__controles {
   flex: 1;
   display: flex;

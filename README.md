@@ -21,8 +21,9 @@ que necesitaba una conversión rápida. Ahora es un clic en la barra del navegad
   una copias su resultado; con la flecha de al lado la vuelves a poner. Se
   apunta sola cuando dejas de escribir, al darle a Enter o al copiar
 - La comisión de tu banco: pones el % que te cobra la tarjeta (0, 1, 2, 3 o el
-  que quieras) y al lado del resultado sale lo que pagarías de verdad. Se queda
-  guardada para la próxima vez
+  que quieras) y al lado del resultado sale lo que pagarías de verdad. También
+  va sumada en la chuleta y en las otras divisas. Se queda guardada para la
+  próxima vez
 - Seleccionas un precio en cualquier web, clic derecho, **Convertir**, y te sale
   el resultado en una tarjeta al lado del texto. Entiende "1.299,00 €",
   "$1,049.99", "R$ 10,50" o "20 euros"

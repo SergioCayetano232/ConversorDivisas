@@ -42,6 +42,21 @@ test("sin tasa salen las cantidades con el valor vacío", () => {
   }
 });
 
+test("con comisión, cada fila lleva lo que pagarías", () => {
+  const filas = chuleta(1.1, 2);
+  assert.ok(Math.abs(filas[0].valor - 1.122) < 1e-9);
+  assert.ok(Math.abs(filas[5].valor - 112.2) < 1e-9);
+});
+
+test("la comisión no cambia la escala", () => {
+  // 0,0049 × 1,03 pasaría de 0,005, pero la tabla tiene que seguir siendo la misma.
+  assert.deepEqual(cantidades(chuleta(0.0049, 3)), cantidades(chuleta(0.0049)));
+});
+
+test("sin tasa, la comisión no inventa nada", () => {
+  assert.ok(chuleta(null, 2).every((f) => f.valor === null));
+});
+
 test("la misma divisa en los dos lados da la tabla tal cual", () => {
   assert.deepEqual(chuleta(1).map((f) => f.valor), CHULETA);
 });

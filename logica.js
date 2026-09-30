@@ -489,10 +489,11 @@ function disponiblesParaAnadir(lista, from, to) {
   return CURRENCIES.map((c) => c.code).filter((c) => !lista.includes(c) && c !== from && c !== to);
 }
 
-function convertirExtras(cantidad, tasas, codes) {
+// Con comisión, lo que pagarías de verdad; sin ella (0) sale lo de siempre.
+function convertirExtras(cantidad, tasas, codes, comision = 0) {
   return codes.map((code) => ({
     code,
-    valor: cantidad === null || typeof tasas?.[code] !== "number" ? null : cantidad * tasas[code],
+    valor: cantidad === null || typeof tasas?.[code] !== "number" ? null : conComision(cantidad * tasas[code], comision),
   }));
 }
 
@@ -508,10 +509,12 @@ function escalaChuleta(rate) {
   return escala;
 }
 
-function chuleta(rate) {
+// La escala sale de la tasa sin comisión: un 3 % no debe cambiar la tabla de
+// 100 a 1.000 yenes.
+function chuleta(rate, comision = 0) {
   const escala = escalaChuleta(rate);
   const hay = Number.isFinite(rate) && rate > 0;
-  return CHULETA.map((n) => ({ cantidad: n * escala, valor: hay ? n * escala * rate : null }));
+  return CHULETA.map((n) => ({ cantidad: n * escala, valor: hay ? conComision(n * escala * rate, comision) : null }));
 }
 
 // Las tarjetas normales cobran entre un 1 y un 3 %. Más de un 10 % seguro que

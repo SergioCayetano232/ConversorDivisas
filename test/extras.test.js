@@ -70,6 +70,16 @@ test("sin tasa o sin cantidad, el valor es null", () => {
   assert.deepEqual(convertirExtras(10, null, ["GBP"]), [{ code: "GBP", valor: null }]);
 });
 
+test("con comisión suma lo del banco a cada una", () => {
+  const [gbp, jpy] = convertirExtras(10, { GBP: 0.85, JPY: 160 }, ["GBP", "JPY"], 2);
+  assert.ok(Math.abs(gbp.valor - 8.67) < 1e-9);
+  assert.ok(Math.abs(jpy.valor - 1632) < 1e-9);
+});
+
+test("sin comisión es lo de siempre", () => {
+  assert.deepEqual(convertirExtras(10, { GBP: 0.85 }, ["GBP"], 0), convertirExtras(10, { GBP: 0.85 }, ["GBP"]));
+});
+
 test("cero se convierte en cero, no en null", () => {
   assert.deepEqual(convertirExtras(0, { GBP: 0.85 }, ["GBP"]), [{ code: "GBP", valor: 0 }]);
 });

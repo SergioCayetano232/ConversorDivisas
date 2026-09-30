@@ -58,6 +58,7 @@ const el = {
   historialVacio: document.getElementById("historial-vacio"),
   historialBorrar: document.getElementById("historial-borrar"),
   comision: document.getElementById("comision"),
+  panelComision: document.getElementById("panel-comision"),
   comisionPct: document.getElementById("comision-pct"),
   comisionTotal: document.getElementById("comision-total"),
   burbuja: document.getElementById("comision-burbuja"),
@@ -761,6 +762,7 @@ function pintarVista() {
   el.avisos.hidden = vista !== "avisos";
   el.chuleta.hidden = vista !== "chuleta";
   el.fecha.hidden = vista !== "fecha";
+  pintarAvisoComision();
   el.vistas.dataset.vista = vista;
   for (const boton of el.botonesVista) {
     const suya = boton.dataset.vista === vista;
@@ -877,7 +879,7 @@ function pintarExtras() {
   const to = el.to.value;
   const codes = extrasVisibles(extras, from, to);
   const tasas = tasasBase?.de === from ? tasasBase.rates : null;
-  const filas = convertirExtras(cantidadOrigen(), tasas, codes);
+  const filas = convertirExtras(cantidadOrigen(), tasas, codes, comision);
 
   const celdas = filas.map(({ code, valor }, i) => {
     const celda = el.rejilla.querySelector(`[data-code="${code}"]`) ?? crearCelda(code);
@@ -1035,7 +1037,7 @@ function crearFilaChuleta() {
 function pintarChuleta() {
   const from = el.from.value;
   const to = el.to.value;
-  const filas = chuleta(rate);
+  const filas = chuleta(rate, comision);
   const tuya = cantidadOrigen();
   if (el.chuletaTabla.children.length !== filas.length) {
     el.chuletaTabla.replaceChildren(...filas.map(crearFilaChuleta));
@@ -1227,10 +1229,23 @@ function pintarComision() {
   el.comision.title = tr("comision.conTitulo", { total: texto });
 }
 
+// En la chuleta y en las otras divisas las cifras ya llevan la comisión: que se
+// vea, que si no parece que la tasa está mal.
+function pintarAvisoComision() {
+  const toca = comision > 0 && (vista === "extras" || vista === "chuleta");
+  el.panelComision.hidden = !toca;
+  if (!toca) return;
+  el.panelComision.textContent = tr("comision.incluida", { pct: tr("pct", { n: nfComision.format(comision) }) });
+  el.panelComision.title = tr("comision.incluidaTitulo");
+}
+
 function ponerComision(pct) {
   const antes = comision;
   comision = pct;
   pintarComision();
+  pintarExtras();
+  pintarChuleta();
+  pintarAvisoComision();
   for (const boton of el.comisionRapidas.children) {
     boton.setAttribute("aria-pressed", String(Number(boton.dataset.pct) === pct));
   }
