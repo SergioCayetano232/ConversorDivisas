@@ -231,21 +231,22 @@ function filtrarDivisas(consulta) {
 const PAD_X = 1.5;
 const PAD_Y = 3;
 
-// Dónde cae cada valor en el viewBox de 100x28 del gráfico.
-function coordenadas(values) {
+// La altura en el viewBox de 100x28 para un valor cualquiera de la serie. Va
+// aparte porque la línea de la media también la necesita.
+function alturaEn(values) {
   const min = Math.min(...values);
-  const max = Math.max(...values);
-  const span = max - min;
-
-  const stepX = (100 - PAD_X * 2) / (values.length - 1);
+  const span = Math.max(...values) - min;
   const bottom = 28 - PAD_Y;
   const height = bottom - PAD_Y;
+  // Si la tasa no se ha movido, span es 0: dibujamos una línea centrada.
+  return (value) => (span === 0 ? 14 : bottom - ((value - min) / span) * height);
+}
 
-  return values.map((value, index) => ({
-    x: PAD_X + index * stepX,
-    // Si la tasa no se ha movido, span es 0: dibujamos una línea centrada.
-    y: span === 0 ? 14 : bottom - ((value - min) / span) * height,
-  }));
+// Dónde cae cada valor en el viewBox de 100x28 del gráfico.
+function coordenadas(values) {
+  const stepX = (100 - PAD_X * 2) / (values.length - 1);
+  const y = alturaEn(values);
+  return values.map((value, index) => ({ x: PAD_X + index * stepX, y: y(value) }));
 }
 
 // La línea y el área sombreada que queda por debajo.
@@ -288,6 +289,35 @@ function extremos(values) {
     if (v < values[min]) min = i;
   });
   return { max, min };
+}
+
+// Mejor que tres de cada cuatro días del periodo es buen momento; peor que
+// tres de cada cuatro, malo. Lo del medio no merece ni verde ni rojo.
+const MOMENTO_UMBRAL = 0.75;
+
+// Los empates cuentan medio: si no, con la tasa plana todo salía "mal momento".
+function momento(values) {
+  if (!Array.isArray(values) || values.length < 3) return null;
+  const hoyV = values[values.length - 1];
+  const antes = values.slice(0, -1);
+  const media = values.reduce((suma, v) => suma + v, 0) / values.length;
+  const peores = antes.reduce((n, v) => n + (v < hoyV ? 1 : v === hoyV ? 0.5 : 0), 0);
+  const posicion = peores / antes.length;
+  const veredicto = posicion >= MOMENTO_UMBRAL ? "bueno" : posicion <= 1 - MOMENTO_UMBRAL ? "malo" : "normal";
+  return { media, diferencia: media ? (hoyV - media) / media : 0, posicion, veredicto };
+}
+
+const nfMomento = new Intl.NumberFormat("es-ES", { maximumFractionDigits: 1 });
+const TITULOS_MOMENTO = { bueno: "Buen momento", normal: "Momento normal", malo: "Mal momento" };
+
+function textoMomento(m, dias, from, to) {
+  const pct = Math.abs(m.diferencia * 100);
+  const detalle = pct < 0.05
+    ? "en la media"
+    : `${nfMomento.format(pct)} % ${m.diferencia > 0 ? "sobre" : "bajo"} la media`;
+  const explicacion = `Hoy la tasa es mejor que el ${Math.round(m.posicion * 100)} % de los días `
+    + `de los últimos ${dias}. Cuanto más alta, más ${to} te dan por cada ${from}.`;
+  return { titulo: TITULOS_MOMENTO[m.veredicto], detalle, explicacion };
 }
 
 const nfFecha = new Intl.DateTimeFormat("es-ES", { day: "numeric", month: "short" });
@@ -713,7 +743,7 @@ if (typeof module !== "undefined") {
     evaluar, completar, leerImporte, esOperacion,
     normalizar, filtrarDivisas, buildPaths, startDateFor, errorMessageFor,
     RECIENTES_MAX, apuntarReciente, leerRecientes, recientesVisibles,
-    coordenadas, indiceCercano, extremos, fechaCorta, largoEnPantalla,
+    coordenadas, alturaEn, MOMENTO_UMBRAL, momento, textoMomento, indiceCercano, extremos, fechaCorta, largoEnPantalla,
     leerNumero, divisaDe, leerSeleccion, destinoPara,
     EXTRAS_MAX, EXTRAS_POR_DEFECTO, leerExtras, anadirExtra, quitarExtra,
     extrasVisibles, disponiblesParaAnadir, convertirExtras, CHULETA, escalaChuleta, chuleta,

@@ -11,6 +11,10 @@
     <header class="header">
       <h1 class="header__title">ConversorDivisas</h1>
       <p class="header__rate" id="rate-line" aria-live="polite"></p>
+      <p class="momento" id="momento" tabindex="0" hidden>
+        <span class="momento__titulo" id="momento-titulo"></span>
+        <span class="momento__detalle" id="momento-detalle"></span>
+      </p>
     </header>
 
     <main class="converter">
@@ -248,8 +252,10 @@
                   </linearGradient>
                 </defs>
                 <path class="trend__area" id="trend-area" d=""></path>
+                <line class="trend__media" id="trend-media" x1="1.5" x2="98.5" y1="14" y2="14"></line>
                 <path class="trend__line" id="trend-line" d=""></path>
               </svg>
+              <span class="trend__media-texto" id="media-texto" aria-hidden="true">media</span>
               <span class="trend__marca trend__marca--max" id="marca-max" aria-hidden="true"></span>
               <span class="trend__marca trend__marca--min" id="marca-min" aria-hidden="true"></span>
               <span class="trend__guia" id="trend-guia" aria-hidden="true"></span>

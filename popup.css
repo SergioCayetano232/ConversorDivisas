@@ -183,6 +183,81 @@ body::after {
   background: linear-gradient(90deg, transparent, var(--brass-glow), transparent);
 }
 
+/* El veredicto va arriba a la derecha, que es donde sobra sitio; por encima
+   de todo lo demás y sin empujar nada, que el alto va justo. */
+.momento {
+  position: absolute;
+  top: var(--s-4);
+  right: var(--s-4);
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 3px;
+  --tono: var(--brass);
+  --tono-glow: var(--brass-glow);
+  cursor: help;
+  border-radius: var(--r-sm);
+}
+
+.momento[data-veredicto="bueno"] {
+  --tono: var(--jade);
+  --tono-glow: var(--jade-glow);
+}
+
+.momento[data-veredicto="malo"] {
+  --tono: var(--cinnabar);
+  --tono-glow: var(--cinnabar-glow);
+}
+
+.momento:focus-visible {
+  outline: 2px solid var(--brass);
+  outline-offset: 3px;
+}
+
+.momento__titulo {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--tono);
+  transition: color var(--mid) var(--ease);
+}
+
+/* El punto late despacio, como un piloto encendido. */
+.momento__titulo::before {
+  content: "";
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--tono);
+  box-shadow: 0 0 6px var(--tono-glow);
+  animation: piloto 2.4s var(--ease) infinite;
+}
+
+@keyframes piloto {
+  50% { box-shadow: 0 0 0 3px transparent, 0 0 10px var(--tono-glow); opacity: 0.7; }
+}
+
+.momento__detalle {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.momento.is-nuevo {
+  animation: momento-entra 480ms var(--ease-spring);
+}
+
+@keyframes momento-entra {
+  from {
+    opacity: 0;
+    transform: translateY(-4px) scale(0.9);
+  }
+}
+
 .header__title {
   font-size: 12px;
   font-weight: 600;
@@ -1083,10 +1158,12 @@ body::after {
   border-top: 1px solid var(--hairline);
 }
 
+/* Va muy justo: cinco pestañas, los tres periodos y el porcentaje en 274 px.
+   Si se añade algo aquí, medirlo antes o el porcentaje se sale por la derecha. */
 .panel__head {
   display: flex;
   align-items: center;
-  gap: var(--s-2);
+  gap: 6px;
 }
 
 .trend,
@@ -1101,7 +1178,7 @@ body::after {
   display: flex;
   justify-content: space-between;
   align-items: baseline;
-  gap: var(--s-2);
+  gap: 6px;
 }
 
 /* El conmutador de pestañas: la píldora dorada se desliza de un icono al otro. */
@@ -1119,7 +1196,7 @@ body::after {
   position: absolute;
   top: 2px;
   left: 2px;
-  width: 26px;
+  width: 22px;
   height: 18px;
   border-radius: 5px;
   background: var(--brass);
@@ -1128,19 +1205,19 @@ body::after {
 }
 
 .vistas[data-vista="extras"] .vistas__pildora {
-  transform: translateX(28px);
+  transform: translateX(24px);
 }
 
 .vistas[data-vista="avisos"] .vistas__pildora {
-  transform: translateX(56px);
+  transform: translateX(48px);
 }
 
 .vistas[data-vista="chuleta"] .vistas__pildora {
-  transform: translateX(84px);
+  transform: translateX(72px);
 }
 
 .vistas[data-vista="fecha"] .vistas__pildora {
-  transform: translateX(112px);
+  transform: translateX(96px);
 }
 
 /* El punto de la campana cuando hay avisos puestos. */
@@ -1174,7 +1251,7 @@ body::after {
   position: relative;
   display: grid;
   place-items: center;
-  width: 26px;
+  width: 22px;
   height: 18px;
   padding: 0;
   background: transparent;
@@ -2019,7 +2096,7 @@ body::after {
 }
 
 .rango {
-  padding: 2px 7px;
+  padding: 2px 4px;
   background: transparent;
   border: none;
   border-radius: 5px;
@@ -2058,7 +2135,7 @@ body::after {
 
 .trend__change {
   font-family: var(--font-mono);
-  font-size: 11px;
+  font-size: 10px;
   font-weight: 600;
   color: var(--muted);
   font-variant-numeric: tabular-nums;
@@ -2195,6 +2272,40 @@ body::after {
 }
 
 /* Salen cuando la línea ya casi ha terminado de dibujarse. */
+.trend__media {
+  stroke: var(--muted);
+  stroke-width: 1;
+  stroke-dasharray: 2 3;
+  vector-effect: non-scaling-stroke;
+  /* stroke-opacity y no opacity: la animación fade acaba en opacity 1 y al
+     terminar pegaba un salto. */
+  stroke-opacity: 0.55;
+  animation: fade 500ms var(--ease-out) backwards;
+  animation-delay: 650ms;
+}
+
+/* A la izquierda: a la derecha está el punto de hoy, que casi siempre es un
+   extremo cuando el veredicto es claro, y se montaban. Con fondo, porque la
+   línea pasa por detrás más de una vez. */
+.trend__media-texto {
+  position: absolute;
+  left: 0;
+  transform: translateY(-50%);
+  padding: 0 3px;
+  line-height: 10px;
+  background: color-mix(in srgb, var(--graphite) 85%, transparent);
+  border: 1px solid var(--hairline);
+  border-radius: 3px;
+  font-family: var(--font-mono);
+  font-size: 8px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--muted);
+  pointer-events: none;
+  animation: fade 500ms var(--ease-out) backwards;
+  animation-delay: 700ms;
+}
+
 .trend__marca {
   position: absolute;
   width: 5px;
@@ -2577,6 +2688,8 @@ kbd {
   .ayuda__fila,
   .bandeja__opcion,
   .trend__marca,
+  .trend__media,
+  .trend__media-texto,
   .trend__pie {
     animation-delay: 0s;
   }

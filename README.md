@@ -26,6 +26,10 @@ que necesitaba una conversión rápida. Ahora es un clic en la barra del navegad
 - Pastillas con tus últimos pares, para cambiar de uno a otro con un clic
 - Un gráfico de cómo ha ido la tasa, a 7, 30 o 90 días. Pasando el ratón ves la
   tasa de cada día, y marca el máximo y el mínimo del periodo
+- Si es buen momento para cambiar: arriba a la derecha sale "Buen momento",
+  "Momento normal" o "Mal momento", según si la tasa de hoy es mejor que la de
+  tres de cada cuatro días del periodo del gráfico, y cuánto se aparta de la
+  media. En el gráfico, la media es la línea de puntos
 - En la pestaña de al lado, la misma cantidad en otras divisas a la vez (hasta
   cinco, las eliges tú). Pulsando una la pones como destino
 - Una chuleta de viaje en otra pestaña: 1, 5, 10, 20, 50 y 100 en las dos

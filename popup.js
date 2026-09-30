@@ -80,6 +80,11 @@ const el = {
   pie: document.getElementById("trend-pie"),
   pieMin: document.getElementById("pie-min"),
   pieMax: document.getElementById("pie-max"),
+  momento: document.getElementById("momento"),
+  momentoTitulo: document.getElementById("momento-titulo"),
+  momentoDetalle: document.getElementById("momento-detalle"),
+  lineaMedia: document.getElementById("trend-media"),
+  textoMedia: document.getElementById("media-texto"),
 };
 
 let rate = null;
@@ -525,6 +530,7 @@ function hideTrend() {
   el.trendArea.setAttribute("d", "");
   el.trendChange.textContent = "";
   el.trendChange.classList.remove("is-up", "is-down");
+  pintarMomento(null);
 }
 
 // Las coordenadas van sobre el viewBox de 100x28; en porcentaje valen tal cual
@@ -632,7 +638,37 @@ function renderTrend(puntos) {
 
   hayGrafico = true;
   pintarVista();
+  pintarMomento(values);
   if (!el.trend.hidden) dibujarLinea();
+}
+
+// El veredicto de arriba sale del mismo periodo que el gráfico: si cambias a
+// 7 días, "buen momento" pasa a ser respecto a esa semana.
+function pintarMomento(values) {
+  const m = values ? momento(values) : null;
+  el.momento.hidden = !m;
+  el.lineaMedia.style.display = m ? "" : "none";
+  el.textoMedia.hidden = !m;
+  if (!m) {
+    delete el.momento.dataset.veredicto;
+    return;
+  }
+
+  const texto = textoMomento(m, dias, el.from.value, el.to.value);
+  const cambia = el.momento.dataset.veredicto !== m.veredicto;
+  el.momento.dataset.veredicto = m.veredicto;
+  el.momentoTitulo.textContent = texto.titulo;
+  el.momentoDetalle.textContent = texto.detalle;
+  el.momento.title = texto.explicacion;
+  el.momento.setAttribute("aria-label", `${texto.titulo}, ${texto.detalle} de ${dias} días. ${texto.explicacion}`);
+  if (cambia) restartAnimation(el.momento, "is-nuevo");
+
+  const y = alturaEn(values)(m.media);
+  el.lineaMedia.setAttribute("y1", y);
+  el.lineaMedia.setAttribute("y2", y);
+  el.textoMedia.style.top = `${(y / 28) * 100}%`;
+  restartAnimation(el.lineaMedia);
+  restartAnimation(el.textoMedia);
 }
 
 // Se mide ya visible: con el gráfico oculto el SVG tiene ancho cero. El +1 es
@@ -1953,6 +1989,7 @@ function bindEvents() {
       el.ayudaCerrar.focus();
     }
   });
+  el.momento.addEventListener("animationend", () => el.momento.classList.remove("is-nuevo"));
   el.fechaCampo.addEventListener("input", onCampoFecha);
   el.fechaCampo.addEventListener("blur", onSalirCampoFecha);
   el.fechaCampo.addEventListener("animationend", () => {
