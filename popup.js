@@ -1,7 +1,6 @@
 const API = "https://api.frankfurter.dev/v1/latest";
 const API_HISTORY = "https://api.frankfurter.dev/v1";
 
-const DEFAULTS = { from: "EUR", to: "USD" };
 
 const el = {
   form: document.getElementById("converter-form"),
@@ -162,7 +161,9 @@ async function loadPair() {
   } catch (error) {
     console.warn("No se pudo leer el almacenamiento", error);
   }
-  return DEFAULTS;
+  // La primera vez no hay nada guardado: tiro por el idioma del navegador, que
+  // a alguien de México EUR → USD no le sirve de mucho.
+  return parPorIdioma(navigator.languages);
 }
 
 async function savePair(from, to) {
@@ -1435,13 +1436,31 @@ let teclaFlash = null;
 // La tecla que acabas de pulsar sale un momento abajo, para que se note que
 // ha hecho algo aunque el cambio sea pequeño (un copiar, por ejemplo).
 function mostrarTecla(tecla, texto) {
-  el.teclaFlash.replaceChildren();
   const kbd = document.createElement("kbd");
   kbd.textContent = tecla;
-  el.teclaFlash.append(kbd, ` ${texto}`);
+  mostrarFlash([kbd, ` ${texto}`]);
+}
+
+function mostrarFlash(contenido, ms = 1300) {
+  el.teclaFlash.replaceChildren(...contenido);
+  el.teclaFlash.style.setProperty("--dura", `${ms}ms`);
   restartAnimation(el.teclaFlash, "is-visible");
   clearTimeout(teclaFlash);
-  teclaFlash = setTimeout(() => el.teclaFlash.classList.remove("is-visible"), 1300);
+  teclaFlash = setTimeout(() => el.teclaFlash.classList.remove("is-visible"), ms);
+}
+
+// Solo sale la primera vez, que es cuando el par lo he elegido yo y no tú: que
+// sepas de dónde viene y que se cambia como siempre.
+function saludarPorIdioma({ from, idioma }) {
+  const bandera = document.createElement("span");
+  bandera.className = "tecla-flash__bandera";
+  bandera.textContent = banderaDe(idioma) || "🌐";
+  const kbd = document.createElement("kbd");
+  kbd.textContent = from;
+  restartAnimation(el.from, "is-cambiado");
+  restartAnimation(el.to, "is-cambiado");
+  // Espero a que acabe la entrada del popup, que si no se pierde entre todo.
+  setTimeout(() => mostrarFlash([bandera, kbd, " puesta por tu idioma"], 3200), 550);
 }
 
 function onAtajo(event) {
@@ -2061,6 +2080,13 @@ async function init() {
   // El par de ahora entra en la lista, pero no lo guardo hasta que cambies:
   // abrir el popup no es elegir nada.
   recientes = apuntarReciente(guardados, pair.from, pair.to);
+
+  if (pair.idioma && !pendiente) {
+    // Lo guardo ya: así el icono de la barra enseña el mismo par y el aviso no
+    // vuelve a salir cada vez que abres.
+    savePair(pair.from, pair.to);
+    saludarPorIdioma(pair);
+  }
 
   if (pendiente) {
     // Esto sí es elegir: viene de lo que has seleccionado en la página.

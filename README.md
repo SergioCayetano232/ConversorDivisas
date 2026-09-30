@@ -39,6 +39,8 @@ que necesitaba una conversión rápida. Ahora es un clic en la barra del navegad
 - La tasa de un día concreto: eliges la fecha (o "hace 1 mes, 6 meses, 1 año")
   y te dice cuánto era tu cantidad entonces y cuánto ha cambiado hasta hoy. Si
   ese día fue fin de semana o festivo, te avisa y usa la del último día con tasa
+- La primera vez elige el par según el idioma del navegador: con `es-MX` empieza
+  en MXN → USD, con `en-GB` en GBP → EUR. Si no lo tiene claro, EUR → USD
 - Recuerda la última pareja de divisas, el periodo del gráfico, la pestaña y
   las divisas que tienes puestas
 - Guarda las tasas del día, así que al abrirlo ya está el número puesto

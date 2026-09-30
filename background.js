@@ -117,7 +117,9 @@ async function actualizarInsignia() {
 async function leerPar() {
   const { lastPair } = await chrome.storage.local.get("lastPair");
   if (lastPair && isValidCode(lastPair.from) && isValidCode(lastPair.to)) return lastPair;
-  return { from: "EUR", to: "USD" };
+  // Lo mismo que el popup la primera vez, para que el icono no diga otra cosa.
+  const { from, to } = parPorIdioma(navigator.languages);
+  return { from, to };
 }
 
 // Si el popup ya pidió hoy esta tasa la aprovecho. No escribo en la caché: eso

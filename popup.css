@@ -2670,7 +2670,20 @@ kbd {
 }
 
 .tecla-flash.is-visible {
-  animation: tecla 1300ms var(--ease-out) forwards;
+  animation: tecla var(--dura, 1300ms) var(--ease-out) forwards;
+}
+
+.tecla-flash__bandera {
+  font-size: 14px;
+  line-height: 1;
+  animation: bandera 900ms var(--ease-spring) 200ms backwards;
+}
+
+/* La bandera entra ondeando un poco. */
+@keyframes bandera {
+  0% { transform: scale(0.4) rotate(-20deg); opacity: 0; }
+  55% { transform: scale(1.15) rotate(8deg); opacity: 1; }
+  75% { transform: rotate(-4deg); }
 }
 
 .tecla-flash kbd {

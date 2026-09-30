@@ -605,6 +605,63 @@ function leerSeleccion(texto) {
 
 // Si lo que he leído ya está en el lado de destino, le doy la vuelta al par: nadie
 // quiere pasar dólares a dólares.
+const EUROZONA = [
+  "AT", "BE", "BG", "CY", "DE", "EE", "ES", "FI", "FR", "GR", "HR", "IE", "IT",
+  "LT", "LU", "LV", "MT", "NL", "PT", "SI", "SK", "AD", "MC", "SM", "VA", "ME", "XK",
+];
+
+// Solo países con divisa del BCE. Los que no (Argentina, Colombia…) no están
+// a propósito: mejor el par de siempre que uno que no te sirve.
+const DIVISA_DE_REGION = {
+  ...Object.fromEntries(EUROZONA.map((r) => [r, "EUR"])),
+  US: "USD", PR: "USD", EC: "USD", SV: "USD", PA: "USD",
+  GB: "GBP", JP: "JPY", CH: "CHF", LI: "CHF", CA: "CAD", AU: "AUD", CN: "CNY",
+  MX: "MXN", BR: "BRL", SE: "SEK", NO: "NOK", DK: "DKK", PL: "PLN", TR: "TRY",
+  CZ: "CZK", HK: "HKD", HU: "HUF", ID: "IDR", IL: "ILS", IN: "INR", IS: "ISK",
+  KR: "KRW", MY: "MYR", NZ: "NZD", PH: "PHP", RO: "RON", SG: "SGD", TH: "THB", ZA: "ZAR",
+};
+
+// Cuando el idioma viene sin país. Solo las lenguas que no dejan duda: "es" o
+// "en" pueden ser de medio mundo, y "pt" igual es Brasil que Portugal.
+const DIVISA_DE_LENGUA = {
+  ja: "JPY", ko: "KRW", th: "THB", pl: "PLN", cs: "CZK", hu: "HUF", sv: "SEK",
+  da: "DKK", nb: "NOK", nn: "NOK", no: "NOK", is: "ISK", tr: "TRY", ro: "RON",
+  id: "IDR", he: "ILS", hi: "INR",
+};
+
+// Desde estas se cambia sobre todo a euros; desde el resto, a dólares.
+const CERCA_DEL_EURO = ["GBP", "CHF", "SEK", "NOK", "DKK", "PLN", "CZK", "HUF", "RON", "ISK", "TRY"];
+
+// "zh-Hant-HK" trae el país al final, por eso busco la parte de dos letras en
+// vez de coger siempre la segunda.
+function divisaDeIdioma(etiqueta) {
+  if (typeof etiqueta !== "string" || !etiqueta) return null;
+  const [lengua, ...resto] = etiqueta.split(/[-_]/);
+  const region = resto.find((p) => /^[a-z]{2}$/i.test(p))?.toUpperCase();
+  if (region) return DIVISA_DE_REGION[region] ?? null;
+  return DIVISA_DE_LENGUA[lengua.toLowerCase()] ?? null;
+}
+
+function parPorIdioma(idiomas) {
+  for (const etiqueta of Array.isArray(idiomas) ? idiomas : []) {
+    const from = divisaDeIdioma(etiqueta);
+    if (!from || !isValidCode(from)) continue;
+    const to = from === "EUR" ? "USD" : from === "USD" || CERCA_DEL_EURO.includes(from) ? "EUR" : "USD";
+    return { from, to, idioma: etiqueta };
+  }
+  return { from: "EUR", to: "USD", idioma: null };
+}
+
+// La bandera sale de juntar las dos letras del país en "indicadores regionales".
+// En Windows no hay dibujo y se ven las letras, que tampoco queda mal.
+function banderaDe(etiqueta) {
+  const region = typeof etiqueta === "string"
+    ? etiqueta.split(/[-_]/).slice(1).find((p) => /^[a-z]{2}$/i.test(p))?.toUpperCase()
+    : null;
+  if (!region) return "";
+  return String.fromCodePoint(...[...region].map((c) => 0x1f1e6 + c.charCodeAt(0) - 65));
+}
+
 function destinoPara(divisa, par) {
   if (!divisa) return { from: par.from, to: par.to };
   return { from: divisa, to: divisa === par.to ? par.from : par.to };
@@ -758,6 +815,7 @@ if (typeof module !== "undefined") {
     RECIENTES_MAX, apuntarReciente, leerRecientes, recientesVisibles,
     RANGOS, RANGO_POR_DEFECTO, leerRango, coordenadas, alturaEn, MOMENTO_UMBRAL, momento, textoMomento, indiceCercano, extremos, fechaCorta, largoEnPantalla,
     leerNumero, divisaDe, leerSeleccion, destinoPara,
+    divisaDeIdioma, parPorIdioma, banderaDe,
     EXTRAS_MAX, EXTRAS_POR_DEFECTO, leerExtras, anadirExtra, quitarExtra,
     extrasVisibles, disponiblesParaAnadir, convertirExtras, CHULETA, escalaChuleta, chuleta,
     COMISION_MAX, COMISIONES_RAPIDAS, leerComision, leerPorcentaje, conComision,
