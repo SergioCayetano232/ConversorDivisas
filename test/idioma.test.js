@@ -59,6 +59,11 @@ test("euro y dólar van el uno al otro", () => {
   assert.equal(par(["en-US"]), "USD→EUR");
 });
 
+test("desde la eurozona es el par de siempre, sin idioma", () => {
+  assert.deepEqual(parPorIdioma(["es-ES"]), { from: "EUR", to: "USD", idioma: null });
+  assert.equal(par(["de-DE", "en-US"]), "EUR→USD", "el primero manda aunque detrás haya otro");
+});
+
 test("manda el primer idioma que se entiende", () => {
   assert.equal(par(["es", "es-MX", "en-US"]), "MXN→USD", "'es' solo no dice nada, sigue buscando");
   assert.equal(par(["es-AR", "en-US"]), "USD→EUR");

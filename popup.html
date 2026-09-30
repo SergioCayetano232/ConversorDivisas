@@ -104,13 +104,35 @@
       <section class="result" aria-labelledby="result-label">
         <div class="result__head">
           <h2 class="result__label" id="result-label">Resultado</h2>
-          <button
-            class="copiar"
-            type="button"
-            id="copiar"
-            aria-label="Copiar el resultado">
-            <span class="copiar__texto" id="copiar-texto">Copiar</span>
-          </button>
+          <div class="result__acciones">
+            <button
+              class="reloj"
+              type="button"
+              id="abrir-historial"
+              aria-haspopup="dialog"
+              aria-expanded="false"
+              aria-controls="historial"
+              aria-label="Últimas conversiones"
+              title="Últimas conversiones">
+              <svg viewBox="0 0 14 14" aria-hidden="true"><circle cx="7" cy="7" r="5.5"/><path class="reloj__agujas" d="M7 4v3l2 1.4"/></svg>
+              <span class="reloj__cuenta" id="historial-cuenta" aria-hidden="true" hidden></span>
+            </button>
+            <button
+              class="copiar"
+              type="button"
+              id="copiar"
+              aria-label="Copiar el resultado">
+              <span class="copiar__texto" id="copiar-texto">Copiar</span>
+            </button>
+          </div>
+        </div>
+        <div class="historial" id="historial" role="dialog" aria-labelledby="historial-titulo" hidden>
+          <div class="historial__cabeza">
+            <p class="historial__titulo" id="historial-titulo">Últimas conversiones</p>
+            <button class="historial__borrar" type="button" id="historial-borrar">Borrar</button>
+          </div>
+          <ul class="historial__lista" id="historial-lista"></ul>
+          <p class="historial__vacio" id="historial-vacio">Aún no has convertido nada. Lo que conviertas irá saliendo aquí.</p>
         </div>
         <div class="result__row">
           <input

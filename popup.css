@@ -807,6 +807,301 @@ body::after {
   animation: beat var(--mid) var(--ease-spring);
 }
 
+.result__acciones {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+/* Mismo alto que el botón de copiar, para que vayan como pareja. */
+.reloj {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 22px;
+  height: 20px;
+  padding: 0;
+  background: transparent;
+  border: 1px solid var(--hairline-strong);
+  border-radius: var(--r-sm);
+  color: var(--muted);
+  cursor: pointer;
+  transition: color var(--fast) var(--ease), border-color var(--fast) var(--ease),
+    background-color var(--fast) var(--ease), transform var(--fast) var(--ease-spring);
+}
+
+.reloj svg {
+  width: 12px;
+  height: 12px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.4;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.reloj__agujas {
+  transform-origin: 7px 7px;
+  transition: transform var(--slow) var(--ease-spring);
+}
+
+.reloj:hover,
+.reloj[aria-expanded="true"] {
+  color: var(--brass);
+  border-color: var(--brass-dim);
+  background: var(--brass-ghost);
+}
+
+/* Al pasar por encima las agujas dan la vuelta hacia atrás, como rebobinando. */
+.reloj:hover .reloj__agujas {
+  transform: rotate(-360deg);
+}
+
+.reloj:active {
+  transform: scale(0.92);
+}
+
+.reloj:focus-visible {
+  outline: 2px solid var(--brass);
+  outline-offset: 1px;
+}
+
+.reloj__cuenta {
+  position: absolute;
+  top: -6px;
+  right: -6px;
+  min-width: 13px;
+  height: 13px;
+  padding: 0 3px;
+  border-radius: 999px;
+  background: var(--brass);
+  color: var(--graphite);
+  font-family: var(--font-mono);
+  font-size: 8px;
+  font-weight: 700;
+  line-height: 13px;
+  text-align: center;
+  box-shadow: 0 0 0 1.5px var(--graphite);
+}
+
+/* Cuando se apunta una conversión nueva el reloj da un saltito y el número
+   se infla, para que se note dónde ha ido a parar. */
+.reloj.is-apuntado {
+  animation: beat var(--mid) var(--ease-spring);
+}
+
+.reloj.is-apuntado .reloj__cuenta {
+  animation: pop var(--mid) var(--ease-spring);
+}
+
+.historial {
+  position: absolute;
+  top: 44px;
+  left: 10px;
+  right: 10px;
+  z-index: 7;
+  display: flex;
+  flex-direction: column;
+  max-height: calc(100% - 54px);
+  padding: 10px;
+  background: color-mix(in srgb, var(--graphite) 94%, transparent);
+  backdrop-filter: blur(16px) saturate(180%);
+  -webkit-backdrop-filter: blur(16px) saturate(180%);
+  border: 1px solid var(--hairline-strong);
+  border-radius: var(--r-md);
+  box-shadow: inset 0 1px 0 var(--sheen), var(--shadow-lg);
+  transform-origin: top right;
+  animation: bandeja 300ms var(--ease-spring);
+}
+
+.historial__cabeza {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: var(--s-2);
+}
+
+.historial__titulo {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.historial__borrar {
+  padding: 1px 6px;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  color: var(--muted);
+  font-family: inherit;
+  font-size: 10px;
+  cursor: pointer;
+  transition: color var(--fast) var(--ease), border-color var(--fast) var(--ease);
+}
+
+.historial__borrar:hover {
+  color: var(--cinnabar);
+  border-color: color-mix(in srgb, var(--cinnabar) 45%, transparent);
+}
+
+.historial__lista {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
+  scrollbar-color: var(--hairline-strong) transparent;
+  list-style: none;
+}
+
+.historial__fila {
+  display: flex;
+  gap: 3px;
+  flex-shrink: 0;
+  animation: pop var(--mid) var(--ease-spring) backwards;
+  animation-delay: calc(var(--i, 0) * 30ms);
+}
+
+.historial__fila.is-saliendo {
+  animation: fuera 220ms var(--ease) forwards;
+  animation-delay: calc(var(--i, 0) * 30ms);
+}
+
+.historial__copiar {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: var(--s-2);
+  height: 24px;
+  padding: 0 var(--s-2);
+  background: var(--slate);
+  border: 1px solid var(--hairline);
+  border-radius: 6px;
+  color: var(--mist);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  cursor: copy;
+  transition: border-color var(--fast) var(--ease), background-color var(--fast) var(--ease),
+    transform var(--fast) var(--ease-spring);
+}
+
+.historial__cuenta {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.historial__de {
+  color: var(--muted);
+}
+
+.historial__flecha {
+  font-size: 9px;
+  color: var(--brass-dim);
+}
+
+.historial__cuando {
+  flex-shrink: 0;
+  font-size: 9px;
+  color: var(--muted);
+}
+
+.historial__cuando.is-tic {
+  animation: tic 260ms var(--ease-out);
+}
+
+.historial__copiar:hover {
+  border-color: var(--brass-dim);
+  background: var(--brass-ghost);
+}
+
+.historial__copiar:hover .historial__a {
+  color: var(--brass);
+}
+
+.historial__copiar:active {
+  transform: scale(0.97);
+}
+
+.historial__fila.is-copiada .historial__copiar {
+  border-color: color-mix(in srgb, var(--jade) 50%, transparent);
+  background: color-mix(in srgb, var(--jade) 12%, transparent);
+}
+
+.historial__fila.is-copiada .historial__cuando {
+  color: var(--jade);
+}
+
+.historial__fila.is-fallo .historial__cuando {
+  color: var(--cinnabar);
+}
+
+.historial__usar {
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  background: transparent;
+  border: 1px solid var(--hairline);
+  border-radius: 6px;
+  color: var(--muted);
+  cursor: pointer;
+  transition: color var(--fast) var(--ease), border-color var(--fast) var(--ease),
+    transform var(--fast) var(--ease-spring);
+}
+
+.historial__usar svg {
+  width: 12px;
+  height: 12px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.4;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  transition: transform var(--mid) var(--ease-spring);
+}
+
+.historial__usar:hover {
+  color: var(--brass);
+  border-color: var(--brass-dim);
+}
+
+.historial__usar:hover svg {
+  transform: rotate(-200deg);
+}
+
+.historial__usar:active {
+  transform: scale(0.9);
+}
+
+.historial__copiar:focus-visible,
+.historial__usar:focus-visible,
+.historial__borrar:focus-visible {
+  outline: 2px solid var(--brass);
+  outline-offset: 1px;
+}
+
+.historial__vacio {
+  padding: var(--s-3) var(--s-2);
+  font-size: 11px;
+  line-height: 1.5;
+  text-align: center;
+  color: var(--muted);
+}
+
 .result__label {
   font-size: 11px;
   font-weight: 600;
@@ -2717,6 +3012,7 @@ kbd {
   .reciente.is-nueva,
   .extra.is-nueva,
   .chuleta__fila.is-nueva,
+  .historial__fila,
   .aviso.is-nueva,
   .burbuja__rapida,
   .ayuda__fila,

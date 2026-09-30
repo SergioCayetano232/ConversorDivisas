@@ -47,6 +47,12 @@ const el = {
   fechaTasa: document.getElementById("fecha-tasa"),
   fechaHoy: document.getElementById("fecha-hoy"),
   fechaCambio: document.getElementById("fecha-cambio"),
+  abrirHistorial: document.getElementById("abrir-historial"),
+  historialCuenta: document.getElementById("historial-cuenta"),
+  historial: document.getElementById("historial"),
+  historialLista: document.getElementById("historial-lista"),
+  historialVacio: document.getElementById("historial-vacio"),
+  historialBorrar: document.getElementById("historial-borrar"),
   comision: document.getElementById("comision"),
   comisionPct: document.getElementById("comision-pct"),
   comisionTotal: document.getElementById("comision-total"),
@@ -110,6 +116,11 @@ let avisos = [];
 // la tasa nueva, pero mientras sea el mismo no le toco lo que hayas escrito.
 let parDelUmbral = null;
 let comision = 0;
+let historial = [];
+// Abrir el popup y verlo con su 1 de siempre no es convertir nada: solo apunto
+// cuando has tocado algo tú.
+let tocado = false;
+let apunteId = null;
 let fecha = null;
 // La tasa del día que miras y de qué par y fecha es, para no pintar la de otro.
 let tasaDelDia = null;
@@ -147,6 +158,10 @@ const VISTA_KEY = "vistaPanel";
 const AVISOS_KEY = "avisos";
 const COMISION_KEY = "comisionBanco";
 const FECHA_KEY = "fechaConsulta";
+const HISTORIAL_KEY = "historialConversiones";
+// Lo que tardo en dar por buena una cantidad: mientras escribes "1", "12",
+// "125" no quiero tres entradas, solo la última.
+const PAUSA_APUNTE = 2000;
 const CACHE_KEY = "rateCache";
 const CACHE_MAX = 40;
 
@@ -235,6 +250,16 @@ async function cargarFecha() {
   } catch (error) {
     console.warn("No se pudo leer la fecha", error);
     return leerFecha(undefined);
+  }
+}
+
+async function cargarHistorial() {
+  try {
+    const guardado = await chrome.storage.local.get(HISTORIAL_KEY);
+    return leerHistorial(guardado[HISTORIAL_KEY]);
+  } catch (error) {
+    console.warn("No se pudo leer el historial", error);
+    return [];
   }
 }
 
@@ -1035,6 +1060,7 @@ function pintarChuleta() {
 }
 
 function onElegirChuleta(cantidad) {
+  tocado = true;
   el.amount.value = nfEntero.format(cantidad);
   restartAnimation(el.amount, "is-cambiado");
   onAmountInput();
@@ -1210,6 +1236,7 @@ function ponerComision(pct) {
 }
 
 function abrirBurbuja() {
+  cerrarHistorial();
   el.comisionRapidas.replaceChildren(...COMISIONES_RAPIDAS.map((pct, i) => {
     const boton = document.createElement("button");
     boton.type = "button";
@@ -1257,6 +1284,146 @@ function onTeclaCampoComision(event) {
     return;
   }
   cerrarBurbuja()?.focus();
+}
+
+function marcarTocado() {
+  tocado = true;
+  programarApunte();
+}
+
+function programarApunte() {
+  if (!tocado) return;
+  clearTimeout(apunteId);
+  apunteId = setTimeout(apuntarAhora, PAUSA_APUNTE);
+}
+
+// Leo lo que se ve en los dos campos y no lo recalculo: así lo apuntado es
+// justo lo que tenías delante, con sus dos decimales.
+function apuntarAhora() {
+  clearTimeout(apunteId);
+  if (!tocado || rate === null) return;
+  const nuevo = apuntarConversion(historial, {
+    from: el.from.value,
+    to: el.to.value,
+    cantidad: leerImporte(el.amount.value),
+    resultado: leerImporte(el.result.value),
+    cuando: Date.now(),
+  });
+  if (nuevo === historial) return;
+  const esOtra = nuevo[0] !== historial[0] && nuevo.length > 0;
+  historial = nuevo;
+  pintarHistorial();
+  if (esOtra) restartAnimation(el.abrirHistorial, "is-apuntado");
+  try {
+    chrome.storage.local.set({ [HISTORIAL_KEY]: historial });
+  } catch (error) {
+    console.warn("No se pudo guardar el historial", error);
+  }
+}
+
+function crearFilaHistorial(entrada, i) {
+  const fila = document.createElement("li");
+  fila.className = "historial__fila";
+  fila.style.setProperty("--i", i);
+
+  const botonCopiar = document.createElement("button");
+  botonCopiar.type = "button";
+  botonCopiar.className = "historial__copiar";
+  const cuenta = document.createElement("span");
+  cuenta.className = "historial__cuenta";
+  cuenta.innerHTML = '<span class="historial__de"></span><span class="historial__flecha" aria-hidden="true">→</span><span class="historial__a"></span>';
+  cuenta.querySelector(".historial__de").textContent = `${nf.format(entrada.cantidad)} ${entrada.from}`;
+  cuenta.querySelector(".historial__a").textContent = `${nf.format(entrada.resultado)} ${entrada.to}`;
+  const cuando = document.createElement("span");
+  cuando.className = "historial__cuando";
+  cuando.textContent = haceCuanto(entrada.cuando);
+  botonCopiar.append(cuenta, cuando);
+  botonCopiar.title = "Copiar el resultado";
+  botonCopiar.setAttribute(
+    "aria-label",
+    `${nf.format(entrada.cantidad)} ${entrada.from} son ${nf.format(entrada.resultado)} ${entrada.to}, ${cuando.textContent}. Copiar`,
+  );
+  botonCopiar.addEventListener("click", async () => {
+    const bien = await copiar(textoParaCopiar(entrada.resultado));
+    cuando.textContent = bien ? "✓ copiado" : "no se pudo";
+    fila.classList.add(bien ? "is-copiada" : "is-fallo");
+    restartAnimation(cuando, "is-tic");
+    setTimeout(() => {
+      cuando.textContent = haceCuanto(entrada.cuando);
+      fila.classList.remove("is-copiada", "is-fallo");
+    }, 1300);
+  });
+
+  const usar = document.createElement("button");
+  usar.type = "button";
+  usar.className = "historial__usar";
+  usar.title = "Volver a ponerla";
+  usar.setAttribute("aria-label", `Volver a poner ${nf.format(entrada.cantidad)} ${entrada.from} a ${entrada.to}`);
+  usar.innerHTML = '<svg viewBox="0 0 14 14" aria-hidden="true"><path d="M2.5 7a4.5 4.5 0 1 0 1.4-3.3"/><path d="M2 1.8v2.6h2.6"/></svg>';
+  usar.addEventListener("click", () => onUsarHistorial(entrada));
+
+  fila.append(botonCopiar, usar);
+  return fila;
+}
+
+function pintarHistorial() {
+  const hay = historial.length > 0;
+  el.historialCuenta.hidden = !hay;
+  el.historialCuenta.textContent = historial.length;
+  el.abrirHistorial.setAttribute("aria-label", hay ? `Últimas conversiones (${historial.length})` : "Últimas conversiones");
+  if (el.historial.hidden) return;
+  el.historialLista.replaceChildren(...historial.map(crearFilaHistorial));
+  el.historialVacio.hidden = hay;
+  el.historialBorrar.hidden = !hay;
+}
+
+function abrirHistorial() {
+  cerrarBurbuja();
+  el.historial.hidden = false;
+  el.abrirHistorial.setAttribute("aria-expanded", "true");
+  pintarHistorial();
+  (el.historialLista.querySelector("button") ?? el.abrirHistorial).focus();
+}
+
+function cerrarHistorial() {
+  if (el.historial.hidden) return;
+  el.historial.hidden = true;
+  el.abrirHistorial.setAttribute("aria-expanded", "false");
+  return el.abrirHistorial;
+}
+
+function onUsarHistorial({ from, to, cantidad }) {
+  cerrarHistorial();
+  buscadores.from.poner(from);
+  buscadores.to.poner(to);
+  el.amount.value = nf.format(cantidad);
+  restartAnimation(el.from, "is-cambiado");
+  restartAnimation(el.to, "is-cambiado");
+  restartAnimation(el.amount, "is-cambiado");
+  onAmountInput();
+  onCurrencyChange();
+  el.amount.focus();
+}
+
+// Las filas se van en cascada y luego se vacía de verdad.
+function onBorrarHistorial() {
+  const filas = [...el.historialLista.children];
+  const vaciar = () => {
+    historial = [];
+    pintarHistorial();
+    el.abrirHistorial.focus();
+    try {
+      chrome.storage.local.set({ [HISTORIAL_KEY]: [] });
+    } catch (error) {
+      console.warn("No se pudo borrar el historial", error);
+    }
+  };
+  if (sinMovimiento.matches || filas.length === 0) return vaciar();
+  filas.forEach((fila, i) => {
+    fila.style.setProperty("--i", i);
+    fila.classList.add("is-saliendo");
+  });
+  filas.at(-1).addEventListener("animationend", vaciar, { once: true });
 }
 
 async function guardarAvisos() {
@@ -1507,6 +1674,7 @@ function abrirAyuda() {
   focoAntesDeAyuda = document.activeElement;
   cerrarBandeja();
   cerrarBurbuja();
+  cerrarHistorial();
   pintarAyuda();
   el.ayuda.hidden = false;
   el.abrirAyuda.setAttribute("aria-expanded", "true");
@@ -1724,6 +1892,7 @@ function onSwap() {
   savePair(el.from.value, el.to.value);
   apuntarPar();
   refresh();
+  programarApunte();
 }
 
 // El "= 35,00" que sale dentro del campo mientras escribes una cuenta. Le dejo
@@ -1794,23 +1963,22 @@ let avisoCopiado = null;
 async function onCopiar() {
   const valor = leerImporte(el.result.value);
   if (valor === null || rate === null) return;
+  // Si lo copias es que era esa: la apunto ya, sin esperar.
+  tocado = true;
+  apuntarAhora();
+  avisar(await copiar(textoParaCopiar(valor)) ? "Copiado" : "No se pudo");
+}
 
-  // Copio el número a secas, sin el código ni separadores de miles: lo normal
-  // es que acabe pegado en una hoja de cálculo y ahí el punto estorba.
-  const texto = valor.toFixed(2).replace(".", ",");
-
+async function copiar(texto) {
   try {
     await navigator.clipboard.writeText(texto);
-    avisar("Copiado");
+    return true;
   } catch (error) {
     // El portapapeles moderno puede negarse según cómo esté el foco. El truco
     // del campo oculto es viejo pero no pide permisos y aquí siempre funciona.
-    if (copiarALaAntigua(texto)) {
-      avisar("Copiado");
-      return;
-    }
+    if (copiarALaAntigua(texto)) return true;
     console.warn("No se pudo copiar", error);
-    avisar("No se pudo");
+    return false;
   }
 }
 
@@ -1957,16 +2125,22 @@ function onCurrencyChange() {
   savePair(el.from.value, el.to.value);
   apuntarPar();
   refresh();
+  programarApunte();
 }
 
 function bindEvents() {
   el.form.addEventListener("submit", (event) => event.preventDefault());
   el.amount.addEventListener("input", onAmountInput);
   el.result.addEventListener("input", onResultInput);
+  el.amount.addEventListener("input", marcarTocado);
+  el.result.addEventListener("input", marcarTocado);
   el.result.addEventListener("focus", () => el.result.select());
   for (const campo of [el.amount, el.result]) {
     campo.addEventListener("keydown", (event) => {
-      if (event.key === "Enter") resolverCalculo(campo);
+      if (event.key === "Enter") {
+        resolverCalculo(campo);
+        apuntarAhora();
+      }
     });
     campo.addEventListener("blur", () => resolverCalculo(campo));
     campo.addEventListener("animationend", () => campo.classList.remove("is-resuelto"));
@@ -2007,6 +2181,11 @@ function bindEvents() {
       el.ayudaCerrar.focus();
     }
   });
+  el.abrirHistorial.addEventListener("click", () => (el.historial.hidden ? abrirHistorial() : cerrarHistorial()));
+  el.abrirHistorial.addEventListener("animationend", () => el.abrirHistorial.classList.remove("is-apuntado"));
+  el.historialBorrar.addEventListener("click", onBorrarHistorial);
+  // Si cierras el popup antes de los dos segundos, que no se pierda.
+  window.addEventListener("pagehide", apuntarAhora);
   el.momento.addEventListener("animationend", () => el.momento.classList.remove("is-nuevo"));
   el.fechaCampo.addEventListener("input", onCampoFecha);
   el.fechaCampo.addEventListener("blur", onSalirCampoFecha);
@@ -2047,6 +2226,10 @@ function bindEvents() {
       event.preventDefault();
       cerrarBurbuja()?.focus();
     }
+    if (event.key === "Escape" && !el.historial.hidden) {
+      event.preventDefault();
+      cerrarHistorial()?.focus();
+    }
   });
   document.addEventListener("mousedown", (event) => {
     if (!el.bandeja.hidden && !el.bandeja.contains(event.target)) cerrarBandeja();
@@ -2055,6 +2238,9 @@ function bindEvents() {
     if (!el.burbuja.hidden && !el.burbuja.contains(event.target) && !el.comision.contains(event.target)) {
       cerrarBurbuja();
     }
+    if (!el.historial.hidden && !el.historial.contains(event.target) && !el.abrirHistorial.contains(event.target)) {
+      cerrarHistorial();
+    }
   });
   window.addEventListener("online", () => {
     if (rate === null) refresh();
@@ -2062,10 +2248,12 @@ function bindEvents() {
 }
 
 async function init() {
-  const [pair, rango, guardados, pendiente, guardadas, vistaGuardada, avisosGuardados, comisionGuardada, fechaGuardada] = await Promise.all([
+  const [pair, rango, guardados, pendiente, guardadas, vistaGuardada, avisosGuardados, comisionGuardada, fechaGuardada, historialGuardado] = await Promise.all([
     loadPair(), cargarRango(), cargarRecientes(), tomarPendiente(), cargarExtras(), cargarVista(), cargarAvisos(),
-    cargarComision(), cargarFecha(),
+    cargarComision(), cargarFecha(), cargarHistorial(),
   ]);
+  historial = historialGuardado;
+  pintarHistorial();
   comision = comisionGuardada;
   fecha = fechaGuardada;
   crearFechasRapidas();
@@ -2090,6 +2278,7 @@ async function init() {
 
   if (pendiente) {
     // Esto sí es elegir: viene de lo que has seleccionado en la página.
+    tocado = true;
     el.amount.value = nf.format(pendiente.cantidad);
     savePair(pendiente.from, pendiente.to);
     apuntarPar();
@@ -2101,6 +2290,8 @@ async function init() {
   bindEvents();
   onAmountInput();
   refresh();
+  // Lo que viene del clic derecho también es una conversión tuya.
+  programarApunte();
 
   el.amount.focus();
   el.amount.select();

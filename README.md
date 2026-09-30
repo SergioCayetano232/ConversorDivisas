@@ -17,6 +17,9 @@ que necesitaba una conversión rápida. Ahora es un clic en la barra del navegad
 - Buscas la divisa escribiendo: pones "mex" y sale el peso mexicano
 - Un botón para dar la vuelta al par sin tocar los dos desplegables
 - Un botón para copiar el resultado
+- Las últimas diez conversiones, en el reloj que hay al lado de **Copiar**. Pulsando
+  una copias su resultado; con la flecha de al lado la vuelves a poner. Se
+  apunta sola cuando dejas de escribir, al darle a Enter o al copiar
 - La comisión de tu banco: pones el % que te cobra la tarjeta (0, 1, 2, 3 o el
   que quieras) y al lado del resultado sale lo que pagarías de verdad. Se queda
   guardada para la próxima vez

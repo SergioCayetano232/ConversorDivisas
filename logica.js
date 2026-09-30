@@ -646,6 +646,9 @@ function parPorIdioma(idiomas) {
   for (const etiqueta of Array.isArray(idiomas) ? idiomas : []) {
     const from = divisaDeIdioma(etiqueta);
     if (!from || !isValidCode(from)) continue;
+    // Desde la eurozona sale el par de siempre: no cuenta como adivinado, que
+    // si no el aviso de "puesta por tu idioma" salía para no cambiar nada.
+    if (from === "EUR") break;
     const to = from === "EUR" ? "USD" : from === "USD" || CERCA_DEL_EURO.includes(from) ? "EUR" : "USD";
     return { from, to, idioma: etiqueta };
   }
@@ -660,6 +663,46 @@ function banderaDe(etiqueta) {
     : null;
   if (!region) return "";
   return String.fromCodePoint(...[...region].map((c) => 0x1f1e6 + c.charCodeAt(0) - 65));
+}
+
+// Diez: más y ya no es "lo último que convertí", es un registro que nadie mira.
+const HISTORIAL_MAX = 10;
+
+const esEntradaBuena = (e) => Boolean(e) && isValidCode(e.from) && isValidCode(e.to)
+  && Number.isFinite(e.cantidad) && Number.isFinite(e.resultado) && Number.isFinite(e.cuando);
+
+function leerHistorial(guardado) {
+  if (!Array.isArray(guardado)) return [];
+  return guardado.filter(esEntradaBuena).slice(0, HISTORIAL_MAX);
+}
+
+// Si vuelves a convertir lo mismo no sale dos veces: sube arriba con la hora
+// nueva. El resultado se guarda tal cual salió, con la tasa de aquel día.
+function apuntarConversion(lista, entrada) {
+  if (!esEntradaBuena(entrada) || entrada.cantidad <= 0) return lista;
+  const { from, to, cantidad, resultado, cuando } = entrada;
+  const otra = (e) => !(e.from === from && e.to === to && e.cantidad === cantidad);
+  return [{ from, to, cantidad, resultado, cuando }, ...lista.filter(otra)].slice(0, HISTORIAL_MAX);
+}
+
+// Los días van por calendario y no de 24 en 24 horas: lo de anoche a las once
+// es "ayer" aunque sean las nueve de la mañana.
+function haceCuanto(cuando, ahora = Date.now()) {
+  const min = Math.floor((ahora - cuando) / 60000);
+  if (min < 1) return "ahora";
+  if (min < 60) return `hace ${min} min`;
+  const dia = (t) => new Date(t).setHours(0, 0, 0, 0);
+  const dias = Math.round((dia(ahora) - dia(cuando)) / 86400000);
+  if (dias === 0) return `hace ${Math.floor(min / 60)} h`;
+  if (dias === 1) return "ayer";
+  if (dias < 7) return `hace ${dias} días`;
+  return fechaCorta(isoLocal(new Date(cuando)), new Date(ahora).getFullYear());
+}
+
+// El número a secas, sin código ni puntos de miles: lo normal es que acabe
+// pegado en una hoja de cálculo y ahí el punto estorba.
+function textoParaCopiar(valor) {
+  return valor.toFixed(2).replace(".", ",");
 }
 
 function destinoPara(divisa, par) {
@@ -816,6 +859,7 @@ if (typeof module !== "undefined") {
     RANGOS, RANGO_POR_DEFECTO, leerRango, coordenadas, alturaEn, MOMENTO_UMBRAL, momento, textoMomento, indiceCercano, extremos, fechaCorta, largoEnPantalla,
     leerNumero, divisaDe, leerSeleccion, destinoPara,
     divisaDeIdioma, parPorIdioma, banderaDe,
+    HISTORIAL_MAX, leerHistorial, apuntarConversion, haceCuanto, textoParaCopiar,
     EXTRAS_MAX, EXTRAS_POR_DEFECTO, leerExtras, anadirExtra, quitarExtra,
     extrasVisibles, disponiblesParaAnadir, convertirExtras, CHULETA, escalaChuleta, chuleta,
     COMISION_MAX, COMISIONES_RAPIDAS, leerComision, leerPorcentaje, conComision,
