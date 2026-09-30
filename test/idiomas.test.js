@@ -1,6 +1,8 @@
 const { test, afterEach } = require("node:test");
 const assert = require("node:assert");
-const { TEXTOS, idiomaPara, ponerIdioma, idiomaActual, tr, separadorDecimal } = require("../textos.js");
+const {
+  TEXTOS, NOMBRES_IDIOMA, idiomaPara, idiomaElegido, ponerIdioma, idiomaActual, tr, separadorDecimal,
+} = require("../textos.js");
 const {
   CURRENCIES, nombreDe, filtrarDivisas, parseAmount, leerImporte, fechaCorta, fechaLarga, textoMomento,
   notaDiaHabil, haceCuanto, textoParaCopiar, textoInsignia, tituloInsignia, mensajeAviso, errorMessageFor,
@@ -31,6 +33,21 @@ test("ningún texto se ha quedado vacío", () => {
 test("español para cualquier variante, inglés para lo demás", () => {
   for (const es of ["es", "es-ES", "es-MX", "es-419", "ES"]) assert.equal(idiomaPara(es), "es", es);
   for (const en of ["en", "en-US", "de-DE", "fr", "", undefined, "estonian"]) assert.equal(idiomaPara(en), "en", String(en));
+});
+
+test("lo elegido a mano gana al idioma de Chrome", () => {
+  assert.equal(idiomaElegido("en", "es-ES"), "en");
+  assert.equal(idiomaElegido("es", "en-US"), "es");
+});
+
+test("en automático, o sin nada guardado, el de Chrome", () => {
+  assert.equal(idiomaElegido("auto", "es-MX"), "es");
+  assert.equal(idiomaElegido(undefined, "de-DE"), "en");
+  assert.equal(idiomaElegido("fr", "es-ES"), "es", "uno que no existe cuenta como automático");
+});
+
+test("cada idioma tiene su nombre para el menú", () => {
+  assert.deepEqual(Object.keys(NOMBRES_IDIOMA).sort(), Object.keys(TEXTOS).sort());
 });
 
 test("un idioma que no existe se queda en español", () => {

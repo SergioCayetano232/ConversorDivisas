@@ -59,8 +59,9 @@ que necesitaba una conversión rápida. Ahora es un clic en la barra del navegad
   los desplegables y del `1` al `5` cambian de pestaña. Si estás escribiendo en
   un campo, con `Alt` delante (`⌥` en Mac). Con `?` salen todos
 - Tiene modo claro y oscuro, según cómo tengas el sistema
-- En español o en inglés, según el idioma de Chrome. En inglés los números van
-  a la inglesa (1,084.70), pero si escribes "12,50" también lo entiende
+- En español o en inglés, según el idioma de Chrome o el que elijas con clic
+  derecho en el icono → **Idioma**. En inglés los números van a la inglesa
+  (1,084.70), pero si escribes "12,50" también lo entiende
 - Si algo falla te dice qué ha pasado, no se queda en blanco
 
 Pide lo justo: guardar tus preferencias, hablar con la API de las tasas, una

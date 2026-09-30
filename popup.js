@@ -1,6 +1,7 @@
-// Chrome decide el idioma por el suyo. Va lo primero porque los formatos de
-// número de más abajo ya se crean en ese idioma.
-ponerIdioma(idiomaPara(chrome.i18n?.getUILanguage?.() ?? navigator.language));
+// El de Chrome de entrada; init() lo cambia por el que hayas elegido en el menú
+// del icono antes de pintar nada.
+const idiomaDeChrome = chrome.i18n?.getUILanguage?.() ?? navigator.language;
+ponerIdioma(idiomaPara(idiomaDeChrome));
 
 const API = "https://api.frankfurter.dev/v1/latest";
 const API_HISTORY = "https://api.frankfurter.dev/v1";
@@ -131,29 +132,17 @@ let fecha = null;
 let tasaDelDia = null;
 let fechaId = 0;
 
-// Con "always" en todos: sin él el español deja "1000,00" sin punto pero
-// "10.000,00" con él, y uno debajo del otro parecía un fallo.
-const nf = new Intl.NumberFormat(localeActual(), {
-  minimumFractionDigits: 2,
-  maximumFractionDigits: 2,
-  useGrouping: "always",
-});
+// Se piden en el momento a numeros(), que los guarda por idioma: así da igual
+// que el idioma elegido llegue después de cargar el archivo. Y todos agrupan
+// siempre los miles, que es lo que pone numeros() por defecto.
+const formatoNumero = (opciones) => ({ format: (n) => numeros(opciones).format(n) });
 
-const nfRate = new Intl.NumberFormat(localeActual(), {
-  minimumFractionDigits: 4,
-  maximumFractionDigits: 4,
-  useGrouping: "always",
-});
-
-const nfEntero = new Intl.NumberFormat(localeActual(), { maximumFractionDigits: 0, useGrouping: "always" });
-
-const nfComision = new Intl.NumberFormat(localeActual(), { maximumFractionDigits: 2 });
-
-const nfPercent = new Intl.NumberFormat(localeActual(), {
-  style: "percent",
-  minimumFractionDigits: 2,
-  maximumFractionDigits: 2,
-  signDisplay: "exceptZero",
+const nf = formatoNumero({ minimumFractionDigits: 2, maximumFractionDigits: 2 });
+const nfRate = formatoNumero({ minimumFractionDigits: 4, maximumFractionDigits: 4 });
+const nfEntero = formatoNumero({ maximumFractionDigits: 0 });
+const nfComision = formatoNumero({ maximumFractionDigits: 2 });
+const nfPercent = formatoNumero({
+  style: "percent", minimumFractionDigits: 2, maximumFractionDigits: 2, signDisplay: "exceptZero",
 });
 
 
@@ -1683,7 +1672,7 @@ function pintarAyuda() {
     fila.append(kbd, texto);
     return fila;
   }));
-  el.ayudaNota.textContent = tr("ayuda.nota", { alt });
+  el.ayudaNota.replaceChildren(tr("ayuda.nota", { alt }), document.createElement("br"), tr("ayuda.idioma"));
 }
 
 function abrirAyuda() {
@@ -2275,8 +2264,33 @@ function bindEvents() {
   });
 }
 
+async function cargarIdioma() {
+  try {
+    const guardado = await chrome.storage.local.get(["idioma", "avisarIdioma"]);
+    ponerIdioma(idiomaElegido(guardado.idioma, idiomaDeChrome));
+    if (guardado.avisarIdioma) {
+      chrome.storage.local.remove("avisarIdioma");
+      return true;
+    }
+  } catch (error) {
+    console.warn("No se pudo leer el idioma", error);
+  }
+  return false;
+}
+
+// Después de cambiarlo en el menú del icono, la primera vez que abres te dice
+// en qué idioma está, en ese idioma.
+function saludarIdioma() {
+  const globo = document.createElement("span");
+  globo.className = "tecla-flash__bandera";
+  globo.textContent = "🌐";
+  setTimeout(() => mostrarFlash([globo, ` ${tr("idioma.cambiado")}`], 2600), 550);
+}
+
 async function init() {
+  const idiomaCambiado = await cargarIdioma();
   traducirPagina();
+  if (idiomaCambiado) saludarIdioma();
   const [pair, rango, guardados, pendiente, guardadas, vistaGuardada, avisosGuardados, comisionGuardada, fechaGuardada, historialGuardado] = await Promise.all([
     loadPair(), cargarRango(), cargarRecientes(), tomarPendiente(), cargarExtras(), cargarVista(), cargarAvisos(),
     cargarComision(), cargarFecha(), cargarHistorial(),

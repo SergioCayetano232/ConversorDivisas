@@ -2,7 +2,19 @@
 // un módulo, igual que en el popup.
 importScripts("textos.js", "logica.js");
 
+const IDIOMA_KEY = "idioma";
+
+// El de Chrome ya, y en cuanto se lea lo guardado, el que hayas elegido. Lo
+// que dependa del idioma espera a esta promesa: si el service worker se acaba
+// de despertar por un clic, la lectura puede no haber llegado.
 ponerIdioma(idiomaPara(chrome.i18n.getUILanguage()));
+let idiomaListo = aplicarIdioma();
+
+async function aplicarIdioma() {
+  const { [IDIOMA_KEY]: guardado } = await chrome.storage.local.get(IDIOMA_KEY);
+  ponerIdioma(idiomaElegido(guardado, chrome.i18n.getUILanguage()));
+  return guardado ?? "auto";
+}
 
 const API = "https://api.frankfurter.dev/v1/latest";
 const API_HISTORY = "https://api.frankfurter.dev/v1";
@@ -13,16 +25,26 @@ const TIMEOUT_MS = 8000;
 const nf = { format: (n) => numeros({ minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(n) };
 const nfRate = { format: (n) => numeros({ minimumFractionDigits: 4, maximumFractionDigits: 4 }).format(n) };
 
-chrome.runtime.onInstalled.addListener(async () => {
-  // Al actualizar la extensión los menús de antes pueden seguir ahí, y crear
-  // uno con un id repetido falla.
+// Los títulos van en el idioma de ahora, así que al cambiarlo los rehago todos.
+// Y todos de golpe: al actualizar la extensión los de antes pueden seguir ahí, y
+// crear uno con un id repetido falla. En cola, porque dos a la vez (instalar y
+// cambiar el idioma, o dos clics seguidos) se mezclaban y salían repetidos.
+let colaMenus = Promise.resolve();
+
+function crearMenus() {
+  colaMenus = colaMenus.then(hacerMenus, hacerMenus);
+  return colaMenus;
+}
+
+async function hacerMenus() {
+  const elegido = await idiomaListo;
   await chrome.contextMenus.removeAll();
   chrome.contextMenus.create({
     id: "convertir",
     title: tr("menu.convertir"),
     contexts: ["selection"],
   });
-  // Este sale al hacer clic derecho en el icono de la barra, no en la página.
+  // Estos salen al hacer clic derecho en el icono de la barra, no en la página.
   const { insigniaActiva = true } = await chrome.storage.local.get("insigniaActiva");
   chrome.contextMenus.create({
     id: "insignia",
@@ -31,6 +53,22 @@ chrome.runtime.onInstalled.addListener(async () => {
     checked: insigniaActiva,
     contexts: ["action"],
   });
+  chrome.contextMenus.create({ id: "idioma", title: tr("menu.idioma"), contexts: ["action"] });
+  const opciones = [["auto", tr("menu.idioma.auto")], ...Object.entries(NOMBRES_IDIOMA)];
+  for (const [valor, titulo] of opciones) {
+    chrome.contextMenus.create({
+      id: `idioma:${valor}`,
+      parentId: "idioma",
+      title: titulo,
+      type: "radio",
+      checked: valor === elegido,
+      contexts: ["action"],
+    });
+  }
+}
+
+chrome.runtime.onInstalled.addListener(async () => {
+  await crearMenus();
   // Antes se llamaba "insignia"; si vienes de esa versión, fuera la vieja para
   // no tener dos sonando a la vez.
   await chrome.alarms.clear("insignia");
@@ -52,7 +90,14 @@ chrome.alarms.onAlarm.addListener((alarma) => {
 
 // El popup guarda el par al cambiarlo; con esto el icono cambia a la vez.
 chrome.storage.onChanged.addListener((cambios, zona) => {
-  if (zona === "local" && (cambios.lastPair || cambios.insigniaActiva)) actualizarInsignia();
+  if (zona !== "local") return;
+  if (cambios[IDIOMA_KEY]) {
+    idiomaListo = aplicarIdioma();
+    crearMenus();
+    actualizarInsignia();
+    return;
+  }
+  if (cambios.lastPair || cambios.insigniaActiva) actualizarInsignia();
 });
 
 const TITULO = "ConversorDivisas (Ctrl+Shift+U)";
@@ -81,6 +126,7 @@ let insigniaId = 0;
 
 async function actualizarInsignia() {
   const actual = ++insigniaId;
+  await idiomaListo;
   const { insigniaActiva = true } = await chrome.storage.local.get("insigniaActiva");
   const par = await leerPar();
 
@@ -201,6 +247,7 @@ function enPagina(tabId, datos) {
 }
 
 async function convertirSeleccion(info, tab) {
+  await idiomaListo;
   try {
     await chrome.scripting.executeScript({ target: { tabId: tab.id }, files: ["tarjeta.js"] });
   } catch (error) {
@@ -240,6 +287,7 @@ async function todasLasTasas(base) {
 }
 
 async function revisarAvisos() {
+  await idiomaListo;
   const { avisos: guardados } = await chrome.storage.local.get("avisos");
   const avisos = leerAvisos(guardados);
   if (avisos.length === 0) return;
@@ -292,4 +340,8 @@ chrome.notifications.onClicked.addListener(async (id) => {
 chrome.contextMenus.onClicked.addListener((info, tab) => {
   if (info.menuItemId === "convertir") convertirSeleccion(info, tab);
   if (info.menuItemId === "insignia") chrome.storage.local.set({ insigniaActiva: info.checked });
+  // El aviso es para el popup: la próxima vez que lo abras te dice en qué idioma está.
+  if (String(info.menuItemId).startsWith("idioma:")) {
+    chrome.storage.local.set({ [IDIOMA_KEY]: info.menuItemId.slice(7), avisarIdioma: true });
+  }
 });

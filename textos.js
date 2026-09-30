@@ -146,6 +146,10 @@ const TEXTOS = {
     "atajo.ayuda": "Esta ayuda",
 
     "idioma.puesta": "puesta por tu idioma",
+    "idioma.cambiado": "Ahora en español",
+    "ayuda.idioma": "El idioma se cambia con clic derecho en el icono de la barra.",
+    "menu.idioma": "Idioma",
+    "menu.idioma.auto": "Automático (el de Chrome)",
 
     "insignia.cambio": "{tasa} · {cambio} desde el día anterior",
     "menu.convertir": "Convertir «%s»",
@@ -306,6 +310,10 @@ const TEXTOS = {
     "atajo.ayuda": "This help",
 
     "idioma.puesta": "set from your language",
+    "idioma.cambiado": "Now in English",
+    "ayuda.idioma": "Change the language by right-clicking the toolbar icon.",
+    "menu.idioma": "Language",
+    "menu.idioma.auto": "Automatic (Chrome's)",
 
     "insignia.cambio": "{tasa} · {cambio} since the previous day",
     "menu.convertir": "Convert “%s”",
@@ -332,6 +340,15 @@ let formatos = new Map();
 // es lo que más gente va a entender.
 function idiomaPara(etiqueta) {
   return /^es\b/i.test(String(etiqueta ?? "")) ? "es" : "en";
+}
+
+// Los nombres de cada idioma van en su propio idioma: si alguien lo ha puesto
+// sin querer en uno que no entiende, tiene que poder encontrar el suyo.
+const NOMBRES_IDIOMA = { es: "Español", en: "English" };
+
+// Lo que hayas elegido en el menú manda; "auto" o nada, el de Chrome.
+function idiomaElegido(guardado, etiquetaChrome) {
+  return TEXTOS[guardado] ? guardado : idiomaPara(etiquetaChrome);
 }
 
 function ponerIdioma(nuevo) {
@@ -363,6 +380,6 @@ const separadorDecimal = () => (idioma === "en" ? "." : ",");
 
 if (typeof module !== "undefined") {
   module.exports = {
-    TEXTOS, LOCALES, idiomaPara, ponerIdioma, idiomaActual, localeActual, tr, numeros, fechas, separadorDecimal,
+    TEXTOS, LOCALES, NOMBRES_IDIOMA, idiomaPara, idiomaElegido, ponerIdioma, idiomaActual, localeActual, tr, numeros, fechas, separadorDecimal,
   };
 }
