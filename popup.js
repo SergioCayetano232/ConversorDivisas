@@ -43,6 +43,12 @@ const el = {
   avisosLista: document.getElementById("avisos-lista"),
   avisoNota: document.getElementById("aviso-nota"),
   chuleta: document.getElementById("chuleta"),
+  comision: document.getElementById("comision"),
+  comisionPct: document.getElementById("comision-pct"),
+  comisionTotal: document.getElementById("comision-total"),
+  burbuja: document.getElementById("comision-burbuja"),
+  comisionRapidas: document.getElementById("comision-rapidas"),
+  comisionCampo: document.getElementById("comision-campo"),
   chuletaTabla: document.getElementById("chuleta-tabla"),
   campana: document.getElementById("vista-avisos"),
   abrirAyuda: document.getElementById("abrir-ayuda"),
@@ -93,6 +99,7 @@ let avisos = [];
 // De qué par es lo que hay en el campo del aviso: al cambiar de par le pongo
 // la tasa nueva, pero mientras sea el mismo no le toco lo que hayas escrito.
 let parDelUmbral = null;
+let comision = 0;
 
 const nf = new Intl.NumberFormat("es-ES", {
   minimumFractionDigits: 2,
@@ -108,6 +115,8 @@ const nfRate = new Intl.NumberFormat("es-ES", {
 // tabla quedaba raro uno debajo del otro.
 const nfEntero = new Intl.NumberFormat("es-ES", { maximumFractionDigits: 0, useGrouping: "always" });
 
+const nfComision = new Intl.NumberFormat("es-ES", { maximumFractionDigits: 2 });
+
 const nfPercent = new Intl.NumberFormat("es-ES", {
   style: "percent",
   minimumFractionDigits: 2,
@@ -122,6 +131,7 @@ const RECIENTES_KEY = "paresRecientes";
 const EXTRAS_KEY = "divisasExtra";
 const VISTA_KEY = "vistaPanel";
 const AVISOS_KEY = "avisos";
+const COMISION_KEY = "comisionBanco";
 const CACHE_KEY = "rateCache";
 const CACHE_MAX = 40;
 
@@ -188,6 +198,16 @@ async function cargarAvisos() {
   } catch (error) {
     console.warn("No se pudieron leer los avisos", error);
     return [];
+  }
+}
+
+async function cargarComision() {
+  try {
+    const guardado = await chrome.storage.local.get(COMISION_KEY);
+    return leerComision(guardado[COMISION_KEY]);
+  } catch (error) {
+    console.warn("No se pudo leer la comisión", error);
+    return 0;
   }
 }
 
@@ -944,6 +964,96 @@ function onElegirChuleta(cantidad) {
   onAmountInput();
 }
 
+// Lo de abajo más la comisión: lo que te cobra el banco de verdad.
+function pintarComision() {
+  const hay = comision > 0;
+  const total = rate === null ? null : conComision(leerImporte(el.result.value), comision);
+  const texto = total === null ? "—" : `${nf.format(total)} ${el.to.value}`;
+
+  el.comision.classList.toggle("is-puesta", hay);
+  el.comisionPct.textContent = hay ? `+${nfComision.format(comision)} %` : "+ comisión";
+  if (!hay) {
+    el.comisionTotal.textContent = "";
+    el.comision.setAttribute("aria-label", "Añadir la comisión de tu banco");
+    el.comision.title = "Añade lo que te cobra el banco por pagar en otra divisa";
+    return;
+  }
+  if (el.comisionTotal.textContent !== texto) {
+    const habia = el.comisionTotal.textContent !== "";
+    el.comisionTotal.textContent = texto;
+    if (habia && texto !== "—") restartAnimation(el.comisionTotal, "is-tic");
+  }
+  el.comision.setAttribute("aria-label", `Con la comisión del ${nfComision.format(comision)} % pagarías ${texto}. Cambiarla`);
+  el.comision.title = `Con la comisión de tu banco pagarías ${texto}`;
+}
+
+function ponerComision(pct) {
+  const antes = comision;
+  comision = pct;
+  pintarComision();
+  for (const boton of el.comisionRapidas.children) {
+    boton.setAttribute("aria-pressed", String(Number(boton.dataset.pct) === pct));
+  }
+  // El salto solo al pasar de no tener a tener, que al cambiar de 2 a 3 ya
+  // basta con el tic de la cifra.
+  if (antes === 0 && pct > 0) restartAnimation(el.comision, "is-estrenada");
+  try {
+    chrome.storage.local.set({ [COMISION_KEY]: comision });
+  } catch (error) {
+    console.warn("No se pudo guardar la comisión", error);
+  }
+}
+
+function abrirBurbuja() {
+  el.comisionRapidas.replaceChildren(...COMISIONES_RAPIDAS.map((pct, i) => {
+    const boton = document.createElement("button");
+    boton.type = "button";
+    boton.className = "burbuja__rapida";
+    boton.style.setProperty("--i", i);
+    boton.dataset.pct = pct;
+    boton.textContent = pct === 0 ? "Sin" : `${pct} %`;
+    boton.setAttribute("aria-label", pct === 0 ? "Sin comisión" : `${pct} %`);
+    boton.setAttribute("aria-pressed", String(pct === comision));
+    boton.addEventListener("click", () => {
+      ponerComision(pct);
+      cerrarBurbuja()?.focus();
+    });
+    return boton;
+  }));
+  const rapida = COMISIONES_RAPIDAS.includes(comision);
+  el.comisionCampo.value = rapida ? "" : nfComision.format(comision);
+  el.comisionCampo.removeAttribute("aria-invalid");
+  el.burbuja.hidden = false;
+  el.comision.setAttribute("aria-expanded", "true");
+  (rapida ? el.comisionRapidas.querySelector('[aria-pressed="true"]') : el.comisionCampo).focus();
+}
+
+function cerrarBurbuja() {
+  if (el.burbuja.hidden) return;
+  el.burbuja.hidden = true;
+  el.comision.setAttribute("aria-expanded", "false");
+  return el.comision;
+}
+
+// Mientras escribes se va viendo el total detrás; lo que no se entiende no lo
+// aplico, pero tampoco protesto hasta que das a Enter.
+function onCampoComision() {
+  const pct = leerPorcentaje(el.comisionCampo.value);
+  el.comisionCampo.removeAttribute("aria-invalid");
+  if (pct !== null) ponerComision(pct);
+}
+
+function onTeclaCampoComision(event) {
+  if (event.key !== "Enter") return;
+  event.preventDefault();
+  if (leerPorcentaje(el.comisionCampo.value) === null) {
+    el.comisionCampo.setAttribute("aria-invalid", "true");
+    restartAnimation(el.comisionCampo, "is-mal");
+    return;
+  }
+  cerrarBurbuja()?.focus();
+}
+
 async function guardarAvisos() {
   try {
     await chrome.storage.local.set({ [AVISOS_KEY]: avisos });
@@ -1172,6 +1282,7 @@ function pintarAyuda() {
 function abrirAyuda() {
   focoAntesDeAyuda = document.activeElement;
   cerrarBandeja();
+  cerrarBurbuja();
   pintarAyuda();
   el.ayuda.hidden = false;
   el.abrirAyuda.setAttribute("aria-expanded", "true");
@@ -1260,10 +1371,14 @@ function renderResult() {
     destino.value = "—";
     ajustarAncho();
     el.resultMeta.textContent = "";
+    pintarComision();
     return;
   }
 
-  if (rate === null) return;
+  if (rate === null) {
+    pintarComision();
+    return;
+  }
 
   const convertido = escribiendoAbajo ? valor / rate : valor * rate;
   destino.value = nf.format(convertido);
@@ -1271,6 +1386,7 @@ function renderResult() {
 
   const enviados = escribiendoAbajo ? convertido : valor;
   el.resultMeta.textContent = `${nf.format(enviados)} ${from}`;
+  pintarComision();
 
   // El latido solo cuando cambia la cifra grande, que si no parpadea al teclear.
   if (!escribiendoAbajo) restartAnimation(el.result, "is-updating");
@@ -1351,6 +1467,7 @@ async function refresh() {
     el.rateLine.textContent = "";
     el.updated.textContent = "";
     pintarChuleta();
+    pintarComision();
     hideTrend();
     showError(errorMessageFor(error));
   } finally {
@@ -1663,6 +1780,12 @@ function bindEvents() {
       el.ayudaCerrar.focus();
     }
   });
+  el.comision.addEventListener("click", () => (el.burbuja.hidden ? abrirBurbuja() : cerrarBurbuja()));
+  el.comision.addEventListener("animationend", () => el.comision.classList.remove("is-estrenada"));
+  el.comisionTotal.addEventListener("animationend", () => el.comisionTotal.classList.remove("is-tic"));
+  el.comisionCampo.addEventListener("input", onCampoComision);
+  el.comisionCampo.addEventListener("keydown", onTeclaCampoComision);
+  el.comisionCampo.addEventListener("animationend", () => el.comisionCampo.classList.remove("is-mal"));
   el.avisoForm.addEventListener("submit", onCrearAviso);
   el.avisoUmbral.addEventListener("input", pintarSentidoAviso);
   el.avisoUmbral.addEventListener("animationend", () => el.avisoUmbral.classList.remove("is-mal"));
@@ -1684,9 +1807,18 @@ function bindEvents() {
       event.preventDefault();
       cerrarBandeja()?.focus();
     }
+    if (event.key === "Escape" && !el.burbuja.hidden) {
+      event.preventDefault();
+      cerrarBurbuja()?.focus();
+    }
   });
   document.addEventListener("mousedown", (event) => {
     if (!el.bandeja.hidden && !el.bandeja.contains(event.target)) cerrarBandeja();
+    // La pastilla se cierra a sí misma con su clic; si la cerrara aquí, el clic
+    // la volvería a abrir.
+    if (!el.burbuja.hidden && !el.burbuja.contains(event.target) && !el.comision.contains(event.target)) {
+      cerrarBurbuja();
+    }
   });
   window.addEventListener("online", () => {
     if (rate === null) refresh();
@@ -1694,9 +1826,11 @@ function bindEvents() {
 }
 
 async function init() {
-  const [pair, rango, guardados, pendiente, guardadas, vistaGuardada, avisosGuardados] = await Promise.all([
+  const [pair, rango, guardados, pendiente, guardadas, vistaGuardada, avisosGuardados, comisionGuardada] = await Promise.all([
     loadPair(), cargarRango(), cargarRecientes(), tomarPendiente(), cargarExtras(), cargarVista(), cargarAvisos(),
+    cargarComision(),
   ]);
+  comision = comisionGuardada;
   dias = rango;
   marcarRango();
   extras = guardadas;

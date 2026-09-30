@@ -120,7 +120,38 @@
             value="—">
           <span class="result__code" id="result-code" aria-hidden="true"></span>
         </div>
-        <p class="result__meta" id="result-meta"></p>
+        <div class="result__pie">
+          <p class="result__meta" id="result-meta"></p>
+          <button
+            class="comision"
+            type="button"
+            id="comision"
+            aria-haspopup="dialog"
+            aria-expanded="false"
+            aria-controls="comision-burbuja">
+            <span class="comision__pct" id="comision-pct"></span>
+            <span class="comision__total" id="comision-total"></span>
+          </button>
+          <div class="burbuja" id="comision-burbuja" role="dialog" aria-labelledby="burbuja-titulo" hidden>
+            <p class="burbuja__titulo" id="burbuja-titulo">Comisión de tu banco</p>
+            <div class="burbuja__fila">
+              <div class="burbuja__rapidas" id="comision-rapidas" role="group" aria-label="Comisiones habituales"></div>
+              <label class="burbuja__otra">
+                <input
+                  class="burbuja__campo"
+                  type="text"
+                  id="comision-campo"
+                  inputmode="decimal"
+                  autocomplete="off"
+                  spellcheck="false"
+                  placeholder="otra"
+                  aria-label="Otra comisión, en tanto por ciento">
+                <span aria-hidden="true">%</span>
+              </label>
+            </div>
+            <p class="burbuja__nota">Se suma a lo convertido. Las tarjetas suelen cobrar entre un 1 y un 3 %.</p>
+          </div>
+        </div>
 
         <div class="panel" id="panel">
           <div class="panel__head">

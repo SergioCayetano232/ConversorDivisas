@@ -383,6 +383,32 @@ function chuleta(rate) {
   return CHULETA.map((n) => ({ cantidad: n * escala, valor: hay ? n * escala * rate : null }));
 }
 
+// Las tarjetas normales cobran entre un 1 y un 3 %. Más de un 10 % seguro que
+// es un error al teclear.
+const COMISION_MAX = 10;
+const COMISIONES_RAPIDAS = [0, 1, 2, 3];
+
+const redondearComision = (pct) => Math.round(pct * 100) / 100;
+
+// Quien viene de antes no tiene nada guardado: sin comisión, como hasta ahora.
+function leerComision(guardado) {
+  if (typeof guardado !== "number" || !Number.isFinite(guardado)) return 0;
+  if (guardado < 0 || guardado > COMISION_MAX) return 0;
+  return redondearComision(guardado);
+}
+
+function leerPorcentaje(texto) {
+  const limpio = String(texto ?? "").replace(/[\s%]/g, "").replace(",", ".");
+  if (!/^\d+(\.\d+)?$/.test(limpio)) return null;
+  const pct = Number(limpio);
+  return pct > COMISION_MAX ? null : redondearComision(pct);
+}
+
+function conComision(valor, pct) {
+  if (valor === null || !Number.isFinite(valor)) return null;
+  return valor * (1 + pct / 100);
+}
+
 // En una web cualquiera no sé si "1.234" son mil o uno con algo, así que no
 // vale parseAmount. Regla: si hay punto y coma, el último es el decimal; si solo
 // hay uno y lleva tres cifras detrás, son miles.
@@ -637,6 +663,7 @@ if (typeof module !== "undefined") {
     leerNumero, divisaDe, leerSeleccion, destinoPara,
     EXTRAS_MAX, EXTRAS_POR_DEFECTO, leerExtras, anadirExtra, quitarExtra,
     extrasVisibles, disponiblesParaAnadir, convertirExtras, CHULETA, escalaChuleta, chuleta,
+    COMISION_MAX, COMISIONES_RAPIDAS, leerComision, leerPorcentaje, conComision,
     textoInsignia, cambioDiario, sentidoDe, tituloInsignia,
     AVISOS_MAX, sentidoAviso, crearAviso, leerAvisos, avisoCumplido, repartirAvisos, mensajeAviso,
     ATAJOS, atajoPara, textoAtajo,

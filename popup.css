@@ -833,13 +833,246 @@ body::after {
   50% { opacity: 0.7; }
 }
 
-.result__meta {
+.result__pie {
+  position: relative;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: var(--s-2);
   margin-top: var(--s-2);
+}
+
+.result__meta {
+  min-width: 0;
   min-height: 14px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
   font-family: var(--font-mono);
   font-size: 11px;
   color: var(--muted);
   font-variant-numeric: tabular-nums;
+}
+
+/* Sin comisión es una pastilla discreta con borde de puntos; con ella se
+   enciende en dorado y enseña lo que pagarías. */
+.comision {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+  max-width: 62%;
+  /* Ni un píxel más que la línea de al lado: el popup va justo en 600. */
+  height: 18px;
+  padding: 0 8px;
+  background: transparent;
+  border: 1px dashed var(--hairline-strong);
+  border-radius: 999px;
+  color: var(--muted);
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: border-color var(--fast) var(--ease), background-color var(--fast) var(--ease),
+    color var(--fast) var(--ease), transform var(--fast) var(--ease-spring);
+}
+
+.comision:hover {
+  border-color: var(--brass-dim);
+  color: var(--brass);
+}
+
+.comision:active {
+  transform: scale(0.94);
+}
+
+.comision:focus-visible {
+  outline: 2px solid var(--brass);
+  outline-offset: 1px;
+}
+
+.comision.is-puesta {
+  border-style: solid;
+  border-color: var(--brass-dim);
+  background: var(--brass-ghost);
+  color: var(--mist);
+}
+
+.comision.is-puesta:hover {
+  box-shadow: 0 0 12px -4px var(--brass-glow);
+}
+
+.comision__pct {
+  flex-shrink: 0;
+}
+
+.comision.is-puesta .comision__pct {
+  padding: 1px 5px;
+  border-radius: 999px;
+  background: var(--brass);
+  color: var(--graphite);
+  font-weight: 700;
+}
+
+.comision__total {
+  display: inline-block;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.comision__total.is-tic {
+  animation: tic 260ms var(--ease-out);
+}
+
+.comision.is-estrenada {
+  animation: estreno 520ms var(--ease-spring);
+}
+
+@keyframes estreno {
+  0% { transform: scale(0.85); box-shadow: 0 0 0 0 var(--brass-glow); }
+  60% { transform: scale(1.05); box-shadow: 0 0 0 6px transparent; }
+  100% { transform: none; }
+}
+
+.burbuja {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  z-index: 6;
+  width: 256px;
+  padding: 10px;
+  background: color-mix(in srgb, var(--graphite) 94%, transparent);
+  backdrop-filter: blur(16px) saturate(180%);
+  -webkit-backdrop-filter: blur(16px) saturate(180%);
+  border: 1px solid var(--hairline-strong);
+  border-radius: var(--r-md);
+  box-shadow: inset 0 1px 0 var(--sheen), var(--shadow-lg);
+  transform-origin: top right;
+  animation: bandeja 300ms var(--ease-spring);
+}
+
+/* El piquito que apunta a la pastilla. */
+.burbuja::before {
+  content: "";
+  position: absolute;
+  top: -5px;
+  right: 22px;
+  width: 8px;
+  height: 8px;
+  background: inherit;
+  border-top: 1px solid var(--hairline-strong);
+  border-left: 1px solid var(--hairline-strong);
+  transform: rotate(45deg);
+}
+
+.burbuja__titulo {
+  margin-bottom: var(--s-2);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.burbuja__fila {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.burbuja__rapidas {
+  display: flex;
+  gap: 4px;
+}
+
+.burbuja__rapida {
+  height: 22px;
+  padding: 0 7px;
+  background: var(--slate);
+  border: 1px solid var(--hairline);
+  border-radius: 6px;
+  color: var(--mist);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  cursor: pointer;
+  animation: pop var(--mid) var(--ease-spring) backwards;
+  animation-delay: calc(var(--i, 0) * 35ms + 60ms);
+  transition: border-color var(--fast) var(--ease), background-color var(--fast) var(--ease),
+    color var(--fast) var(--ease), transform var(--fast) var(--ease-spring);
+}
+
+.burbuja__rapida:hover {
+  border-color: var(--brass-dim);
+  color: var(--brass);
+  transform: translateY(-1px);
+}
+
+.burbuja__rapida:active {
+  transform: scale(0.92);
+}
+
+.burbuja__rapida[aria-pressed="true"] {
+  background: var(--brass);
+  border-color: var(--brass);
+  color: var(--graphite);
+  font-weight: 700;
+  box-shadow: 0 0 10px -2px var(--brass-glow);
+}
+
+.burbuja__rapida:focus-visible,
+.burbuja__campo:focus-visible {
+  outline: 2px solid var(--brass);
+  outline-offset: 1px;
+}
+
+.burbuja__otra {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  min-width: 0;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--muted);
+}
+
+.burbuja__campo {
+  width: 100%;
+  min-width: 0;
+  height: 22px;
+  padding: 0 6px;
+  background: var(--slate);
+  border: 1px solid var(--hairline);
+  border-radius: 6px;
+  color: var(--mist);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+  transition: border-color var(--fast) var(--ease);
+}
+
+.burbuja__campo:focus {
+  border-color: var(--brass-dim);
+}
+
+.burbuja__campo[aria-invalid="true"] {
+  border-color: var(--cinnabar);
+}
+
+.burbuja__campo.is-mal {
+  animation: shake 400ms var(--ease);
+}
+
+.burbuja__nota {
+  margin-top: var(--s-2);
+  font-size: 10px;
+  line-height: 1.4;
+  color: var(--muted);
 }
 
 .panel {
@@ -2165,6 +2398,7 @@ kbd {
   .extra.is-nueva,
   .chuleta__fila.is-nueva,
   .aviso.is-nueva,
+  .burbuja__rapida,
   .ayuda__fila,
   .bandeja__opcion,
   .trend__marca,

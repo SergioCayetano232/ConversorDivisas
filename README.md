@@ -17,6 +17,9 @@ que necesitaba una conversión rápida. Ahora es un clic en la barra del navegad
 - Buscas la divisa escribiendo: pones "mex" y sale el peso mexicano
 - Un botón para dar la vuelta al par sin tocar los dos desplegables
 - Un botón para copiar el resultado
+- La comisión de tu banco: pones el % que te cobra la tarjeta (0, 1, 2, 3 o el
+  que quieras) y al lado del resultado sale lo que pagarías de verdad. Se queda
+  guardada para la próxima vez
 - Seleccionas un precio en cualquier web, clic derecho, **Convertir**, y te sale
   el resultado en una tarjeta al lado del texto. Entiende "1.299,00 €",
   "$1,049.99", "R$ 10,50" o "20 euros"
