@@ -16,7 +16,7 @@ const historial = [
 
 const gastos = [
   { id: "b", from: "USD", to: "EUR", cantidad: 12, valor: 10.62, concepto: "Taxi", cuando: hora("2026-10-02", 21, 30) },
-  { id: "a", from: "USD", to: "EUR", cantidad: 45, valor: 39.83, concepto: "Cena; con vino", cuando: hora("2026-10-01", 14) },
+  { id: "a", from: "USD", to: "EUR", cantidad: 45, valor: 39.83, concepto: "Cena; con vino", categoria: "comida", cuando: hora("2026-10-01", 14) },
 ];
 
 test("en español, punto y coma y la coma decimal, sin miles", () => {
@@ -36,13 +36,13 @@ test("en inglés, coma y punto decimal", () => {
 
 test("los gastos van del primero al último, con el concepto", () => {
   const lineas = csvGastos(gastos).split("\r\n");
-  assert.equal(lineas[0], "Fecha;Hora;Concepto;Cantidad;Divisa;Importe;En");
-  assert.equal(lineas[1], '2026-10-01;14:00;"Cena; con vino";45,00;USD;39,83;EUR', "el ; del concepto va entre comillas");
-  assert.equal(lineas[2], "2026-10-02;21:30;Taxi;12,00;USD;10,62;EUR");
+  assert.equal(lineas[0], "Fecha;Hora;Concepto;Categoría;Cantidad;Divisa;Importe;En");
+  assert.equal(lineas[1], '2026-10-01;14:00;"Cena; con vino";Comida;45,00;USD;39,83;EUR', "el ; del concepto va entre comillas");
+  assert.equal(lineas[2], "2026-10-02;21:30;Taxi;Otros;12,00;USD;10,62;EUR", "sin categoría, otros");
 });
 
 test("sin nada, solo la cabecera", () => {
-  assert.equal(csvGastos([]), "Fecha;Hora;Concepto;Cantidad;Divisa;Importe;En");
+  assert.equal(csvGastos([]), "Fecha;Hora;Concepto;Categoría;Cantidad;Divisa;Importe;En");
 });
 
 test("las comillas se doblan", () => {

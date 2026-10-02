@@ -10,9 +10,14 @@ const gasto = (extra) => crearGasto({
 });
 
 test("un gasto bueno se crea tal cual", () => {
-  assert.deepEqual(gasto(), {
-    id: "a", from: "USD", to: "EUR", cantidad: 45, valor: 38.9, concepto: "Cena", cuando: hora("2026-10-02"),
+  assert.deepEqual(gasto({ categoria: "comida" }), {
+    id: "a", from: "USD", to: "EUR", cantidad: 45, valor: 38.9, concepto: "Cena", cuando: hora("2026-10-02"), categoria: "comida",
   });
+});
+
+test("sin categoría o con una que no existe, va a otros", () => {
+  assert.equal(gasto().categoria, "otros");
+  assert.equal(gasto({ categoria: "lujo" }).categoria, "otros");
 });
 
 test("el concepto se limpia y se corta", () => {
@@ -38,6 +43,13 @@ test("sin nada guardado no hay gastos", () => {
 test("de lo guardado solo me quedo con lo bueno", () => {
   const bueno = gasto();
   assert.deepEqual(leerGastos([bueno, { id: "b", from: "USD" }, null]), [bueno]);
+});
+
+test("a los gastos de antes de las categorías les saco una del concepto", () => {
+  const { categoria, ...deAntes } = gasto({ categoria: "ocio" });
+  assert.equal(leerGastos([deAntes])[0].categoria, "comida", "«Cena»");
+  assert.equal(leerGastos([{ ...deAntes, concepto: "cosas" }])[0].categoria, "otros");
+  assert.equal(leerGastos([{ ...deAntes, categoria: "ocio" }])[0].categoria, "ocio", "la que traiga se respeta");
 });
 
 test("lo último va arriba y no pasa del máximo", () => {
