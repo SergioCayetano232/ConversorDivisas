@@ -26,6 +26,13 @@ que necesitaba una conversión rápida. Ahora es un clic en la barra del navegad
   por días con lo de cada día. Cada uno se guarda con la tasa y la comisión de
   ese momento, así que lo que gastaste el lunes no cambia aunque el euro suba
   el martes. Hasta 200, y para vaciarlo hay que darle dos veces
+- Cada gasto con su categoría (comida, transporte, alojamiento, ocio, compras
+  u otros), que sale sola por el concepto ("taxi", "cena", "hotel") y se cambia
+  con un clic. Arriba, en qué se te va el dinero en porcentajes; pulsando una
+  ves solo esos gastos
+- Un presupuesto para el viaje: le dices cuánto quieres gastar y hasta qué día,
+  y una barra te enseña lo que llevas (verde, dorada pasado el 80 %, roja si te
+  pasas) y cuánto te queda al día
 - Las conversiones y los gastos se bajan en CSV con el botón **CSV** de cada
   panel, listos para abrir en Excel o en Google Sheets: en español van con
   punto y coma y "12,50", en inglés con coma y "12.50", y las tildes no se rompen
@@ -35,12 +42,15 @@ que necesitaba una conversión rápida. Ahora es un clic en la barra del navegad
   próxima vez
 - Seleccionas un precio en cualquier web, clic derecho, **Convertir**, y te sale
   el resultado en una tarjeta al lado del texto. Entiende "1.299,00 €",
-  "$1,049.99", "R$ 10,50" o "20 euros"
+  "$1,049.99", "R$ 10,50" o "20 euros". Sin ratón, con `Alt+Shift+C` (`⌥⇧C`
+  en Mac), también dentro de un campo de texto
 - Todos los precios de una web a la vez: clic derecho en la página, **Convertir
   los precios de la página**, y al lado de cada precio sale lo que vale en tu
   divisa. Solo cuenta los que llevan la divisa pegada (`49,99 €`, `$1,049.99`,
   `USD 35`), así que un "20 unidades" no se convierte. Volviendo a darle, o con
-  **Quitar**, la página se queda como estaba. Los precios con los céntimos en
+  **Quitar**, la página se queda como estaba. Lo que la web va cargando
+  después (el scroll infinito de las tiendas, el "ver más") también sale
+  convertido, mientras las tengas puestas. Los precios con los céntimos en
   pequeño (`$49⁹⁹`) se los salta, que los leería mal
 - Pastillas con tus últimos pares, para cambiar de uno a otro con un clic
 - Un gráfico de cómo ha ido la tasa, a 7 días, 1 mes, 3 meses o 1 año. Pasando
@@ -94,8 +104,8 @@ Pide lo justo: guardar tus preferencias, hablar con la API de las tasas, una
 alarma para refrescar el icono y mirar los avisos cada hora, mandar las
 notificaciones de esos avisos y, para lo del clic derecho, el menú y poner la
 tarjeta en la pestaña en la que estás.
-Esto último solo pasa cuando pulsas **Convertir** o **Convertir los precios de
-la página**; no lee ninguna web por su cuenta, y por eso Chrome no avisa de nada al instalarla. No hay analítica ni
+Esto último solo pasa cuando pulsas **Convertir**, **Convertir los precios de
+la página** o el atajo; no lee ninguna web por su cuenta, y por eso Chrome no avisa de nada al instalarla. No hay analítica ni
 seguimiento de ningún tipo.
 
 En Mac, para ver los avisos Chrome necesita permiso para mandar notificaciones

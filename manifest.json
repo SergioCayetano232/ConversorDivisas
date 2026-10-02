@@ -31,6 +31,13 @@
         "mac": "Command+Shift+U"
       },
       "description": "__MSG_abrir__"
+    },
+    "convertir-seleccion": {
+      "suggested_key": {
+        "default": "Alt+Shift+C",
+        "mac": "Alt+Shift+C"
+      },
+      "description": "__MSG_convertirSeleccion__"
     }
   }
 }

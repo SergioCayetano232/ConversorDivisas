@@ -4,5 +4,8 @@
   },
   "abrir": {
     "message": "Abrir ConversorDivisas"
+  },
+  "convertirSeleccion": {
+    "message": "Convertir lo seleccionado en la página"
   }
 }

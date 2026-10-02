@@ -174,6 +174,8 @@
       transform: rotate(90deg);
     }
 
+    .original:empty { display: none; }
+
     .original {
       margin: 8px 0 0;
       font-family: var(--mono);
@@ -486,7 +488,8 @@
     } else if (d.estado === "cargando") {
       $(".original").textContent = citar(d.original);
     } else {
-      $(".original").textContent = citar(d.original);
+      // Con el atajo y nada seleccionado no hay texto que citar: mejor nada que «».
+      $(".original").textContent = d.original ? citar(d.original) : "";
       $(".aviso").textContent = d.mensaje;
     }
 

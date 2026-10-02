@@ -402,6 +402,45 @@ chrome.omnibox.onInputStarted.addListener(async () => {
 chrome.omnibox.onInputChanged.addListener(sugerirEnBarra);
 chrome.omnibox.onInputEntered.addListener(abrirDesdeBarra);
 
+// Lo seleccionado, también dentro de un campo de texto: ahí getSelection() no
+// ve nada. Va a la página tal cual, así que no puede usar nada de fuera.
+function leerSeleccionDePagina() {
+  const campo = document.activeElement;
+  if (campo && typeof campo.selectionStart === "number" && typeof campo.value === "string") {
+    return campo.value.slice(campo.selectionStart, campo.selectionEnd);
+  }
+  return String(getSelection());
+}
+
+// El atajo hace lo mismo que el clic derecho, pero primero tengo que ir a
+// buscar qué hay seleccionado.
+async function convertirConAtajo(tab) {
+  await idiomaListo;
+  let texto;
+  try {
+    const [{ result }] = await chrome.scripting.executeScript({ target: { tabId: tab.id }, func: leerSeleccionDePagina });
+    texto = String(result ?? "").trim();
+  } catch (error) {
+    // En chrome:// o la Web Store no hay forma de leerlo: abro el popup sin más.
+    try {
+      await chrome.action.openPopup();
+    } catch (otro) {
+      console.warn("No se pudo abrir el popup", otro);
+    }
+    return;
+  }
+  if (texto) {
+    await convertirSeleccion({ selectionText: texto }, tab);
+    return;
+  }
+  await chrome.scripting.executeScript({ target: { tabId: tab.id }, files: ["tarjeta.js"] });
+  await enPagina(tab.id, paraLaTarjeta({ estado: "nada", original: "", mensaje: tr("tarjeta.sinSeleccion") }));
+}
+
+chrome.commands.onCommand.addListener((comando, tab) => {
+  if (comando === "convertir-seleccion" && tab) convertirConAtajo(tab);
+});
+
 // Aquí no uso la caché del popup: guarda la tasa de la mañana hasta el día
 // siguiente, y el BCE publica por la tarde. Un aviso tiene que ver la nueva.
 async function todasLasTasas(base) {
