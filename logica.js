@@ -859,23 +859,65 @@ function haceCuanto(cuando, ahora = Date.now()) {
 const GASTOS_MAX = 200;
 const CONCEPTO_MAX = 40;
 
+// Pocas y gordas: con más, elegir cuesta más que apuntar el gasto.
+const CATEGORIAS = ["comida", "transporte", "alojamiento", "ocio", "compras", "otros"];
+const CATEGORIA_POR_DEFECTO = "otros";
+
+// El transporte va antes que la comida para que "barco" no se quede en "bar".
+// Las raíces cortas van con \b detrás, que si no "bar" se comía "barato".
+const PISTAS_CATEGORIA = [
+  ["transporte", /\b(taxi|uber|cabify|bolt|lyft|metro\b|bus\b|autobus|tren|train|vuelo|avion|flight|barco|ferry|gasolina|fuel|parking|aparcamiento|peaje|toll|bici|bike|alquiler de coche|car rental)/],
+  ["alojamiento", /\b(hotel|hostal|hostel|airbnb|apartamento|alojamiento|booking|motel|camping|habitacion|room\b)/],
+  ["comida", /\b(cena|comida|almuerzo|desayuno|cafe|restaurante|bar\b|tapas|cerveza|vino|pizza|super\b|supermercado|helado|menu|dinner|lunch|breakfast|coffee|food|restaurant|beer|wine|groceries|snack|brunch)/],
+  ["ocio", /\b(museo|museum|entrada|ticket|concierto|concert|cine|cinema|tour|excursion|parque|park|teatro|theat|discoteca|club|espectaculo|show\b|visita)/],
+  ["compras", /\b(tienda|compra|ropa|regalo|souvenir|recuerdo|shop|gift|clothes|zapat|shoes|farmacia|pharmacy|mercado|market)/],
+];
+
+function adivinarCategoria(concepto) {
+  const texto = normalizar(String(concepto ?? ""));
+  return PISTAS_CATEGORIA.find(([, patron]) => patron.test(texto))?.[0] ?? null;
+}
+
+const categoriaBuena = (c) => (CATEGORIAS.includes(c) ? c : CATEGORIA_POR_DEFECTO);
+
 const esGastoBueno = (g) => Boolean(g) && typeof g.id === "string" && isValidCode(g.from) && isValidCode(g.to)
   && Number.isFinite(g.cantidad) && g.cantidad > 0 && Number.isFinite(g.valor) && g.valor >= 0
   && Number.isFinite(g.cuando) && typeof g.concepto === "string";
 
 // El valor se guarda ya convertido, con la tasa y la comisión de ese día. Si lo
 // calculara al enseñarlo, el cambio de hoy me movería lo que gasté hace una semana.
-function crearGasto({ id, from, to, cantidad, valor, concepto = "", cuando }) {
+function crearGasto({ id, from, to, cantidad, valor, concepto = "", cuando, categoria }) {
   const gasto = {
     id, from, to, cantidad, valor, cuando,
     concepto: String(concepto ?? "").replace(/\s+/g, " ").trim().slice(0, CONCEPTO_MAX),
+    categoria: categoriaBuena(categoria),
   };
   return esGastoBueno(gasto) && from !== to ? gasto : null;
 }
 
 function leerGastos(guardado) {
   if (!Array.isArray(guardado)) return [];
-  return guardado.filter(esGastoBueno).slice(0, GASTOS_MAX);
+  // Los de antes de las categorías no traen ninguna: la saco del concepto, como
+  // al apuntarlos, y si no dice nada van a "otros".
+  return guardado.filter(esGastoBueno).slice(0, GASTOS_MAX).map((g) => ({
+    ...g,
+    categoria: CATEGORIAS.includes(g.categoria) ? g.categoria : adivinarCategoria(g.concepto) ?? CATEGORIA_POR_DEFECTO,
+  }));
+}
+
+// En qué se va el dinero, solo en la divisa que más suma: mezclar euros con
+// dólares en los mismos porcentajes no tiene sentido.
+function desglose(gastos) {
+  const [principal] = sumarPorDivisa(gastos);
+  if (!principal || principal.total <= 0) return [];
+  const totales = new Map();
+  for (const g of gastos) {
+    if (g.to === principal.to) totales.set(g.categoria, (totales.get(g.categoria) ?? 0) + g.valor);
+  }
+  return [...totales]
+    .map(([categoria, total]) => ({ categoria, total, fraccion: total / principal.total, to: principal.to }))
+    .filter((d) => d.total > 0)
+    .sort((a, b) => b.total - a.total);
 }
 
 function apuntarGasto(lista, gasto) {
@@ -905,6 +947,44 @@ function gastosPorDia(gastos) {
     dias.get(dia).push(g);
   }
   return [...dias].map(([dia, lista]) => ({ dia, gastos: lista, totales: sumarPorDivisa(lista) }));
+}
+
+// Días que quedan contando hoy: el último día del viaje también se gasta.
+function diasHasta(hasta, hoyIso = hoy()) {
+  const [a1, m1, d1] = hoyIso.split("-").map(Number);
+  const [a2, m2, d2] = hasta.split("-").map(Number);
+  // Con Date.UTC y no con la hora local: el día del cambio de hora tiene 23 horas.
+  return Math.round((Date.UTC(a2, m2 - 1, d2) - Date.UTC(a1, m1 - 1, d1)) / 86400000) + 1;
+}
+
+// El presupuesto lleva su divisa: es la de los gastos que cuenta. Si cambias de
+// divisa a mitad de viaje, lo de la otra no se suma, igual que en el total.
+function leerPresupuesto(guardado) {
+  if (!guardado || typeof guardado !== "object") return null;
+  const { importe, to, hasta } = guardado;
+  if (!Number.isFinite(importe) || importe <= 0 || !isValidCode(to)) return null;
+  if (typeof hasta !== "string" || !/^\d{4}-\d{2}-\d{2}$/.test(hasta)) return null;
+  return { importe, to, hasta };
+}
+
+// Hasta el 80 % vas bien; de ahí al 100 %, justo; pasado, pasado.
+const PRESUPUESTO_JUSTO = 0.8;
+
+function estadoPresupuesto(presupuesto, gastos, hoyIso = hoy()) {
+  if (!presupuesto) return null;
+  const gastado = gastos.filter((g) => g.to === presupuesto.to).reduce((suma, g) => suma + g.valor, 0);
+  const queda = presupuesto.importe - gastado;
+  const fraccion = gastado / presupuesto.importe;
+  const dias = Math.max(diasHasta(presupuesto.hasta, hoyIso), 0);
+  return {
+    gastado,
+    queda,
+    fraccion,
+    dias,
+    // Acabado el viaje o pasado del presupuesto, "al día" ya no significa nada.
+    porDia: dias > 0 && queda > 0 ? queda / dias : null,
+    tono: fraccion > 1 ? "pasado" : fraccion >= PRESUPUESTO_JUSTO ? "justo" : "bien",
+  };
 }
 
 function nombreDia(dia, hoyIso = hoy()) {
@@ -947,9 +1027,10 @@ function csvHistorial(lista) {
 // Del más antiguo al último: en una hoja de gastos se lee así, al revés que en el popup.
 function csvGastos(lista) {
   return filasCsv(
-    [tr("csv.fecha"), tr("csv.hora"), tr("csv.concepto"), tr("csv.cantidad"), tr("csv.de"), tr("csv.importe"), tr("csv.a")],
+    [tr("csv.fecha"), tr("csv.hora"), tr("csv.concepto"), tr("csv.categoria"), tr("csv.cantidad"), tr("csv.de"), tr("csv.importe"), tr("csv.a")],
     [...lista].reverse().map((g) => [
-      isoLocal(new Date(g.cuando)), horaLocal(g.cuando), g.concepto, numeroCsv(g.cantidad), g.from, numeroCsv(g.valor), g.to,
+      isoLocal(new Date(g.cuando)), horaLocal(g.cuando), g.concepto, tr(`cat.${g.categoria ?? CATEGORIA_POR_DEFECTO}`),
+      numeroCsv(g.cantidad), g.from, numeroCsv(g.valor), g.to,
     ]),
   );
 }
@@ -1113,6 +1194,8 @@ if (typeof module !== "undefined") {
     HISTORIAL_MAX, leerHistorial, apuntarConversion, haceCuanto, textoParaCopiar,
     celdaCsv, csvHistorial, csvGastos,
     GASTOS_MAX, CONCEPTO_MAX, crearGasto, leerGastos, apuntarGasto, quitarGasto, sumarPorDivisa, gastosPorDia, nombreDia,
+    CATEGORIAS, CATEGORIA_POR_DEFECTO, adivinarCategoria, desglose,
+    diasHasta, leerPresupuesto, PRESUPUESTO_JUSTO, estadoPresupuesto,
     EXTRAS_MAX, EXTRAS_POR_DEFECTO, leerExtras, anadirExtra, quitarExtra,
     extrasVisibles, disponiblesParaAnadir, convertirExtras, CHULETA, escalaChuleta, chuleta,
     COMISION_MAX, COMISIONES_RAPIDAS, leerComision, leerPorcentaje, conComision,
