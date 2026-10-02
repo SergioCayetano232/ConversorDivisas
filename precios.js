@@ -155,7 +155,12 @@
     .textos { display: flex; flex-direction: column; min-width: 0; }
 
     .mensaje { font-weight: 600; white-space: nowrap; }
-    .cuantos { font-family: ui-monospace, "SF Mono", Menlo, monospace; font-variant-numeric: tabular-nums; color: var(--dorado); }
+    .cuantos { display: inline-block; font-family: ui-monospace, "SF Mono", Menlo, monospace; font-variant-numeric: tabular-nums; color: var(--dorado); }
+    .cuantos.is-sube { animation: subir-cifra 420ms cubic-bezier(0.34, 1.56, 0.64, 1); }
+
+    @keyframes subir-cifra {
+      from { opacity: 0.3; transform: translateY(6px) scale(1.3); }
+    }
 
     .pista { font-size: 11px; color: var(--tenue); white-space: nowrap; }
     .pista:empty { display: none; }
@@ -259,6 +264,14 @@
   let pastillas = [];
   let aviso = null;
   let cierreAviso = null;
+  // Para lo que llegue después (scroll infinito, "ver más"): las tasas que ya
+  // tengo, qué tiene ya su pastilla y lo que falta por mirar.
+  let ultimo = null;
+  let hechos = new WeakSet();
+  let totalPrecios = 0;
+  let observador = null;
+  let porMirar = [];
+  let esperaId = null;
 
   // Lo que no se ve no lo convierto. Amazon, por ejemplo, repite cada precio en
   // un span de 1x1 px para los lectores de pantalla.
@@ -283,11 +296,11 @@
     return null;
   }
 
-  function buscar() {
+  function buscar(raiz = document.body, cupo = MAX) {
     const encontrados = [];
     const partidos = new Map();
-    const paseo = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT);
-    for (let nodo = paseo.nextNode(); nodo && encontrados.length + partidos.size < MAX; nodo = paseo.nextNode()) {
+    const paseo = document.createTreeWalker(raiz, NodeFilter.SHOW_TEXT);
+    for (let nodo = paseo.nextNode(); nodo && encontrados.length + partidos.size < cupo; nodo = paseo.nextNode()) {
       if (!/\d/.test(nodo.data)) continue;
       const padre = nodo.parentElement;
       if (!padre || padre.closest(NO_MIRAR)) continue;
@@ -310,9 +323,12 @@
 
   function quitar() {
     clearTimeout(cierreAviso);
+    dejarDeVigilar();
     const fuera = pastillas;
     pastillas = [];
     hallados = [];
+    hechos = new WeakSet();
+    totalPrecios = 0;
     for (const host of fuera) {
       const pastilla = host.shadowRoot.querySelector(".pastilla");
       if (sinMovimiento.matches || !host.isConnected) host.remove();
@@ -336,7 +352,7 @@
     return { total: hallados.length, divisas: [...divisas] };
   }
 
-  function pintar({ tasas, locale, textos, error }) {
+  function ponerPastillas(lista, { tasas, locale }) {
     // Siempre con los miles: en español Intl deja "1467,61" sin punto.
     const formato = new Intl.NumberFormat(locale, { minimumFractionDigits: 2, maximumFractionDigits: 2, useGrouping: "always" });
     const formatoTasa = new Intl.NumberFormat(locale, { minimumFractionDigits: 4, maximumFractionDigits: 4 });
@@ -344,8 +360,8 @@
     let i = 0;
     let total = 0;
 
-    for (const { despues, precios } of hallados) {
-      if (!despues.isConnected) continue;
+    for (const { despues, precios } of lista) {
+      if (!despues.isConnected || hechos.has(despues) || pastillas.length >= MAX) continue;
       const convertidos = precios
         .map((p) => ({ ...p, ...tasas[p.divisa] }))
         .filter((p) => p.rate && p.to !== p.divisa);
@@ -371,16 +387,73 @@
       raiz.append(estilo, pastilla);
       despues.after(host);
       pastillas.push(host);
+      hechos.add(despues);
       for (const p of convertidos) destinos.add(p.to);
       total += convertidos.length;
       i++;
     }
+    return { total, destinos };
+  }
+
+  function pintar({ tasas, locale, textos, error }) {
+    ultimo = { tasas, locale };
+    const { total, destinos } = ponerPastillas(hallados, ultimo);
+    totalPrecios = total;
+    if (total > 0) vigilar();
 
     if (error) mostrarAviso("is-error", error);
     else if (total === 0) mostrarAviso("is-nada", textos.nada);
     else {
       const plantilla = total === 1 ? textos.uno : textos.varios;
       mostrarAviso("", plantilla.replace("{n}", total).replace("{to}", [...destinos].join(" · ")), textos, total);
+    }
+  }
+
+  // Solo me fijo en lo que se añade: si mirara también los cambios de texto,
+  // cada contador o reloj de la página me tendría escaneando sin parar.
+  function vigilar() {
+    if (observador) return;
+    observador = new MutationObserver((cambios) => {
+      for (const cambio of cambios) {
+        for (const nodo of cambio.addedNodes) {
+          const el = nodo.nodeType === Node.ELEMENT_NODE ? nodo : nodo.parentElement;
+          // Las mías también son nodos nuevos; si las mirara, me vigilaría a mí mismo.
+          if (el && !el.matches("conversor-precio, conversor-aviso, conversor-divisas")) porMirar.push(el);
+        }
+      }
+      if (porMirar.length === 0) return;
+      // El scroll infinito mete las tarjetas de una en una: espero a que acabe la tanda.
+      clearTimeout(esperaId);
+      esperaId = setTimeout(mirarLoNuevo, 300);
+    });
+    observador.observe(document.body, { childList: true, subtree: true });
+  }
+
+  function dejarDeVigilar() {
+    observador?.disconnect();
+    observador = null;
+    clearTimeout(esperaId);
+    porMirar = [];
+  }
+
+  function mirarLoNuevo() {
+    const unicos = [...new Set(porMirar)].filter((el) => el.isConnected);
+    porMirar = [];
+    // Si ya voy a mirar el contenedor, sus hijos sobran.
+    const raices = unicos.filter((el) => !unicos.some((otro) => otro !== el && otro.contains(el)));
+    const cupo = MAX - pastillas.length;
+    if (!ultimo || cupo <= 0) return;
+    const nuevos = raices.flatMap((raiz) => buscar(raiz, cupo));
+    const { total } = ponerPastillas(nuevos, ultimo);
+    if (total === 0) return;
+    totalPrecios += total;
+    // Si el aviso sigue a la vista, la cifra se pone al día con un saltito.
+    const cuantos = aviso?.shadowRoot.querySelector(".cuantos");
+    if (cuantos) {
+      cuantos.textContent = totalPrecios;
+      cuantos.classList.remove("is-sube");
+      void cuantos.offsetWidth;
+      cuantos.classList.add("is-sube");
     }
   }
 
