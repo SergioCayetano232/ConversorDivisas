@@ -78,6 +78,8 @@ const el = {
   historialLista: document.getElementById("historial-lista"),
   historialVacio: document.getElementById("historial-vacio"),
   historialBorrar: document.getElementById("historial-borrar"),
+  historialCsv: document.getElementById("historial-csv"),
+  gastosCsv: document.getElementById("gastos-csv"),
   comision: document.getElementById("comision"),
   panelComision: document.getElementById("panel-comision"),
   comisionPct: document.getElementById("comision-pct"),
@@ -1521,6 +1523,7 @@ function pintarHistorial() {
   el.historialLista.replaceChildren(...historial.map(crearFilaHistorial));
   el.historialVacio.hidden = hay;
   el.historialBorrar.hidden = !hay;
+  el.historialCsv.hidden = !hay;
 }
 
 function abrirHistorial() {
@@ -1571,6 +1574,27 @@ function onBorrarHistorial() {
     fila.classList.add("is-saliendo");
   });
   filas.at(-1).addEventListener("animationend", vaciar, { once: true });
+}
+
+// El BOM del principio es para Excel: sin él abre el archivo como Latin-1 y
+// "Cena en el Rincón" sale con la ó rota.
+function descargarCsv(texto, nombre, boton) {
+  const url = URL.createObjectURL(new Blob(["\uFEFF", texto], { type: "text/csv;charset=utf-8" }));
+  const enlace = document.createElement("a");
+  enlace.href = url;
+  enlace.download = `${nombre}-${hoy()}.csv`;
+  document.body.append(enlace);
+  enlace.click();
+  enlace.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+
+  boton.textContent = tr("csv.hecho");
+  restartAnimation(boton, "is-hecho");
+  clearTimeout(boton.vuelta);
+  boton.vuelta = setTimeout(() => {
+    boton.textContent = tr("csv.boton");
+    boton.classList.remove("is-hecho");
+  }, 1400);
 }
 
 const textoTotales = (totales) => totales.map(({ to, total }) => `${nf.format(total)} ${to}`).join(" · ");
@@ -1686,6 +1710,7 @@ function pintarGastos() {
   gastoNuevo = null;
   el.gastosVacio.hidden = n > 0;
   el.gastosVaciar.hidden = n === 0;
+  el.gastosCsv.hidden = n === 0;
 }
 
 function abrirGastos() {
@@ -2539,6 +2564,8 @@ function bindEvents() {
   el.abrirHistorial.addEventListener("click", () => (el.historial.hidden ? abrirHistorial() : cerrarHistorial()));
   el.abrirHistorial.addEventListener("animationend", () => el.abrirHistorial.classList.remove("is-apuntado"));
   el.historialBorrar.addEventListener("click", onBorrarHistorial);
+  el.historialCsv.addEventListener("click", () => descargarCsv(csvHistorial(historial), tr("csv.archivoHistorial"), el.historialCsv));
+  el.gastosCsv.addEventListener("click", () => descargarCsv(csvGastos(gastos), tr("csv.archivoGastos"), el.gastosCsv));
   el.abrirGastos.addEventListener("click", () => (el.gastos.hidden ? abrirGastos() : cerrarGastos()));
   el.abrirGastos.addEventListener("animationend", () => el.abrirGastos.classList.remove("is-apuntado"));
   el.gastosForm.addEventListener("submit", onApuntarGasto);

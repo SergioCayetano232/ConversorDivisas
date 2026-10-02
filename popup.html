@@ -150,7 +150,10 @@
         <div class="historial" id="historial" role="dialog" aria-labelledby="historial-titulo" hidden>
           <div class="historial__cabeza">
             <p class="historial__titulo" id="historial-titulo" data-t="historial">Últimas conversiones</p>
-            <button class="historial__borrar" type="button" id="historial-borrar" data-t="historial.borrar">Borrar</button>
+            <div class="historial__botones">
+              <button class="csv" type="button" id="historial-csv" title="Descargar las conversiones en CSV, para una hoja de cálculo" aria-label="Descargar las conversiones en CSV, para una hoja de cálculo" data-t="csv.boton" data-t-title="csv.historial" data-t-aria-label="csv.historial">CSV</button>
+              <button class="historial__borrar" type="button" id="historial-borrar" data-t="historial.borrar">Borrar</button>
+            </div>
           </div>
           <ul class="historial__lista" id="historial-lista"></ul>
           <p class="historial__vacio" id="historial-vacio" data-t="historial.vacio">Aún no has convertido nada. Lo que conviertas irá saliendo aquí.</p>
@@ -163,7 +166,10 @@
             </div>
             <div class="gastos__lado">
               <span class="gastos__n" id="gastos-n"></span>
-              <button class="historial__borrar" type="button" id="gastos-vaciar" data-t="gastos.vaciar">Vaciar</button>
+              <div class="historial__botones">
+                <button class="csv" type="button" id="gastos-csv" title="Descargar los gastos en CSV, para una hoja de cálculo" aria-label="Descargar los gastos en CSV, para una hoja de cálculo" data-t="csv.boton" data-t-title="csv.gastos" data-t-aria-label="csv.gastos">CSV</button>
+                <button class="historial__borrar" type="button" id="gastos-vaciar" data-t="gastos.vaciar">Vaciar</button>
+              </div>
             </div>
           </div>
           <form class="gastos__nuevo" id="gastos-form" novalidate>

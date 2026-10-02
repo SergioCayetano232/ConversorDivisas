@@ -914,6 +914,46 @@ function nombreDia(dia, hoyIso = hoy()) {
   return fechaCorta(dia, a);
 }
 
+// El Excel en español separa con punto y coma y lee "12,50"; en inglés, coma y
+// "12.50". Si no casan, abre todo en una columna.
+const separadorCsv = () => (separadorDecimal() === "," ? ";" : ",");
+const numeroCsv = (n) => n.toFixed(2).replace(".", separadorDecimal());
+
+// Comillas solo si hacen falta. Y un concepto que empiece por "=" o "+" lo
+// toma Excel por una fórmula: con la comilla simple delante se queda en texto.
+function celdaCsv(valor) {
+  let texto = String(valor ?? "");
+  if (/^[=+\-@]/.test(texto)) texto = `'${texto}`;
+  return new RegExp(`["\\r\\n${separadorCsv()}]`).test(texto) ? `"${texto.replace(/"/g, '""')}"` : texto;
+}
+
+function filasCsv(cabecera, filas) {
+  return [cabecera, ...filas].map((celdas) => celdas.map(celdaCsv).join(separadorCsv())).join("\r\n");
+}
+
+const horaLocal = (cuando) => {
+  const d = new Date(cuando);
+  return `${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
+};
+
+// Los números sin formatear (sin "EUR" pegado ni miles): en la hoja se suman.
+function csvHistorial(lista) {
+  return filasCsv(
+    [tr("csv.fecha"), tr("csv.hora"), tr("csv.cantidad"), tr("csv.de"), tr("csv.resultado"), tr("csv.a")],
+    lista.map((e) => [isoLocal(new Date(e.cuando)), horaLocal(e.cuando), numeroCsv(e.cantidad), e.from, numeroCsv(e.resultado), e.to]),
+  );
+}
+
+// Del más antiguo al último: en una hoja de gastos se lee así, al revés que en el popup.
+function csvGastos(lista) {
+  return filasCsv(
+    [tr("csv.fecha"), tr("csv.hora"), tr("csv.concepto"), tr("csv.cantidad"), tr("csv.de"), tr("csv.importe"), tr("csv.a")],
+    [...lista].reverse().map((g) => [
+      isoLocal(new Date(g.cuando)), horaLocal(g.cuando), g.concepto, numeroCsv(g.cantidad), g.from, numeroCsv(g.valor), g.to,
+    ]),
+  );
+}
+
 // El número a secas, sin código ni separador de miles: lo normal es que acabe
 // pegado en una hoja de cálculo y ahí estorba. El decimal, el del idioma.
 function textoParaCopiar(valor) {
@@ -1071,6 +1111,7 @@ if (typeof module !== "undefined") {
     leerNumero, divisaDe, leerSeleccion, destinoPara, buscarPrecios, precioEntero, leerOmnibox, escaparXml,
     divisaDeIdioma, parPorIdioma, banderaDe,
     HISTORIAL_MAX, leerHistorial, apuntarConversion, haceCuanto, textoParaCopiar,
+    celdaCsv, csvHistorial, csvGastos,
     GASTOS_MAX, CONCEPTO_MAX, crearGasto, leerGastos, apuntarGasto, quitarGasto, sumarPorDivisa, gastosPorDia, nombreDia,
     EXTRAS_MAX, EXTRAS_POR_DEFECTO, leerExtras, anadirExtra, quitarExtra,
     extrasVisibles, disponiblesParaAnadir, convertirExtras, CHULETA, escalaChuleta, chuleta,

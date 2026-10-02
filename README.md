@@ -26,6 +26,9 @@ que necesitaba una conversión rápida. Ahora es un clic en la barra del navegad
   por días con lo de cada día. Cada uno se guarda con la tasa y la comisión de
   ese momento, así que lo que gastaste el lunes no cambia aunque el euro suba
   el martes. Hasta 200, y para vaciarlo hay que darle dos veces
+- Las conversiones y los gastos se bajan en CSV con el botón **CSV** de cada
+  panel, listos para abrir en Excel o en Google Sheets: en español van con
+  punto y coma y "12,50", en inglés con coma y "12.50", y las tildes no se rompen
 - La comisión de tu banco: pones el % que te cobra la tarjeta (0, 1, 2, 3 o el
   que quieras) y al lado del resultado sale lo que pagarías de verdad. También
   va sumada en la chuleta y en las otras divisas. Se queda guardada para la
