@@ -74,6 +74,10 @@ que necesitaba una conversión rápida. Ahora es un clic en la barra del navegad
   de 1,15") y te salta una notificación cuando pase, aunque tengas el popup
   cerrado. Hasta cuatro a la vez
 - Se abre con `Ctrl+Shift+U` (en Mac, `Cmd+Shift+U`)
+- Desde la barra de direcciones, sin abrir nada: escribes `cd`, espacio, y
+  luego `20 usd`, `50 eur a gbp` o `100-15% jpy`. El resultado sale en las
+  sugerencias de Chrome, con tus otras divisas debajo, y con Enter se abre el
+  popup con esa conversión puesta
 - Atajos dentro del popup: `S` da la vuelta al par, `C` copia, `D` y `A` abren
   los desplegables, `G` los gastos y del `1` al `6` cambian de pestaña. Si estás escribiendo en
   un campo, con `Alt` delante (`⌥` en Mac). Con `?` salen todos

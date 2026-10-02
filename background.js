@@ -327,6 +327,81 @@ async function convertirPagina(tab) {
   }]);
 }
 
+// La barra de direcciones: "cd 20 usd". Pido todas las tasas del origen de una
+// vez, que así salen también tus otras divisas, y las guardo en memoria mientras
+// escribes: si no, cada tecla sería una petición.
+let tasasBarra = null;
+let barraId = 0;
+
+async function tasasDe(base) {
+  if (tasasBarra?.base === base && tasasBarra.dia === hoy()) return tasasBarra.rates;
+  const rates = await todasLasTasas(base);
+  tasasBarra = { base, dia: hoy(), rates };
+  return rates;
+}
+
+function pistaBarra(texto) {
+  chrome.omnibox.setDefaultSuggestion({ description: escaparXml(texto) });
+}
+
+async function sugerirEnBarra(texto, sugerir) {
+  const actual = ++barraId;
+  await idiomaListo;
+  const leido = leerOmnibox(texto, await leerPar());
+  if (actual !== barraId) return;
+  if (!leido) {
+    pistaBarra(tr(texto.trim() ? "barra.no" : "barra.pista"));
+    sugerir([]);
+    return;
+  }
+
+  const { cantidad, from, to } = leido;
+  const de = `${nf.format(cantidad)} ${from}`;
+  try {
+    const rates = await tasasDe(from);
+    const { divisasExtra } = await chrome.storage.local.get("divisasExtra");
+    if (actual !== barraId) return;
+    const rate = rates[to];
+    if (typeof rate !== "number") throw new Error("Respuesta inesperada");
+    chrome.omnibox.setDefaultSuggestion({
+      description: `<match>${escaparXml(`${de} = ${nf.format(cantidad * rate)} ${to}`)}</match>`
+        + ` <dim>${escaparXml(`· 1 ${from} = ${nfRate.format(rate)} ${to} · ${tr("barra.enter")}`)}</dim>`,
+    });
+    // Debajo, tus otras divisas. Lo que va en content es lo que se vuelve a
+    // leer si eliges esa, así que va escrito como lo escribirías tú.
+    sugerir(leerExtras(divisasExtra)
+      .filter((code) => code !== from && code !== to && typeof rates[code] === "number")
+      .map((code) => ({
+        content: `${textoParaCopiar(cantidad)} ${from} ${code}`,
+        description: `${escaparXml(`${de} =`)} <match>${escaparXml(`${nf.format(cantidad * rates[code])} ${code}`)}</match>`,
+      })));
+  } catch (error) {
+    if (actual !== barraId) return;
+    pistaBarra(errorMessageFor(error));
+    sugerir([]);
+  }
+}
+
+// Con Enter se abre el popup con la cantidad y el par ya puestos, igual que
+// cuando la selección viene de una página donde no se puede poner la tarjeta.
+async function abrirDesdeBarra(texto) {
+  await idiomaListo;
+  const leido = leerOmnibox(texto, await leerPar());
+  if (leido) await chrome.storage.session.set({ pendiente: leido });
+  try {
+    await chrome.action.openPopup();
+  } catch (error) {
+    console.warn("No se pudo abrir el popup", error);
+  }
+}
+
+chrome.omnibox.onInputStarted.addListener(async () => {
+  await idiomaListo;
+  pistaBarra(tr("barra.pista"));
+});
+chrome.omnibox.onInputChanged.addListener(sugerirEnBarra);
+chrome.omnibox.onInputEntered.addListener(abrirDesdeBarra);
+
 // Aquí no uso la caché del popup: guarda la tasa de la mañana hasta el día
 // siguiente, y el BCE publica por la tarde. Un aviso tiene que ver la nueva.
 async function todasLasTasas(base) {

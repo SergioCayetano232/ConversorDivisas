@@ -197,6 +197,9 @@ const TEXTOS = {
     "tarjeta.nada": "No veo ninguna cantidad en lo que has seleccionado.",
 
     "menu.precios": "Convertir los precios de la página",
+    "barra.pista": "Escribe una cantidad: 20 usd, 50 eur a gbp, 100-15% jpy",
+    "barra.no": "No lo entiendo. Prueba con 20 usd o 50 eur a gbp",
+    "barra.enter": "Enter lo abre en el conversor",
     "precios.uno": "1 precio pasado a {to}",
     "precios.varios": "{n} precios pasados a {to}",
     "precios.nada": "No he encontrado precios en esta página.",
@@ -404,6 +407,9 @@ const TEXTOS = {
     "tarjeta.nada": "I can't find an amount in what you selected.",
 
     "menu.precios": "Convert prices on this page",
+    "barra.pista": "Type an amount: 20 usd, 50 eur to gbp, 100-15% jpy",
+    "barra.no": "I don't get it. Try 20 usd or 50 eur to gbp",
+    "barra.enter": "Enter opens it in the converter",
     "precios.uno": "1 price converted to {to}",
     "precios.varios": "{n} prices converted to {to}",
     "precios.nada": "I couldn't find any prices on this page.",

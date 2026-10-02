@@ -728,6 +728,36 @@ function precioEntero(texto) {
   return { cantidad, divisa };
 }
 
+// En la barra de direcciones nadie escribe en mayúsculas, así que aquí "usd"
+// sí vale. Las palabras de enlace ("50 eur a gbp", "to", "en") sobran.
+const ENLACES = new Set(["a", "to", "en", "in", "->", "→", "=", "de"]);
+
+function leerOmnibox(texto, par) {
+  if (typeof texto !== "string") return null;
+  // El símbolo pegado al número ("20€", "$20") va aparte, que si no la cuenta no se entiende.
+  const palabras = texto.replace(/([€$£¥₹₩₪฿₱₺])/g, " $1 ").trim().split(/\s+/);
+  const divisas = [];
+  const resto = [];
+  for (const palabra of palabras) {
+    if (ENLACES.has(palabra.toLowerCase())) continue;
+    const code = palabra.toUpperCase();
+    const divisa = isValidCode(code) ? code : /[a-z€$£¥₹₩₪฿₱₺]/i.test(palabra) ? divisaDe(palabra) : null;
+    if (divisa) divisas.push(divisa);
+    else resto.push(palabra);
+  }
+  if (divisas.length > 2) return null;
+  const cantidad = leerImporte(resto.join(" "));
+  if (cantidad === null || cantidad <= 0) return null;
+  const [de, a] = divisas;
+  const { from, to } = a ? { from: de, to: a } : destinoPara(de ?? null, par);
+  return from === to ? null : { cantidad, from, to };
+}
+
+// Lo que pinta Chrome en la sugerencia es XML: un "&" suelto la deja en blanco.
+function escaparXml(texto) {
+  return String(texto).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+}
+
 // Si lo que he leído ya está en el lado de destino, le doy la vuelta al par: nadie
 // quiere pasar dólares a dólares.
 const EUROZONA = [
@@ -1038,7 +1068,7 @@ if (typeof module !== "undefined") {
     normalizar, filtrarDivisas, buildPaths, startDateFor, errorMessageFor,
     RECIENTES_MAX, apuntarReciente, leerRecientes, recientesVisibles,
     RANGOS, RANGO_POR_DEFECTO, leerRango, coordenadas, alturaEn, MOMENTO_UMBRAL, momento, textoMomento, indiceCercano, extremos, fechaCorta, largoEnPantalla,
-    leerNumero, divisaDe, leerSeleccion, destinoPara, buscarPrecios, precioEntero,
+    leerNumero, divisaDe, leerSeleccion, destinoPara, buscarPrecios, precioEntero, leerOmnibox, escaparXml,
     divisaDeIdioma, parPorIdioma, banderaDe,
     HISTORIAL_MAX, leerHistorial, apuntarConversion, haceCuanto, textoParaCopiar,
     GASTOS_MAX, CONCEPTO_MAX, crearGasto, leerGastos, apuntarGasto, quitarGasto, sumarPorDivisa, gastosPorDia, nombreDia,
