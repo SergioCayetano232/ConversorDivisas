@@ -73,6 +73,20 @@ const el = {
   gastosApuntar: document.getElementById("gastos-apuntar"),
   gastosLista: document.getElementById("gastos-lista"),
   gastosVacio: document.getElementById("gastos-vacio"),
+  gastosCerrar: document.getElementById("gastos-cerrar"),
+  gastosCategoria: document.getElementById("gastos-categoria"),
+  categorias: document.getElementById("categorias"),
+  desglose: document.getElementById("desglose"),
+  presupuesto: document.getElementById("presupuesto"),
+  presupuestoAnadir: document.getElementById("presupuesto-anadir"),
+  presupuestoVer: document.getElementById("presupuesto-ver"),
+  presupuestoLleno: document.getElementById("presupuesto-lleno"),
+  presupuestoTexto: document.getElementById("presupuesto-texto"),
+  presupuestoForm: document.getElementById("presupuesto-form"),
+  presupuestoImporte: document.getElementById("presupuesto-importe"),
+  presupuestoCodigo: document.getElementById("presupuesto-codigo"),
+  presupuestoHasta: document.getElementById("presupuesto-hasta"),
+  presupuestoQuitar: document.getElementById("presupuesto-quitar"),
   historialCuenta: document.getElementById("historial-cuenta"),
   historial: document.getElementById("historial"),
   historialLista: document.getElementById("historial-lista"),
@@ -161,6 +175,24 @@ let gastos = [];
 let gastoNuevo = null;
 let cascadaGastos = false;
 let vaciarId = null;
+let presupuesto = null;
+// La categoría del gasto que vas a apuntar. Mientras no la elijas tú, la saco
+// del concepto; si la eliges, ya no te la cambio por mucho que escribas.
+let categoriaNueva = CATEGORIA_POR_DEFECTO;
+let categoriaAMano = false;
+let filtroCategoria = null;
+
+// Con el mismo trazo que los iconos de las pestañas.
+const ICONOS_CATEGORIA = {
+  comida: '<path d="M4 1.5v3.3a1.5 1.5 0 0 0 3 0V1.5M5.5 1.5v11M10.5 12.5v-11c-1.6 0-2.6 1.6-2.6 3.8 0 1.9.9 3 2.6 3"/>',
+  transporte: '<rect x="1.8" y="3" width="10.4" height="7" rx="2"/><path d="M1.8 7h10.4"/><circle cx="4.5" cy="11.2" r="1"/><circle cx="9.5" cy="11.2" r="1"/>',
+  alojamiento: '<path d="M1.5 3v9.5M1.5 9.5h11v3M12.5 9.5V7.5a2 2 0 0 0-2-2H6.5v4"/><circle cx="4" cy="7.3" r="1.1"/>',
+  ocio: '<path d="M1.8 4h10.4v2a1 1 0 0 0 0 2v2H1.8V8a1 1 0 0 0 0-2z"/><path d="M8.5 4.5v1M8.5 6.6v.8M8.5 8.5v1"/>',
+  compras: '<path d="M3 5h8l-.6 7.5H3.6z"/><path d="M5.2 5V4a1.8 1.8 0 0 1 3.6 0v1"/>',
+  otros: '<circle cx="3.2" cy="7" r="0.9"/><circle cx="7" cy="7" r="0.9"/><circle cx="10.8" cy="7" r="0.9"/>',
+};
+const iconoCategoria = (categoria) =>
+  `<svg viewBox="0 0 14 14" aria-hidden="true">${ICONOS_CATEGORIA[categoria] ?? ICONOS_CATEGORIA.otros}</svg>`;
 
 // Se piden en el momento a numeros(), que los guarda por idioma: así da igual
 // que el idioma elegido llegue después de cargar el archivo. Y todos agrupan
@@ -187,6 +219,7 @@ const COMISION_KEY = "comisionBanco";
 const FECHA_KEY = "fechaConsulta";
 const HISTORIAL_KEY = "historialConversiones";
 const GASTOS_KEY = "gastosViaje";
+const PRESUPUESTO_KEY = "presupuestoViaje";
 // Lo que tardo en dar por buena una cantidad: mientras escribes "1", "12",
 // "125" no quiero tres entradas, solo la última.
 const PAUSA_APUNTE = 2000;
@@ -298,6 +331,16 @@ async function cargarGastos() {
   } catch (error) {
     console.warn("No se pudieron leer los gastos", error);
     return [];
+  }
+}
+
+async function cargarPresupuesto() {
+  try {
+    const guardado = await chrome.storage.local.get(PRESUPUESTO_KEY);
+    return leerPresupuesto(guardado[PRESUPUESTO_KEY]);
+  } catch (error) {
+    console.warn("No se pudo leer el presupuesto", error);
+    return null;
   }
 }
 
@@ -1479,6 +1522,7 @@ function crearFilaHistorial(entrada, i) {
   cuenta.innerHTML = '<span class="historial__de"></span><span class="historial__flecha" aria-hidden="true">→</span><span class="historial__a"></span>';
   cuenta.querySelector(".historial__de").textContent = `${nf.format(entrada.cantidad)} ${entrada.from}`;
   cuenta.querySelector(".historial__a").textContent = `${nf.format(entrada.resultado)} ${entrada.to}`;
+  cuenta.title = `${nf.format(entrada.cantidad)} ${entrada.from} → ${nf.format(entrada.resultado)} ${entrada.to}`;
   const cuando = document.createElement("span");
   cuando.className = "historial__cuando";
   cuando.textContent = haceCuanto(entrada.cuando);
@@ -1611,9 +1655,95 @@ function gastoDePantalla() {
     cantidad: leerImporte(el.amount.value),
     valor,
     concepto: el.gastosConcepto.value,
+    categoria: categoriaNueva,
     cuando: Date.now(),
   });
 }
+
+function pintarCategoriaNueva(conSalto = false) {
+  el.gastosCategoria.innerHTML = iconoCategoria(categoriaNueva);
+  el.gastosCategoria.dataset.categoria = categoriaNueva;
+  const nombre = tr(`cat.${categoriaNueva}`);
+  el.gastosCategoria.title = nombre;
+  el.gastosCategoria.setAttribute("aria-label", tr("cat.elegir", { nombre }));
+  if (conSalto) restartAnimation(el.gastosCategoria, "is-cambiada");
+}
+
+function onConceptoGasto() {
+  pintarBotonGasto();
+  if (categoriaAMano) return;
+  const nueva = adivinarCategoria(el.gastosConcepto.value) ?? CATEGORIA_POR_DEFECTO;
+  if (nueva === categoriaNueva) return;
+  categoriaNueva = nueva;
+  pintarCategoriaNueva(true);
+}
+
+function abrirCategorias() {
+  el.categorias.replaceChildren(...CATEGORIAS.map((categoria, i) => {
+    const boton = document.createElement("button");
+    boton.type = "button";
+    boton.className = "categorias__opcion";
+    boton.style.setProperty("--i", i);
+    boton.dataset.categoria = categoria;
+    boton.innerHTML = iconoCategoria(categoria);
+    boton.title = tr(`cat.${categoria}`);
+    boton.setAttribute("aria-label", tr(`cat.${categoria}`));
+    boton.setAttribute("aria-pressed", String(categoria === categoriaNueva));
+    boton.addEventListener("click", () => {
+      categoriaNueva = categoria;
+      categoriaAMano = true;
+      pintarCategoriaNueva(true);
+      cerrarCategorias();
+      el.gastosConcepto.focus();
+    });
+    return boton;
+  }));
+  el.categorias.hidden = false;
+  el.gastosCategoria.setAttribute("aria-expanded", "true");
+  el.categorias.querySelector('[aria-pressed="true"]')?.focus();
+}
+
+function cerrarCategorias() {
+  if (el.categorias.hidden) return false;
+  el.categorias.hidden = true;
+  el.gastosCategoria.setAttribute("aria-expanded", "false");
+  return true;
+}
+
+function pintarDesglose() {
+  const trozos = desglose(gastos);
+  // Con una sola categoría el desglose no dice nada: un 100 % y ya.
+  el.desglose.hidden = trozos.length < 2;
+  if (filtroCategoria && !trozos.some((t) => t.categoria === filtroCategoria)) filtroCategoria = null;
+  if (el.desglose.hidden) {
+    filtroCategoria = null;
+    return;
+  }
+  el.desglose.replaceChildren(...trozos.map(({ categoria, total, fraccion, to }, i) => {
+    const boton = document.createElement("button");
+    boton.type = "button";
+    boton.className = "desglose__trozo";
+    boton.dataset.categoria = categoria;
+    boton.style.setProperty("--i", i);
+    boton.style.setProperty("--parte", fraccion);
+    const pct = porCientoEntero(fraccion);
+    boton.innerHTML = `${iconoCategoria(categoria)}<span class="desglose__pct"></span>`;
+    boton.querySelector(".desglose__pct").textContent = pct;
+    const nombre = tr(`cat.${categoria}`);
+    boton.title = tr("cat.filtrar", { nombre, total: `${nf.format(total)} ${to}`, pct });
+    boton.setAttribute("aria-label", boton.title);
+    boton.setAttribute("aria-pressed", String(categoria === filtroCategoria));
+    boton.addEventListener("click", () => {
+      filtroCategoria = filtroCategoria === categoria ? null : categoria;
+      cascadaGastos = true;
+      pintarGastos();
+      el.desglose.querySelector(`[data-categoria="${categoria}"]`)?.focus();
+    });
+    return boton;
+  }));
+}
+
+const porCientoEntero = (fraccion) => tr("pct", { n: Math.round(fraccion * 100) });
 
 function pintarBotonGasto() {
   const gasto = gastoDePantalla();
@@ -1656,6 +1786,11 @@ function crearFilaGasto(gasto, i) {
   const concepto = gasto.concepto || tr("gastos.sinConcepto");
   const valor = `${nf.format(gasto.valor)} ${gasto.to}`;
 
+  const icono = document.createElement("span");
+  icono.className = "gastos__icono";
+  icono.dataset.categoria = gasto.categoria;
+  icono.title = tr(`cat.${gasto.categoria}`);
+  icono.innerHTML = iconoCategoria(gasto.categoria);
   const que = document.createElement("span");
   que.className = "gastos__que";
   que.classList.toggle("is-sin", !gasto.concepto);
@@ -1669,7 +1804,7 @@ function crearFilaGasto(gasto, i) {
   const texto = document.createElement("span");
   texto.className = "gastos__texto";
   texto.setAttribute("aria-label", tr("gastos.fila", { concepto, cantidad: nf.format(gasto.cantidad), from: gasto.from, valor }));
-  texto.append(que, de, cuanto);
+  texto.append(icono, que, de, cuanto);
 
   const quitar = document.createElement("button");
   quitar.type = "button";
@@ -1701,21 +1836,106 @@ function pintarGastos() {
   }
   el.gastosN.textContent = n === 0 ? "" : n === 1 ? tr("gastos.uno") : tr("gastos.n", { n });
 
+  pintarDesglose();
+  const visibles = filtroCategoria ? gastos.filter((g) => g.categoria === filtroCategoria) : gastos;
   let i = 0;
-  el.gastosLista.replaceChildren(...gastosPorDia(gastos).flatMap((dia) => [
+  el.gastosLista.replaceChildren(...gastosPorDia(visibles).flatMap((dia) => [
     crearDiaGastos(dia),
     ...dia.gastos.map((gasto) => crearFilaGasto(gasto, i++)),
   ]));
   cascadaGastos = false;
   gastoNuevo = null;
+  pintarPresupuesto();
   el.gastosVacio.hidden = n > 0;
   el.gastosVaciar.hidden = n === 0;
   el.gastosCsv.hidden = n === 0;
 }
 
+function pintarPresupuesto() {
+  const estado = estadoPresupuesto(presupuesto, gastos);
+  el.presupuestoAnadir.hidden = Boolean(estado);
+  el.presupuestoVer.hidden = !estado;
+  if (!estado) {
+    delete el.presupuestoVer.dataset.tono;
+    return;
+  }
+  const dinero = (n) => `${nf.format(n)} ${presupuesto.to}`;
+  const partes = estado.queda < 0
+    ? [tr("presupuesto.pasado", { pasado: dinero(-estado.queda) })]
+    : [tr("presupuesto.queda", { queda: dinero(estado.queda) })];
+  if (estado.porDia !== null) partes.push(tr("presupuesto.alDia", { porDia: nf.format(estado.porDia) }));
+  el.presupuestoTexto.textContent = partes.join(" · ");
+  el.presupuestoVer.title = tr("presupuesto.titulo", {
+    gastado: nf.format(estado.gastado), importe: dinero(presupuesto.importe), fecha: fechaLarga(presupuesto.hasta),
+  });
+  el.presupuestoVer.setAttribute("aria-label", `${el.presupuestoTexto.textContent}. ${el.presupuestoVer.title}`);
+  el.presupuestoLleno.style.width = `${Math.min(estado.fraccion, 1) * 100}%`;
+  // El temblor solo al pasarte, no cada vez que abres el panel ya pasado.
+  const antes = el.presupuestoVer.dataset.tono;
+  el.presupuestoVer.dataset.tono = estado.tono;
+  if (antes && antes !== "pasado" && estado.tono === "pasado") restartAnimation(el.presupuestoVer, "is-alarma");
+}
+
+function editarPresupuesto() {
+  noVaciar();
+  const to = presupuesto?.to ?? el.to.value;
+  el.presupuestoCodigo.textContent = to;
+  el.presupuestoImporte.value = presupuesto ? nf.format(presupuesto.importe) : "";
+  // Una semana si no hay nada, que es lo que dura un viaje normal.
+  const [a, m, d] = hoy().split("-").map(Number);
+  el.presupuestoHasta.min = hoy();
+  el.presupuestoHasta.value = presupuesto?.hasta ?? isoLocal(new Date(a, m - 1, d + 6));
+  el.presupuestoQuitar.hidden = !presupuesto;
+  el.presupuestoForm.hidden = false;
+  el.presupuesto.hidden = true;
+  el.gastosForm.hidden = true;
+  restartAnimation(el.presupuestoForm, "is-nuevo");
+  el.presupuestoImporte.focus();
+  el.presupuestoImporte.select();
+}
+
+function dejarDeEditarPresupuesto() {
+  if (el.presupuestoForm.hidden) return false;
+  el.presupuestoForm.hidden = true;
+  el.presupuesto.hidden = false;
+  el.gastosForm.hidden = false;
+  return true;
+}
+
+async function ponerPresupuesto(nuevo) {
+  presupuesto = nuevo;
+  dejarDeEditarPresupuesto();
+  pintarPresupuesto();
+  (presupuesto ? el.presupuestoVer : el.presupuestoAnadir).focus();
+  if (presupuesto) restartAnimation(el.presupuestoVer, "is-nuevo");
+  try {
+    if (presupuesto) await chrome.storage.local.set({ [PRESUPUESTO_KEY]: presupuesto });
+    else await chrome.storage.local.remove(PRESUPUESTO_KEY);
+  } catch (error) {
+    console.warn("No se pudo guardar el presupuesto", error);
+  }
+}
+
+function onGuardarPresupuesto(event) {
+  event.preventDefault();
+  const nuevo = leerPresupuesto({
+    importe: leerImporte(el.presupuestoImporte.value),
+    to: el.presupuestoCodigo.textContent,
+    hasta: el.presupuestoHasta.value,
+  });
+  if (!nuevo) {
+    const mal = leerImporte(el.presupuestoImporte.value) > 0 ? el.presupuestoHasta : el.presupuestoImporte;
+    restartAnimation(mal, "is-mal");
+    mal.focus();
+    return;
+  }
+  ponerPresupuesto(nuevo);
+}
+
 function abrirGastos() {
   cerrarBurbuja();
   cerrarHistorial();
+  el.gastos.style.setProperty("--gastos-arriba", `${el.resultBox.offsetTop}px`);
   el.gastos.hidden = false;
   el.abrirGastos.setAttribute("aria-expanded", "true");
   cascadaGastos = true;
@@ -1726,6 +1946,8 @@ function abrirGastos() {
 
 function cerrarGastos() {
   if (el.gastos.hidden) return;
+  dejarDeEditarPresupuesto();
+  cerrarCategorias();
   el.gastos.hidden = true;
   el.abrirGastos.setAttribute("aria-expanded", "false");
   noVaciar();
@@ -1742,6 +1964,11 @@ function onApuntarGasto(event) {
   gastos = apuntarGasto(gastos, gasto);
   gastoNuevo = gasto.id;
   el.gastosConcepto.value = "";
+  categoriaNueva = CATEGORIA_POR_DEFECTO;
+  categoriaAMano = false;
+  // Si estabas mirando otra categoría, el que acabas de apuntar no se vería.
+  if (filtroCategoria && filtroCategoria !== gasto.categoria) filtroCategoria = null;
+  pintarCategoriaNueva();
   guardarGastos();
   pintarGastos();
   restartAnimation(el.abrirGastos, "is-apuntado");
@@ -2028,6 +2255,24 @@ function pintarAyuda() {
     return fila;
   }));
   el.ayudaNota.replaceChildren(tr("ayuda.nota", { alt }), document.createElement("br"), tr("ayuda.idioma"));
+  pintarAtajoSeleccion();
+}
+
+// El de convertir lo seleccionado es de Chrome y lo puedes cambiar: lo pido en
+// vez de escribirlo a mano, que si no la ayuda diría uno que ya no vale.
+async function pintarAtajoSeleccion() {
+  let tecla = "";
+  try {
+    const comandos = await chrome.commands.getAll();
+    tecla = comandos.find((c) => c.name === "convertir-seleccion")?.shortcut ?? "";
+  } catch (error) {
+    console.warn("No se pudieron leer los atajos de Chrome", error);
+    return;
+  }
+  const kbd = document.createElement("kbd");
+  kbd.textContent = tecla;
+  const [antes, despues] = tr("ayuda.seleccion").split("{tecla}");
+  el.ayudaNota.append(document.createElement("br"), ...(tecla ? [antes, kbd, despues] : [tr("ayuda.sinTecla")]));
 }
 
 function abrirAyuda() {
@@ -2569,10 +2814,21 @@ function bindEvents() {
   el.abrirGastos.addEventListener("click", () => (el.gastos.hidden ? abrirGastos() : cerrarGastos()));
   el.abrirGastos.addEventListener("animationend", () => el.abrirGastos.classList.remove("is-apuntado"));
   el.gastosForm.addEventListener("submit", onApuntarGasto);
-  el.gastosConcepto.addEventListener("input", pintarBotonGasto);
+  el.gastosConcepto.addEventListener("input", onConceptoGasto);
+  el.gastosCategoria.addEventListener("click", () => (el.categorias.hidden ? abrirCategorias() : cerrarCategorias()));
+  el.gastosCategoria.addEventListener("animationend", () => el.gastosCategoria.classList.remove("is-cambiada"));
   el.gastosVaciar.addEventListener("click", onVaciarGastos);
   el.gastosSuma.addEventListener("animationend", () => el.gastosSuma.classList.remove("is-tic"));
   el.gastosApuntar.addEventListener("animationend", () => el.gastosApuntar.classList.remove("is-mal"));
+  el.gastosCerrar.addEventListener("click", () => cerrarGastos()?.focus());
+  el.presupuestoAnadir.addEventListener("click", editarPresupuesto);
+  el.presupuestoVer.addEventListener("click", editarPresupuesto);
+  el.presupuestoForm.addEventListener("submit", onGuardarPresupuesto);
+  el.presupuestoQuitar.addEventListener("click", () => ponerPresupuesto(null));
+  el.presupuestoVer.addEventListener("animationend", () => el.presupuestoVer.classList.remove("is-nuevo", "is-alarma"));
+  el.presupuestoForm.addEventListener("animationend", (event) => {
+    event.target.classList.remove("is-nuevo", "is-mal");
+  });
   // Si cierras el popup antes de los dos segundos, que no se pierda.
   window.addEventListener("pagehide", apuntarAhora);
   el.momento.addEventListener("animationend", () => el.momento.classList.remove("is-nuevo"));
@@ -2625,7 +2881,10 @@ function bindEvents() {
     }
     if (event.key === "Escape" && !el.gastos.hidden) {
       event.preventDefault();
-      cerrarGastos()?.focus();
+      // Primero se cierra lo de dentro (categorías, presupuesto), y con otro Escape el panel.
+      if (cerrarCategorias()) el.gastosCategoria.focus();
+      else if (dejarDeEditarPresupuesto()) el.presupuestoVer.hidden ? el.presupuestoAnadir.focus() : el.presupuestoVer.focus();
+      else cerrarGastos()?.focus();
     }
   });
   document.addEventListener("mousedown", (event) => {
@@ -2640,6 +2899,9 @@ function bindEvents() {
     }
     if (!el.gastos.hidden && !el.gastos.contains(event.target) && !el.abrirGastos.contains(event.target)) {
       cerrarGastos();
+    }
+    if (!el.categorias.hidden && !el.categorias.contains(event.target) && !el.gastosCategoria.contains(event.target)) {
+      cerrarCategorias();
     }
   });
   window.addEventListener("online", () => {
@@ -2674,13 +2936,15 @@ async function init() {
   const idiomaCambiado = await cargarIdioma();
   traducirPagina();
   if (idiomaCambiado) saludarIdioma();
-  const [pair, rango, guardados, pendiente, guardadas, vistaGuardada, avisosGuardados, comisionGuardada, fechaGuardada, historialGuardado, gastosGuardados] = await Promise.all([
+  const [pair, rango, guardados, pendiente, guardadas, vistaGuardada, avisosGuardados, comisionGuardada, fechaGuardada, historialGuardado, gastosGuardados, presupuestoGuardado] = await Promise.all([
     loadPair(), cargarRango(), cargarRecientes(), tomarPendiente(), cargarExtras(), cargarVista(), cargarAvisos(),
-    cargarComision(), cargarFecha(), cargarHistorial(), cargarGastos(),
+    cargarComision(), cargarFecha(), cargarHistorial(), cargarGastos(), cargarPresupuesto(),
   ]);
   historial = historialGuardado;
   pintarHistorial();
   gastos = gastosGuardados;
+  presupuesto = presupuestoGuardado;
+  pintarCategoriaNueva();
   pintarGastos();
   comision = comisionGuardada;
   fecha = fechaGuardada;

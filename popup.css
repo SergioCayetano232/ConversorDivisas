@@ -139,6 +139,7 @@ body::after {
 }
 
 .app {
+  position: relative;
   display: flex;
   flex-direction: column;
 }
@@ -1038,17 +1039,26 @@ body::after {
     transform var(--fast) var(--ease-spring);
 }
 
+/* Si no cabe, lo que se corta es la cantidad de origen y nunca el resultado,
+   que es lo que copias: antes salía "1.106,82 E". */
 .historial__cuenta {
+  flex: 1;
   display: flex;
   align-items: center;
   gap: 5px;
   min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
 }
 
 .historial__de {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
   color: var(--muted);
+}
+
+.historial__flecha,
+.historial__a {
+  flex-shrink: 0;
 }
 
 .historial__flecha {
@@ -1147,10 +1157,51 @@ body::after {
   color: var(--muted);
 }
 
-/* Más tapado que el historial: detrás del total se transparentaba el código
-   grande del resultado. */
+/* Cuelga de .app y no de .result, que recorta lo que se sale: va desde arriba
+   de la caja del resultado hasta el pie, y así caben unas cuantas filas más.
+   Más tapado que el historial, que detrás se transparentaba la cifra grande. */
 .gastos {
+  top: var(--gastos-arriba, 240px);
+  left: var(--s-4);
+  right: var(--s-4);
+  max-height: calc(100% - var(--gastos-arriba, 240px) - var(--s-3));
+  padding: 12px;
   background: color-mix(in srgb, var(--graphite) 99%, transparent);
+  transform-origin: top center;
+}
+
+.gastos__arriba {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.gastos__cerrar {
+  display: grid;
+  place-items: center;
+  width: 18px;
+  height: 18px;
+  margin-right: -3px;
+  padding: 0;
+  background: transparent;
+  border: none;
+  border-radius: 50%;
+  color: var(--muted);
+  font-size: 10px;
+  cursor: pointer;
+  transition: color var(--fast) var(--ease), background-color var(--fast) var(--ease),
+    transform var(--mid) var(--ease-spring);
+}
+
+.gastos__cerrar:hover {
+  color: var(--brass);
+  background: var(--brass-ghost);
+  transform: rotate(90deg);
+}
+
+.gastos__cerrar:focus-visible {
+  outline: 2px solid var(--brass);
+  outline-offset: 1px;
 }
 
 /* La cartera es un reloj más: mismo botón, mismo contador. Al pasar por encima
@@ -1214,6 +1265,7 @@ body::after {
 }
 
 .gastos__nuevo {
+  position: relative;
   display: flex;
   gap: 4px;
   margin-bottom: var(--s-2);
@@ -1399,6 +1451,337 @@ body::after {
   border-color: color-mix(in srgb, var(--cinnabar) 45%, transparent);
   background: color-mix(in srgb, var(--cinnabar) 10%, transparent);
   transform: rotate(90deg);
+}
+
+/* La barra del presupuesto: verde mientras vas bien, dorada al acercarte y
+   roja pasado. El ancho crece con muelle cada vez que apuntas algo. */
+.presupuesto {
+  margin: -2px 0 var(--s-2);
+}
+
+.presupuesto__anadir {
+  padding: 1px 8px;
+  background: transparent;
+  border: 1px dashed var(--hairline-strong);
+  border-radius: 999px;
+  color: var(--muted);
+  font-family: inherit;
+  font-size: 10px;
+  cursor: pointer;
+  transition: color var(--fast) var(--ease), border-color var(--fast) var(--ease),
+    background-color var(--fast) var(--ease), transform var(--fast) var(--ease-spring);
+}
+
+.presupuesto__anadir:hover {
+  color: var(--brass);
+  border-color: var(--brass-dim);
+  background: var(--brass-ghost);
+}
+
+.presupuesto__anadir:active {
+  transform: scale(0.94);
+}
+
+.presupuesto__ver {
+  --tono: var(--jade);
+  --tono-glow: var(--jade-glow);
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  width: 100%;
+  padding: 0;
+  background: transparent;
+  border: none;
+  border-radius: 4px;
+  color: inherit;
+  font-family: var(--font-mono);
+  text-align: left;
+  cursor: pointer;
+}
+
+.presupuesto__ver[data-tono="justo"] {
+  --tono: var(--brass);
+  --tono-glow: var(--brass-glow);
+}
+
+.presupuesto__ver[data-tono="pasado"] {
+  --tono: var(--cinnabar);
+  --tono-glow: var(--cinnabar-glow);
+}
+
+.presupuesto__barra {
+  position: relative;
+  display: block;
+  width: 100%;
+  height: 4px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: var(--hairline-strong);
+}
+
+.presupuesto__lleno {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: var(--tono);
+  box-shadow: 0 0 8px var(--tono-glow);
+  transition: width var(--slow) var(--ease-spring), background-color var(--mid) var(--ease);
+}
+
+.presupuesto__texto {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 10px;
+  font-variant-numeric: tabular-nums;
+  color: var(--tono);
+  transition: color var(--mid) var(--ease);
+}
+
+.presupuesto__ver:hover .presupuesto__texto {
+  text-decoration: underline dotted;
+  text-underline-offset: 2px;
+}
+
+.presupuesto__ver.is-nuevo {
+  animation: beat var(--mid) var(--ease-spring);
+}
+
+.presupuesto__ver.is-alarma {
+  animation: shake 400ms var(--ease);
+}
+
+.presupuesto__anadir:focus-visible,
+.presupuesto__ver:focus-visible,
+.presupuesto__importe:focus-visible,
+.presupuesto__hasta:focus-visible {
+  outline: 2px solid var(--brass);
+  outline-offset: 1px;
+}
+
+.presupuesto__form {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-bottom: var(--s-2);
+  color-scheme: dark;
+}
+
+@media (prefers-color-scheme: light) {
+  .presupuesto__form {
+    color-scheme: light;
+  }
+}
+
+.presupuesto__form.is-nuevo {
+  animation: pop var(--mid) var(--ease-spring);
+}
+
+.presupuesto__importe,
+.presupuesto__hasta {
+  min-width: 0;
+  height: 24px;
+  padding: 0 6px;
+  background: var(--slate);
+  border: 1px solid var(--hairline-strong);
+  border-radius: 6px;
+  color: var(--mist);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+  transition: border-color var(--fast) var(--ease);
+}
+
+.presupuesto__importe {
+  flex: 1;
+}
+
+.presupuesto__hasta {
+  flex: 1.3;
+}
+
+.presupuesto__importe:focus,
+.presupuesto__hasta:focus {
+  border-color: var(--brass);
+}
+
+.presupuesto__importe.is-mal,
+.presupuesto__hasta.is-mal {
+  border-color: var(--cinnabar);
+  animation: shake 400ms var(--ease);
+}
+
+.presupuesto__codigo {
+  flex-shrink: 0;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--muted);
+}
+
+.presupuesto__ok {
+  max-width: none;
+}
+
+/* El icono de la categoría delante del concepto. Cuando cambia solo, porque
+   has escrito "taxi", da un saltito para que veas que se ha dado cuenta. */
+.gastos__categoria {
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  background: var(--brass-ghost);
+  border: 1px solid var(--brass-dim);
+  border-radius: 6px;
+  color: var(--brass);
+  cursor: pointer;
+  transition: transform var(--fast) var(--ease-spring), background-color var(--fast) var(--ease);
+}
+
+.gastos__categoria:hover,
+.gastos__categoria[aria-expanded="true"] {
+  background: color-mix(in srgb, var(--brass) 22%, transparent);
+}
+
+.gastos__categoria:active {
+  transform: scale(0.9);
+}
+
+.gastos__categoria.is-cambiada svg {
+  animation: pop var(--mid) var(--ease-spring);
+}
+
+.gastos__categoria svg,
+.categorias__opcion svg,
+.gastos__icono svg,
+.desglose__trozo svg {
+  width: 12px;
+  height: 12px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.4;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+/* Las seis salen en abanico debajo del botón. */
+.categorias {
+  position: absolute;
+  top: 28px;
+  left: 0;
+  z-index: 2;
+  display: flex;
+  gap: 3px;
+  padding: 4px;
+  background: var(--graphite);
+  border: 1px solid var(--hairline-strong);
+  border-radius: var(--r-sm);
+  box-shadow: inset 0 1px 0 var(--sheen), var(--shadow-md);
+  transform-origin: top left;
+  animation: bandeja 260ms var(--ease-spring);
+}
+
+.categorias__opcion {
+  display: grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  padding: 0;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  color: var(--muted);
+  cursor: pointer;
+  animation: pop var(--mid) var(--ease-spring) backwards;
+  animation-delay: calc(var(--i, 0) * 25ms);
+  transition: color var(--fast) var(--ease), background-color var(--fast) var(--ease),
+    transform var(--fast) var(--ease-spring);
+}
+
+.categorias__opcion:hover {
+  color: var(--brass);
+  background: var(--brass-ghost);
+  transform: translateY(-1px);
+}
+
+.categorias__opcion[aria-pressed="true"] {
+  color: var(--graphite);
+  background: var(--brass);
+  box-shadow: 0 0 10px -2px var(--brass-glow);
+}
+
+.gastos__icono {
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  color: var(--brass-dim);
+}
+
+/* El desglose: cada pastilla se rellena por detrás en proporción a lo que
+   pesa, como una barrita dentro del botón. */
+.desglose {
+  display: flex;
+  gap: 4px;
+  margin: -2px 0 var(--s-2);
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.desglose__trozo {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  flex-shrink: 0;
+  height: 20px;
+  padding: 0 7px;
+  background:
+    linear-gradient(90deg, var(--brass-ghost) calc(var(--parte, 0) * 100%), transparent 0),
+    var(--slate);
+  border: 1px solid var(--hairline-strong);
+  border-radius: 999px;
+  color: var(--muted);
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-variant-numeric: tabular-nums;
+  cursor: pointer;
+  animation: pop var(--mid) var(--ease-spring) backwards;
+  animation-delay: calc(var(--i, 0) * 35ms);
+  transition: color var(--fast) var(--ease), border-color var(--fast) var(--ease),
+    transform var(--fast) var(--ease-spring);
+}
+
+.desglose__trozo svg {
+  color: var(--brass);
+}
+
+.desglose__trozo:hover {
+  color: var(--mist);
+  border-color: var(--brass-dim);
+}
+
+.desglose__trozo:active {
+  transform: scale(0.93);
+}
+
+.desglose__trozo[aria-pressed="true"] {
+  color: var(--graphite);
+  background: var(--brass);
+  border-color: var(--brass);
+  font-weight: 700;
+  box-shadow: 0 0 10px -2px var(--brass-glow);
+}
+
+.desglose__trozo[aria-pressed="true"] svg {
+  color: var(--graphite);
+}
+
+.gastos__categoria:focus-visible,
+.categorias__opcion:focus-visible,
+.desglose__trozo:focus-visible {
+  outline: 2px solid var(--brass);
+  outline-offset: 1px;
 }
 
 /* El "¿Seguro?" de vaciar se queda en rojo y late, para que no pase por un
@@ -3555,6 +3938,8 @@ kbd {
   .historial__fila,
   .gastos__fila.is-nueva,
   .gastos__fila.is-saliendo,
+  .categorias__opcion,
+  .desglose__trozo,
   .aviso.is-nueva,
   .burbuja__rapida,
   .ayuda__fila,
