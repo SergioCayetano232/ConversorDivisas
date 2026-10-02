@@ -550,6 +550,51 @@ function conComision(valor, pct) {
   return valor * (1 + pct / 100);
 }
 
+// Hasta un 1 % es lo que cobra una buena tarjeta; del 7 % para arriba ya es
+// tarifa de aeropuerto.
+const MARGENES = [
+  { hasta: 0.01, veredicto: "bien" },
+  { hasta: 0.03, veredicto: "normal" },
+  { hasta: 0.07, veredicto: "caro" },
+  { hasta: Infinity, veredicto: "timo" },
+];
+
+// En la ventanilla igual pone "1 EUR = 1,12 USD" que "1 USD = 0,89 EUR", así
+// que me quedo con la lectura que más se parezca a la real. Si empatan, la del par.
+function tasaOfrecida(numero, real) {
+  if (!Number.isFinite(numero) || numero <= 0 || !Number.isFinite(real) || real <= 0) return null;
+  const directa = Math.abs(Math.log(numero / real));
+  const alReves = Math.abs(Math.log(numero * real));
+  return alReves < directa ? { tasa: 1 / numero, invertida: true } : { tasa: numero, invertida: false };
+}
+
+// La casa siempre gana, así que hacia dónde se aparta de la real dice qué haces:
+// por debajo te dan menos de lo tuyo (vendes), por encima pagas más (compras).
+function analizarCambio(numero, real, cantidad, comision = 0) {
+  const ofrecida = tasaOfrecida(numero, real);
+  if (!ofrecida || !Number.isFinite(cantidad) || cantidad < 0) return null;
+  const { tasa, invertida } = ofrecida;
+  const vendes = tasa <= real;
+  const margen = vendes ? 1 - tasa / real : 1 - real / tasa;
+  // La comisión de la tarjeta se cuenta sobre lo justo, no sobre lo que pagas:
+  // para comparar paso el margen a esa misma cuenta.
+  const sobrecoste = margen / (1 - margen);
+  // 1 - 0,99 no da 0,01 justo, da 0,010000000000000009: sin la holgura un 1 %
+  // exacto salía "normal".
+  const HOLGURA = 1e-9;
+  return {
+    tasa,
+    invertida,
+    margen,
+    veredicto: MARGENES.find((m) => margen <= m.hasta + HOLGURA).veredicto,
+    sentido: vendes ? "vendes" : "compras",
+    justo: cantidad * real,
+    ofrecido: cantidad * tasa,
+    perdida: cantidad * Math.abs(tasa - real),
+    tarjeta: comision > 0 ? (sobrecoste > comision / 100 + HOLGURA ? "tarjeta" : "aqui") : null,
+  };
+}
+
 // En una web cualquiera no sé si "1.234" son mil o uno con algo, así que no
 // vale parseAmount. Regla: si hay punto y coma, el último es el decimal; si solo
 // hay uno y lleva tres cifras detrás, son miles.
@@ -864,6 +909,7 @@ const ATAJOS = {
   Digit3: "vista:avisos",
   Digit4: "vista:chuleta",
   Digit5: "vista:fecha",
+  Digit6: "vista:timo",
   KeyH: "ayuda",
 };
 
@@ -904,6 +950,7 @@ if (typeof module !== "undefined") {
     EXTRAS_MAX, EXTRAS_POR_DEFECTO, leerExtras, anadirExtra, quitarExtra,
     extrasVisibles, disponiblesParaAnadir, convertirExtras, CHULETA, escalaChuleta, chuleta,
     COMISION_MAX, COMISIONES_RAPIDAS, leerComision, leerPorcentaje, conComision,
+    MARGENES, tasaOfrecida, analizarCambio,
     FECHA_MINIMA, fechaLarga, fechaValida, diaDelGrafico, mesesAtras, FECHAS_RAPIDAS, leerFecha, cambioDesde, notaDiaHabil,
     textoInsignia, cambioDiario, sentidoDe, tituloInsignia,
     AVISOS_MAX, sentidoAviso, crearAviso, leerAvisos, avisoCumplido, repartirAvisos, mensajeAviso,

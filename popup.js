@@ -52,6 +52,15 @@ const el = {
   fechaTasa: document.getElementById("fecha-tasa"),
   fechaHoy: document.getElementById("fecha-hoy"),
   fechaCambio: document.getElementById("fecha-cambio"),
+  timo: document.getElementById("timo"),
+  timoOferta: document.getElementById("timo-oferta"),
+  timoDe: document.getElementById("timo-de"),
+  timoA: document.getElementById("timo-a"),
+  timoCampo: document.getElementById("timo-campo"),
+  timoVeredicto: document.getElementById("timo-veredicto"),
+  timoPerdida: document.getElementById("timo-perdida"),
+  timoMargen: document.getElementById("timo-margen"),
+  timoNota: document.getElementById("timo-nota"),
   abrirHistorial: document.getElementById("abrir-historial"),
   historialCuenta: document.getElementById("historial-cuenta"),
   historial: document.getElementById("historial"),
@@ -131,6 +140,9 @@ let fecha = null;
 // La tasa del día que miras y de qué par y fecha es, para no pintar la de otro.
 let tasaDelDia = null;
 let fechaId = 0;
+// De qué par es la tasa escrita en la pestaña de la ventanilla, sin orden: al
+// dar la vuelta al par sigue valiendo (la leo al revés), con otro par no.
+let parDelTimo = null;
 
 // Se piden en el momento a numeros(), que los guarda por idioma: así da igual
 // que el idioma elegido llegue después de cargar el archivo. Y todos agrupan
@@ -141,6 +153,7 @@ const nf = formatoNumero({ minimumFractionDigits: 2, maximumFractionDigits: 2 })
 const nfRate = formatoNumero({ minimumFractionDigits: 4, maximumFractionDigits: 4 });
 const nfEntero = formatoNumero({ maximumFractionDigits: 0 });
 const nfComision = formatoNumero({ maximumFractionDigits: 2 });
+const nfMargen = formatoNumero({ style: "percent", minimumFractionDigits: 1, maximumFractionDigits: 1 });
 const nfPercent = formatoNumero({
   style: "percent", minimumFractionDigits: 2, maximumFractionDigits: 2, signDisplay: "exceptZero",
 });
@@ -773,6 +786,7 @@ function pintarVista() {
   el.avisos.hidden = vista !== "avisos";
   el.chuleta.hidden = vista !== "chuleta";
   el.fecha.hidden = vista !== "fecha";
+  el.timo.hidden = vista !== "timo";
   pintarAvisoComision();
   el.vistas.dataset.vista = vista;
   for (const boton of el.botonesVista) {
@@ -812,7 +826,7 @@ function cambiarVista(nueva) {
 
 // El patrón de pestañas de siempre: con las flechas cambias, y el foco va con
 // la pestaña elegida.
-const VISTAS = ["evolucion", "extras", "avisos", "chuleta", "fecha"];
+const VISTAS = ["evolucion", "extras", "avisos", "chuleta", "fecha", "timo"];
 
 function onTeclaVistas(event) {
   if (event.key !== "ArrowLeft" && event.key !== "ArrowRight") return;
@@ -1216,6 +1230,62 @@ function onSalirCampoFecha() {
   el.fechaCampo.value = fecha;
 }
 
+function pintarTimo() {
+  const from = el.from.value;
+  const to = el.to.value;
+  const par = [from, to].sort().join();
+  if (par !== parDelTimo) {
+    if (parDelTimo !== null) el.timoCampo.value = "";
+    parDelTimo = par;
+  }
+
+  const hay = from !== to && rate !== null;
+  el.timoCampo.disabled = from === to;
+  el.timoCampo.placeholder = hay ? nfRate.format(rate) : "";
+  const r = hay ? analizarCambio(leerImporte(el.timoCampo.value), rate, cantidadOrigen() ?? 1, comision) : null;
+
+  // Si la has escrito al revés, giro los códigos para que se lea como la pusiste.
+  const [de, a] = r?.invertida ? [to, from] : [from, to];
+  el.timoDe.textContent = `1 ${de} =`;
+  el.timoA.textContent = a;
+  const girada = String(Boolean(r?.invertida));
+  if (el.timoOferta.dataset.girada !== girada) {
+    if (el.timoOferta.dataset.girada !== undefined) restartAnimation(el.timoOferta, "is-girada");
+    el.timoOferta.dataset.girada = girada;
+  }
+  el.timoOferta.title = r?.invertida
+    ? tr("timo.alReves", { de, tasa: nfRate.format(leerImporte(el.timoCampo.value)), a })
+    : "";
+
+  const veredicto = r?.veredicto ?? "";
+  el.timoVeredicto.hidden = !r;
+  if (el.timo.dataset.veredicto !== veredicto) {
+    el.timo.dataset.veredicto = veredicto;
+    if (r) {
+      el.timoVeredicto.textContent = tr(`timo.${veredicto}`);
+      restartAnimation(el.timoVeredicto, veredicto === "timo" ? "is-alarma" : "is-nuevo");
+    }
+  }
+
+  const perdida = r ? tr("timo.pierdes", { valor: `${nf.format(r.perdida)} ${to}` }) : "—";
+  if (el.timoPerdida.textContent !== perdida) {
+    el.timoPerdida.textContent = perdida;
+    if (r) restartAnimation(el.timoPerdida, "is-tic");
+  }
+  el.timoMargen.textContent = r ? `−${nfMargen.format(r.margen)}` : "";
+
+  let nota;
+  if (!r) nota = from === to ? tr("timo.mismo") : tr("timo.pista");
+  else if (r.tarjeta) nota = tr(`timo.${r.tarjeta}`, { pct: tr("pct", { n: nfComision.format(comision) }) });
+  else {
+    nota = tr(r.sentido === "vendes" ? "timo.teDan" : "timo.pagas", {
+      valor: `${nf.format(r.ofrecido)} ${to}`, justo: nf.format(r.justo),
+    });
+  }
+  el.timoNota.textContent = nota;
+  el.timoNota.dataset.tarjeta = r?.tarjeta ?? "";
+}
+
 // Lo de abajo más la comisión: lo que te cobra el banco de verdad.
 function pintarComision() {
   const hay = comision > 0;
@@ -1256,6 +1326,7 @@ function ponerComision(pct) {
   pintarComision();
   pintarExtras();
   pintarChuleta();
+  pintarTimo();
   pintarAvisoComision();
   for (const boton of el.comisionRapidas.children) {
     boton.setAttribute("aria-pressed", String(Number(boton.dataset.pct) === pct));
@@ -1798,6 +1869,7 @@ function renderResult() {
   pintarSentidoAviso();
   pintarChuleta();
   pintarFecha();
+  pintarTimo();
 
   if (valor === null) {
     destino.value = "—";
@@ -1901,6 +1973,7 @@ async function refresh() {
     el.updated.textContent = "";
     pintarChuleta();
     pintarFecha();
+    pintarTimo();
     pintarComision();
     hideTrend();
     showError(errorMessageFor(error));
@@ -2236,6 +2309,10 @@ function bindEvents() {
   });
   el.fechaValor.addEventListener("animationend", () => el.fechaValor.classList.remove("is-tic"));
   el.fechaCambio.addEventListener("animationend", () => el.fechaCambio.classList.remove("is-nueva"));
+  el.timoCampo.addEventListener("input", pintarTimo);
+  el.timoOferta.addEventListener("animationend", () => el.timoOferta.classList.remove("is-girada"));
+  el.timoVeredicto.addEventListener("animationend", () => el.timoVeredicto.classList.remove("is-nuevo", "is-alarma"));
+  el.timoPerdida.addEventListener("animationend", () => el.timoPerdida.classList.remove("is-tic"));
   el.comision.addEventListener("click", () => (el.burbuja.hidden ? abrirBurbuja() : cerrarBurbuja()));
   el.comision.addEventListener("animationend", () => el.comision.classList.remove("is-estrenada"));
   el.comisionTotal.addEventListener("animationend", () => el.comisionTotal.classList.remove("is-tic"));

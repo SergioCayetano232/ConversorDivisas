@@ -258,6 +258,19 @@
                 data-t-title="vista.fecha">
                 <svg viewBox="0 0 14 14" aria-hidden="true"><rect x="1.5" y="2.5" width="11" height="10" rx="2"/><path d="M1.5 6h11M4.5 1v3M9.5 1v3"/><circle cx="9.3" cy="9.3" r="0.6"/></svg>
               </button>
+              <button
+                class="vista"
+                type="button"
+                role="tab"
+                id="vista-timo"
+                data-vista="timo"
+                aria-selected="false"
+                aria-controls="timo"
+                tabindex="-1"
+                title="¿Te cambian bien?"
+                data-t-title="vista.timo">
+                <svg viewBox="0 0 14 14" aria-hidden="true"><circle cx="6" cy="6" r="4.2"/><path d="M9.1 9.1l3.4 3.4"/></svg>
+              </button>
             </div>
             <span class="panel__comision" id="panel-comision" hidden></span>
             <div class="trend__controles" id="trend-controles" hidden>
@@ -356,6 +369,33 @@
             <div class="fecha__fila">
               <span class="fecha__hoy" id="fecha-hoy"></span>
               <span class="fecha__cambio" id="fecha-cambio"></span>
+            </div>
+          </div>
+
+          <div class="timo" id="timo" role="tabpanel" aria-labelledby="vista-timo" hidden>
+            <div class="timo__fila">
+              <label class="timo__oferta" id="timo-oferta">
+                <span class="timo__de" id="timo-de"></span>
+                <input
+                  class="timo__campo"
+                  type="text"
+                  id="timo-campo"
+                  inputmode="decimal"
+                  autocomplete="off"
+                  spellcheck="false"
+                  aria-label="La tasa que te ofrecen"
+                  data-t-aria-label="timo.campo"
+                  aria-describedby="timo-nota">
+                <span class="timo__a" id="timo-a"></span>
+              </label>
+              <span class="timo__veredicto" id="timo-veredicto" hidden></span>
+            </div>
+            <div class="timo__fila" aria-live="polite">
+              <span class="timo__perdida" id="timo-perdida">—</span>
+              <span class="timo__margen" id="timo-margen" title="Lo que se queda la casa de cambio sobre la tasa real" data-t-title="timo.margen"></span>
+            </div>
+            <div class="timo__fila">
+              <span class="timo__nota" id="timo-nota"></span>
             </div>
           </div>
         </div>

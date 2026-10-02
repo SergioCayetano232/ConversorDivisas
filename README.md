@@ -44,6 +44,12 @@ que necesitaba una conversión rápida. Ahora es un clic en la barra del navegad
 - La tasa de un día concreto: eliges la fecha (o "hace 1 mes, 6 meses, 1 año")
   y te dice cuánto era tu cantidad entonces y cuánto ha cambiado hasta hoy. Si
   ese día fue fin de semana o festivo, te avisa y usa la del último día con tasa
+- Si te cambian bien: en la pestaña de la lupa pones la tasa que te ofrecen en
+  la casa de cambio o el cajero y te dice cuánto pierdes con tu cantidad, qué
+  margen se quedan y si es "Bien", "Normal", "Caro" o "Te timan". Da igual
+  que la escribas al derecho o al revés (`1 EUR = 1,10 USD` o `1 USD = 0,91
+  EUR`), la entiende igual. Si tienes puesta la comisión de tu tarjeta, te dice
+  qué te sale mejor
 - La primera vez elige el par según el idioma del navegador: con `es-MX` empieza
   en MXN → USD, con `en-GB` en GBP → EUR. Si no lo tiene claro, EUR → USD
 - Recuerda la última pareja de divisas, el periodo del gráfico, la pestaña y
@@ -57,7 +63,7 @@ que necesitaba una conversión rápida. Ahora es un clic en la barra del navegad
   cerrado. Hasta cuatro a la vez
 - Se abre con `Ctrl+Shift+U` (en Mac, `Cmd+Shift+U`)
 - Atajos dentro del popup: `S` da la vuelta al par, `C` copia, `D` y `A` abren
-  los desplegables y del `1` al `5` cambian de pestaña. Si estás escribiendo en
+  los desplegables y del `1` al `6` cambian de pestaña. Si estás escribiendo en
   un campo, con `Alt` delante (`⌥` en Mac). Con `?` salen todos
 - Tiene modo claro y oscuro, según cómo tengas el sistema
 - En español o en inglés, según el idioma de Chrome o el que elijas con clic
