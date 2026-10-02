@@ -44,6 +44,11 @@ async function hacerMenus() {
     title: tr("menu.convertir"),
     contexts: ["selection"],
   });
+  chrome.contextMenus.create({
+    id: "precios",
+    title: tr("menu.precios"),
+    contexts: ["page"],
+  });
   // Estos salen al hacer clic derecho en el icono de la barra, no en la página.
   const { insigniaActiva = true } = await chrome.storage.local.get("insigniaActiva");
   chrome.contextMenus.create({
@@ -271,6 +276,57 @@ async function convertirSeleccion(info, tab) {
   await enPagina(tab.id, paraLaTarjeta(await calcular(info.selectionText)));
 }
 
+// Va en tres pasos porque las tasas las pido yo y no la página: primero busca
+// los precios, luego pido una tasa por divisa y al final pinta. Si ya estaban
+// puestos, el primer paso los quita y aquí se acaba.
+async function convertirPagina(tab) {
+  await idiomaListo;
+  const enLaPestana = async (func, args = []) => {
+    const [{ result }] = await chrome.scripting.executeScript({ target: { tabId: tab.id }, func, args });
+    return result;
+  };
+  let hallado;
+  try {
+    // logica.js lleva const de primer nivel: inyectarlo dos veces da error.
+    if (!(await enLaPestana(() => Boolean(window.__conversorPrecios)))) {
+      await chrome.scripting.executeScript({ target: { tabId: tab.id }, files: ["logica.js", "precios.js"] });
+    }
+    hallado = await enLaPestana(() => window.__conversorPrecios.alternar());
+  } catch (error) {
+    // En chrome:// o la Web Store no se puede, y ahí tampoco hay precios.
+    console.warn("No se pudo mirar la página", error);
+    return;
+  }
+  if (!hallado) return;
+
+  const par = await leerPar();
+  const tasas = {};
+  let fallo = null;
+  for (const divisa of hallado.divisas) {
+    const { to } = destinoPara(divisa, par);
+    try {
+      const { rate } = await tasa(divisa, to);
+      tasas[divisa] = { to, rate };
+    } catch (error) {
+      fallo = error;
+    }
+  }
+
+  await enLaPestana((d) => window.__conversorPrecios.pintar(d), [{
+    tasas,
+    locale: localeActual(),
+    error: fallo && Object.keys(tasas).length === 0 ? errorMessageFor(fallo) : null,
+    textos: {
+      uno: tr("precios.uno"),
+      varios: tr("precios.varios"),
+      nada: tr("precios.nada"),
+      quitar: tr("precios.quitar"),
+      otraVez: tr("precios.otraVez"),
+      cerrar: tr("cerrar"),
+    },
+  }]);
+}
+
 // Aquí no uso la caché del popup: guarda la tasa de la mañana hasta el día
 // siguiente, y el BCE publica por la tarde. Un aviso tiene que ver la nueva.
 async function todasLasTasas(base) {
@@ -339,6 +395,7 @@ chrome.notifications.onClicked.addListener(async (id) => {
 
 chrome.contextMenus.onClicked.addListener((info, tab) => {
   if (info.menuItemId === "convertir") convertirSeleccion(info, tab);
+  if (info.menuItemId === "precios") convertirPagina(tab);
   if (info.menuItemId === "insignia") chrome.storage.local.set({ insigniaActiva: info.checked });
   // El aviso es para el popup: la próxima vez que lo abras te dice en qué idioma está.
   if (String(info.menuItemId).startsWith("idioma:")) {

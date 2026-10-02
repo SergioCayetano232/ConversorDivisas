@@ -695,6 +695,39 @@ function leerSeleccion(texto) {
   return { cantidad, divisa: divisaDe(texto) };
 }
 
+// Para la página entera no vale cualquier número como en la selección: aquí
+// solo cuenta si lleva la divisa pegada, delante o detrás. Los símbolos largos
+// primero, que si no "US$" se quedaba en "$".
+const CODIGOS = CURRENCIES.map((c) => c.code).join("|");
+const DIVISA_DELANTE = `R\\$|US\\$|MX\\$|CA?\\$|AU?\\$|HK\\$|NZ\\$|S\\$|CN¥|[$€£¥₹₩₪฿₱₺]|\\b(?:${CODIGOS})\\b`;
+const DIVISA_DETRAS = `[$€£¥₹₩₪฿₱₺円元]|zł|Kč|\\b(?:${CODIGOS})\\b|\\b[Ee]uros?\\b`;
+// Detrás de una letra o de otra cifra no empieza un precio: "A4 €" no son 4 €.
+const PRECIO = new RegExp(
+  `(${DIVISA_DELANTE})\\s?(${NUMERO.source})|(?<![\\w.,])(${NUMERO.source})\\s?(${DIVISA_DETRAS})`,
+  "g",
+);
+
+function buscarPrecios(texto) {
+  if (typeof texto !== "string") return [];
+  const precios = [];
+  for (const m of texto.matchAll(PRECIO)) {
+    const cantidad = leerNumero(m[2] ?? m[3]);
+    const divisa = divisaDe(m[1] ?? m[4]);
+    if (cantidad > 0 && divisa) precios.push({ inicio: m.index, fin: m.index + m[0].length, cantidad, divisa });
+  }
+  return precios;
+}
+
+// Hay tiendas que parten el precio en trozos ("$" "49" "." "99"), cada uno en
+// su etiqueta. Juntos solo me valen si el texto entero es un precio y nada más.
+function precioEntero(texto) {
+  const limpio = String(texto ?? "").trim();
+  const precios = buscarPrecios(limpio);
+  if (precios.length !== 1 || precios[0].inicio !== 0 || precios[0].fin !== limpio.length) return null;
+  const { cantidad, divisa } = precios[0];
+  return { cantidad, divisa };
+}
+
 // Si lo que he leído ya está en el lado de destino, le doy la vuelta al par: nadie
 // quiere pasar dólares a dólares.
 const EUROZONA = [
@@ -944,7 +977,7 @@ if (typeof module !== "undefined") {
     normalizar, filtrarDivisas, buildPaths, startDateFor, errorMessageFor,
     RECIENTES_MAX, apuntarReciente, leerRecientes, recientesVisibles,
     RANGOS, RANGO_POR_DEFECTO, leerRango, coordenadas, alturaEn, MOMENTO_UMBRAL, momento, textoMomento, indiceCercano, extremos, fechaCorta, largoEnPantalla,
-    leerNumero, divisaDe, leerSeleccion, destinoPara,
+    leerNumero, divisaDe, leerSeleccion, destinoPara, buscarPrecios, precioEntero,
     divisaDeIdioma, parPorIdioma, banderaDe,
     HISTORIAL_MAX, leerHistorial, apuntarConversion, haceCuanto, textoParaCopiar,
     EXTRAS_MAX, EXTRAS_POR_DEFECTO, leerExtras, anadirExtra, quitarExtra,

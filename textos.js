@@ -177,6 +177,13 @@ const TEXTOS = {
     "tarjeta.sinDivisa": "Sin divisa en el texto: uso {from}",
     "tarjeta.nada": "No veo ninguna cantidad en lo que has seleccionado.",
 
+    "menu.precios": "Convertir los precios de la página",
+    "precios.uno": "1 precio pasado a {to}",
+    "precios.varios": "{n} precios pasados a {to}",
+    "precios.nada": "No he encontrado precios en esta página.",
+    "precios.quitar": "Quitar",
+    "precios.otraVez": "Vuelve a darle al menú para quitarlos",
+
     "error.tiempo": "La conexión ha tardado demasiado.",
     "error.sinRed": "Sin conexión a internet.",
     "error.servicio": "El servicio de tasas no responde.",
@@ -357,6 +364,13 @@ const TEXTOS = {
     "tarjeta.cita": "“{texto}”",
     "tarjeta.sinDivisa": "No currency in the text: using {from}",
     "tarjeta.nada": "I can't find an amount in what you selected.",
+
+    "menu.precios": "Convert prices on this page",
+    "precios.uno": "1 price converted to {to}",
+    "precios.varios": "{n} prices converted to {to}",
+    "precios.nada": "I couldn't find any prices on this page.",
+    "precios.quitar": "Remove",
+    "precios.otraVez": "Use the menu again to remove them",
 
     "error.tiempo": "The connection took too long.",
     "error.sinRed": "No internet connection.",

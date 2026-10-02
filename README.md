@@ -27,6 +27,12 @@ que necesitaba una conversión rápida. Ahora es un clic en la barra del navegad
 - Seleccionas un precio en cualquier web, clic derecho, **Convertir**, y te sale
   el resultado en una tarjeta al lado del texto. Entiende "1.299,00 €",
   "$1,049.99", "R$ 10,50" o "20 euros"
+- Todos los precios de una web a la vez: clic derecho en la página, **Convertir
+  los precios de la página**, y al lado de cada precio sale lo que vale en tu
+  divisa. Solo cuenta los que llevan la divisa pegada (`49,99 €`, `$1,049.99`,
+  `USD 35`), así que un "20 unidades" no se convierte. Volviendo a darle, o con
+  **Quitar**, la página se queda como estaba. Los precios con los céntimos en
+  pequeño (`$49⁹⁹`) se los salta, que los leería mal
 - Pastillas con tus últimos pares, para cambiar de uno a otro con un clic
 - Un gráfico de cómo ha ido la tasa, a 7 días, 1 mes, 3 meses o 1 año. Pasando
   el ratón ves la tasa de cada día, y marca el máximo y el mínimo del periodo.
@@ -75,8 +81,8 @@ Pide lo justo: guardar tus preferencias, hablar con la API de las tasas, una
 alarma para refrescar el icono y mirar los avisos cada hora, mandar las
 notificaciones de esos avisos y, para lo del clic derecho, el menú y poner la
 tarjeta en la pestaña en la que estás.
-Esto último solo pasa cuando pulsas **Convertir**; no lee ninguna web por su
-cuenta, y por eso Chrome no avisa de nada al instalarla. No hay analítica ni
+Esto último solo pasa cuando pulsas **Convertir** o **Convertir los precios de
+la página**; no lee ninguna web por su cuenta, y por eso Chrome no avisa de nada al instalarla. No hay analítica ni
 seguimiento de ningún tipo.
 
 En Mac, para ver los avisos Chrome necesita permiso para mandar notificaciones
@@ -113,6 +119,7 @@ logica.js        las cuentas y los formatos, sin tocar la pantalla
 popup.js         lo que reacciona a los clics
 background.js    el menú del clic derecho y la tasa para la tarjeta
 tarjeta.js       la tarjeta que sale en la web, en un shadow DOM
+precios.js       las pastillas con los precios de toda la página
 test/            tests de logica.js
 icons/           16, 48 y 128 px
 _locales/        el nombre y la descripción que enseña Chrome, en los dos idiomas
