@@ -62,6 +62,17 @@ const el = {
   timoMargen: document.getElementById("timo-margen"),
   timoNota: document.getElementById("timo-nota"),
   abrirHistorial: document.getElementById("abrir-historial"),
+  abrirGastos: document.getElementById("abrir-gastos"),
+  gastosCuenta: document.getElementById("gastos-cuenta"),
+  gastos: document.getElementById("gastos"),
+  gastosVaciar: document.getElementById("gastos-vaciar"),
+  gastosSuma: document.getElementById("gastos-suma"),
+  gastosN: document.getElementById("gastos-n"),
+  gastosForm: document.getElementById("gastos-form"),
+  gastosConcepto: document.getElementById("gastos-concepto"),
+  gastosApuntar: document.getElementById("gastos-apuntar"),
+  gastosLista: document.getElementById("gastos-lista"),
+  gastosVacio: document.getElementById("gastos-vacio"),
   historialCuenta: document.getElementById("historial-cuenta"),
   historial: document.getElementById("historial"),
   historialLista: document.getElementById("historial-lista"),
@@ -143,6 +154,11 @@ let fechaId = 0;
 // De qué par es la tasa escrita en la pestaña de la ventanilla, sin orden: al
 // dar la vuelta al par sigue valiendo (la leo al revés), con otro par no.
 let parDelTimo = null;
+let gastos = [];
+// El que acabas de apuntar entra con su salto; los demás se quedan quietos.
+let gastoNuevo = null;
+let cascadaGastos = false;
+let vaciarId = null;
 
 // Se piden en el momento a numeros(), que los guarda por idioma: así da igual
 // que el idioma elegido llegue después de cargar el archivo. Y todos agrupan
@@ -168,6 +184,7 @@ const AVISOS_KEY = "avisos";
 const COMISION_KEY = "comisionBanco";
 const FECHA_KEY = "fechaConsulta";
 const HISTORIAL_KEY = "historialConversiones";
+const GASTOS_KEY = "gastosViaje";
 // Lo que tardo en dar por buena una cantidad: mientras escribes "1", "12",
 // "125" no quiero tres entradas, solo la última.
 const PAUSA_APUNTE = 2000;
@@ -269,6 +286,24 @@ async function cargarHistorial() {
   } catch (error) {
     console.warn("No se pudo leer el historial", error);
     return [];
+  }
+}
+
+async function cargarGastos() {
+  try {
+    const guardado = await chrome.storage.local.get(GASTOS_KEY);
+    return leerGastos(guardado[GASTOS_KEY]);
+  } catch (error) {
+    console.warn("No se pudieron leer los gastos", error);
+    return [];
+  }
+}
+
+async function guardarGastos() {
+  try {
+    await chrome.storage.local.set({ [GASTOS_KEY]: gastos });
+  } catch (error) {
+    console.warn("No se pudieron guardar los gastos", error);
   }
 }
 
@@ -1327,6 +1362,7 @@ function ponerComision(pct) {
   pintarExtras();
   pintarChuleta();
   pintarTimo();
+  pintarBotonGasto();
   pintarAvisoComision();
   for (const boton of el.comisionRapidas.children) {
     boton.setAttribute("aria-pressed", String(Number(boton.dataset.pct) === pct));
@@ -1343,6 +1379,7 @@ function ponerComision(pct) {
 
 function abrirBurbuja() {
   cerrarHistorial();
+  cerrarGastos();
   el.comisionRapidas.replaceChildren(...COMISIONES_RAPIDAS.map((pct, i) => {
     const boton = document.createElement("button");
     boton.type = "button";
@@ -1488,6 +1525,7 @@ function pintarHistorial() {
 
 function abrirHistorial() {
   cerrarBurbuja();
+  cerrarGastos();
   el.historial.hidden = false;
   el.abrirHistorial.setAttribute("aria-expanded", "true");
   pintarHistorial();
@@ -1530,6 +1568,204 @@ function onBorrarHistorial() {
   if (sinMovimiento.matches || filas.length === 0) return vaciar();
   filas.forEach((fila, i) => {
     fila.style.setProperty("--i", i);
+    fila.classList.add("is-saliendo");
+  });
+  filas.at(-1).addEventListener("animationend", vaciar, { once: true });
+}
+
+const textoTotales = (totales) => totales.map(({ to, total }) => `${nf.format(total)} ${to}`).join(" · ");
+
+// Lo que se ve en los dos campos, como en el historial, más la comisión: en el
+// extranjero eso es lo que te cuesta de verdad.
+function gastoDePantalla() {
+  if (rate === null) return null;
+  const valor = conComision(leerImporte(el.result.value), comision);
+  return crearGasto({
+    id: `${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`,
+    from: el.from.value,
+    to: el.to.value,
+    cantidad: leerImporte(el.amount.value),
+    valor,
+    concepto: el.gastosConcepto.value,
+    cuando: Date.now(),
+  });
+}
+
+function pintarBotonGasto() {
+  const gasto = gastoDePantalla();
+  el.gastosApuntar.disabled = !gasto;
+  if (!gasto) {
+    el.gastosApuntar.textContent = "+";
+    el.gastosApuntar.title = tr("gastos.nada");
+    el.gastosApuntar.setAttribute("aria-label", tr("gastos.nada"));
+    return;
+  }
+  const valor = `${nf.format(gasto.valor)} ${gasto.to}`;
+  el.gastosApuntar.textContent = tr("gastos.apuntar", { valor });
+  el.gastosApuntar.title = comision > 0 ? tr("gastos.comision", { pct: tr("pct", { n: nfComision.format(comision) }) }) : "";
+  el.gastosApuntar.setAttribute(
+    "aria-label",
+    tr("gastos.apuntarAria", { cantidad: nf.format(gasto.cantidad), from: gasto.from, valor }),
+  );
+}
+
+function crearDiaGastos({ dia, totales }) {
+  const fila = document.createElement("li");
+  fila.className = "gastos__dia";
+  const nombre = document.createElement("span");
+  nombre.textContent = nombreDia(dia);
+  const suma = document.createElement("span");
+  suma.className = "gastos__dia-suma";
+  suma.textContent = textoTotales(totales);
+  fila.append(nombre, suma);
+  return fila;
+}
+
+function crearFilaGasto(gasto, i) {
+  const fila = document.createElement("li");
+  fila.className = "gastos__fila";
+  fila.dataset.id = gasto.id;
+  if (cascadaGastos || gasto.id === gastoNuevo) {
+    fila.classList.add("is-nueva");
+    fila.style.setProperty("--i", cascadaGastos ? Math.min(i, 12) : 0);
+  }
+  const concepto = gasto.concepto || tr("gastos.sinConcepto");
+  const valor = `${nf.format(gasto.valor)} ${gasto.to}`;
+
+  const que = document.createElement("span");
+  que.className = "gastos__que";
+  que.classList.toggle("is-sin", !gasto.concepto);
+  que.textContent = concepto;
+  const de = document.createElement("span");
+  de.className = "gastos__de";
+  de.textContent = `${nf.format(gasto.cantidad)} ${gasto.from}`;
+  const cuanto = document.createElement("span");
+  cuanto.className = "gastos__valor";
+  cuanto.textContent = valor;
+  const texto = document.createElement("span");
+  texto.className = "gastos__texto";
+  texto.setAttribute("aria-label", tr("gastos.fila", { concepto, cantidad: nf.format(gasto.cantidad), from: gasto.from, valor }));
+  texto.append(que, de, cuanto);
+
+  const quitar = document.createElement("button");
+  quitar.type = "button";
+  quitar.className = "gastos__quitar";
+  quitar.textContent = "✕";
+  quitar.setAttribute("aria-label", tr("gastos.quitar", { concepto, valor }));
+  quitar.addEventListener("click", () => onQuitarGasto(gasto.id, fila));
+
+  fila.append(texto, quitar);
+  fila.addEventListener("animationend", (event) => {
+    if (event.target === fila) fila.classList.remove("is-nueva");
+  });
+  return fila;
+}
+
+function pintarGastos() {
+  const n = gastos.length;
+  el.gastosCuenta.hidden = n === 0;
+  el.gastosCuenta.textContent = n;
+  el.abrirGastos.setAttribute("aria-label", n ? tr("gastos.cuenta", { n }) : tr("gastos"));
+  pintarBotonGasto();
+  if (el.gastos.hidden) return;
+
+  const suma = n ? textoTotales(sumarPorDivisa(gastos)) : `${nf.format(0)} ${el.to.value}`;
+  if (el.gastosSuma.textContent !== suma) {
+    const habia = el.gastosSuma.textContent !== "";
+    el.gastosSuma.textContent = suma;
+    if (habia) restartAnimation(el.gastosSuma, "is-tic");
+  }
+  el.gastosN.textContent = n === 0 ? "" : n === 1 ? tr("gastos.uno") : tr("gastos.n", { n });
+
+  let i = 0;
+  el.gastosLista.replaceChildren(...gastosPorDia(gastos).flatMap((dia) => [
+    crearDiaGastos(dia),
+    ...dia.gastos.map((gasto) => crearFilaGasto(gasto, i++)),
+  ]));
+  cascadaGastos = false;
+  gastoNuevo = null;
+  el.gastosVacio.hidden = n > 0;
+  el.gastosVaciar.hidden = n === 0;
+}
+
+function abrirGastos() {
+  cerrarBurbuja();
+  cerrarHistorial();
+  el.gastos.hidden = false;
+  el.abrirGastos.setAttribute("aria-expanded", "true");
+  cascadaGastos = true;
+  el.gastosSuma.textContent = "";
+  pintarGastos();
+  el.gastosConcepto.focus();
+}
+
+function cerrarGastos() {
+  if (el.gastos.hidden) return;
+  el.gastos.hidden = true;
+  el.abrirGastos.setAttribute("aria-expanded", "false");
+  noVaciar();
+  return el.abrirGastos;
+}
+
+function onApuntarGasto(event) {
+  event.preventDefault();
+  const gasto = gastoDePantalla();
+  if (!gasto) {
+    restartAnimation(el.gastosApuntar, "is-mal");
+    return;
+  }
+  gastos = apuntarGasto(gastos, gasto);
+  gastoNuevo = gasto.id;
+  el.gastosConcepto.value = "";
+  guardarGastos();
+  pintarGastos();
+  restartAnimation(el.abrirGastos, "is-apuntado");
+  el.gastosLista.scrollTop = 0;
+  el.gastosConcepto.focus();
+}
+
+function onQuitarGasto(id, fila) {
+  const quitar = () => {
+    gastos = quitarGasto(gastos, id);
+    guardarGastos();
+    pintarGastos();
+    (el.gastosLista.querySelector(".gastos__quitar") ?? el.gastosConcepto).focus();
+  };
+  if (sinMovimiento.matches) return quitar();
+  fila.classList.remove("is-nueva");
+  fila.classList.add("is-saliendo");
+  fila.addEventListener("animationend", quitar, { once: true });
+}
+
+function noVaciar() {
+  clearTimeout(vaciarId);
+  el.gastosVaciar.classList.remove("is-seguro");
+  el.gastosVaciar.textContent = tr("gastos.vaciar");
+}
+
+// Un viaje entero no se borra de un clic sin querer: el primero pregunta y el
+// segundo, si llega en tres segundos, vacía.
+function onVaciarGastos() {
+  if (!el.gastosVaciar.classList.contains("is-seguro")) {
+    el.gastosVaciar.classList.add("is-seguro");
+    el.gastosVaciar.textContent = tr("gastos.seguro");
+    restartAnimation(el.gastosVaciar, "is-seguro");
+    clearTimeout(vaciarId);
+    vaciarId = setTimeout(noVaciar, 3000);
+    return;
+  }
+  noVaciar();
+  const filas = [...el.gastosLista.children];
+  const vaciar = () => {
+    gastos = [];
+    guardarGastos();
+    pintarGastos();
+    el.gastosConcepto.focus();
+  };
+  if (sinMovimiento.matches || filas.length === 0) return vaciar();
+  filas.forEach((fila, i) => {
+    fila.style.setProperty("--i", Math.min(i, 12));
+    fila.classList.remove("is-nueva");
     fila.classList.add("is-saliendo");
   });
   filas.at(-1).addEventListener("animationend", vaciar, { once: true });
@@ -1693,6 +1929,7 @@ function hacerAtajo(accion) {
   else if (accion === "origen") el.from.click();
   else if (accion === "destino") el.to.click();
   else if (accion === "ayuda") abrirAyuda();
+  else if (accion === "gastos") (el.gastos.hidden ? abrirGastos() : cerrarGastos()?.focus());
   else if (accion.startsWith("vista:")) cambiarVista(accion.slice(6));
 }
 
@@ -1773,6 +2010,7 @@ function abrirAyuda() {
   cerrarBandeja();
   cerrarBurbuja();
   cerrarHistorial();
+  cerrarGastos();
   pintarAyuda();
   el.ayuda.hidden = false;
   el.abrirAyuda.setAttribute("aria-expanded", "true");
@@ -1795,6 +2033,7 @@ function ponerPistasDeAtajos() {
   };
   el.swap.title = tr("intercambiar.titulo", { tecla: pista("intercambiar") });
   el.copiar.title = tr("copiar.titulo", { tecla: pista("copiar") });
+  el.abrirGastos.title = `${tr("gastos")} (${pista("gastos")})`;
   for (const boton of el.botonesVista) {
     boton.title = `${boton.title} (${pista(`vista:${boton.dataset.vista}`)})`;
   }
@@ -1872,6 +2111,7 @@ function renderResult() {
   pintarTimo();
 
   if (valor === null) {
+    pintarBotonGasto();
     destino.value = "—";
     ajustarAncho();
     el.resultMeta.textContent = "";
@@ -1891,6 +2131,7 @@ function renderResult() {
   const enviados = escribiendoAbajo ? convertido : valor;
   el.resultMeta.textContent = `${nf.format(enviados)} ${from}`;
   pintarComision();
+  pintarBotonGasto();
 
   // El latido solo cuando cambia la cifra grande, que si no parpadea al teclear.
   if (!escribiendoAbajo) restartAnimation(el.result, "is-updating");
@@ -2298,6 +2539,13 @@ function bindEvents() {
   el.abrirHistorial.addEventListener("click", () => (el.historial.hidden ? abrirHistorial() : cerrarHistorial()));
   el.abrirHistorial.addEventListener("animationend", () => el.abrirHistorial.classList.remove("is-apuntado"));
   el.historialBorrar.addEventListener("click", onBorrarHistorial);
+  el.abrirGastos.addEventListener("click", () => (el.gastos.hidden ? abrirGastos() : cerrarGastos()));
+  el.abrirGastos.addEventListener("animationend", () => el.abrirGastos.classList.remove("is-apuntado"));
+  el.gastosForm.addEventListener("submit", onApuntarGasto);
+  el.gastosConcepto.addEventListener("input", pintarBotonGasto);
+  el.gastosVaciar.addEventListener("click", onVaciarGastos);
+  el.gastosSuma.addEventListener("animationend", () => el.gastosSuma.classList.remove("is-tic"));
+  el.gastosApuntar.addEventListener("animationend", () => el.gastosApuntar.classList.remove("is-mal"));
   // Si cierras el popup antes de los dos segundos, que no se pierda.
   window.addEventListener("pagehide", apuntarAhora);
   el.momento.addEventListener("animationend", () => el.momento.classList.remove("is-nuevo"));
@@ -2348,6 +2596,10 @@ function bindEvents() {
       event.preventDefault();
       cerrarHistorial()?.focus();
     }
+    if (event.key === "Escape" && !el.gastos.hidden) {
+      event.preventDefault();
+      cerrarGastos()?.focus();
+    }
   });
   document.addEventListener("mousedown", (event) => {
     if (!el.bandeja.hidden && !el.bandeja.contains(event.target)) cerrarBandeja();
@@ -2358,6 +2610,9 @@ function bindEvents() {
     }
     if (!el.historial.hidden && !el.historial.contains(event.target) && !el.abrirHistorial.contains(event.target)) {
       cerrarHistorial();
+    }
+    if (!el.gastos.hidden && !el.gastos.contains(event.target) && !el.abrirGastos.contains(event.target)) {
+      cerrarGastos();
     }
   });
   window.addEventListener("online", () => {
@@ -2392,12 +2647,14 @@ async function init() {
   const idiomaCambiado = await cargarIdioma();
   traducirPagina();
   if (idiomaCambiado) saludarIdioma();
-  const [pair, rango, guardados, pendiente, guardadas, vistaGuardada, avisosGuardados, comisionGuardada, fechaGuardada, historialGuardado] = await Promise.all([
+  const [pair, rango, guardados, pendiente, guardadas, vistaGuardada, avisosGuardados, comisionGuardada, fechaGuardada, historialGuardado, gastosGuardados] = await Promise.all([
     loadPair(), cargarRango(), cargarRecientes(), tomarPendiente(), cargarExtras(), cargarVista(), cargarAvisos(),
-    cargarComision(), cargarFecha(), cargarHistorial(),
+    cargarComision(), cargarFecha(), cargarHistorial(), cargarGastos(),
   ]);
   historial = historialGuardado;
   pintarHistorial();
+  gastos = gastosGuardados;
+  pintarGastos();
   comision = comisionGuardada;
   fecha = fechaGuardada;
   crearFechasRapidas();

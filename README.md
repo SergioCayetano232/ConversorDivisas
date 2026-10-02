@@ -20,6 +20,12 @@ que necesitaba una conversión rápida. Ahora es un clic en la barra del navegad
 - Las últimas diez conversiones, en el reloj que hay al lado de **Copiar**. Pulsando
   una copias su resultado; con la flecha de al lado la vuelves a poner. Se
   apunta sola cuando dejas de escribir, al darle a Enter o al copiar
+- Los gastos del viaje, en la cartera que hay al lado del reloj: con una
+  cantidad puesta, le das a **+ 38,90 EUR** (con un concepto si quieres, "Cena",
+  "Taxi"…) y se apunta. Arriba sale el total en tu divisa, y debajo los gastos
+  por días con lo de cada día. Cada uno se guarda con la tasa y la comisión de
+  ese momento, así que lo que gastaste el lunes no cambia aunque el euro suba
+  el martes. Hasta 200, y para vaciarlo hay que darle dos veces
 - La comisión de tu banco: pones el % que te cobra la tarjeta (0, 1, 2, 3 o el
   que quieras) y al lado del resultado sale lo que pagarías de verdad. También
   va sumada en la chuleta y en las otras divisas. Se queda guardada para la
@@ -69,7 +75,7 @@ que necesitaba una conversión rápida. Ahora es un clic en la barra del navegad
   cerrado. Hasta cuatro a la vez
 - Se abre con `Ctrl+Shift+U` (en Mac, `Cmd+Shift+U`)
 - Atajos dentro del popup: `S` da la vuelta al par, `C` copia, `D` y `A` abren
-  los desplegables y del `1` al `6` cambian de pestaña. Si estás escribiendo en
+  los desplegables, `G` los gastos y del `1` al `6` cambian de pestaña. Si estás escribiendo en
   un campo, con `Alt` delante (`⌥` en Mac). Con `?` salen todos
 - Tiene modo claro y oscuro, según cómo tengas el sistema
 - En español o en inglés, según el idioma de Chrome o el que elijas con clic

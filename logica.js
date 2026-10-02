@@ -824,6 +824,66 @@ function haceCuanto(cuando, ahora = Date.now()) {
   return fechaCorta(isoLocal(new Date(cuando)), new Date(ahora).getFullYear());
 }
 
+// Doscientos dan para un viaje largo comiendo fuera todos los días; más y el
+// almacenamiento se llena de cafés de hace un año.
+const GASTOS_MAX = 200;
+const CONCEPTO_MAX = 40;
+
+const esGastoBueno = (g) => Boolean(g) && typeof g.id === "string" && isValidCode(g.from) && isValidCode(g.to)
+  && Number.isFinite(g.cantidad) && g.cantidad > 0 && Number.isFinite(g.valor) && g.valor >= 0
+  && Number.isFinite(g.cuando) && typeof g.concepto === "string";
+
+// El valor se guarda ya convertido, con la tasa y la comisión de ese día. Si lo
+// calculara al enseñarlo, el cambio de hoy me movería lo que gasté hace una semana.
+function crearGasto({ id, from, to, cantidad, valor, concepto = "", cuando }) {
+  const gasto = {
+    id, from, to, cantidad, valor, cuando,
+    concepto: String(concepto ?? "").replace(/\s+/g, " ").trim().slice(0, CONCEPTO_MAX),
+  };
+  return esGastoBueno(gasto) && from !== to ? gasto : null;
+}
+
+function leerGastos(guardado) {
+  if (!Array.isArray(guardado)) return [];
+  return guardado.filter(esGastoBueno).slice(0, GASTOS_MAX);
+}
+
+function apuntarGasto(lista, gasto) {
+  if (!esGastoBueno(gasto)) return lista;
+  return [gasto, ...lista].slice(0, GASTOS_MAX);
+}
+
+function quitarGasto(lista, id) {
+  return lista.filter((g) => g.id !== id);
+}
+
+// Si a mitad de viaje cambias de divisa no las mezclo: un total por cada una,
+// la que más suma primero.
+function sumarPorDivisa(gastos) {
+  const totales = new Map();
+  for (const g of gastos) totales.set(g.to, (totales.get(g.to) ?? 0) + g.valor);
+  return [...totales].map(([to, total]) => ({ to, total })).sort((a, b) => b.total - a.total);
+}
+
+// La lista ya va de lo último a lo primero, así que los días salen en ese orden
+// sin tener que ordenar nada.
+function gastosPorDia(gastos) {
+  const dias = new Map();
+  for (const g of gastos) {
+    const dia = isoLocal(new Date(g.cuando));
+    if (!dias.has(dia)) dias.set(dia, []);
+    dias.get(dia).push(g);
+  }
+  return [...dias].map(([dia, lista]) => ({ dia, gastos: lista, totales: sumarPorDivisa(lista) }));
+}
+
+function nombreDia(dia, hoyIso = hoy()) {
+  const [a, m, d] = hoyIso.split("-").map(Number);
+  if (dia === hoyIso) return tr("dia.hoy");
+  if (dia === isoLocal(new Date(a, m - 1, d - 1))) return tr("dia.ayer");
+  return fechaCorta(dia, a);
+}
+
 // El número a secas, sin código ni separador de miles: lo normal es que acabe
 // pegado en una hoja de cálculo y ahí estorba. El decimal, el del idioma.
 function textoParaCopiar(valor) {
@@ -943,6 +1003,7 @@ const ATAJOS = {
   Digit4: "vista:chuleta",
   Digit5: "vista:fecha",
   Digit6: "vista:timo",
+  KeyG: "gastos",
   KeyH: "ayuda",
 };
 
@@ -980,6 +1041,7 @@ if (typeof module !== "undefined") {
     leerNumero, divisaDe, leerSeleccion, destinoPara, buscarPrecios, precioEntero,
     divisaDeIdioma, parPorIdioma, banderaDe,
     HISTORIAL_MAX, leerHistorial, apuntarConversion, haceCuanto, textoParaCopiar,
+    GASTOS_MAX, CONCEPTO_MAX, crearGasto, leerGastos, apuntarGasto, quitarGasto, sumarPorDivisa, gastosPorDia, nombreDia,
     EXTRAS_MAX, EXTRAS_POR_DEFECTO, leerExtras, anadirExtra, quitarExtra,
     extrasVisibles, disponiblesParaAnadir, convertirExtras, CHULETA, escalaChuleta, chuleta,
     COMISION_MAX, COMISIONES_RAPIDAS, leerComision, leerPorcentaje, conComision,

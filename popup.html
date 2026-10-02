@@ -112,6 +112,19 @@
           <h2 class="result__label" id="result-label" data-t="resultado">Resultado</h2>
           <div class="result__acciones">
             <button
+              class="reloj cartera"
+              type="button"
+              id="abrir-gastos"
+              aria-haspopup="dialog"
+              aria-expanded="false"
+              aria-controls="gastos"
+              aria-label="Gastos del viaje"
+              title="Gastos del viaje"
+              data-t-title="gastos">
+              <svg viewBox="0 0 14 14" aria-hidden="true"><path d="M2 4.5h9.5a1 1 0 0 1 1 1v5a1 1 0 0 1-1 1h-9a1 1 0 0 1-1-1V3.5a1 1 0 0 1 1-1h7.5v2"/><circle class="cartera__moneda" cx="9.8" cy="8" r="0.9"/></svg>
+              <span class="reloj__cuenta" id="gastos-cuenta" aria-hidden="true" hidden></span>
+            </button>
+            <button
               class="reloj"
               type="button"
               id="abrir-historial"
@@ -141,6 +154,33 @@
           </div>
           <ul class="historial__lista" id="historial-lista"></ul>
           <p class="historial__vacio" id="historial-vacio" data-t="historial.vacio">Aún no has convertido nada. Lo que conviertas irá saliendo aquí.</p>
+        </div>
+        <div class="historial gastos" id="gastos" role="dialog" aria-labelledby="gastos-titulo" hidden>
+          <div class="gastos__total">
+            <div class="gastos__cifra" aria-live="polite">
+              <p class="historial__titulo" id="gastos-titulo" data-t="gastos">Gastos del viaje</p>
+              <span class="gastos__suma" id="gastos-suma"></span>
+            </div>
+            <div class="gastos__lado">
+              <span class="gastos__n" id="gastos-n"></span>
+              <button class="historial__borrar" type="button" id="gastos-vaciar" data-t="gastos.vaciar">Vaciar</button>
+            </div>
+          </div>
+          <form class="gastos__nuevo" id="gastos-form" novalidate>
+            <input
+              class="gastos__concepto"
+              type="text"
+              id="gastos-concepto"
+              maxlength="40"
+              autocomplete="off"
+              placeholder="Concepto (opcional)"
+              aria-label="Concepto (opcional)"
+              data-t-placeholder="gastos.concepto"
+              data-t-aria-label="gastos.concepto">
+            <button class="gastos__apuntar" type="submit" id="gastos-apuntar"></button>
+          </form>
+          <ul class="historial__lista gastos__lista" id="gastos-lista"></ul>
+          <p class="historial__vacio" id="gastos-vacio" data-t="gastos.vacio">Apunta lo que vas gastando y te sumo el total en tu divisa, con la tasa de cada día.</p>
         </div>
         <div class="result__row">
           <input

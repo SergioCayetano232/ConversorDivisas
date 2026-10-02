@@ -15,6 +15,7 @@ test("fuera de un campo basta la letra", () => {
   assert.equal(atajoPara(tecla("Digit4")), "vista:chuleta");
   assert.equal(atajoPara(tecla("Digit5")), "vista:fecha");
   assert.equal(atajoPara(tecla("Digit6")), "vista:timo");
+  assert.equal(atajoPara(tecla("KeyG")), "gastos");
 });
 
 test("fuera de un campo también vale con Alt", () => {
