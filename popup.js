@@ -129,6 +129,7 @@ const el = {
   chuletaTabla: document.getElementById("chuleta-tabla"),
   campana: document.getElementById("vista-avisos"),
   abrirAyuda: document.getElementById("abrir-ayuda"),
+  abrirCopia: document.getElementById("abrir-copia"),
   ayuda: document.getElementById("ayuda"),
   ayudaCerrar: document.getElementById("ayuda-cerrar"),
   ayudaLista: document.getElementById("ayuda-lista"),
@@ -3249,6 +3250,7 @@ function bindEvents() {
   el.bandeja.addEventListener("keydown", onTeclaBandeja);
   document.addEventListener("keydown", onAtajo);
   el.abrirAyuda.addEventListener("click", abrirAyuda);
+  el.abrirCopia.addEventListener("click", () => chrome.runtime.openOptionsPage());
   el.ayudaCerrar.addEventListener("click", cerrarAyuda);
   el.ayuda.addEventListener("mousedown", (event) => {
     if (event.target !== el.ayuda) return;

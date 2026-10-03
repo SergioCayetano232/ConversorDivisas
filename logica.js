@@ -1330,6 +1330,63 @@ function errorMessageFor(error) {
   return tr("error.otro");
 }
 
+// La copia de seguridad guarda lo tuyo: viajes, avisos, historial y
+// preferencias. Las tasas guardadas no, que caducan en un día.
+const COPIA_APP = "ConversorDivisas";
+const COPIA_VERSION = 1;
+
+// Todo pasa por los mismos lectores que al abrir el popup: una copia tocada a
+// mano o a medias no puede meter nada que el popup no se trague.
+function limpiarCopia(crudo) {
+  const d = crudo && typeof crudo === "object" ? crudo : {};
+  const datos = { viajes: leerViajes(d.viajes, d.gastosViaje, d.presupuestoViaje) };
+  const { from, to } = d.lastPair ?? {};
+  if (isValidCode(from) && isValidCode(to)) datos.lastPair = { from, to };
+  if (Array.isArray(d.paresRecientes)) datos.paresRecientes = leerRecientes(d.paresRecientes);
+  if (Array.isArray(d.divisasExtra)) datos.divisasExtra = leerExtras(d.divisasExtra);
+  if (Array.isArray(d.avisos)) datos.avisos = leerAvisos(d.avisos);
+  if (Array.isArray(d.historialConversiones)) datos.historialConversiones = leerHistorial(d.historialConversiones);
+  if (d.rangoGrafico !== undefined) datos.rangoGrafico = leerRango(d.rangoGrafico);
+  if (d.comisionBanco !== undefined) datos.comisionBanco = leerComision(d.comisionBanco);
+  if (d.cuentaReparto !== undefined) datos.cuentaReparto = leerCuenta(d.cuentaReparto);
+  if (typeof d.insigniaActiva === "boolean") datos.insigniaActiva = d.insigniaActiva;
+  if (d.idioma === "auto" || TEXTOS[d.idioma]) datos.idioma = d.idioma;
+  return datos;
+}
+
+// Las claves que borro antes de restaurar: las de la copia y las de antes de
+// los viajes, para que no vuelvan a aparecer mezcladas.
+const CLAVES_COPIA = [
+  "viajes", "gastosViaje", "presupuestoViaje", "lastPair", "paresRecientes", "divisasExtra", "avisos",
+  "historialConversiones", "rangoGrafico", "comisionBanco", "cuentaReparto", "insigniaActiva", "idioma",
+];
+
+function crearCopia(crudo, ahora = new Date()) {
+  return { app: COPIA_APP, version: COPIA_VERSION, creada: ahora.toISOString(), datos: limpiarCopia(crudo) };
+}
+
+function leerCopia(texto) {
+  let copia;
+  try {
+    copia = JSON.parse(texto);
+  } catch {
+    return { error: "json" };
+  }
+  if (!copia || copia.app !== COPIA_APP || !copia.datos || typeof copia.datos !== "object") return { error: "otra" };
+  if (!Number.isInteger(copia.version) || copia.version > COPIA_VERSION) return { error: "version" };
+  const creada = typeof copia.creada === "string" && !Number.isNaN(Date.parse(copia.creada)) ? copia.creada : null;
+  return { datos: limpiarCopia(copia.datos), creada };
+}
+
+function resumenCopia(datos) {
+  return {
+    viajes: datos.viajes.lista.length,
+    gastos: datos.viajes.lista.reduce((suma, v) => suma + v.gastos.length, 0),
+    avisos: datos.avisos?.length ?? 0,
+    conversiones: datos.historialConversiones?.length ?? 0,
+  };
+}
+
 // El popup lo carga como script normal y lo lee del ámbito global; Node necesita
 // el export. Sin esto habría que montar un build, y aquí no hay ninguno.
 if (typeof module !== "undefined") {
@@ -1346,6 +1403,7 @@ if (typeof module !== "undefined") {
     GASTOS_MAX, CONCEPTO_MAX, crearGasto, leerGastos, apuntarGasto, quitarGasto, devolverGasto, sumarPorDivisa, gastosPorDia, nombreDia,
     CATEGORIAS, CATEGORIA_POR_DEFECTO, adivinarCategoria, desglose,
     EMOJI_CATEGORIA, resumenParaCompartir,
+    COPIA_APP, COPIA_VERSION, CLAVES_COPIA, limpiarCopia, crearCopia, leerCopia, resumenCopia,
     VIAJES_MAX, NOMBRE_VIAJE_MAX, leerViajes, viajeActivo, crearViaje, renombrarViaje, elegirViaje, borrarViaje, cambiarViaje, resumenViaje,
     diasHasta, leerPresupuesto, PRESUPUESTO_JUSTO, estadoPresupuesto,
     EXTRAS_MAX, EXTRAS_POR_DEFECTO, leerExtras, anadirExtra, quitarExtra,

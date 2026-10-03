@@ -1,0 +1,490 @@
+/* La página de la copia. Los mismos colores que el popup, pero aquí hay sitio:
+   manchas de color detrás, grano por encima y las tarjetas de cristal. */
+:root {
+  --fondo: #0B0E13;
+  --texto: #E6EDF3;
+  --tenue: #8B949E;
+  --dorado: #E8B75C;
+  --jade: #4EA96B;
+  --cinabrio: #E5534B;
+
+  --cristal: rgba(22, 27, 34, 0.55);
+  --losa: rgba(255, 255, 255, 0.04);
+  --borde: rgba(255, 255, 255, 0.08);
+  --borde-fuerte: rgba(255, 255, 255, 0.14);
+  --brillo: rgba(255, 255, 255, 0.14);
+  --dorado-fantasma: rgba(232, 183, 92, 0.12);
+  --dorado-tenue: rgba(232, 183, 92, 0.45);
+  --dorado-halo: rgba(232, 183, 92, 0.3);
+  --mancha-1: rgba(232, 183, 92, 0.16);
+  --mancha-2: rgba(78, 169, 107, 0.12);
+  --mancha-3: rgba(229, 83, 75, 0.08);
+  --grano: 0.05;
+
+  --sombra: 0 12px 40px rgba(0, 0, 0, 0.55);
+  --sombra-boton: 0 4px 16px rgba(0, 0, 0, 0.45);
+
+  --letra: system-ui, -apple-system, "Segoe UI", Inter, sans-serif;
+  --mono: ui-monospace, "SF Mono", "JetBrains Mono", "Cascadia Code", Menlo, monospace;
+
+  --radio: 18px;
+  --radio-sm: 10px;
+  --suave: cubic-bezier(0.16, 1, 0.3, 1);
+  --muelle: cubic-bezier(0.34, 1.56, 0.64, 1);
+  --rapido: 180ms;
+  --medio: 280ms;
+  --lento: 520ms;
+}
+
+@media (prefers-color-scheme: light) {
+  :root {
+    --fondo: #F4F1EA;
+    --texto: #1A1D23;
+    --tenue: #6B7280;
+    --dorado: #9A6B14;
+    --jade: #2F7D4A;
+    --cinabrio: #C2392F;
+
+    --cristal: rgba(255, 255, 255, 0.6);
+    --losa: rgba(0, 0, 0, 0.03);
+    --borde: rgba(0, 0, 0, 0.08);
+    --borde-fuerte: rgba(0, 0, 0, 0.14);
+    --brillo: rgba(255, 255, 255, 0.9);
+    --dorado-fantasma: rgba(154, 107, 20, 0.1);
+    --dorado-tenue: rgba(154, 107, 20, 0.4);
+    --dorado-halo: rgba(154, 107, 20, 0.22);
+    --mancha-1: rgba(232, 183, 92, 0.3);
+    --mancha-2: rgba(78, 169, 107, 0.16);
+    --mancha-3: rgba(229, 83, 75, 0.1);
+    --grano: 0.035;
+
+    --sombra: 0 12px 40px rgba(60, 50, 30, 0.12);
+    --sombra-boton: 0 4px 16px rgba(60, 50, 30, 0.12);
+  }
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  background: var(--fondo);
+}
+
+body {
+  min-height: 100vh;
+  background:
+    radial-gradient(600px 420px at 12% 8%, var(--mancha-1), transparent 70%),
+    radial-gradient(520px 480px at 92% 30%, var(--mancha-2), transparent 70%),
+    radial-gradient(640px 420px at 40% 105%, var(--mancha-3), transparent 70%),
+    var(--fondo);
+  background-attachment: fixed;
+  color: var(--texto);
+  font-family: var(--letra);
+  font-size: 14px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* El grano: un ruido en SVG casi transparente, que quita el aire de plantilla. */
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  opacity: var(--grano);
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='g'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23g)'/%3E%3C/svg%3E");
+}
+
+.pagina {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  max-width: 560px;
+  margin: 0 auto;
+  padding: 56px 16px 32px;
+}
+
+.pagina > * {
+  animation: entrar var(--lento) var(--suave) backwards;
+}
+
+.pagina > :nth-child(2) { animation-delay: 60ms; }
+.pagina > :nth-child(3) { animation-delay: 120ms; }
+.pagina > :nth-child(4) { animation-delay: 180ms; }
+.pagina > :nth-child(5) { animation-delay: 240ms; }
+
+@keyframes entrar {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+}
+
+.cabeza {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.cabeza__logo {
+  border-radius: 12px;
+  box-shadow: 0 6px 20px var(--dorado-halo);
+}
+
+.cabeza__app {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--tenue);
+}
+
+.cabeza__titulo {
+  font-size: 26px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+
+.intro {
+  max-width: 48ch;
+  color: var(--tenue);
+}
+
+.tarjeta {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 20px;
+  background: var(--cristal);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  border: 1px solid var(--borde-fuerte);
+  border-radius: var(--radio);
+  box-shadow: inset 0 1px 0 var(--brillo), var(--sombra);
+}
+
+.tarjeta__titulo {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--tenue);
+}
+
+.cifras {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+  list-style: none;
+}
+
+.cifra {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 12px;
+  background: var(--losa);
+  border: 1px solid var(--borde);
+  border-radius: var(--radio-sm);
+  animation: entrar var(--medio) var(--muelle) backwards;
+  animation-delay: calc(var(--i, 0) * 50ms + 150ms);
+}
+
+.cifra.is-cambiada {
+  animation: latido var(--medio) var(--muelle);
+}
+
+@keyframes latido {
+  50% {
+    transform: scale(1.06);
+    border-color: var(--dorado-tenue);
+  }
+}
+
+.cifra__n {
+  font-family: var(--mono);
+  font-size: 24px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  color: var(--dorado);
+  text-shadow: 0 0 18px var(--dorado-halo);
+}
+
+.cifra.is-cero .cifra__n {
+  color: var(--tenue);
+  text-shadow: none;
+}
+
+.cifra__que {
+  font-size: 12px;
+  color: var(--tenue);
+}
+
+.cifras--pequenas .cifra {
+  padding: 8px 10px;
+}
+
+.cifras--pequenas .cifra__n {
+  font-size: 18px;
+}
+
+.boton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  align-self: flex-start;
+  height: 40px;
+  padding: 0 18px;
+  background: var(--losa);
+  border: 1px solid var(--borde-fuerte);
+  border-radius: var(--radio-sm);
+  color: var(--texto);
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: transform var(--rapido) var(--muelle), box-shadow var(--rapido) ease,
+    border-color var(--rapido) ease, background-color var(--rapido) ease;
+}
+
+.boton:hover {
+  border-color: var(--dorado-tenue);
+  transform: translateY(-1px);
+}
+
+.boton:active {
+  transform: scale(0.96);
+}
+
+.boton:focus-visible {
+  outline: 2px solid var(--dorado);
+  outline-offset: 2px;
+}
+
+.boton svg {
+  width: 16px;
+  height: 16px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  transition: transform var(--medio) var(--muelle);
+}
+
+.boton--dorado {
+  background: var(--dorado);
+  border-color: var(--dorado);
+  color: var(--fondo);
+  box-shadow: 0 0 20px -4px var(--dorado-halo), var(--sombra-boton);
+}
+
+.boton--dorado:hover {
+  border-color: var(--dorado);
+  box-shadow: 0 0 26px -2px var(--dorado-halo), var(--sombra-boton);
+}
+
+.boton--dorado:hover svg {
+  transform: translateY(2px);
+}
+
+.boton.is-hecho {
+  background: var(--jade);
+  border-color: var(--jade);
+  animation: latido var(--medio) var(--muelle);
+}
+
+/* La caja para soltar el archivo: discontinua, y dorada con el archivo encima. */
+.soltar {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 28px 16px;
+  border: 1.5px dashed var(--borde-fuerte);
+  border-radius: var(--radio-sm);
+  background: var(--losa);
+  text-align: center;
+  cursor: pointer;
+  transition: border-color var(--rapido) ease, background-color var(--rapido) ease, transform var(--medio) var(--muelle);
+}
+
+.soltar:hover,
+.soltar:focus-within {
+  border-color: var(--dorado-tenue);
+}
+
+.soltar:focus-within {
+  outline: 2px solid var(--dorado);
+  outline-offset: 2px;
+}
+
+.soltar.is-encima {
+  border-color: var(--dorado);
+  background: var(--dorado-fantasma);
+  transform: scale(1.02);
+}
+
+.soltar.is-mal {
+  border-color: var(--cinabrio);
+  animation: temblor 400ms ease;
+}
+
+@keyframes temblor {
+  20%, 60% { transform: translateX(-5px); }
+  40%, 80% { transform: translateX(5px); }
+}
+
+.soltar__archivo {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+}
+
+.soltar__icono {
+  width: 28px;
+  height: 28px;
+  margin-bottom: 4px;
+  fill: none;
+  stroke: var(--dorado);
+  stroke-width: 1.6;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  transition: transform var(--medio) var(--muelle);
+}
+
+.soltar:hover .soltar__icono,
+.soltar.is-encima .soltar__icono {
+  transform: translateY(-3px);
+}
+
+.soltar__texto {
+  font-weight: 600;
+}
+
+.soltar__pista {
+  font-size: 12px;
+  color: var(--tenue);
+}
+
+.error {
+  color: var(--cinabrio);
+  font-size: 13px;
+}
+
+.vista-previa {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 16px;
+  border: 1px solid var(--dorado-tenue);
+  border-radius: var(--radio-sm);
+  background: var(--dorado-fantasma);
+}
+
+.vista-previa.is-nueva,
+.hecho.is-nueva {
+  animation: aparecer var(--medio) var(--muelle);
+}
+
+@keyframes aparecer {
+  from {
+    opacity: 0;
+    transform: translateY(6px) scale(0.97);
+  }
+}
+
+.vista-previa__fecha {
+  font-weight: 600;
+}
+
+.vista-previa__aviso {
+  font-size: 13px;
+  color: var(--tenue);
+}
+
+.vista-previa__botones {
+  display: flex;
+  gap: 8px;
+}
+
+.hecho {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--jade);
+  font-weight: 600;
+}
+
+.hecho svg {
+  flex-shrink: 0;
+  width: 18px;
+  height: 18px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.pie {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding-top: 8px;
+  font-size: 12px;
+  text-align: center;
+  color: var(--tenue);
+}
+
+.pie svg {
+  flex-shrink: 0;
+  width: 14px;
+  height: 14px;
+  fill: none;
+  stroke: var(--jade);
+  stroke-width: 1.5;
+  stroke-linejoin: round;
+}
+
+[hidden] {
+  display: none !important;
+}
+
+@media (max-width: 480px) {
+  .pagina {
+    padding-top: 32px;
+  }
+
+  .cifras {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .boton {
+    align-self: stretch;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-delay: 0s !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}

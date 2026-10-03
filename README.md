@@ -112,6 +112,12 @@ que necesitaba una conversión rápida. Ahora es un clic en la barra del navegad
 - En español o en inglés, según el idioma de Chrome o el que elijas con clic
   derecho en el icono → **Idioma**. En inglés los números van a la inglesa
   (1,084.70), pero si escribes "12,50" también lo entiende
+- Copia de seguridad: con el escudo que hay al lado de **Atajos** (o clic
+  derecho en el icono → **Opciones**) se abre una página para bajarte en un
+  archivo tus viajes, gastos, avisos, historial y preferencias, y para
+  restaurarlos arrastrándolo. Antes de restaurar te enseña qué trae la copia,
+  porque sustituye lo que tienes. Como la extensión se carga a mano, si borras
+  la carpeta lo perderías todo
 - Si algo falla te dice qué ha pasado, no se queda en blanco
 
 Pide lo justo: guardar tus preferencias, hablar con la API de las tasas, una
@@ -154,6 +160,7 @@ popup.css        estilos
 textos.js        todos los textos, en español y en inglés
 logica.js        las cuentas y los formatos, sin tocar la pantalla
 popup.js         lo que reacciona a los clics
+copia.*          la página de la copia de seguridad (las opciones)
 background.js    el menú del clic derecho y la tasa para la tarjeta
 tarjeta.js       la tarjeta que sale en la web, en un shadow DOM
 precios.js       las pastillas con los precios de toda la página
