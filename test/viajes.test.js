@@ -2,8 +2,9 @@ const { test } = require("node:test");
 const assert = require("node:assert");
 const {
   VIAJES_MAX, NOMBRE_VIAJE_MAX, leerViajes, viajeActivo, crearViaje, renombrarViaje, elegirViaje, borrarViaje, cambiarViaje,
-  resumenViaje,
+  resumenViaje, archivoGastos,
 } = require("../logica.js");
+const { ponerIdioma } = require("../textos.js");
 
 const gasto = (id, valor = 10, to = "EUR") => ({
   id, from: "USD", to, cantidad: 12, valor, concepto: "", cuando: 1, categoria: "otros",
@@ -106,4 +107,16 @@ test("el resumen cuenta los gastos y suma la divisa principal", () => {
   const viaje = { id: "a", nombre: "", gastos: [gasto("1", 10), gasto("2", 5.5), gasto("3", 3, "USD")], presupuesto: null };
   assert.deepEqual(resumenViaje(viaje), { n: 3, total: { to: "EUR", total: 15.5 } });
   assert.deepEqual(resumenViaje({ ...viaje, gastos: [] }), { n: 0, total: null });
+});
+
+test("el CSV se llama como el viaje, sin tildes ni espacios", () => {
+  ponerIdioma("es");
+  assert.equal(archivoGastos("Japón 2026"), "gastos-japon-2026");
+  assert.equal(archivoGastos("  Nueva York / NYC! "), "gastos-nueva-york-nyc");
+  assert.equal(archivoGastos(""), "gastos-viaje", "sin nombre, el de siempre");
+  assert.equal(archivoGastos("¡¡!!"), "gastos-viaje");
+  ponerIdioma("en");
+  assert.equal(archivoGastos("Lisboa"), "expenses-lisboa");
+  assert.equal(archivoGastos(""), "trip-expenses");
+  ponerIdioma("es");
 });

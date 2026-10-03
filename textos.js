@@ -212,6 +212,7 @@ const TEXTOS = {
     "compartir.pasado": "💸 Presupuesto: {gastado} de {importe}. Nos hemos pasado {pasado}",
     "csv.archivoHistorial": "conversiones",
     "csv.archivoGastos": "gastos-viaje",
+    "csv.archivoViaje": "gastos-{nombre}",
     "dia.ayer": "Ayer",
 
     "gastos": "Gastos del viaje",
@@ -533,6 +534,7 @@ const TEXTOS = {
     "compartir.pasado": "💸 Budget: {gastado} of {importe}. {pasado} over",
     "csv.archivoHistorial": "conversions",
     "csv.archivoGastos": "trip-expenses",
+    "csv.archivoViaje": "expenses-{nombre}",
     "dia.ayer": "Yesterday",
 
     "gastos": "Trip expenses",

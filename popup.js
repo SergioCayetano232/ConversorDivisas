@@ -3357,7 +3357,7 @@ function bindEvents() {
   el.historialBorrar.addEventListener("click", onBorrarHistorial);
   el.historialCsv.addEventListener("click", () => descargarCsv(csvHistorial(historial), tr("csv.archivoHistorial"), el.historialCsv));
   el.gastosCompartir.addEventListener("click", onCompartir);
-  el.gastosCsv.addEventListener("click", () => descargarCsv(csvGastos(gastos), tr("csv.archivoGastos"), el.gastosCsv));
+  el.gastosCsv.addEventListener("click", () => descargarCsv(csvGastos(gastos), archivoGastos(viajeActivo(viajes).nombre), el.gastosCsv));
   el.abrirGastos.addEventListener("click", () => (el.gastos.hidden ? abrirGastos() : cerrarGastos()));
   el.abrirGastos.addEventListener("animationend", () => el.abrirGastos.classList.remove("is-apuntado"));
   el.gastosForm.addEventListener("submit", onApuntarGasto);

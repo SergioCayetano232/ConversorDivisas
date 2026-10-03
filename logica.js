@@ -1057,6 +1057,13 @@ function cambiarViaje(viajes, id, cambios) {
   return { ...viajes, lista: viajes.lista.map((v) => (v.id === id ? { ...v, ...cambios } : v)) };
 }
 
+// "Japón 2026" → "gastos-japon-2026": sin tildes ni espacios, que algunos
+// sistemas los llevan mal en los nombres de archivo. Sin nombre, el de siempre.
+function archivoGastos(nombre) {
+  const limpio = normalizar(String(nombre ?? "")).replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
+  return limpio ? tr("csv.archivoViaje", { nombre: limpio }) : tr("csv.archivoGastos");
+}
+
 function resumenViaje(viaje) {
   return { n: viaje.gastos.length, total: sumarPorDivisa(viaje.gastos)[0] ?? null };
 }
@@ -1430,7 +1437,7 @@ if (typeof module !== "undefined") {
     CATEGORIAS, CATEGORIA_POR_DEFECTO, adivinarCategoria, desglose,
     EMOJI_CATEGORIA, resumenParaCompartir,
     COPIA_APP, COPIA_VERSION, CLAVES_COPIA, limpiarCopia, crearCopia, leerCopia, resumenCopia,
-    VIAJES_MAX, NOMBRE_VIAJE_MAX, leerViajes, viajeActivo, crearViaje, renombrarViaje, elegirViaje, borrarViaje, cambiarViaje, resumenViaje,
+    VIAJES_MAX, NOMBRE_VIAJE_MAX, leerViajes, viajeActivo, crearViaje, renombrarViaje, elegirViaje, borrarViaje, cambiarViaje, resumenViaje, archivoGastos,
     diasHasta, leerPresupuesto, PRESUPUESTO_JUSTO, estadoPresupuesto,
     EXTRAS_MAX, EXTRAS_POR_DEFECTO, leerExtras, anadirExtra, quitarExtra,
     extrasVisibles, disponiblesParaAnadir, convertirExtras, semanaDe, trazoMini, CHULETA, escalaChuleta, chuleta,
