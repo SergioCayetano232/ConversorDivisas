@@ -538,16 +538,51 @@ function leerComision(guardado) {
   return redondearComision(guardado);
 }
 
-function leerPorcentaje(texto) {
+function leerPorcentaje(texto, max = COMISION_MAX) {
   const limpio = String(texto ?? "").replace(/[\s%]/g, "").replace(",", ".");
   if (!/^\d+(\.\d+)?$/.test(limpio)) return null;
   const pct = Number(limpio);
-  return pct > COMISION_MAX ? null : redondearComision(pct);
+  return pct > max ? null : redondearComision(pct);
 }
 
 function conComision(valor, pct) {
   if (valor === null || !Number.isFinite(valor)) return null;
   return valor * (1 + pct / 100);
+}
+
+// Las propinas de siempre: en Europa poco o nada, en Estados Unidos del 15 al 20.
+const PROPINAS_RAPIDAS = [0, 10, 15, 20];
+const PROPINA_MAX = 30;
+const PERSONAS_MAX = 20;
+const CUENTA_POR_DEFECTO = { propina: 10, personas: 2 };
+
+function leerCuenta(guardado) {
+  const { propina, personas } = guardado ?? {};
+  return {
+    propina: Number.isFinite(propina) && propina >= 0 && propina <= PROPINA_MAX
+      ? redondearComision(propina) : CUENTA_POR_DEFECTO.propina,
+    personas: Number.isInteger(personas) && personas >= 1 && personas <= PERSONAS_MAX
+      ? personas : CUENTA_POR_DEFECTO.personas,
+  };
+}
+
+// Hacia arriba: mejor que en la mesa sobre un céntimo a que falte. El margen
+// es para que 10,00 no se vaya a 10,01 por los decimales del ordenador.
+const alCentimo = (n) => Math.ceil(n * 100 - 1e-6) / 100;
+
+// La propina va sobre la cuenta tal cual, y la comisión sobre lo que te cobran
+// después en tu divisa, igual que en el resto del popup.
+function repartirCuenta(cantidad, rate, { propina, personas }, comision = 0) {
+  if (!Number.isFinite(cantidad) || cantidad <= 0) return null;
+  const total = cantidad * (1 + propina / 100);
+  const tuyo = Number.isFinite(rate) && rate > 0 ? conComision(total * rate, comision) : null;
+  return {
+    propina: total - cantidad,
+    total,
+    cadaUno: alCentimo(total / personas),
+    totalTuyo: tuyo,
+    cadaUnoTuyo: tuyo === null ? null : alCentimo(tuyo / personas),
+  };
 }
 
 // Hasta un 1 % es lo que cobra una buena tarjeta; del 7 % para arriba ya es
@@ -1163,6 +1198,7 @@ const ATAJOS = {
   Digit5: "vista:fecha",
   Digit6: "vista:timo",
   KeyG: "gastos",
+  KeyP: "cuenta",
   KeyH: "ayuda",
 };
 
@@ -1207,6 +1243,7 @@ if (typeof module !== "undefined") {
     EXTRAS_MAX, EXTRAS_POR_DEFECTO, leerExtras, anadirExtra, quitarExtra,
     extrasVisibles, disponiblesParaAnadir, convertirExtras, CHULETA, escalaChuleta, chuleta,
     COMISION_MAX, COMISIONES_RAPIDAS, leerComision, leerPorcentaje, conComision,
+    PROPINAS_RAPIDAS, PROPINA_MAX, PERSONAS_MAX, CUENTA_POR_DEFECTO, leerCuenta, repartirCuenta,
     MARGENES, tasaOfrecida, analizarCambio,
     FECHA_MINIMA, fechaLarga, fechaValida, diaDelGrafico, mesesAtras, FECHAS_RAPIDAS, leerFecha, cambioDesde, notaDiaHabil,
     textoInsignia, cambioDiario, sentidoDe, tituloInsignia,

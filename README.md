@@ -36,6 +36,12 @@ que necesitaba una conversión rápida. Ahora es un clic en la barra del navegad
 - Las conversiones y los gastos se bajan en CSV con el botón **CSV** de cada
   panel, listos para abrir en Excel o en Google Sheets: en español van con
   punto y coma y "12,50", en inglés con coma y "12.50", y las tildes no se rompen
+- Dividir la cuenta, en el tique que hay al lado de la cartera: con lo que
+  pone la cuenta arriba, eliges la propina (sin, 10, 15, 20 % o la que quieras)
+  y entre cuántos sois, y te dice lo que paga cada uno, en esa divisa y en la
+  tuya. Se redondea hacia arriba al céntimo, para que en la mesa no falte nada.
+  Puedes cambiar la cantidad con el panel abierto, y la propina y la gente se
+  quedan guardadas
 - La comisión de tu banco: pones el % que te cobra la tarjeta (0, 1, 2, 3 o el
   que quieras) y al lado del resultado sale lo que pagarías de verdad. También
   va sumada en la chuleta y en las otras divisas. Se queda guardada para la
@@ -92,7 +98,7 @@ que necesitaba una conversión rápida. Ahora es un clic en la barra del navegad
   sugerencias de Chrome, con tus otras divisas debajo, y con Enter se abre el
   popup con esa conversión puesta
 - Atajos dentro del popup: `S` da la vuelta al par, `C` copia, `D` y `A` abren
-  los desplegables, `G` los gastos y del `1` al `6` cambian de pestaña. Si estás escribiendo en
+  los desplegables, `G` los gastos, `P` dividir la cuenta y del `1` al `6` cambian de pestaña. Si estás escribiendo en
   un campo, con `Alt` delante (`⌥` en Mac). Con `?` salen todos
 - Tiene modo claro y oscuro, según cómo tengas el sistema
 - En español o en inglés, según el idioma de Chrome o el que elijas con clic

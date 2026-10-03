@@ -63,6 +63,19 @@ const el = {
   timoNota: document.getElementById("timo-nota"),
   abrirHistorial: document.getElementById("abrir-historial"),
   abrirGastos: document.getElementById("abrir-gastos"),
+  abrirCuenta: document.getElementById("abrir-cuenta"),
+  cuenta: document.getElementById("cuenta"),
+  cuentaCerrar: document.getElementById("cuenta-cerrar"),
+  cuentaEtiqueta: document.getElementById("cuenta-etiqueta"),
+  cuentaCifra: document.getElementById("cuenta-cifra"),
+  cuentaTuyo: document.getElementById("cuenta-tuyo"),
+  cuentaPropinas: document.getElementById("cuenta-propinas"),
+  cuentaCampo: document.getElementById("cuenta-campo"),
+  cuentaMenos: document.getElementById("cuenta-menos"),
+  cuentaMas: document.getElementById("cuenta-mas"),
+  cuentaN: document.getElementById("cuenta-n"),
+  cuentaGente: document.getElementById("cuenta-gente"),
+  cuentaPie: document.getElementById("cuenta-pie"),
   gastosCuenta: document.getElementById("gastos-cuenta"),
   gastos: document.getElementById("gastos"),
   gastosVaciar: document.getElementById("gastos-vaciar"),
@@ -182,6 +195,7 @@ let vaciarId = null;
 // El último que has quitado y dónde estaba, mientras se puede deshacer.
 let quitado = null;
 let presupuesto = null;
+let reparto = { ...CUENTA_POR_DEFECTO };
 // La categoría del gasto que vas a apuntar. Mientras no la elijas tú, la saco
 // del concepto; si la eliges, ya no te la cambio por mucho que escribas.
 let categoriaNueva = CATEGORIA_POR_DEFECTO;
@@ -226,6 +240,7 @@ const FECHA_KEY = "fechaConsulta";
 const HISTORIAL_KEY = "historialConversiones";
 const GASTOS_KEY = "gastosViaje";
 const PRESUPUESTO_KEY = "presupuestoViaje";
+const CUENTA_KEY = "cuentaReparto";
 // Lo que tardo en dar por buena una cantidad: mientras escribes "1", "12",
 // "125" no quiero tres entradas, solo la última.
 const PAUSA_APUNTE = 2000;
@@ -347,6 +362,16 @@ async function cargarPresupuesto() {
   } catch (error) {
     console.warn("No se pudo leer el presupuesto", error);
     return null;
+  }
+}
+
+async function cargarReparto() {
+  try {
+    const guardado = await chrome.storage.local.get(CUENTA_KEY);
+    return leerCuenta(guardado[CUENTA_KEY]);
+  } catch (error) {
+    console.warn("No se pudo leer la propina", error);
+    return { ...CUENTA_POR_DEFECTO };
   }
 }
 
@@ -1413,6 +1438,7 @@ function ponerComision(pct) {
   pintarExtras();
   pintarChuleta();
   pintarTimo();
+  pintarCuenta();
   pintarBotonGasto();
   pintarAvisoComision();
   for (const boton of el.comisionRapidas.children) {
@@ -1431,6 +1457,7 @@ function ponerComision(pct) {
 function abrirBurbuja() {
   cerrarHistorial();
   cerrarGastos();
+  cerrarCuenta();
   el.comisionRapidas.replaceChildren(...COMISIONES_RAPIDAS.map((pct, i) => {
     const boton = document.createElement("button");
     boton.type = "button";
@@ -1579,6 +1606,7 @@ function pintarHistorial() {
 function abrirHistorial() {
   cerrarBurbuja();
   cerrarGastos();
+  cerrarCuenta();
   el.historial.hidden = false;
   el.abrirHistorial.setAttribute("aria-expanded", "true");
   pintarHistorial();
@@ -1938,9 +1966,164 @@ function onGuardarPresupuesto(event) {
   ponerPresupuesto(nuevo);
 }
 
+// Con más de diez muñecos ya no se cuentan de un vistazo: el resto va en número.
+const GENTE_VISIBLE = 10;
+
+function pintarGente() {
+  const caben = Math.min(reparto.personas, GENTE_VISIBLE);
+  const hay = el.cuentaGente.querySelectorAll(".cuenta__muneco").length;
+  for (let i = hay; i < caben; i++) {
+    const muneco = document.createElement("span");
+    muneco.className = "cuenta__muneco";
+    if (hay > 0) muneco.classList.add("is-nuevo");
+    muneco.innerHTML = '<svg viewBox="0 0 10 12"><circle cx="5" cy="3" r="2.2"/><path d="M1 11.5a4 4 0 0 1 8 0z"/></svg>';
+    const resto = el.cuentaGente.querySelector(".cuenta__mas-gente");
+    if (resto) resto.before(muneco);
+    else el.cuentaGente.append(muneco);
+  }
+  [...el.cuentaGente.querySelectorAll(".cuenta__muneco")].slice(caben).forEach((m) => m.remove());
+  let resto = el.cuentaGente.querySelector(".cuenta__mas-gente");
+  if (reparto.personas > GENTE_VISIBLE) {
+    if (!resto) {
+      resto = document.createElement("span");
+      resto.className = "cuenta__mas-gente";
+      el.cuentaGente.append(resto);
+    }
+    resto.textContent = `+${reparto.personas - GENTE_VISIBLE}`;
+  } else {
+    resto?.remove();
+  }
+}
+
+function pintarCuenta() {
+  if (el.cuenta.hidden) return;
+  const from = el.from.value;
+  const to = el.to.value;
+  const r = repartirCuenta(cantidadOrigen(), from === to ? null : rate, reparto, comision);
+  const solo = reparto.personas === 1;
+
+  el.cuentaEtiqueta.textContent = tr(solo ? "cuenta.conPropina" : "cuenta.cadaUno");
+  const cifra = r ? `${nf.format(r.cadaUno)} ${from}` : "—";
+  if (el.cuentaCifra.textContent !== cifra) {
+    const habia = el.cuentaCifra.textContent !== "—";
+    el.cuentaCifra.textContent = cifra;
+    if (habia && r) restartAnimation(el.cuentaCifra, "is-tic");
+  }
+  el.cuentaCifra.title = r && !solo ? tr("cuenta.redondeo") : "";
+  el.cuentaTuyo.textContent = r?.cadaUnoTuyo != null ? `≈ ${nf.format(r.cadaUnoTuyo)} ${to}` : "";
+  el.cuentaTuyo.title = comision > 0 ? tr("gastos.comision", { pct: tr("pct", { n: nfComision.format(comision) }) }) : "";
+
+  el.cuentaN.textContent = reparto.personas;
+  el.cuentaN.setAttribute("aria-label", solo ? tr("cuenta.una") : tr("cuenta.personas", { n: reparto.personas }));
+  el.cuentaMenos.disabled = reparto.personas <= 1;
+  el.cuentaMas.disabled = reparto.personas >= PERSONAS_MAX;
+  pintarGente();
+
+  if (!r) {
+    el.cuentaPie.textContent = tr("cuenta.nada");
+    el.cuentaPie.classList.add("is-pista");
+    return;
+  }
+  el.cuentaPie.classList.remove("is-pista");
+  const total = `${nf.format(r.total)} ${from}`;
+  const texto = document.createElement("span");
+  texto.textContent = reparto.propina > 0
+    ? tr("cuenta.pie", { cuenta: nf.format(r.total - r.propina), propina: nf.format(r.propina), total })
+    : tr("cuenta.total", { total });
+  const tuyo = document.createElement("span");
+  tuyo.className = "cuenta__pie-tuyo";
+  if (r.totalTuyo !== null) tuyo.textContent = `${nf.format(r.totalTuyo)} ${to}`;
+  el.cuentaPie.replaceChildren(texto, tuyo);
+}
+
+function guardarReparto() {
+  try {
+    chrome.storage.local.set({ [CUENTA_KEY]: reparto });
+  } catch (error) {
+    console.warn("No se pudo guardar la propina", error);
+  }
+}
+
+function marcarPropina() {
+  for (const boton of el.cuentaPropinas.children) {
+    boton.setAttribute("aria-pressed", String(Number(boton.dataset.pct) === reparto.propina));
+  }
+}
+
+function ponerPropina(pct) {
+  reparto = { ...reparto, propina: pct };
+  marcarPropina();
+  pintarCuenta();
+  guardarReparto();
+}
+
+function cambiarPersonas(paso) {
+  const personas = Math.min(Math.max(reparto.personas + paso, 1), PERSONAS_MAX);
+  if (personas === reparto.personas) return;
+  reparto = { ...reparto, personas };
+  pintarCuenta();
+  restartAnimation(el.cuentaN, paso > 0 ? "is-sube" : "is-baja");
+  guardarReparto();
+}
+
+function onCampoPropina() {
+  const pct = leerPorcentaje(el.cuentaCampo.value, PROPINA_MAX);
+  el.cuentaCampo.removeAttribute("aria-invalid");
+  if (pct !== null) ponerPropina(pct);
+}
+
+function onTeclaCampoPropina(event) {
+  if (event.key !== "Enter") return;
+  event.preventDefault();
+  if (el.cuentaCampo.value.trim() !== "" && leerPorcentaje(el.cuentaCampo.value, PROPINA_MAX) === null) {
+    el.cuentaCampo.setAttribute("aria-invalid", "true");
+    restartAnimation(el.cuentaCampo, "is-mal");
+  }
+}
+
+function abrirCuenta() {
+  cerrarBurbuja();
+  cerrarHistorial();
+  cerrarGastos();
+  el.cuenta.style.setProperty("--gastos-arriba", `${el.resultBox.offsetTop}px`);
+  el.cuentaPropinas.replaceChildren(...PROPINAS_RAPIDAS.map((pct, i) => {
+    const boton = document.createElement("button");
+    boton.type = "button";
+    boton.className = "burbuja__rapida";
+    boton.style.setProperty("--i", i);
+    boton.dataset.pct = pct;
+    boton.textContent = pct === 0 ? tr("cuenta.sin") : tr("pct", { n: pct });
+    boton.setAttribute("aria-label", pct === 0 ? tr("cuenta.sinAria") : tr("pct", { n: pct }));
+    boton.addEventListener("click", () => {
+      el.cuentaCampo.value = "";
+      el.cuentaCampo.removeAttribute("aria-invalid");
+      ponerPropina(pct);
+    });
+    return boton;
+  }));
+  marcarPropina();
+  const rapida = PROPINAS_RAPIDAS.includes(reparto.propina);
+  el.cuentaCampo.value = rapida ? "" : nfComision.format(reparto.propina);
+  el.cuentaCampo.removeAttribute("aria-invalid");
+  el.cuentaGente.replaceChildren();
+  el.cuentaCifra.textContent = "—";
+  el.cuenta.hidden = false;
+  el.abrirCuenta.setAttribute("aria-expanded", "true");
+  pintarCuenta();
+  (el.cuentaPropinas.querySelector('[aria-pressed="true"]') ?? el.cuentaCampo).focus();
+}
+
+function cerrarCuenta() {
+  if (el.cuenta.hidden) return;
+  el.cuenta.hidden = true;
+  el.abrirCuenta.setAttribute("aria-expanded", "false");
+  return el.abrirCuenta;
+}
+
 function abrirGastos() {
   cerrarBurbuja();
   cerrarHistorial();
+  cerrarCuenta();
   el.gastos.style.setProperty("--gastos-arriba", `${el.resultBox.offsetTop}px`);
   el.gastos.hidden = false;
   el.abrirGastos.setAttribute("aria-expanded", "true");
@@ -2232,6 +2415,7 @@ function hacerAtajo(accion) {
   else if (accion === "destino") el.to.click();
   else if (accion === "ayuda") abrirAyuda();
   else if (accion === "gastos") (el.gastos.hidden ? abrirGastos() : cerrarGastos()?.focus());
+  else if (accion === "cuenta") (el.cuenta.hidden ? abrirCuenta() : cerrarCuenta()?.focus());
   else if (accion.startsWith("vista:")) cambiarVista(accion.slice(6));
 }
 
@@ -2331,6 +2515,7 @@ function abrirAyuda() {
   cerrarBurbuja();
   cerrarHistorial();
   cerrarGastos();
+  cerrarCuenta();
   pintarAyuda();
   el.ayuda.hidden = false;
   el.abrirAyuda.setAttribute("aria-expanded", "true");
@@ -2354,6 +2539,7 @@ function ponerPistasDeAtajos() {
   el.swap.title = tr("intercambiar.titulo", { tecla: pista("intercambiar") });
   el.copiar.title = tr("copiar.titulo", { tecla: pista("copiar") });
   el.abrirGastos.title = `${tr("gastos")} (${pista("gastos")})`;
+  el.abrirCuenta.title = `${tr("cuenta")} (${pista("cuenta")})`;
   for (const boton of el.botonesVista) {
     boton.title = `${boton.title} (${pista(`vista:${boton.dataset.vista}`)})`;
   }
@@ -2429,6 +2615,7 @@ function renderResult() {
   pintarChuleta();
   pintarFecha();
   pintarTimo();
+  pintarCuenta();
 
   if (valor === null) {
     pintarBotonGasto();
@@ -2535,6 +2722,7 @@ async function refresh() {
     pintarChuleta();
     pintarFecha();
     pintarTimo();
+    pintarCuenta();
     pintarComision();
     hideTrend();
     showError(errorMessageFor(error));
@@ -2879,6 +3067,16 @@ function bindEvents() {
   el.gastosSuma.addEventListener("animationend", () => el.gastosSuma.classList.remove("is-tic"));
   el.gastosApuntar.addEventListener("animationend", () => el.gastosApuntar.classList.remove("is-mal"));
   el.gastosCerrar.addEventListener("click", () => cerrarGastos()?.focus());
+  el.abrirCuenta.addEventListener("click", () => (el.cuenta.hidden ? abrirCuenta() : cerrarCuenta()));
+  el.cuentaCerrar.addEventListener("click", () => cerrarCuenta()?.focus());
+  el.cuentaCampo.addEventListener("input", onCampoPropina);
+  el.cuentaCampo.addEventListener("keydown", onTeclaCampoPropina);
+  el.cuentaCampo.addEventListener("animationend", () => el.cuentaCampo.classList.remove("is-mal"));
+  el.cuentaMenos.addEventListener("click", () => cambiarPersonas(-1));
+  el.cuentaMas.addEventListener("click", () => cambiarPersonas(1));
+  el.cuentaCifra.addEventListener("animationend", () => el.cuentaCifra.classList.remove("is-tic"));
+  el.cuentaN.addEventListener("animationend", () => el.cuentaN.classList.remove("is-sube", "is-baja"));
+  el.cuentaGente.addEventListener("animationend", (event) => event.target.classList.remove("is-nuevo"));
   el.presupuestoAnadir.addEventListener("click", editarPresupuesto);
   el.presupuestoVer.addEventListener("click", editarPresupuesto);
   el.presupuestoForm.addEventListener("submit", onGuardarPresupuesto);
@@ -2937,6 +3135,10 @@ function bindEvents() {
       event.preventDefault();
       cerrarHistorial()?.focus();
     }
+    if (event.key === "Escape" && !el.cuenta.hidden) {
+      event.preventDefault();
+      cerrarCuenta()?.focus();
+    }
     if (event.key === "Escape" && !el.gastos.hidden) {
       event.preventDefault();
       // Primero se cierra lo de dentro (categorías, presupuesto), y con otro Escape el panel.
@@ -2957,6 +3159,11 @@ function bindEvents() {
     }
     if (!el.gastos.hidden && !el.gastos.contains(event.target) && !el.abrirGastos.contains(event.target)) {
       cerrarGastos();
+    }
+    // Arriba se puede tocar la cantidad sin que se cierre: es la cuenta que reparto.
+    if (!el.cuenta.hidden && !el.cuenta.contains(event.target) && !el.abrirCuenta.contains(event.target)
+      && !el.form.contains(event.target)) {
+      cerrarCuenta();
     }
     if (!el.categorias.hidden && !el.categorias.contains(event.target) && !el.gastosCategoria.contains(event.target)) {
       cerrarCategorias();
@@ -2994,10 +3201,11 @@ async function init() {
   const idiomaCambiado = await cargarIdioma();
   traducirPagina();
   if (idiomaCambiado) saludarIdioma();
-  const [pair, rango, guardados, pendiente, guardadas, vistaGuardada, avisosGuardados, comisionGuardada, fechaGuardada, historialGuardado, gastosGuardados, presupuestoGuardado] = await Promise.all([
+  const [pair, rango, guardados, pendiente, guardadas, vistaGuardada, avisosGuardados, comisionGuardada, fechaGuardada, historialGuardado, gastosGuardados, presupuestoGuardado, repartoGuardado] = await Promise.all([
     loadPair(), cargarRango(), cargarRecientes(), tomarPendiente(), cargarExtras(), cargarVista(), cargarAvisos(),
-    cargarComision(), cargarFecha(), cargarHistorial(), cargarGastos(), cargarPresupuesto(),
+    cargarComision(), cargarFecha(), cargarHistorial(), cargarGastos(), cargarPresupuesto(), cargarReparto(),
   ]);
+  reparto = repartoGuardado;
   historial = historialGuardado;
   pintarHistorial();
   gastos = gastosGuardados;
