@@ -3041,6 +3041,75 @@ body::after {
     transform var(--fast) var(--ease-spring);
 }
 
+/* La semana de fondo: verde si en una semana te dan más de esa divisa, roja si
+   menos. Tenue para que se lea la cifra, y más viva al pasar por encima. */
+.extra__elegir {
+  position: relative;
+  overflow: hidden;
+}
+
+.extra__elegir > span {
+  position: relative;
+}
+
+.extra__mini {
+  position: absolute;
+  inset: 2px 0 0;
+  width: 100%;
+  height: calc(100% - 2px);
+  color: var(--muted);
+  opacity: 0.5;
+  pointer-events: none;
+  transition: opacity var(--fast) var(--ease);
+}
+
+.extra[data-sentido="sube"] .extra__mini { color: var(--jade); }
+.extra[data-sentido="baja"] .extra__mini { color: var(--cinnabar); }
+
+.extra__mini.is-dibujando {
+  animation: mini-dibuja 700ms var(--ease-out) backwards;
+  animation-delay: calc(var(--i, 0) * 60ms + 80ms);
+}
+
+@keyframes mini-dibuja {
+  from {
+    clip-path: inset(0 100% 0 0);
+  }
+  to {
+    clip-path: inset(0 0 0 0);
+  }
+}
+
+.extra__mini-linea {
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.2;
+  stroke-linejoin: round;
+}
+
+.extra__mini-area {
+  fill: currentColor;
+  opacity: 0.18;
+}
+
+.extra__elegir:hover .extra__mini {
+  opacity: 0.9;
+}
+
+.extra__flecha {
+  flex-shrink: 0;
+  margin: 0 auto 0 -3px;
+  font-size: 7px;
+  line-height: 1;
+}
+
+.extra__flecha:empty {
+  display: none;
+}
+
+.extra[data-sentido="sube"] .extra__flecha { color: var(--jade); }
+.extra[data-sentido="baja"] .extra__flecha { color: var(--cinnabar); }
+
 .extra__codigo {
   flex-shrink: 0;
   font-size: 10px;
@@ -4647,6 +4716,7 @@ kbd {
   .gastos__fila.is-nueva,
   .gastos__fila.is-saliendo,
   .viajes__fila,
+  .extra__mini.is-dibujando,
   .categorias__opcion,
   .desglose__trozo,
   .aviso.is-nueva,

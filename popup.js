@@ -179,6 +179,8 @@ let extras = [];
 // cambias el origen, las viejas no valen ni un segundo.
 let tasasBase = null;
 let extrasId = 0;
+let semanaBase = null;
+let semanaId = 0;
 let avisos = [];
 // De qué par es lo que hay en el campo del aviso: al cambiar de par le pongo
 // la tasa nueva, pero mientras sea el mismo no le toco lo que hayas escrito.
@@ -629,6 +631,23 @@ async function fetchTodas(from) {
   }
 }
 
+// Toda la semana de todas las divisas de una vez: son unos pocos días, y así
+// sirve también para las que añadas luego sin volver a pedir nada.
+async function fetchSemana(from) {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), TIMEOUT_MS);
+
+  try {
+    const response = await fetch(`${API_HISTORY}/${startDateFor(7)}..?base=${from}`, { signal: controller.signal });
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+    const data = await response.json();
+    if (!data.rates || typeof data.rates !== "object") throw new Error("Respuesta inesperada");
+    return data.rates;
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
 async function fetchDia(from, to, dia) {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), TIMEOUT_MS);
@@ -987,6 +1006,19 @@ function crearCelda(code) {
   elegir.append(cod, valor);
   elegir.addEventListener("click", () => onElegirExtra(code));
 
+  // La semana va de fondo, detrás del código y la cifra.
+  const mini = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+  mini.setAttribute("class", "extra__mini");
+  mini.setAttribute("viewBox", "0 0 100 20");
+  mini.setAttribute("preserveAspectRatio", "none");
+  mini.setAttribute("aria-hidden", "true");
+  mini.innerHTML = '<path class="extra__mini-area"/><path class="extra__mini-linea" vector-effect="non-scaling-stroke"/>';
+  const flecha = document.createElement("span");
+  flecha.className = "extra__flecha";
+  flecha.setAttribute("aria-hidden", "true");
+  cod.after(flecha);
+  elegir.prepend(mini);
+
   const quitar = document.createElement("button");
   quitar.type = "button";
   quitar.className = "extra__quitar";
@@ -1039,10 +1071,13 @@ function pintarExtras() {
       // El tic solo en las que ya estaban; las nuevas ya entran con su rebote.
       if (!celda.classList.contains("is-nueva") && texto !== "—") restartAnimation(cifra, "is-tic");
     }
-    celda.querySelector(".extra__elegir").setAttribute(
-      "aria-label",
-      tr("extras.aria", { nombre: nombreDe(code), valor: texto }),
-    );
+    const semana = semanaBase?.de === from ? semanaDe(semanaBase.rates, code) : null;
+    pintarSemana(celda, semana);
+    const elegir = celda.querySelector(".extra__elegir");
+    const aria = tr("extras.aria", { nombre: nombreDe(code), valor: texto });
+    const cambio = semana?.cambio == null ? "" : tr("extras.semana", { cambio: nfPercent.format(semana.cambio) });
+    elegir.setAttribute("aria-label", cambio ? `${aria}. ${cambio}` : aria);
+    elegir.title = cambio ? `${tr("extras.elegir", { nombre: nombreDe(code) })}\n${cambio}` : tr("extras.elegir", { nombre: nombreDe(code) });
     return celda;
   });
 
@@ -1060,7 +1095,58 @@ function pintarExtras() {
   if (antes !== ahora) el.rejilla.replaceChildren(...celdas);
 }
 
+const FLECHAS = { sube: "▲", baja: "▼", igual: "" };
+
+// Si cambia la forma (otra divisa de origen, el dato de hoy), la línea se
+// dibuja de nuevo de izquierda a derecha.
+function pintarSemana(celda, semana) {
+  const mini = celda.querySelector(".extra__mini");
+  const sentido = semana?.sentido ?? "";
+  celda.dataset.sentido = sentido;
+  celda.querySelector(".extra__flecha").textContent = FLECHAS[sentido] ?? "";
+  const linea = semana ? trazoMini(semana.valores).linea : "";
+  if (mini.dataset.linea === linea) return;
+  mini.dataset.linea = linea;
+  if (!semana) {
+    mini.querySelector(".extra__mini-linea").removeAttribute("d");
+    mini.querySelector(".extra__mini-area").removeAttribute("d");
+    return;
+  }
+  const { area } = trazoMini(semana.valores);
+  mini.querySelector(".extra__mini-linea").setAttribute("d", linea);
+  mini.querySelector(".extra__mini-area").setAttribute("d", area);
+  // Un svg no tiene offsetWidth: el reflujo para reiniciar lo fuerzo con el botón.
+  mini.classList.remove("is-dibujando");
+  void celda.querySelector(".extra__elegir").offsetWidth;
+  mini.classList.add("is-dibujando");
+}
+
+// Como las tasas de hoy: guardada en la caché y pedida otra vez al día siguiente.
+async function refreshSemana(from) {
+  const actual = ++semanaId;
+  const key = `semana:${from}`;
+  const cache = await loadCache();
+  if (actual !== semanaId) return;
+
+  const cached = cache[key];
+  if (cached?.rates) semanaBase = { de: from, rates: cached.rates };
+  else if (semanaBase?.de !== from) semanaBase = null;
+  pintarExtras();
+  if (isFresh(cached)) return;
+
+  try {
+    const rates = await fetchSemana(from);
+    if (actual !== semanaId) return;
+    semanaBase = { de: from, rates };
+    pintarExtras();
+    saveCache({ [key]: { rates, day: hoy(), saved: Date.now() } });
+  } catch (error) {
+    if (actual === semanaId) console.warn("No se pudo obtener la semana de las demás divisas", error);
+  }
+}
+
 async function refreshExtras(from) {
+  refreshSemana(from);
   const actual = ++extrasId;
   const key = `todas:${from}`;
 

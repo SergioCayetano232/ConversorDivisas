@@ -504,6 +504,32 @@ function convertirExtras(cantidad, tasas, codes, comision = 0) {
   }));
 }
 
+// La API da la serie como { "2026-09-29": { GBP: 0.86, JPY: 160 }, ... }: de
+// ahí saco la semana de una divisa y cuánto se ha movido del primer día al último.
+function semanaDe(rates, code) {
+  const valores = Object.keys(rates ?? {})
+    .sort()
+    .map((dia) => rates[dia]?.[code])
+    .filter((v) => typeof v === "number" && v > 0);
+  if (valores.length < 2) return null;
+  const cambio = cambioDesde(valores[0], valores.at(-1));
+  return { valores, cambio, sentido: sentidoDe(cambio) };
+}
+
+// El minigráfico de cada casilla, en una caja de 100 × 20. Va de fondo detrás
+// de la cifra, así que le dejo aire arriba y abajo para que no la pise entera.
+function trazoMini(valores) {
+  const min = Math.min(...valores);
+  const span = Math.max(...valores) - min;
+  const paso = 100 / (valores.length - 1);
+  const puntos = valores.map((v, i) => {
+    const y = span === 0 ? 10 : 17 - ((v - min) / span) * 14;
+    return `${(i * paso).toFixed(2)},${y.toFixed(2)}`;
+  });
+  const linea = `M${puntos.join("L")}`;
+  return { linea, area: `${linea}L100,20L0,20Z` };
+}
+
 const CHULETA = [1, 5, 10, 20, 50, 100];
 
 // Con yenes o rupias una tabla de 1 a 100 no sirve para nada (100 JPY son
@@ -1407,7 +1433,7 @@ if (typeof module !== "undefined") {
     VIAJES_MAX, NOMBRE_VIAJE_MAX, leerViajes, viajeActivo, crearViaje, renombrarViaje, elegirViaje, borrarViaje, cambiarViaje, resumenViaje,
     diasHasta, leerPresupuesto, PRESUPUESTO_JUSTO, estadoPresupuesto,
     EXTRAS_MAX, EXTRAS_POR_DEFECTO, leerExtras, anadirExtra, quitarExtra,
-    extrasVisibles, disponiblesParaAnadir, convertirExtras, CHULETA, escalaChuleta, chuleta,
+    extrasVisibles, disponiblesParaAnadir, convertirExtras, semanaDe, trazoMini, CHULETA, escalaChuleta, chuleta,
     COMISION_MAX, COMISIONES_RAPIDAS, leerComision, leerPorcentaje, conComision,
     PROPINAS_RAPIDAS, PROPINA_MAX, PERSONAS_MAX, CUENTA_POR_DEFECTO, leerCuenta, repartirCuenta,
     MARGENES, tasaOfrecida, analizarCambio,
