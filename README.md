@@ -26,6 +26,11 @@ que necesitaba una conversión rápida. Ahora es un clic en la barra del navegad
   por días con lo de cada día. Cada uno se guarda con la tasa y la comisión de
   ese momento, así que lo que gastaste el lunes no cambia aunque el euro suba
   el martes. Hasta 200, y para vaciarlo hay que darle dos veces
+- Varios viajes, cada uno con sus gastos y su presupuesto: pulsando el nombre
+  del viaje, arriba del panel, cambias de uno a otro, ves cuánto llevas en
+  cada uno y empiezas otro ("Japón", "Lisboa"). Se les cambia el nombre con el
+  lápiz, y para borrar uno hay que darle dos veces. Hasta ocho. Lo que tenías
+  apuntado antes de esto pasa al primero, sin perder nada
 - Cada gasto con su categoría (comida, transporte, alojamiento, ocio, compras
   u otros), que sale sola por el concepto ("taxi", "cena", "hotel") y se cambia
   con un clic. Arriba, en qué se te va el dinero en porcentajes; pulsando una

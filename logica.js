@@ -972,6 +972,69 @@ function devolverGasto(lista, gasto, indice) {
   return copia.slice(0, GASTOS_MAX);
 }
 
+// Cada viaje con sus gastos y su presupuesto. Con más de ocho el desplegable ya
+// no cabe en el popup, y quien quiera guardar viajes viejos tiene el CSV.
+const VIAJES_MAX = 8;
+const NOMBRE_VIAJE_MAX = 24;
+
+const limpiarNombreViaje = (nombre) => String(nombre ?? "").replace(/\s+/g, " ").trim().slice(0, NOMBRE_VIAJE_MAX);
+
+const viajeVacio = (id, nombre = "") => ({ id, nombre: limpiarNombreViaje(nombre), gastos: [], presupuesto: null });
+
+// Antes de los viajes había una sola lista y un presupuesto sueltos: pasan a
+// ser el primer viaje, sin nombre, para que nadie pierda lo que tenía.
+function leerViajes(guardado, gastosSueltos, presupuestoSuelto) {
+  const vistos = new Set();
+  const lista = (Array.isArray(guardado?.lista) ? guardado.lista : [])
+    .filter((v) => v && typeof v.id === "string" && v.id && !vistos.has(v.id) && vistos.add(v.id))
+    .slice(0, VIAJES_MAX)
+    .map((v) => ({
+      id: v.id, nombre: limpiarNombreViaje(v.nombre), gastos: leerGastos(v.gastos), presupuesto: leerPresupuesto(v.presupuesto),
+    }));
+  if (lista.length === 0) {
+    lista.push({ ...viajeVacio("primero"), gastos: leerGastos(gastosSueltos), presupuesto: leerPresupuesto(presupuestoSuelto) });
+  }
+  const activo = lista.some((v) => v.id === guardado?.activo) ? guardado.activo : lista[0].id;
+  return { activo, lista };
+}
+
+const viajeActivo = (viajes) => viajes.lista.find((v) => v.id === viajes.activo);
+
+// El nuevo es al que vas: lo creas para empezar a apuntar en él.
+function crearViaje(viajes, id, nombre) {
+  const limpio = limpiarNombreViaje(nombre);
+  if (!limpio || viajes.lista.length >= VIAJES_MAX || viajes.lista.some((v) => v.id === id)) return viajes;
+  return { activo: id, lista: [...viajes.lista, viajeVacio(id, limpio)] };
+}
+
+function renombrarViaje(viajes, id, nombre) {
+  const limpio = limpiarNombreViaje(nombre);
+  if (!limpio) return viajes;
+  return { ...viajes, lista: viajes.lista.map((v) => (v.id === id ? { ...v, nombre: limpio } : v)) };
+}
+
+function elegirViaje(viajes, id) {
+  return viajes.lista.some((v) => v.id === id) ? { ...viajes, activo: id } : viajes;
+}
+
+// El último no se borra: para dejarlo limpio ya está "Vaciar". Si borras el que
+// tenías abierto, pasas al que tenía al lado.
+function borrarViaje(viajes, id) {
+  const i = viajes.lista.findIndex((v) => v.id === id);
+  if (i === -1 || viajes.lista.length <= 1) return viajes;
+  const lista = viajes.lista.filter((v) => v.id !== id);
+  const activo = viajes.activo === id ? lista[Math.min(i, lista.length - 1)].id : viajes.activo;
+  return { activo, lista };
+}
+
+function cambiarViaje(viajes, id, cambios) {
+  return { ...viajes, lista: viajes.lista.map((v) => (v.id === id ? { ...v, ...cambios } : v)) };
+}
+
+function resumenViaje(viaje) {
+  return { n: viaje.gastos.length, total: sumarPorDivisa(viaje.gastos)[0] ?? null };
+}
+
 // Si a mitad de viaje cambias de divisa no las mezclo: un total por cada una,
 // la que más suma primero.
 function sumarPorDivisa(gastos) {
@@ -1239,6 +1302,7 @@ if (typeof module !== "undefined") {
     celdaCsv, csvHistorial, csvGastos,
     GASTOS_MAX, CONCEPTO_MAX, crearGasto, leerGastos, apuntarGasto, quitarGasto, devolverGasto, sumarPorDivisa, gastosPorDia, nombreDia,
     CATEGORIAS, CATEGORIA_POR_DEFECTO, adivinarCategoria, desglose,
+    VIAJES_MAX, NOMBRE_VIAJE_MAX, leerViajes, viajeActivo, crearViaje, renombrarViaje, elegirViaje, borrarViaje, cambiarViaje, resumenViaje,
     diasHasta, leerPresupuesto, PRESUPUESTO_JUSTO, estadoPresupuesto,
     EXTRAS_MAX, EXTRAS_POR_DEFECTO, leerExtras, anadirExtra, quitarExtra,
     extrasVisibles, disponiblesParaAnadir, convertirExtras, CHULETA, escalaChuleta, chuleta,

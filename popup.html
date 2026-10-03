@@ -502,9 +502,20 @@
     </div>
     <div class="historial gastos" id="gastos" role="dialog" aria-labelledby="gastos-titulo" hidden>
       <div class="gastos__total">
-        <div class="gastos__cifra" aria-live="polite">
-          <p class="historial__titulo" id="gastos-titulo" data-t="gastos">Gastos del viaje</p>
-          <span class="gastos__suma" id="gastos-suma"></span>
+        <div class="gastos__cifra">
+          <button
+            class="viaje"
+            type="button"
+            id="viaje"
+            aria-haspopup="true"
+            aria-expanded="false"
+            aria-controls="viajes"
+            title="Cambiar de viaje"
+            data-t-title="viajes.cambiar">
+            <span class="historial__titulo viaje__nombre" id="gastos-titulo">Gastos del viaje</span>
+            <svg class="viaje__flecha" viewBox="0 0 10 10" aria-hidden="true"><path d="M2.5 4l2.5 2.5L7.5 4"/></svg>
+          </button>
+          <span class="gastos__suma" id="gastos-suma" aria-live="polite"></span>
         </div>
         <div class="gastos__lado">
           <span class="gastos__arriba">
@@ -516,6 +527,23 @@
             <button class="historial__borrar" type="button" id="gastos-vaciar" data-t="gastos.vaciar">Vaciar</button>
           </div>
         </div>
+      </div>
+      <div class="viajes" id="viajes" role="group" aria-label="Tus viajes" data-t-aria-label="viajes" hidden>
+        <ul class="viajes__lista" id="viajes-lista"></ul>
+        <form class="viajes__nuevo" id="viajes-nuevo" novalidate>
+          <input
+            class="gastos__concepto"
+            type="text"
+            id="viajes-nombre"
+            maxlength="24"
+            autocomplete="off"
+            placeholder="Nuevo viaje: Japón, Lisboa…"
+            aria-label="Nombre del viaje nuevo"
+            data-t-placeholder="viajes.nuevo"
+            data-t-aria-label="viajes.nuevoAria">
+          <button class="gastos__apuntar" type="submit" aria-label="Crear el viaje" data-t-aria-label="viajes.crear">+</button>
+        </form>
+        <p class="viajes__lleno" id="viajes-lleno" hidden></p>
       </div>
       <div class="presupuesto" id="presupuesto">
         <button class="presupuesto__anadir" type="button" id="presupuesto-anadir" data-t="presupuesto.anadir" title="Ponte un presupuesto y te digo cuánto te queda al día" data-t-title="presupuesto.anadirTitulo">+ presupuesto</button>

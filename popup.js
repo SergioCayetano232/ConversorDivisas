@@ -77,6 +77,13 @@ const el = {
   cuentaGente: document.getElementById("cuenta-gente"),
   cuentaPie: document.getElementById("cuenta-pie"),
   gastosCuenta: document.getElementById("gastos-cuenta"),
+  gastosTitulo: document.getElementById("gastos-titulo"),
+  viaje: document.getElementById("viaje"),
+  viajes: document.getElementById("viajes"),
+  viajesLista: document.getElementById("viajes-lista"),
+  viajesNuevo: document.getElementById("viajes-nuevo"),
+  viajesNombre: document.getElementById("viajes-nombre"),
+  viajesLleno: document.getElementById("viajes-lleno"),
   gastos: document.getElementById("gastos"),
   gastosVaciar: document.getElementById("gastos-vaciar"),
   gastosSuma: document.getElementById("gastos-suma"),
@@ -187,6 +194,10 @@ let fechaId = 0;
 // De qué par es la tasa escrita en la pestaña de la ventanilla, sin orden: al
 // dar la vuelta al par sigue valiendo (la leo al revés), con otro par no.
 let parDelTimo = null;
+// Los gastos y el presupuesto de abajo son los del viaje abierto; al guardar
+// vuelven a su sitio dentro de viajes.
+let viajes = null;
+let quedanSueltos = false;
 let gastos = [];
 // El que acabas de apuntar entra con su salto; los demás se quedan quietos.
 let gastoNuevo = null;
@@ -238,8 +249,10 @@ const AVISOS_KEY = "avisos";
 const COMISION_KEY = "comisionBanco";
 const FECHA_KEY = "fechaConsulta";
 const HISTORIAL_KEY = "historialConversiones";
+// Estas dos son de antes de los viajes: solo se leen para pasarlas al primero.
 const GASTOS_KEY = "gastosViaje";
 const PRESUPUESTO_KEY = "presupuestoViaje";
+const VIAJES_KEY = "viajes";
 const CUENTA_KEY = "cuentaReparto";
 // Lo que tardo en dar por buena una cantidad: mientras escribes "1", "12",
 // "125" no quiero tres entradas, solo la última.
@@ -345,23 +358,14 @@ async function cargarHistorial() {
   }
 }
 
-async function cargarGastos() {
+async function cargarViajes() {
   try {
-    const guardado = await chrome.storage.local.get(GASTOS_KEY);
-    return leerGastos(guardado[GASTOS_KEY]);
+    const guardado = await chrome.storage.local.get([VIAJES_KEY, GASTOS_KEY, PRESUPUESTO_KEY]);
+    quedanSueltos = GASTOS_KEY in guardado || PRESUPUESTO_KEY in guardado;
+    return leerViajes(guardado[VIAJES_KEY], guardado[GASTOS_KEY], guardado[PRESUPUESTO_KEY]);
   } catch (error) {
-    console.warn("No se pudieron leer los gastos", error);
-    return [];
-  }
-}
-
-async function cargarPresupuesto() {
-  try {
-    const guardado = await chrome.storage.local.get(PRESUPUESTO_KEY);
-    return leerPresupuesto(guardado[PRESUPUESTO_KEY]);
-  } catch (error) {
-    console.warn("No se pudo leer el presupuesto", error);
-    return null;
+    console.warn("No se pudieron leer los viajes", error);
+    return leerViajes(undefined);
   }
 }
 
@@ -375,11 +379,17 @@ async function cargarReparto() {
   }
 }
 
-async function guardarGastos() {
+async function guardarViajes() {
+  viajes = cambiarViaje(viajes, viajes.activo, { gastos, presupuesto });
   try {
-    await chrome.storage.local.set({ [GASTOS_KEY]: gastos });
+    await chrome.storage.local.set({ [VIAJES_KEY]: viajes });
+    // Lo suelto de antes se borra cuando ya está a salvo dentro del primer viaje.
+    if (quedanSueltos) {
+      quedanSueltos = false;
+      await chrome.storage.local.remove([GASTOS_KEY, PRESUPUESTO_KEY]);
+    }
   } catch (error) {
-    console.warn("No se pudieron guardar los gastos", error);
+    console.warn("No se pudieron guardar los viajes", error);
   }
 }
 
@@ -1862,6 +1872,7 @@ function pintarGastos() {
   pintarBotonGasto();
   if (el.gastos.hidden) return;
 
+  pintarTituloViaje();
   const suma = n ? textoTotales(sumarPorDivisa(gastos)) : `${nf.format(0)} ${el.to.value}`;
   if (el.gastosSuma.textContent !== suma) {
     const habia = el.gastosSuma.textContent !== "";
@@ -1936,18 +1947,13 @@ function dejarDeEditarPresupuesto() {
   return true;
 }
 
-async function ponerPresupuesto(nuevo) {
+function ponerPresupuesto(nuevo) {
   presupuesto = nuevo;
   dejarDeEditarPresupuesto();
   pintarPresupuesto();
   (presupuesto ? el.presupuestoVer : el.presupuestoAnadir).focus();
   if (presupuesto) restartAnimation(el.presupuestoVer, "is-nuevo");
-  try {
-    if (presupuesto) await chrome.storage.local.set({ [PRESUPUESTO_KEY]: presupuesto });
-    else await chrome.storage.local.remove(PRESUPUESTO_KEY);
-  } catch (error) {
-    console.warn("No se pudo guardar el presupuesto", error);
-  }
+  guardarViajes();
 }
 
 function onGuardarPresupuesto(event) {
@@ -2120,6 +2126,204 @@ function cerrarCuenta() {
   return el.abrirCuenta;
 }
 
+// Con un solo viaje sin nombre, el título de siempre; en la lista, "Mi viaje".
+const nombreViaje = (viaje) => viaje.nombre || tr("viajes.sinNombre");
+
+function pintarTituloViaje() {
+  const viaje = viajeActivo(viajes);
+  el.gastosTitulo.textContent = viaje.nombre || tr(viajes.lista.length > 1 ? "viajes.sinNombre" : "gastos");
+}
+
+let borrarViajeId = null;
+
+function crearFilaViaje(viaje, i) {
+  const fila = document.createElement("li");
+  fila.className = "viajes__fila";
+  fila.dataset.id = viaje.id;
+  fila.style.setProperty("--i", i);
+  const activo = viaje.id === viajes.activo;
+  fila.classList.toggle("is-activo", activo);
+
+  const elegir = document.createElement("button");
+  elegir.type = "button";
+  elegir.className = "viajes__elegir";
+  if (activo) elegir.setAttribute("aria-current", "true");
+  const { n, total } = resumenViaje(viaje);
+  const nombre = document.createElement("span");
+  nombre.className = "viajes__nombre";
+  nombre.textContent = nombreViaje(viaje);
+  const meta = document.createElement("span");
+  meta.className = "viajes__meta";
+  meta.textContent = n === 0
+    ? tr("viajes.vacio")
+    : `${n === 1 ? tr("gastos.uno") : tr("gastos.n", { n })} · ${nf.format(total.total)} ${total.to}`;
+  elegir.append(nombre, meta);
+  elegir.addEventListener("click", () => onElegirViaje(viaje.id));
+
+  const renombrar = document.createElement("button");
+  renombrar.type = "button";
+  renombrar.className = "viajes__accion";
+  renombrar.innerHTML = '<svg viewBox="0 0 12 12" aria-hidden="true"><path d="M2 10l.6-2.4L8.2 2a1 1 0 0 1 1.4 0l.4.4a1 1 0 0 1 0 1.4L4.4 9.4z"/></svg>';
+  renombrar.setAttribute("aria-label", tr("viajes.renombrar", { nombre: nombreViaje(viaje) }));
+  renombrar.title = renombrar.getAttribute("aria-label");
+  renombrar.addEventListener("click", () => empezarRenombrar(fila, viaje));
+
+  fila.append(elegir, renombrar);
+  if (viajes.lista.length > 1) {
+    const borrar = document.createElement("button");
+    borrar.type = "button";
+    borrar.className = "viajes__accion viajes__borrar";
+    borrar.textContent = "✕";
+    borrar.setAttribute("aria-label", tr("viajes.borrar", { nombre: nombreViaje(viaje) }));
+    borrar.addEventListener("click", () => onBorrarViaje(viaje, borrar));
+    fila.append(borrar);
+  }
+  return fila;
+}
+
+function pintarViajes() {
+  el.viajesLista.replaceChildren(...viajes.lista.map(crearFilaViaje));
+  const lleno = viajes.lista.length >= VIAJES_MAX;
+  el.viajesNuevo.hidden = lleno;
+  el.viajesLleno.hidden = !lleno;
+  el.viajesLleno.textContent = tr("viajes.lleno", { n: VIAJES_MAX });
+}
+
+function abrirViajes() {
+  cerrarCategorias();
+  dejarDeEditarPresupuesto();
+  noVaciar();
+  pintarViajes();
+  el.viajesNombre.value = "";
+  // Justo debajo del total, que es lo que no quiero tapar.
+  const arriba = el.gastosSuma.getBoundingClientRect().bottom - el.gastos.getBoundingClientRect().top;
+  el.viajes.style.setProperty("--viajes-arriba", `${Math.round(arriba) + 4}px`);
+  el.viajes.hidden = false;
+  el.viaje.setAttribute("aria-expanded", "true");
+  el.viajesLista.querySelector(".is-activo .viajes__elegir")?.focus();
+}
+
+function cerrarViajes() {
+  if (el.viajes.hidden) return false;
+  el.viajes.hidden = true;
+  el.viaje.setAttribute("aria-expanded", "false");
+  noBorrarViaje();
+  return true;
+}
+
+// Al cambiar de viaje, lo que estabas a medias del otro se queda allí: el
+// deshacer, el filtro de categoría y el presupuesto que editabas.
+function ponerViaje(nuevos) {
+  viajes = nuevos;
+  ({ gastos, presupuesto } = viajeActivo(viajes));
+  quitado = null;
+  el.deshacer.hidden = true;
+  filtroCategoria = null;
+  dejarDeEditarPresupuesto();
+  delete el.presupuestoVer.dataset.tono;
+  cascadaGastos = true;
+  pintarGastos();
+  restartAnimation(el.gastosTitulo, "is-cambiado");
+  guardarViajes();
+}
+
+function onElegirViaje(id) {
+  cerrarViajes();
+  if (id !== viajes.activo) ponerViaje(elegirViaje(viajes, id));
+  el.gastosConcepto.focus();
+}
+
+function onCrearViaje(event) {
+  event.preventDefault();
+  const id = `${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`;
+  const nuevos = crearViaje(viajes, id, el.viajesNombre.value);
+  if (nuevos === viajes) {
+    restartAnimation(el.viajesNombre, "is-mal");
+    el.viajesNombre.focus();
+    return;
+  }
+  cerrarViajes();
+  ponerViaje(nuevos);
+  restartAnimation(el.viaje, "is-estreno");
+  el.gastosConcepto.focus();
+}
+
+function empezarRenombrar(fila, viaje) {
+  noBorrarViaje();
+  const campo = document.createElement("input");
+  campo.type = "text";
+  campo.className = "gastos__concepto viajes__campo";
+  campo.maxLength = NOMBRE_VIAJE_MAX;
+  campo.value = viaje.nombre;
+  campo.placeholder = tr("viajes.sinNombre");
+  campo.setAttribute("aria-label", tr("viajes.nombre"));
+  let hecho = false;
+  const acabar = (guardar) => {
+    if (hecho) return;
+    hecho = true;
+    if (guardar && campo.value.trim() && campo.value.trim() !== viaje.nombre) {
+      viajes = renombrarViaje(viajes, viaje.id, campo.value);
+      pintarTituloViaje();
+      guardarViajes();
+    }
+    pintarViajes();
+    const nueva = el.viajesLista.querySelector(`[data-id="${viaje.id}"]`);
+    if (guardar) restartAnimation(nueva, "is-renombrado");
+    nueva?.querySelector(".viajes__accion")?.focus();
+  };
+  campo.addEventListener("keydown", (event) => {
+    if (event.key === "Enter") {
+      event.preventDefault();
+      acabar(true);
+    }
+    if (event.key === "Escape") {
+      event.preventDefault();
+      event.stopPropagation();
+      acabar(false);
+    }
+  });
+  campo.addEventListener("blur", () => acabar(true));
+  fila.replaceChildren(campo);
+  campo.focus();
+  campo.select();
+}
+
+function noBorrarViaje() {
+  clearTimeout(borrarViajeId);
+  for (const boton of el.viajesLista.querySelectorAll(".viajes__borrar.is-seguro")) {
+    boton.classList.remove("is-seguro");
+    boton.textContent = "✕";
+  }
+}
+
+// Como "Vaciar": un viaje entero no se va de un clic sin querer.
+function onBorrarViaje(viaje, boton) {
+  if (!boton.classList.contains("is-seguro")) {
+    noBorrarViaje();
+    boton.classList.add("is-seguro");
+    boton.textContent = tr("viajes.seguro");
+    boton.setAttribute("aria-label", tr("viajes.seguroAria", { nombre: nombreViaje(viaje) }));
+    borrarViajeId = setTimeout(noBorrarViaje, 3000);
+    return;
+  }
+  noBorrarViaje();
+  const nuevos = borrarViaje(viajes, viaje.id);
+  const fila = boton.closest(".viajes__fila");
+  const acabar = () => {
+    if (nuevos.activo !== viajes.activo) ponerViaje(nuevos);
+    else {
+      viajes = nuevos;
+      pintarTituloViaje();
+      guardarViajes();
+    }
+    pintarViajes();
+    el.viajesLista.querySelector(".is-activo .viajes__elegir")?.focus();
+  };
+  if (sinMovimiento.matches) return acabar();
+  fila.classList.add("is-saliendo");
+  fila.addEventListener("animationend", acabar, { once: true });
+}
+
 function abrirGastos() {
   cerrarBurbuja();
   cerrarHistorial();
@@ -2135,6 +2339,7 @@ function abrirGastos() {
 
 function cerrarGastos() {
   if (el.gastos.hidden) return;
+  cerrarViajes();
   dejarDeEditarPresupuesto();
   cerrarCategorias();
   el.gastos.hidden = true;
@@ -2160,7 +2365,7 @@ function onApuntarGasto(event) {
   // Si estabas mirando otra categoría, el que acabas de apuntar no se vería.
   if (filtroCategoria && filtroCategoria !== gasto.categoria) filtroCategoria = null;
   pintarCategoriaNueva();
-  guardarGastos();
+  guardarViajes();
   pintarGastos();
   restartAnimation(el.abrirGastos, "is-apuntado");
   el.gastosLista.scrollTop = 0;
@@ -2173,7 +2378,7 @@ function onQuitarGasto(id, fila) {
     if (indice === -1) return;
     const gasto = gastos[indice];
     gastos = quitarGasto(gastos, id);
-    guardarGastos();
+    guardarViajes();
     pintarGastos();
     ofrecerDeshacer(gasto, indice);
     (el.gastosLista.querySelector(".gastos__quitar") ?? el.gastosConcepto).focus();
@@ -2216,7 +2421,7 @@ function onDeshacer() {
   gastoNuevo = gasto.id;
   if (filtroCategoria && filtroCategoria !== gasto.categoria) filtroCategoria = null;
   olvidarDeshacer();
-  guardarGastos();
+  guardarViajes();
   pintarGastos();
   (el.gastosLista.querySelector(`[data-id="${gasto.id}"] .gastos__quitar`) ?? el.gastosConcepto).focus();
 }
@@ -2243,7 +2448,7 @@ function onVaciarGastos() {
   olvidarDeshacer();
   const vaciar = () => {
     gastos = [];
-    guardarGastos();
+    guardarViajes();
     pintarGastos();
     el.gastosConcepto.focus();
   };
@@ -3067,6 +3272,12 @@ function bindEvents() {
   el.gastosSuma.addEventListener("animationend", () => el.gastosSuma.classList.remove("is-tic"));
   el.gastosApuntar.addEventListener("animationend", () => el.gastosApuntar.classList.remove("is-mal"));
   el.gastosCerrar.addEventListener("click", () => cerrarGastos()?.focus());
+  el.viaje.addEventListener("click", () => (el.viajes.hidden ? abrirViajes() : cerrarViajes()));
+  el.viaje.addEventListener("animationend", () => el.viaje.classList.remove("is-estreno"));
+  el.gastosTitulo.addEventListener("animationend", () => el.gastosTitulo.classList.remove("is-cambiado"));
+  el.viajesNuevo.addEventListener("submit", onCrearViaje);
+  el.viajesNombre.addEventListener("animationend", () => el.viajesNombre.classList.remove("is-mal"));
+  el.viajesLista.addEventListener("animationend", (event) => event.target.classList.remove("is-renombrado"));
   el.abrirCuenta.addEventListener("click", () => (el.cuenta.hidden ? abrirCuenta() : cerrarCuenta()));
   el.cuentaCerrar.addEventListener("click", () => cerrarCuenta()?.focus());
   el.cuentaCampo.addEventListener("input", onCampoPropina);
@@ -3142,7 +3353,8 @@ function bindEvents() {
     if (event.key === "Escape" && !el.gastos.hidden) {
       event.preventDefault();
       // Primero se cierra lo de dentro (categorías, presupuesto), y con otro Escape el panel.
-      if (cerrarCategorias()) el.gastosCategoria.focus();
+      if (cerrarViajes()) el.viaje.focus();
+      else if (cerrarCategorias()) el.gastosCategoria.focus();
       else if (dejarDeEditarPresupuesto()) el.presupuestoVer.hidden ? el.presupuestoAnadir.focus() : el.presupuestoVer.focus();
       else cerrarGastos()?.focus();
     }
@@ -3164,6 +3376,9 @@ function bindEvents() {
     if (!el.cuenta.hidden && !el.cuenta.contains(event.target) && !el.abrirCuenta.contains(event.target)
       && !el.form.contains(event.target)) {
       cerrarCuenta();
+    }
+    if (!el.viajes.hidden && !el.viajes.contains(event.target) && !el.viaje.contains(event.target)) {
+      cerrarViajes();
     }
     if (!el.categorias.hidden && !el.categorias.contains(event.target) && !el.gastosCategoria.contains(event.target)) {
       cerrarCategorias();
@@ -3201,15 +3416,15 @@ async function init() {
   const idiomaCambiado = await cargarIdioma();
   traducirPagina();
   if (idiomaCambiado) saludarIdioma();
-  const [pair, rango, guardados, pendiente, guardadas, vistaGuardada, avisosGuardados, comisionGuardada, fechaGuardada, historialGuardado, gastosGuardados, presupuestoGuardado, repartoGuardado] = await Promise.all([
+  const [pair, rango, guardados, pendiente, guardadas, vistaGuardada, avisosGuardados, comisionGuardada, fechaGuardada, historialGuardado, viajesGuardados, repartoGuardado] = await Promise.all([
     loadPair(), cargarRango(), cargarRecientes(), tomarPendiente(), cargarExtras(), cargarVista(), cargarAvisos(),
-    cargarComision(), cargarFecha(), cargarHistorial(), cargarGastos(), cargarPresupuesto(), cargarReparto(),
+    cargarComision(), cargarFecha(), cargarHistorial(), cargarViajes(), cargarReparto(),
   ]);
   reparto = repartoGuardado;
   historial = historialGuardado;
   pintarHistorial();
-  gastos = gastosGuardados;
-  presupuesto = presupuestoGuardado;
+  viajes = viajesGuardados;
+  ({ gastos, presupuesto } = viajeActivo(viajes));
   pintarCategoriaNueva();
   pintarGastos();
   comision = comisionGuardada;
