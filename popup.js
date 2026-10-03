@@ -207,7 +207,8 @@ let gastos = [];
 let gastoNuevo = null;
 let cascadaGastos = false;
 let vaciarId = null;
-// El último que has quitado y dónde estaba, mientras se puede deshacer.
+// Lo último que has quitado, mientras se puede deshacer: un gasto y dónde
+// estaba, o la lista entera si has vaciado.
 let quitado = null;
 let presupuesto = null;
 let reparto = { ...CUENTA_POR_DEFECTO };
@@ -2482,7 +2483,7 @@ function onQuitarGasto(id, fila) {
     gastos = quitarGasto(gastos, id);
     guardarViajes();
     pintarGastos();
-    ofrecerDeshacer(gasto, indice);
+    ofrecerDeshacer({ gasto, indice });
     (el.gastosLista.querySelector(".gastos__quitar") ?? el.gastosConcepto).focus();
   };
   if (sinMovimiento.matches) return quitar();
@@ -2495,10 +2496,16 @@ function onQuitarGasto(id, fila) {
 // cierras el popup con el aviso puesto, el gasto se queda quitado, que es lo
 // que habías pedido. El tiempo lo lleva la barra del CSS, que se para al
 // pasar el ratón por encima.
-function ofrecerDeshacer(gasto, indice) {
-  quitado = { gasto, indice };
-  const concepto = gasto.concepto || tr("gastos.sinConcepto");
-  el.deshacerTexto.textContent = tr("gastos.quitado", { concepto, valor: `${nf.format(gasto.valor)} ${gasto.to}` });
+function ofrecerDeshacer(nuevo) {
+  quitado = nuevo;
+  if (nuevo.todos) {
+    const n = nuevo.todos.length;
+    el.deshacerTexto.textContent = tr("gastos.vaciados", { n: n === 1 ? tr("gastos.uno") : tr("gastos.n", { n }) });
+  } else {
+    const { gasto } = nuevo;
+    const concepto = gasto.concepto || tr("gastos.sinConcepto");
+    el.deshacerTexto.textContent = tr("gastos.quitado", { concepto, valor: `${nf.format(gasto.valor)} ${gasto.to}` });
+  }
   el.deshacer.classList.remove("is-saliendo");
   const yaEstaba = !el.deshacer.hidden;
   el.deshacer.hidden = false;
@@ -2518,6 +2525,16 @@ function olvidarDeshacer() {
 
 function onDeshacer() {
   if (!quitado) return;
+  if (quitado.todos) {
+    gastos = devolverTodos(gastos, quitado.todos);
+    filtroCategoria = null;
+    cascadaGastos = true;
+    olvidarDeshacer();
+    guardarViajes();
+    pintarGastos();
+    el.gastosConcepto.focus();
+    return;
+  }
   const { gasto, indice } = quitado;
   gastos = devolverGasto(gastos, gasto, indice);
   gastoNuevo = gasto.id;
@@ -2535,7 +2552,7 @@ function noVaciar() {
 }
 
 // Un viaje entero no se borra de un clic sin querer: el primero pregunta y el
-// segundo, si llega en tres segundos, vacía.
+// segundo, si llega en tres segundos, vacía. Y aun así se puede deshacer.
 function onVaciarGastos() {
   if (!el.gastosVaciar.classList.contains("is-seguro")) {
     el.gastosVaciar.classList.add("is-seguro");
@@ -2547,11 +2564,12 @@ function onVaciarGastos() {
   }
   noVaciar();
   const filas = [...el.gastosLista.children];
-  olvidarDeshacer();
+  const todos = gastos;
   const vaciar = () => {
     gastos = [];
     guardarViajes();
     pintarGastos();
+    if (todos.length) ofrecerDeshacer({ todos });
     el.gastosConcepto.focus();
   };
   if (sinMovimiento.matches || filas.length === 0) return vaciar();

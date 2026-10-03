@@ -1,7 +1,7 @@
 const { test } = require("node:test");
 const assert = require("node:assert");
 const {
-  GASTOS_MAX, CONCEPTO_MAX, crearGasto, leerGastos, apuntarGasto, quitarGasto, devolverGasto, sumarPorDivisa, gastosPorDia, nombreDia,
+  GASTOS_MAX, CONCEPTO_MAX, crearGasto, leerGastos, apuntarGasto, quitarGasto, devolverGasto, devolverTodos, sumarPorDivisa, gastosPorDia, nombreDia,
 } = require("../logica.js");
 
 const hora = (dia, h = 12) => new Date(...dia.split("-").map((n, i) => (i === 1 ? n - 1 : Number(n))), h).getTime();
@@ -87,6 +87,24 @@ test("deshacer dos veces no lo duplica, y uno malo no entra", () => {
   const lista = [gasto({ id: "a" })];
   assert.equal(devolverGasto(lista, gasto({ id: "a" }), 0), lista);
   assert.equal(devolverGasto(lista, null, 0), lista);
+});
+
+test("deshacer el vaciar los devuelve todos, en su orden", () => {
+  const vaciados = ["a", "b", "c"].map((id) => gasto({ id }));
+  assert.deepEqual(devolverTodos([], vaciados).map((g) => g.id), ["a", "b", "c"]);
+});
+
+test("lo apuntado después de vaciar se queda arriba, sin repetir nada", () => {
+  const vaciados = ["a", "b"].map((id) => gasto({ id }));
+  const ahora = [gasto({ id: "nuevo" }), gasto({ id: "a" })];
+  assert.deepEqual(devolverTodos(ahora, vaciados).map((g) => g.id), ["nuevo", "a", "b"]);
+});
+
+test("al devolverlos todos tampoco se pasa del máximo", () => {
+  const vaciados = Array.from({ length: GASTOS_MAX }, (_, i) => gasto({ id: `g${i}` }));
+  const vuelta = devolverTodos([gasto({ id: "nuevo" })], vaciados);
+  assert.equal(vuelta.length, GASTOS_MAX);
+  assert.equal(vuelta[0].id, "nuevo");
 });
 
 test("al devolverlo no se pasa del máximo", () => {

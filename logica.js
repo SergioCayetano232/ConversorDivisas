@@ -990,6 +990,13 @@ function quitarGasto(lista, id) {
   return lista.filter((g) => g.id !== id);
 }
 
+// Deshacer un "Vaciar": vuelven todos detrás de lo que hayas apuntado entretanto,
+// que es más nuevo y va arriba.
+function devolverTodos(lista, vaciados) {
+  const ids = new Set(lista.map((g) => g.id));
+  return [...lista, ...vaciados.filter((g) => esGastoBueno(g) && !ids.has(g.id))].slice(0, GASTOS_MAX);
+}
+
 // Al deshacer vuelve a donde estaba, no arriba del todo como uno nuevo.
 function devolverGasto(lista, gasto, indice) {
   if (!esGastoBueno(gasto) || lista.some((g) => g.id === gasto.id)) return lista;
@@ -1433,7 +1440,7 @@ if (typeof module !== "undefined") {
     divisaDeIdioma, parPorIdioma, banderaDe,
     HISTORIAL_MAX, leerHistorial, apuntarConversion, haceCuanto, textoParaCopiar,
     celdaCsv, csvHistorial, csvGastos,
-    GASTOS_MAX, CONCEPTO_MAX, crearGasto, leerGastos, apuntarGasto, quitarGasto, devolverGasto, sumarPorDivisa, gastosPorDia, nombreDia,
+    GASTOS_MAX, CONCEPTO_MAX, crearGasto, leerGastos, apuntarGasto, quitarGasto, devolverGasto, devolverTodos, sumarPorDivisa, gastosPorDia, nombreDia,
     CATEGORIAS, CATEGORIA_POR_DEFECTO, adivinarCategoria, desglose,
     EMOJI_CATEGORIA, resumenParaCompartir,
     COPIA_APP, COPIA_VERSION, CLAVES_COPIA, limpiarCopia, crearCopia, leerCopia, resumenCopia,

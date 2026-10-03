@@ -25,7 +25,9 @@ que necesitaba una conversión rápida. Ahora es un clic en la barra del navegad
   "Taxi"…) y se apunta. Arriba sale el total en tu divisa, y debajo los gastos
   por días con lo de cada día. Cada uno se guarda con la tasa y la comisión de
   ese momento, así que lo que gastaste el lunes no cambia aunque el euro suba
-  el martes. Hasta 200, y para vaciarlo hay que darle dos veces
+  el martes. Hasta 200, y para vaciarlo hay que darle dos veces. Si
+  quitas uno o los vacías todos sin querer, tienes cinco segundos para
+  deshacerlo
 - Varios viajes, cada uno con sus gastos y su presupuesto: pulsando el nombre
   del viaje, arriba del panel, cambias de uno a otro, ves cuánto llevas en
   cada uno y empiezas otro ("Japón", "Lisboa"). Se les cambia el nombre con el
