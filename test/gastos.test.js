@@ -1,7 +1,7 @@
 const { test } = require("node:test");
 const assert = require("node:assert");
 const {
-  GASTOS_MAX, CONCEPTO_MAX, crearGasto, leerGastos, apuntarGasto, quitarGasto, sumarPorDivisa, gastosPorDia, nombreDia,
+  GASTOS_MAX, CONCEPTO_MAX, crearGasto, leerGastos, apuntarGasto, quitarGasto, devolverGasto, sumarPorDivisa, gastosPorDia, nombreDia,
 } = require("../logica.js");
 
 const hora = (dia, h = 12) => new Date(...dia.split("-").map((n, i) => (i === 1 ? n - 1 : Number(n))), h).getTime();
@@ -67,6 +67,33 @@ test("un gasto malo no cambia la lista", () => {
 test("quitar uno deja los demás", () => {
   const lista = [gasto({ id: "a" }), gasto({ id: "b" })];
   assert.deepEqual(quitarGasto(lista, "a").map((g) => g.id), ["b"]);
+});
+
+test("deshacer lo devuelve a su sitio", () => {
+  const lista = ["a", "b", "c"].map((id) => gasto({ id }));
+  const ids = (l) => l.map((g) => g.id);
+  assert.deepEqual(ids(devolverGasto(quitarGasto(lista, "b"), lista[1], 1)), ["a", "b", "c"]);
+  assert.deepEqual(ids(devolverGasto(quitarGasto(lista, "a"), lista[0], 0)), ["a", "b", "c"]);
+  assert.deepEqual(ids(devolverGasto(quitarGasto(lista, "c"), lista[2], 2)), ["a", "b", "c"]);
+});
+
+test("si la lista ha encogido mientras tanto, va al final", () => {
+  const lista = [gasto({ id: "a" })];
+  assert.deepEqual(devolverGasto(lista, gasto({ id: "z" }), 9).map((g) => g.id), ["a", "z"]);
+  assert.deepEqual(devolverGasto(lista, gasto({ id: "z" }), NaN).map((g) => g.id), ["z", "a"]);
+});
+
+test("deshacer dos veces no lo duplica, y uno malo no entra", () => {
+  const lista = [gasto({ id: "a" })];
+  assert.equal(devolverGasto(lista, gasto({ id: "a" }), 0), lista);
+  assert.equal(devolverGasto(lista, null, 0), lista);
+});
+
+test("al devolverlo no se pasa del máximo", () => {
+  const llena = Array.from({ length: GASTOS_MAX }, (_, i) => gasto({ id: `g${i}` }));
+  const vuelta = devolverGasto(llena, gasto({ id: "z" }), 0);
+  assert.equal(vuelta.length, GASTOS_MAX);
+  assert.equal(vuelta[0].id, "z");
 });
 
 test("suma por divisa, la que más suma primero", () => {

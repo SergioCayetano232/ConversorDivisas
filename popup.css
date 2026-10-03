@@ -1453,6 +1453,112 @@ body::after {
   transform: rotate(90deg);
 }
 
+/* El aviso de deshacer, abajo del panel. La barra de abajo es el reloj: cuando
+   se vacía, el JS lo da por perdido. Al pasar el ratón se para. */
+.deshacer {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: var(--s-2);
+  flex-shrink: 0;
+  margin-top: var(--s-2);
+  padding: 6px 6px 7px 10px;
+  overflow: hidden;
+  background: var(--glass-light);
+  border: 1px solid var(--hairline-strong);
+  border-radius: var(--r-sm);
+  box-shadow: inset 0 1px 0 var(--sheen), var(--shadow-md);
+  font-size: 11px;
+}
+
+.deshacer.is-nuevo {
+  animation: deshacer-entra var(--slow) var(--ease-spring);
+}
+
+.deshacer.is-otra {
+  animation: beat var(--mid) var(--ease-spring);
+}
+
+.deshacer.is-saliendo {
+  animation: deshacer-sale 200ms var(--ease) forwards;
+  pointer-events: none;
+}
+
+@keyframes deshacer-entra {
+  from {
+    opacity: 0;
+    transform: translateY(10px) scale(0.94);
+  }
+}
+
+@keyframes deshacer-sale {
+  to {
+    opacity: 0;
+    transform: translateY(6px) scale(0.97);
+  }
+}
+
+.deshacer__texto {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.deshacer__boton {
+  flex-shrink: 0;
+  padding: 3px 10px;
+  background: var(--brass-ghost);
+  border: 1px solid var(--brass-dim);
+  border-radius: 6px;
+  color: var(--brass);
+  font-family: inherit;
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color var(--fast) var(--ease), box-shadow var(--fast) var(--ease),
+    transform var(--mid) var(--ease-spring);
+}
+
+.deshacer__boton:hover {
+  background: color-mix(in srgb, var(--brass) 20%, transparent);
+  box-shadow: 0 0 12px var(--brass-glow);
+}
+
+.deshacer__boton:active {
+  transform: scale(0.92);
+}
+
+.deshacer__boton:focus-visible {
+  outline: 2px solid var(--brass);
+  outline-offset: 1px;
+}
+
+.deshacer__tiempo {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 2px;
+  background: linear-gradient(90deg, var(--brass-dim), var(--brass));
+  transform-origin: left center;
+  animation: deshacer-tiempo 5s linear forwards;
+}
+
+.deshacer:hover .deshacer__tiempo,
+.deshacer:focus-within .deshacer__tiempo {
+  animation-play-state: paused;
+}
+
+@keyframes deshacer-tiempo {
+  to {
+    transform: scaleX(0);
+  }
+}
+
 /* La barra del presupuesto: verde mientras vas bien, dorada al acercarte y
    roja pasado. El ancho crece con muelle cada vez que apuntas algo. */
 .presupuesto {
@@ -3955,6 +4061,12 @@ kbd {
      queda hasta que el JS lo quita. */
   .avisos__nota.is-mensaje {
     animation: none;
+  }
+
+  /* Esta no es adorno, es el tiempo que tienes para deshacer: sin ella el
+     aviso se iría nada más salir. */
+  .deshacer__tiempo {
+    animation-duration: 5s !important;
   }
 
   .tecla-flash.is-visible {

@@ -506,6 +506,11 @@
       </form>
       <ul class="historial__lista gastos__lista" id="gastos-lista"></ul>
       <p class="historial__vacio" id="gastos-vacio" data-t="gastos.vacio">Apunta lo que vas gastando y te sumo el total en tu divisa, con la tasa de cada día.</p>
+      <div class="deshacer" id="gastos-deshacer" role="status" hidden>
+        <span class="deshacer__texto" id="gastos-deshacer-texto"></span>
+        <button class="deshacer__boton" type="button" id="gastos-deshacer-boton" data-t="gastos.deshacer">Deshacer</button>
+        <span class="deshacer__tiempo" id="gastos-deshacer-tiempo" aria-hidden="true"></span>
+      </div>
     </div>
 
     <div class="tecla-flash" id="tecla-flash" aria-hidden="true"></div>

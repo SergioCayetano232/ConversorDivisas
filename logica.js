@@ -929,6 +929,14 @@ function quitarGasto(lista, id) {
   return lista.filter((g) => g.id !== id);
 }
 
+// Al deshacer vuelve a donde estaba, no arriba del todo como uno nuevo.
+function devolverGasto(lista, gasto, indice) {
+  if (!esGastoBueno(gasto) || lista.some((g) => g.id === gasto.id)) return lista;
+  const copia = [...lista];
+  copia.splice(Math.min(Math.max(indice, 0), copia.length) || 0, 0, gasto);
+  return copia.slice(0, GASTOS_MAX);
+}
+
 // Si a mitad de viaje cambias de divisa no las mezclo: un total por cada una,
 // la que más suma primero.
 function sumarPorDivisa(gastos) {
@@ -1193,7 +1201,7 @@ if (typeof module !== "undefined") {
     divisaDeIdioma, parPorIdioma, banderaDe,
     HISTORIAL_MAX, leerHistorial, apuntarConversion, haceCuanto, textoParaCopiar,
     celdaCsv, csvHistorial, csvGastos,
-    GASTOS_MAX, CONCEPTO_MAX, crearGasto, leerGastos, apuntarGasto, quitarGasto, sumarPorDivisa, gastosPorDia, nombreDia,
+    GASTOS_MAX, CONCEPTO_MAX, crearGasto, leerGastos, apuntarGasto, quitarGasto, devolverGasto, sumarPorDivisa, gastosPorDia, nombreDia,
     CATEGORIAS, CATEGORIA_POR_DEFECTO, adivinarCategoria, desglose,
     diasHasta, leerPresupuesto, PRESUPUESTO_JUSTO, estadoPresupuesto,
     EXTRAS_MAX, EXTRAS_POR_DEFECTO, leerExtras, anadirExtra, quitarExtra,

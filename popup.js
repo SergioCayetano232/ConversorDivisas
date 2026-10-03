@@ -94,6 +94,10 @@ const el = {
   historialBorrar: document.getElementById("historial-borrar"),
   historialCsv: document.getElementById("historial-csv"),
   gastosCsv: document.getElementById("gastos-csv"),
+  deshacer: document.getElementById("gastos-deshacer"),
+  deshacerTexto: document.getElementById("gastos-deshacer-texto"),
+  deshacerBoton: document.getElementById("gastos-deshacer-boton"),
+  deshacerTiempo: document.getElementById("gastos-deshacer-tiempo"),
   comision: document.getElementById("comision"),
   panelComision: document.getElementById("panel-comision"),
   comisionPct: document.getElementById("comision-pct"),
@@ -175,6 +179,8 @@ let gastos = [];
 let gastoNuevo = null;
 let cascadaGastos = false;
 let vaciarId = null;
+// El último que has quitado y dónde estaba, mientras se puede deshacer.
+let quitado = null;
 let presupuesto = null;
 // La categoría del gasto que vas a apuntar. Mientras no la elijas tú, la saco
 // del concepto; si la eliges, ya no te la cambio por mucho que escribas.
@@ -1951,6 +1957,8 @@ function cerrarGastos() {
   el.gastos.hidden = true;
   el.abrirGastos.setAttribute("aria-expanded", "false");
   noVaciar();
+  quitado = null;
+  el.deshacer.hidden = true;
   return el.abrirGastos;
 }
 
@@ -1978,15 +1986,56 @@ function onApuntarGasto(event) {
 
 function onQuitarGasto(id, fila) {
   const quitar = () => {
+    const indice = gastos.findIndex((g) => g.id === id);
+    if (indice === -1) return;
+    const gasto = gastos[indice];
     gastos = quitarGasto(gastos, id);
     guardarGastos();
     pintarGastos();
+    ofrecerDeshacer(gasto, indice);
     (el.gastosLista.querySelector(".gastos__quitar") ?? el.gastosConcepto).focus();
   };
   if (sinMovimiento.matches) return quitar();
   fila.classList.remove("is-nueva");
   fila.classList.add("is-saliendo");
   fila.addEventListener("animationend", quitar, { once: true });
+}
+
+// Se quita de verdad en el momento y deshacer lo vuelve a meter. Así, si
+// cierras el popup con el aviso puesto, el gasto se queda quitado, que es lo
+// que habías pedido. El tiempo lo lleva la barra del CSS, que se para al
+// pasar el ratón por encima.
+function ofrecerDeshacer(gasto, indice) {
+  quitado = { gasto, indice };
+  const concepto = gasto.concepto || tr("gastos.sinConcepto");
+  el.deshacerTexto.textContent = tr("gastos.quitado", { concepto, valor: `${nf.format(gasto.valor)} ${gasto.to}` });
+  el.deshacer.classList.remove("is-saliendo");
+  const yaEstaba = !el.deshacer.hidden;
+  el.deshacer.hidden = false;
+  restartAnimation(el.deshacer, yaEstaba ? "is-otra" : "is-nuevo");
+  restartAnimation(el.deshacerTiempo);
+}
+
+function olvidarDeshacer() {
+  quitado = null;
+  if (el.deshacer.hidden || el.deshacer.classList.contains("is-saliendo")) return;
+  if (sinMovimiento.matches) {
+    el.deshacer.hidden = true;
+    return;
+  }
+  el.deshacer.classList.add("is-saliendo");
+}
+
+function onDeshacer() {
+  if (!quitado) return;
+  const { gasto, indice } = quitado;
+  gastos = devolverGasto(gastos, gasto, indice);
+  gastoNuevo = gasto.id;
+  if (filtroCategoria && filtroCategoria !== gasto.categoria) filtroCategoria = null;
+  olvidarDeshacer();
+  guardarGastos();
+  pintarGastos();
+  (el.gastosLista.querySelector(`[data-id="${gasto.id}"] .gastos__quitar`) ?? el.gastosConcepto).focus();
 }
 
 function noVaciar() {
@@ -2008,6 +2057,7 @@ function onVaciarGastos() {
   }
   noVaciar();
   const filas = [...el.gastosLista.children];
+  olvidarDeshacer();
   const vaciar = () => {
     gastos = [];
     guardarGastos();
@@ -2818,6 +2868,14 @@ function bindEvents() {
   el.gastosCategoria.addEventListener("click", () => (el.categorias.hidden ? abrirCategorias() : cerrarCategorias()));
   el.gastosCategoria.addEventListener("animationend", () => el.gastosCategoria.classList.remove("is-cambiada"));
   el.gastosVaciar.addEventListener("click", onVaciarGastos);
+  el.deshacerBoton.addEventListener("click", onDeshacer);
+  el.deshacerTiempo.addEventListener("animationend", olvidarDeshacer);
+  el.deshacer.addEventListener("animationend", (event) => {
+    if (event.target === el.deshacer && el.deshacer.classList.contains("is-saliendo")) {
+      el.deshacer.classList.remove("is-saliendo");
+      el.deshacer.hidden = true;
+    }
+  });
   el.gastosSuma.addEventListener("animationend", () => el.gastosSuma.classList.remove("is-tic"));
   el.gastosApuntar.addEventListener("animationend", () => el.gastosApuntar.classList.remove("is-mal"));
   el.gastosCerrar.addEventListener("click", () => cerrarGastos()?.focus());
