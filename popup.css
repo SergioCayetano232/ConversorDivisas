@@ -965,6 +965,62 @@ body::after {
     background-color var(--fast) var(--ease), transform var(--fast) var(--ease-spring);
 }
 
+/* El de compartir: un bocadillo que, al copiar, se cambia por un visto. */
+.compartir {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 22px;
+  height: 17px;
+  padding: 0;
+}
+
+.compartir svg {
+  grid-area: 1 / 1;
+  width: 11px;
+  height: 11px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.3;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  transition: transform var(--mid) var(--ease-spring), opacity var(--fast) var(--ease);
+}
+
+.compartir__puntos {
+  stroke-width: 1.6;
+}
+
+.compartir:hover .compartir__icono {
+  transform: translateY(-1px) rotate(-8deg);
+}
+
+.compartir__ok {
+  opacity: 0;
+  transform: scale(0.3);
+}
+
+.compartir.is-hecho .compartir__icono {
+  opacity: 0;
+  transform: scale(0.3);
+}
+
+.compartir.is-hecho .compartir__ok {
+  opacity: 1;
+  transform: none;
+  stroke-width: 1.8;
+}
+
+.compartir.is-hecho.is-fallo {
+  color: var(--cinnabar);
+  border-color: color-mix(in srgb, var(--cinnabar) 45%, transparent);
+  background: color-mix(in srgb, var(--cinnabar) 10%, transparent);
+}
+
+.compartir.is-hecho.is-fallo .compartir__ok {
+  opacity: 0;
+}
+
 .csv:hover {
   color: var(--brass);
   border-color: var(--brass-dim);

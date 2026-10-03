@@ -114,6 +114,7 @@ const el = {
   historialBorrar: document.getElementById("historial-borrar"),
   historialCsv: document.getElementById("historial-csv"),
   gastosCsv: document.getElementById("gastos-csv"),
+  gastosCompartir: document.getElementById("gastos-compartir"),
   deshacer: document.getElementById("gastos-deshacer"),
   deshacerTexto: document.getElementById("gastos-deshacer-texto"),
   deshacerBoton: document.getElementById("gastos-deshacer-boton"),
@@ -1894,6 +1895,7 @@ function pintarGastos() {
   el.gastosVacio.hidden = n > 0;
   el.gastosVaciar.hidden = n === 0;
   el.gastosCsv.hidden = n === 0;
+  el.gastosCompartir.hidden = n === 0;
 }
 
 function pintarPresupuesto() {
@@ -2322,6 +2324,19 @@ function onBorrarViaje(viaje, boton) {
   if (sinMovimiento.matches) return acabar();
   fila.classList.add("is-saliendo");
   fila.addEventListener("animationend", acabar, { once: true });
+}
+
+// El viaje entero, aunque estés mirando una sola categoría: es lo que se manda.
+async function onCompartir() {
+  const viaje = viajeActivo(cambiarViaje(viajes, viajes.activo, { gastos, presupuesto }));
+  const texto = resumenParaCompartir({ ...viaje, nombre: viaje.nombre || tr("gastos") });
+  const bien = await copiar(texto);
+  const boton = el.gastosCompartir;
+  boton.classList.toggle("is-fallo", !bien);
+  restartAnimation(boton, "is-hecho");
+  clearTimeout(boton.vuelta);
+  boton.vuelta = setTimeout(() => boton.classList.remove("is-hecho", "is-fallo"), 1600);
+  mostrarFlash([tr(bien ? "compartir.flash" : "compartir.fallo")], 2200);
 }
 
 function abrirGastos() {
@@ -3253,6 +3268,7 @@ function bindEvents() {
   el.abrirHistorial.addEventListener("animationend", () => el.abrirHistorial.classList.remove("is-apuntado"));
   el.historialBorrar.addEventListener("click", onBorrarHistorial);
   el.historialCsv.addEventListener("click", () => descargarCsv(csvHistorial(historial), tr("csv.archivoHistorial"), el.historialCsv));
+  el.gastosCompartir.addEventListener("click", onCompartir);
   el.gastosCsv.addEventListener("click", () => descargarCsv(csvGastos(gastos), tr("csv.archivoGastos"), el.gastosCsv));
   el.abrirGastos.addEventListener("click", () => (el.gastos.hidden ? abrirGastos() : cerrarGastos()));
   el.abrirGastos.addEventListener("animationend", () => el.abrirGastos.classList.remove("is-apuntado"));

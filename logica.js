@@ -1035,6 +1035,49 @@ function resumenViaje(viaje) {
   return { n: viaje.gastos.length, total: sumarPorDivisa(viaje.gastos)[0] ?? null };
 }
 
+const EMOJI_CATEGORIA = {
+  comida: "🍽️", transporte: "🚕", alojamiento: "🏨", ocio: "🎟️", compras: "🛍️", otros: "📌",
+};
+
+// Para pegarlo en WhatsApp: lo de entre asteriscos sale en negrita, y en
+// cualquier otro sitio se lee igual de bien. Los días van del primero al último,
+// que es como se cuenta un viaje.
+function resumenParaCompartir({ nombre, gastos, presupuesto }, hoyIso = hoy()) {
+  if (gastos.length === 0) return "";
+  const dinero = (n, to) => `${numeros({ minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(n)} ${to}`;
+  const sumas = (totales) => totales.map(({ total, to }) => dinero(total, to)).join(" + ");
+  const n = gastos.length;
+
+  const lineas = [
+    `*🧳 ${nombre}*`,
+    tr("compartir.total", { total: `*${sumas(sumarPorDivisa(gastos))}*`, n: n === 1 ? tr("gastos.uno") : tr("gastos.n", { n }) }),
+  ];
+
+  const trozos = desglose(gastos);
+  if (trozos.length > 1) {
+    lineas.push("", `*${tr("compartir.categorias")}*`);
+    for (const { categoria, total, fraccion, to } of trozos) {
+      const pct = tr("pct", { n: Math.round(fraccion * 100) });
+      lineas.push(`${EMOJI_CATEGORIA[categoria]} ${tr(`cat.${categoria}`)}: ${dinero(total, to)} (${pct})`);
+    }
+  }
+
+  const dias = gastosPorDia(gastos);
+  if (dias.length > 1) {
+    lineas.push("", `*${tr("compartir.dias")}*`);
+    for (const { dia, totales } of [...dias].reverse()) lineas.push(`${nombreDia(dia, hoyIso)}: ${sumas(totales)}`);
+  }
+
+  const estado = estadoPresupuesto(presupuesto, gastos, hoyIso);
+  if (estado) {
+    const datos = { gastado: dinero(estado.gastado, presupuesto.to), importe: dinero(presupuesto.importe, presupuesto.to) };
+    lineas.push("", estado.queda < 0
+      ? tr("compartir.pasado", { ...datos, pasado: dinero(-estado.queda, presupuesto.to) })
+      : tr("compartir.queda", { ...datos, queda: dinero(estado.queda, presupuesto.to) }));
+  }
+  return lineas.join("\n");
+}
+
 // Si a mitad de viaje cambias de divisa no las mezclo: un total por cada una,
 // la que más suma primero.
 function sumarPorDivisa(gastos) {
@@ -1302,6 +1345,7 @@ if (typeof module !== "undefined") {
     celdaCsv, csvHistorial, csvGastos,
     GASTOS_MAX, CONCEPTO_MAX, crearGasto, leerGastos, apuntarGasto, quitarGasto, devolverGasto, sumarPorDivisa, gastosPorDia, nombreDia,
     CATEGORIAS, CATEGORIA_POR_DEFECTO, adivinarCategoria, desglose,
+    EMOJI_CATEGORIA, resumenParaCompartir,
     VIAJES_MAX, NOMBRE_VIAJE_MAX, leerViajes, viajeActivo, crearViaje, renombrarViaje, elegirViaje, borrarViaje, cambiarViaje, resumenViaje,
     diasHasta, leerPresupuesto, PRESUPUESTO_JUSTO, estadoPresupuesto,
     EXTRAS_MAX, EXTRAS_POR_DEFECTO, leerExtras, anadirExtra, quitarExtra,
