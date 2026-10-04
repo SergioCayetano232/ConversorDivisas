@@ -447,20 +447,42 @@ function startDateFor(days) {
 // lista pero no sale como pastilla. Tres pastillas caben en una fila; con
 // cuatro saltaba a dos y el popup pasaba de 600 px, que es donde Chrome corta.
 const RECIENTES_MAX = 4;
+// Uno menos que el máximo: si fijas todos, el par nuevo no tendría dónde entrar.
+const FIJOS_MAX = RECIENTES_MAX - 1;
 
+const esPar = (p, from, to) => p.from === from && p.to === to;
+
+// Los fijos van siempre delante y en el orden en que los fijaste; detrás, el
+// resto, del último al más viejo.
 function apuntarReciente(lista, from, to) {
   if (from === to) return lista;
-  const resto = lista.filter((p) => p.from !== from || p.to !== to);
-  return [{ from, to }, ...resto].slice(0, RECIENTES_MAX);
+  if (lista.some((p) => p.fijo && esPar(p, from, to))) return lista;
+  const fijos = lista.filter((p) => p.fijo);
+  const resto = lista.filter((p) => !p.fijo && !esPar(p, from, to));
+  return [...fijos, { from, to }, ...resto].slice(0, RECIENTES_MAX);
+}
+
+function fijarReciente(lista, from, to) {
+  const par = lista.find((p) => esPar(p, from, to));
+  if (!par) return lista;
+  const fijos = lista.filter((p) => p.fijo && !esPar(p, from, to));
+  const resto = lista.filter((p) => !p.fijo && !esPar(p, from, to));
+  if (par.fijo) return [...fijos, { from, to }, ...resto];
+  if (fijos.length >= FIJOS_MAX) return lista;
+  return [...fijos, { from, to, fijo: true }, ...resto];
 }
 
 // Lo que venga del almacenamiento no me lo creo: puede no existir (versiones
 // de antes) o traer una divisa que ya he quitado del array.
 function leerRecientes(guardado) {
   if (!Array.isArray(guardado)) return [];
-  return guardado
+  const buenos = guardado
     .filter((p) => p && isValidCode(p.from) && isValidCode(p.to) && p.from !== p.to)
-    .slice(0, RECIENTES_MAX);
+    .slice(0, RECIENTES_MAX)
+    .map(({ from, to, fijo }) => (fijo === true ? { from, to, fijo } : { from, to }));
+  // Por si vienen tocados a mano: más fijos de la cuenta, el resto se suelta.
+  let fijos = 0;
+  return buenos.map((p) => (p.fijo && ++fijos > FIJOS_MAX ? { from: p.from, to: p.to } : p));
 }
 
 function recientesVisibles(lista, from, to) {
@@ -1500,7 +1522,7 @@ if (typeof module !== "undefined") {
     CURRENCIES, isValidCode, nombreDe, parseAmount, isoLocal, hoy, isFresh,
     evaluar, completar, leerImporte, esOperacion,
     normalizar, filtrarDivisas, buildPaths, startDateFor, errorMessageFor,
-    RECIENTES_MAX, apuntarReciente, leerRecientes, recientesVisibles,
+    RECIENTES_MAX, FIJOS_MAX, apuntarReciente, fijarReciente, leerRecientes, recientesVisibles,
     RANGOS, RANGO_POR_DEFECTO, leerRango, coordenadas, alturaEn, MOMENTO_UMBRAL, momento, textoMomento, indiceCercano, extremos, fechaCorta, largoEnPantalla,
     leerNumero, divisaDe, leerSeleccion, destinoPara, buscarPrecios, precioEntero, leerOmnibox, escaparXml,
     divisaDeIdioma, parPorIdioma, banderaDe,

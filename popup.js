@@ -3315,11 +3315,14 @@ function avisar(texto) {
 
 const sinMovimiento = matchMedia("(prefers-reduced-motion: reduce)");
 
+// La chincheta va fuera del botón y no dentro: un botón no puede llevar otro.
 function crearPastilla(par) {
+  const caja = document.createElement("span");
+  caja.className = "reciente-caja";
+  caja.dataset.par = `${par.from}${par.to}`;
   const boton = document.createElement("button");
   boton.type = "button";
   boton.className = "reciente is-nueva";
-  boton.dataset.par = `${par.from}${par.to}`;
   boton.setAttribute("aria-label", tr("reciente.aria", { de: nombreDe(par.from), a: nombreDe(par.to) }));
 
   const de = document.createElement("span");
@@ -3336,7 +3339,39 @@ function crearPastilla(par) {
   // Si no la quito, al reordenar vuelve a entrar con rebote: sacar un nodo del
   // DOM y meterlo otra vez reinicia sus animaciones.
   boton.addEventListener("animationend", () => boton.classList.remove("is-nueva"));
-  return boton;
+
+  const fijar = document.createElement("button");
+  fijar.type = "button";
+  fijar.className = "reciente__fijar";
+  fijar.innerHTML = '<svg viewBox="0 0 12 12" aria-hidden="true"><path d="M4.5 1.5h3M5 1.5v3L3 7h6L7 4.5v-3M6 7v3.5"/></svg>';
+  fijar.addEventListener("click", () => onFijar(par.from, par.to));
+  caja.append(boton, fijar);
+  return caja;
+}
+
+function pintarFijo(caja, par) {
+  caja.classList.toggle("is-fija", Boolean(par.fijo));
+  const fijar = caja.querySelector(".reciente__fijar");
+  const datos = { de: par.from, a: par.to };
+  fijar.title = tr(par.fijo ? "reciente.soltar" : "reciente.fijar", datos);
+  fijar.setAttribute("aria-label", fijar.title);
+  fijar.setAttribute("aria-pressed", String(Boolean(par.fijo)));
+}
+
+function onFijar(from, to) {
+  const nuevos = fijarReciente(recientes, from, to);
+  const caja = () => el.recientes.querySelector(`[data-par="${from}${to}"]`);
+  if (nuevos === recientes) {
+    restartAnimation(caja(), "is-mal");
+    mostrarFlash([tr("reciente.lleno", { n: FIJOS_MAX })], 2200);
+    return;
+  }
+  recientes = nuevos;
+  guardarRecientes();
+  pintarRecientes();
+  const fijar = caja()?.querySelector(".reciente__fijar");
+  fijar?.focus();
+  if (caja()?.classList.contains("is-fija")) restartAnimation(fijar, "is-clavada");
 }
 
 function pintarRecientes() {
@@ -3349,6 +3384,7 @@ function pintarRecientes() {
     const vieja = el.recientes.querySelector(`[data-par="${par.from}${par.to}"]`);
     const pastilla = vieja ?? crearPastilla(par);
     pastilla.style.setProperty("--i", i);
+    pintarFijo(pastilla, par);
     return pastilla;
   });
   el.recientes.replaceChildren(...pastillas);

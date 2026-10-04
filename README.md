@@ -73,7 +73,9 @@ que necesitaba una conversión rápida. Ahora es un clic en la barra del navegad
   después (el scroll infinito de las tiendas, el "ver más") también sale
   convertido, mientras las tengas puestas. Los precios con los céntimos en
   pequeño (`$49⁹⁹`) se los salta, que los leería mal
-- Pastillas con tus últimos pares, para cambiar de uno a otro con un clic
+- Pastillas con tus últimos pares, para cambiar de uno a otro con un clic. Con
+  la chincheta que sale al pasar el ratón fijas uno, y ese ya no se va aunque
+  cambies mucho de par. Hasta tres
 - Un gráfico de cómo ha ido la tasa, a 7 días, 1 mes, 3 meses o 1 año. Pasando
   el ratón ves la tasa de cada día, y marca el máximo y el mínimo del periodo.
   Pulsando un día (o con Enter) te lleva a la pestaña del día con esa fecha

@@ -772,6 +772,92 @@ body::after {
   animation-delay: calc(var(--i, 0) * 50ms);
 }
 
+.reciente-caja {
+  position: relative;
+  display: inline-flex;
+}
+
+.reciente-caja.is-mal {
+  animation: shake 400ms var(--ease);
+}
+
+.reciente-caja.is-fija .reciente {
+  border-color: var(--brass-dim);
+}
+
+/* Sale al pasar por encima; las fijas la llevan siempre, que es lo que las
+   distingue. */
+.reciente__fijar {
+  position: absolute;
+  top: -5px;
+  right: -5px;
+  display: grid;
+  place-items: center;
+  width: 16px;
+  height: 16px;
+  padding: 0;
+  background: var(--graphite);
+  border: 1px solid var(--hairline-strong);
+  border-radius: 50%;
+  box-shadow: var(--shadow-sm);
+  color: var(--muted);
+  cursor: pointer;
+  opacity: 0;
+  transform: scale(0.6);
+  transition: opacity var(--fast) var(--ease), transform var(--fast) var(--ease-spring),
+    color var(--fast) var(--ease), border-color var(--fast) var(--ease);
+}
+
+.reciente__fijar svg {
+  width: 9px;
+  height: 9px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.4;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.reciente-caja:hover .reciente__fijar,
+.reciente__fijar:focus-visible,
+.reciente-caja.is-fija .reciente__fijar {
+  opacity: 1;
+  transform: none;
+}
+
+.reciente__fijar:hover {
+  color: var(--brass);
+  border-color: var(--brass-dim);
+}
+
+.reciente__fijar:focus-visible {
+  outline: 2px solid var(--brass);
+  outline-offset: 1px;
+}
+
+.reciente-caja.is-fija .reciente__fijar {
+  background: var(--brass);
+  border-color: var(--brass);
+  color: var(--graphite);
+}
+
+.reciente__fijar.is-clavada {
+  animation: clavar var(--mid) var(--ease-spring);
+}
+
+@keyframes clavar {
+  from {
+    transform: translateY(-5px) rotate(-25deg) scale(1.3);
+  }
+}
+
+@media (hover: none) {
+  .reciente__fijar {
+    opacity: 1;
+    transform: none;
+  }
+}
+
 @keyframes pop {
   from {
     opacity: 0;

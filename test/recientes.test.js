@@ -1,7 +1,7 @@
 const { test } = require("node:test");
 const assert = require("node:assert");
 const {
-  RECIENTES_MAX, apuntarReciente, leerRecientes, recientesVisibles,
+  RECIENTES_MAX, FIJOS_MAX, apuntarReciente, fijarReciente, leerRecientes, recientesVisibles,
 } = require("../logica.js");
 
 const pares = (lista) => lista.map((p) => `${p.from}${p.to}`);
@@ -77,4 +77,57 @@ test("las pastillas no enseñan el par que tienes puesto", () => {
 test("como mucho enseña una menos que el máximo", () => {
   const lista = ["USD", "GBP", "JPY", "CHF", "CAD"].map((to) => ({ from: "EUR", to }));
   assert.equal(recientesVisibles(lista, "EUR", "MXN").length, RECIENTES_MAX - 1);
+});
+
+const fijos = (lista) => lista.filter((p) => p.fijo).map((p) => `${p.from}${p.to}`);
+
+test("fijar un par lo pone delante y quitarlo lo devuelve al resto", () => {
+  let lista = [{ from: "EUR", to: "USD" }, { from: "EUR", to: "GBP" }, { from: "EUR", to: "JPY" }];
+  lista = fijarReciente(lista, "EUR", "JPY");
+  assert.deepEqual(pares(lista), ["EURJPY", "EURUSD", "EURGBP"]);
+  assert.deepEqual(fijos(lista), ["EURJPY"]);
+  lista = fijarReciente(lista, "EUR", "JPY");
+  assert.deepEqual(fijos(lista), []);
+  assert.deepEqual(pares(lista), ["EURJPY", "EURUSD", "EURGBP"], "suelto, va el primero del resto");
+});
+
+test("un par fijo no se va aunque cambies mucho", () => {
+  let lista = fijarReciente([{ from: "EUR", to: "JPY" }], "EUR", "JPY");
+  for (const to of ["USD", "GBP", "CHF", "CAD", "AUD", "MXN"]) lista = apuntarReciente(lista, "EUR", to);
+  assert.equal(lista.length, RECIENTES_MAX);
+  assert.deepEqual(pares(lista), ["EURJPY", "EURMXN", "EURAUD", "EURCAD"]);
+});
+
+test("volver a un par fijo no lo mueve ni lo suelta", () => {
+  const lista = fijarReciente([{ from: "EUR", to: "USD" }, { from: "EUR", to: "JPY" }], "EUR", "JPY");
+  assert.equal(apuntarReciente(lista, "EUR", "JPY"), lista);
+});
+
+test("los fijos van en el orden en que los fijaste", () => {
+  let lista = [{ from: "EUR", to: "USD" }, { from: "EUR", to: "GBP" }, { from: "EUR", to: "JPY" }];
+  lista = fijarReciente(lista, "EUR", "GBP");
+  lista = fijarReciente(lista, "EUR", "USD");
+  assert.deepEqual(fijos(lista), ["EURGBP", "EURUSD"]);
+});
+
+test("como mucho tres fijos, para que quepa uno nuevo", () => {
+  let lista = ["USD", "GBP", "JPY", "CHF"].map((to) => ({ from: "EUR", to }));
+  for (const to of ["USD", "GBP", "JPY", "CHF"]) lista = fijarReciente(lista, "EUR", to);
+  assert.equal(FIJOS_MAX, 3);
+  assert.deepEqual(fijos(lista), ["EURUSD", "EURGBP", "EURJPY"]);
+  lista = apuntarReciente(lista, "EUR", "MXN");
+  assert.deepEqual(pares(lista), ["EURUSD", "EURGBP", "EURJPY", "EURMXN"]);
+});
+
+test("fijar un par que no está no hace nada", () => {
+  const lista = [{ from: "EUR", to: "USD" }];
+  assert.equal(fijarReciente(lista, "EUR", "GBP"), lista);
+});
+
+test("leerRecientes se queda con los fijos y no deja pasar de tres", () => {
+  const guardado = ["USD", "GBP", "JPY", "CHF"].map((to) => ({ from: "EUR", to, fijo: true }));
+  guardado.push({ from: "EUR", to: "MXN", fijo: "sí" });
+  const leidos = leerRecientes(guardado);
+  assert.deepEqual(fijos(leidos), ["EURUSD", "EURGBP", "EURJPY"]);
+  assert.deepEqual(leerRecientes([{ from: "EUR", to: "USD", fijo: "sí" }]), [{ from: "EUR", to: "USD" }]);
 });
