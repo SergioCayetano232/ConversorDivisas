@@ -1,7 +1,7 @@
 const { test } = require("node:test");
 const assert = require("node:assert");
 const {
-  GASTOS_MAX, CONCEPTO_MAX, crearGasto, leerGastos, apuntarGasto, quitarGasto, devolverGasto, devolverTodos, sumarPorDivisa, gastosPorDia, nombreDia,
+  GASTOS_MAX, CONCEPTO_MAX, crearGasto, leerGastos, apuntarGasto, quitarGasto, devolverGasto, devolverTodos, sumarPorDivisa, gastosPorDia, mediaPorDia, nombreDia,
 } = require("../logica.js");
 
 const hora = (dia, h = 12) => new Date(...dia.split("-").map((n, i) => (i === 1 ? n - 1 : Number(n))), h).getTime();
@@ -139,6 +139,28 @@ test("agrupa por día, de lo último a lo primero", () => {
 test("pasada la medianoche es otro día, aunque sea la misma noche", () => {
   const lista = [gasto({ id: "2", cuando: hora("2026-10-02", 0) + 60000 }), gasto({ id: "1", cuando: hora("2026-10-01", 23) })];
   assert.equal(gastosPorDia(lista).length, 2);
+});
+
+test("la media cuenta del primer día al último, también los que no gastaste", () => {
+  const lista = [
+    gasto({ id: "3", valor: 30, cuando: hora("2026-10-04") }),
+    gasto({ id: "2", valor: 50, cuando: hora("2026-10-01", 20) }),
+    gasto({ id: "1", valor: 40, cuando: hora("2026-10-01", 9) }),
+  ];
+  assert.deepEqual(mediaPorDia(lista), { media: 30, to: "EUR", dias: 4 });
+});
+
+test("con un solo día no hay media, y sin gastos tampoco", () => {
+  assert.equal(mediaPorDia([gasto({ id: "2" }), gasto({ id: "1", cuando: hora("2026-10-02", 8) })]), null);
+  assert.equal(mediaPorDia([]), null);
+});
+
+test("si cambiaste de divisa, la media es de la que más suma", () => {
+  const lista = [
+    gasto({ id: "2", from: "EUR", to: "USD", valor: 10, cuando: hora("2026-10-02") }),
+    gasto({ id: "1", valor: 100, cuando: hora("2026-10-01") }),
+  ];
+  assert.deepEqual(mediaPorDia(lista), { media: 50, to: "EUR", dias: 2 });
 });
 
 test("hoy y ayer con nombre; lo de antes, con fecha", () => {

@@ -1844,6 +1844,15 @@ body::after {
   color: var(--muted);
 }
 
+.gastos__media {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 10px;
+  color: var(--muted);
+  cursor: default;
+}
+
 .gastos__nuevo {
   position: relative;
   display: flex;

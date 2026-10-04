@@ -1138,6 +1138,17 @@ function gastosPorDia(gastos) {
   return [...dias].map(([dia, lista]) => ({ dia, gastos: lista, totales: sumarPorDivisa(lista) }));
 }
 
+// Del primer día al último con gastos, contando los de en medio sin nada: en el
+// viaje estabas igual. Con un solo día la media sería el total, no la enseño.
+function mediaPorDia(gastos) {
+  const principal = sumarPorDivisa(gastos)[0];
+  if (!principal) return null;
+  const dias = gastosPorDia(gastos);
+  const total = diasHasta(dias[0].dia, dias[dias.length - 1].dia);
+  if (total < 2) return null;
+  return { media: principal.total / total, to: principal.to, dias: total };
+}
+
 // Días que quedan contando hoy: el último día del viaje también se gasta.
 function diasHasta(hasta, hoyIso = hoy()) {
   const [a1, m1, d1] = hoyIso.split("-").map(Number);
@@ -1440,7 +1451,7 @@ if (typeof module !== "undefined") {
     divisaDeIdioma, parPorIdioma, banderaDe,
     HISTORIAL_MAX, leerHistorial, apuntarConversion, haceCuanto, textoParaCopiar,
     celdaCsv, csvHistorial, csvGastos,
-    GASTOS_MAX, CONCEPTO_MAX, crearGasto, leerGastos, apuntarGasto, quitarGasto, devolverGasto, devolverTodos, sumarPorDivisa, gastosPorDia, nombreDia,
+    GASTOS_MAX, CONCEPTO_MAX, crearGasto, leerGastos, apuntarGasto, quitarGasto, devolverGasto, devolverTodos, sumarPorDivisa, gastosPorDia, mediaPorDia, nombreDia,
     CATEGORIAS, CATEGORIA_POR_DEFECTO, adivinarCategoria, desglose,
     EMOJI_CATEGORIA, resumenParaCompartir,
     COPIA_APP, COPIA_VERSION, CLAVES_COPIA, limpiarCopia, crearCopia, leerCopia, resumenCopia,

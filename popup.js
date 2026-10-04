@@ -88,6 +88,7 @@ const el = {
   gastosVaciar: document.getElementById("gastos-vaciar"),
   gastosSuma: document.getElementById("gastos-suma"),
   gastosN: document.getElementById("gastos-n"),
+  gastosMedia: document.getElementById("gastos-media"),
   gastosForm: document.getElementById("gastos-form"),
   gastosConcepto: document.getElementById("gastos-concepto"),
   gastosApuntar: document.getElementById("gastos-apuntar"),
@@ -1969,6 +1970,12 @@ function pintarGastos() {
     if (habia) restartAnimation(el.gastosSuma, "is-tic");
   }
   el.gastosN.textContent = n === 0 ? "" : n === 1 ? tr("gastos.uno") : tr("gastos.n", { n });
+  const media = mediaPorDia(gastos);
+  el.gastosMedia.hidden = !media;
+  if (media) {
+    el.gastosMedia.textContent = tr("gastos.media", { media: `${nf.format(media.media)} ${media.to}` });
+    el.gastosMedia.title = tr("gastos.mediaTitulo", { dias: media.dias });
+  }
 
   pintarDesglose();
   const visibles = filtroCategoria ? gastos.filter((g) => g.categoria === filtroCategoria) : gastos;
