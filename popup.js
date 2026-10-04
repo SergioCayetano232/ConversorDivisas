@@ -187,6 +187,7 @@ let avisos = [];
 // la tasa nueva, pero mientras sea el mismo no le toco lo que hayas escrito.
 let parDelUmbral = null;
 let comision = 0;
+let tasaAlReves = false;
 let historial = [];
 // Abrir el popup y verlo con su 1 de siempre no es convertir nada: solo apunto
 // cuando has tocado algo tú.
@@ -260,6 +261,7 @@ const GASTOS_KEY = "gastosViaje";
 const PRESUPUESTO_KEY = "presupuestoViaje";
 const VIAJES_KEY = "viajes";
 const CUENTA_KEY = "cuentaReparto";
+const AL_REVES_KEY = "tasaAlReves";
 // Lo que tardo en dar por buena una cantidad: mientras escribes "1", "12",
 // "125" no quiero tres entradas, solo la última.
 const PAUSA_APUNTE = 2000;
@@ -341,6 +343,24 @@ async function cargarComision() {
   } catch (error) {
     console.warn("No se pudo leer la comisión", error);
     return 0;
+  }
+}
+
+async function cargarTasaAlReves() {
+  try {
+    const guardado = await chrome.storage.local.get(AL_REVES_KEY);
+    return guardado[AL_REVES_KEY] === true;
+  } catch (error) {
+    console.warn("No se pudo leer cómo ver la tasa", error);
+    return false;
+  }
+}
+
+async function guardarTasaAlReves() {
+  try {
+    await chrome.storage.local.set({ [AL_REVES_KEY]: tasaAlReves });
+  } catch (error) {
+    console.warn("No se pudo guardar cómo ver la tasa", error);
   }
 }
 
@@ -2970,7 +2990,14 @@ function renderRateLine(from, to) {
     el.rateLine.textContent = "";
     return;
   }
-  el.rateLine.textContent = `1 ${from} = ${nfRate.format(rate)} ${to}`;
+  el.rateLine.textContent = lineaTasa(rate, from, to, tasaAlReves);
+}
+
+function onDarLaVueltaATasa() {
+  tasaAlReves = !tasaAlReves;
+  renderRateLine(el.from.value, el.to.value);
+  restartAnimation(el.rateLine, "is-vuelta");
+  guardarTasaAlReves();
 }
 
 function renderUpdated() {
@@ -3493,6 +3520,7 @@ function bindEvents() {
   el.cuentaCifra.addEventListener("animationend", () => el.cuentaCifra.classList.remove("is-tic"));
   el.cuentaN.addEventListener("animationend", () => el.cuentaN.classList.remove("is-sube", "is-baja"));
   el.cuentaGente.addEventListener("animationend", (event) => event.target.classList.remove("is-nuevo"));
+  el.rateLine.addEventListener("click", onDarLaVueltaATasa);
   el.presupuestoAnadir.addEventListener("click", editarPresupuesto);
   el.presupuestoVer.addEventListener("click", editarPresupuesto);
   el.presupuestoForm.addEventListener("submit", onGuardarPresupuesto);
@@ -3621,10 +3649,11 @@ async function init() {
   const idiomaCambiado = await cargarIdioma();
   traducirPagina();
   if (idiomaCambiado) saludarIdioma();
-  const [pair, rango, guardados, pendiente, guardadas, vistaGuardada, avisosGuardados, comisionGuardada, fechaGuardada, historialGuardado, viajesGuardados, repartoGuardado] = await Promise.all([
+  const [pair, rango, guardados, pendiente, guardadas, vistaGuardada, avisosGuardados, comisionGuardada, fechaGuardada, historialGuardado, viajesGuardados, repartoGuardado, alRevesGuardado] = await Promise.all([
     loadPair(), cargarRango(), cargarRecientes(), tomarPendiente(), cargarExtras(), cargarVista(), cargarAvisos(),
-    cargarComision(), cargarFecha(), cargarHistorial(), cargarViajes(), cargarReparto(),
+    cargarComision(), cargarFecha(), cargarHistorial(), cargarViajes(), cargarReparto(), cargarTasaAlReves(),
   ]);
+  tasaAlReves = alRevesGuardado;
   reparto = repartoGuardado;
   historial = historialGuardado;
   pintarHistorial();

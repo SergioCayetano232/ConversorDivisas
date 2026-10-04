@@ -275,6 +275,44 @@ body::after {
   font-variant-numeric: tabular-nums;
 }
 
+.header__tasa {
+  padding: 0;
+  background: none;
+  border: 0;
+  border-radius: 3px;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+  text-decoration: underline dotted transparent;
+  text-underline-offset: 3px;
+  transition: color var(--fast) var(--ease), text-decoration-color var(--fast) var(--ease);
+}
+
+.header__tasa:empty {
+  display: none;
+}
+
+.header__tasa:hover {
+  color: var(--mist);
+  text-decoration-color: currentColor;
+}
+
+.header__tasa:focus-visible {
+  outline: 2px solid var(--brass);
+  outline-offset: 1px;
+}
+
+.header__tasa.is-vuelta {
+  animation: tasa-vuelta var(--mid) var(--ease-spring);
+}
+
+@keyframes tasa-vuelta {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+}
+
 .converter {
   padding: var(--s-4);
   display: flex;

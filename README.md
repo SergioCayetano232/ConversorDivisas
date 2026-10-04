@@ -17,6 +17,8 @@ que necesitaba una conversión rápida. Ahora es un clic en la barra del navegad
 - Buscas la divisa escribiendo: pones "mex" y sale el peso mexicano
 - Un botón para dar la vuelta al par sin tocar los dos desplegables
 - Un botón para copiar el resultado
+- Pulsando la tasa de arriba la ves al revés (`1 JPY = 0,005650 EUR`), que en
+  la tienda muchas veces se piensa así. Se queda como la dejes
 - Las últimas diez conversiones, en el reloj que hay al lado de **Copiar**. Pulsando
   una copias su resultado; con la flecha de al lado la vuelves a poner. Se
   apunta sola cuando dejas de escribir, al darle a Enter o al copiar

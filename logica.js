@@ -1300,6 +1300,16 @@ function sentidoDe(cambio) {
 
 const tasaLarga = (n) => numeros({ minimumFractionDigits: 4, maximumFractionDigits: 4 }).format(n);
 
+// Al revés, el yen se queda en "1 JPY = 0,0061 EUR" y con cuatro decimales casi
+// no se lee: le pongo los que hagan falta para ver cuatro cifras.
+function lineaTasa(rate, from, to, alReves = false) {
+  if (!Number.isFinite(rate) || rate <= 0) return "";
+  const valor = alReves ? 1 / rate : rate;
+  const decimales = valor >= 1 ? 4 : Math.min(Math.max(4, 3 - Math.floor(Math.log10(valor))), 8);
+  const texto = numeros({ minimumFractionDigits: decimales, maximumFractionDigits: decimales }).format(valor);
+  return alReves ? `1 ${to} = ${texto} ${from}` : `1 ${from} = ${texto} ${to}`;
+}
+
 function tituloInsignia(par, rate, cambio) {
   const tasa = `1 ${par.from} = ${tasaLarga(rate)} ${par.to}`;
   if (cambio === null) return tasa;
@@ -1422,6 +1432,7 @@ function limpiarCopia(crudo) {
   if (d.comisionBanco !== undefined) datos.comisionBanco = leerComision(d.comisionBanco);
   if (d.cuentaReparto !== undefined) datos.cuentaReparto = leerCuenta(d.cuentaReparto);
   if (typeof d.insigniaActiva === "boolean") datos.insigniaActiva = d.insigniaActiva;
+  if (typeof d.tasaAlReves === "boolean") datos.tasaAlReves = d.tasaAlReves;
   if (d.idioma === "auto" || TEXTOS[d.idioma]) datos.idioma = d.idioma;
   return datos;
 }
@@ -1430,7 +1441,7 @@ function limpiarCopia(crudo) {
 // los viajes, para que no vuelvan a aparecer mezcladas.
 const CLAVES_COPIA = [
   "viajes", "gastosViaje", "presupuestoViaje", "lastPair", "paresRecientes", "divisasExtra", "avisos",
-  "historialConversiones", "rangoGrafico", "comisionBanco", "cuentaReparto", "insigniaActiva", "idioma",
+  "historialConversiones", "rangoGrafico", "comisionBanco", "cuentaReparto", "insigniaActiva", "tasaAlReves", "idioma",
 ];
 
 function crearCopia(crudo, ahora = new Date()) {
@@ -1484,7 +1495,7 @@ if (typeof module !== "undefined") {
     PROPINAS_RAPIDAS, PROPINA_MAX, PERSONAS_MAX, CUENTA_POR_DEFECTO, leerCuenta, repartirCuenta,
     MARGENES, tasaOfrecida, analizarCambio,
     FECHA_MINIMA, fechaLarga, fechaValida, diaDelGrafico, mesesAtras, FECHAS_RAPIDAS, leerFecha, cambioDesde, notaDiaHabil,
-    textoInsignia, cambioDiario, sentidoDe, tituloInsignia,
+    textoInsignia, cambioDiario, sentidoDe, tituloInsignia, lineaTasa,
     AVISOS_MAX, sentidoAviso, crearAviso, leerAvisos, avisoCumplido, repartirAvisos, mensajeAviso,
     ATAJOS, atajoPara, textoAtajo,
   };
