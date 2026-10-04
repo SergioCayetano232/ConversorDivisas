@@ -1,7 +1,7 @@
 const { test } = require("node:test");
 const assert = require("node:assert");
 const {
-  GASTOS_MAX, CONCEPTO_MAX, crearGasto, leerGastos, apuntarGasto, quitarGasto, cambiarConcepto, devolverGasto, devolverTodos, sumarPorDivisa, gastosPorDia, mediaPorDia, nombreDia,
+  GASTOS_MAX, CONCEPTO_MAX, crearGasto, leerGastos, apuntarGasto, quitarGasto, cambiarConcepto, repetirGasto, devolverGasto, devolverTodos, sumarPorDivisa, gastosPorDia, mediaPorDia, nombreDia,
 } = require("../logica.js");
 
 const hora = (dia, h = 12) => new Date(...dia.split("-").map((n, i) => (i === 1 ? n - 1 : Number(n))), h).getTime();
@@ -163,6 +163,20 @@ test("la categoría se adivina solo si estaba en otros", () => {
   assert.equal(cambiarConcepto([gasto({ concepto: "Tazi", categoria: "otros" })], "a", "Taxi")[0].categoria, "transporte");
   assert.equal(cambiarConcepto([gasto({ concepto: "Tazi", categoria: "otros" })], "a", "Cosas")[0].categoria, "otros");
   assert.equal(cambiarConcepto([gasto({ concepto: "Cena", categoria: "ocio" })], "a", "Taxi")[0].categoria, "ocio");
+});
+
+test("repetir un gasto lo apunta hoy con la tasa y la comisión de hoy", () => {
+  const original = gasto({ concepto: "Metro", cantidad: 3, valor: 2.7, categoria: "transporte" });
+  const otro = repetirGasto(original, { id: "b", cuando: hora("2026-10-04"), tasa: 0.95, comision: 2 });
+  assert.deepEqual(otro, {
+    id: "b", from: "USD", to: "EUR", cantidad: 3, valor: 2.91, concepto: "Metro", cuando: hora("2026-10-04"), categoria: "transporte",
+  });
+});
+
+test("sin la tasa de hoy se repite con la que tuvo", () => {
+  const original = gasto({ cantidad: 3, valor: 2.7 });
+  assert.equal(repetirGasto(original, { id: "b", cuando: hora("2026-10-04") }).valor, 2.7);
+  assert.equal(repetirGasto(original, { id: "b", cuando: hora("2026-10-04"), tasa: 0 }).valor, 2.7);
 });
 
 test("la media cuenta del primer día al último, también los que no gastaste", () => {

@@ -992,6 +992,15 @@ function quitarGasto(lista, id) {
   return lista.filter((g) => g.id !== id);
 }
 
+// El metro de cada mañana: la misma cantidad, pero con la tasa y la comisión de
+// hoy. Si no tengo la de hoy para ese par, uso la que tuvo, que es lo más cerca.
+function repetirGasto(gasto, { id, cuando, tasa = null, comision = 0 }) {
+  const valor = Number.isFinite(tasa) && tasa > 0
+    ? Math.round(conComision(gasto.cantidad * tasa, comision) * 100) / 100
+    : gasto.valor;
+  return crearGasto({ ...gasto, id, cuando, valor });
+}
+
 // La categoría solo la cambio si estaba en "otros": si ya era otra, puede que
 // la eligieras tú, y corregir una falta no debería deshacértela.
 function cambiarConcepto(lista, id, concepto) {
@@ -1463,7 +1472,7 @@ if (typeof module !== "undefined") {
     divisaDeIdioma, parPorIdioma, banderaDe,
     HISTORIAL_MAX, leerHistorial, apuntarConversion, haceCuanto, textoParaCopiar,
     celdaCsv, csvHistorial, csvGastos,
-    GASTOS_MAX, CONCEPTO_MAX, crearGasto, leerGastos, apuntarGasto, quitarGasto, cambiarConcepto, devolverGasto, devolverTodos, sumarPorDivisa, gastosPorDia, mediaPorDia, nombreDia,
+    GASTOS_MAX, CONCEPTO_MAX, crearGasto, leerGastos, apuntarGasto, quitarGasto, cambiarConcepto, repetirGasto, devolverGasto, devolverTodos, sumarPorDivisa, gastosPorDia, mediaPorDia, nombreDia,
     CATEGORIAS, CATEGORIA_POR_DEFECTO, adivinarCategoria, desglose,
     EMOJI_CATEGORIA, resumenParaCompartir,
     COPIA_APP, COPIA_VERSION, CLAVES_COPIA, limpiarCopia, crearCopia, leerCopia, resumenCopia,

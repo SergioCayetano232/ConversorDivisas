@@ -2087,6 +2087,23 @@ body::after {
   transform: rotate(90deg);
 }
 
+.gastos__repetir svg {
+  width: 11px;
+  height: 11px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.3;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.gastos__repetir:hover {
+  color: var(--brass);
+  border-color: color-mix(in srgb, var(--brass) 45%, transparent);
+  background: color-mix(in srgb, var(--brass) 10%, transparent);
+  transform: rotate(-180deg);
+}
+
 /* El aviso de deshacer, abajo del panel. La barra de abajo es el reloj: cuando
    se vacía, el JS lo da por perdido. Al pasar el ratón se para. */
 .deshacer {

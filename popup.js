@@ -1951,7 +1951,15 @@ function crearFilaGasto(gasto, i) {
   quitar.setAttribute("aria-label", tr("gastos.quitar", { concepto, valor }));
   quitar.addEventListener("click", () => onQuitarGasto(gasto.id, fila));
 
-  fila.append(texto, quitar);
+  const repetir = document.createElement("button");
+  repetir.type = "button";
+  repetir.className = "gastos__quitar gastos__repetir";
+  repetir.innerHTML = '<svg viewBox="0 0 12 12" aria-hidden="true"><path d="M2.5 5.5a3.5 3.5 0 0 1 6-2.4L9.5 4M9.5 1.8V4H7.3M9.5 6.5a3.5 3.5 0 0 1-6 2.4L2.5 8M2.5 10.2V8h2.2"/></svg>';
+  repetir.title = tr("gastos.repetir");
+  repetir.setAttribute("aria-label", tr("gastos.repetirDe", { concepto, cantidad: `${nf.format(gasto.cantidad)} ${gasto.from}` }));
+  repetir.addEventListener("click", () => onRepetirGasto(gasto));
+
+  fila.append(texto, repetir, quitar);
   fila.addEventListener("animationend", (event) => {
     if (event.target === fila) fila.classList.remove("is-nueva");
   });
@@ -2484,6 +2492,30 @@ function onApuntarGasto(event) {
   restartAnimation(el.abrirGastos, "is-apuntado");
   el.gastosLista.scrollTop = 0;
   el.gastosConcepto.focus();
+}
+
+// La tasa de hoy solo si es de ese par: con la pantalla en otro, la que tengo
+// a mano no sirve y se queda con la que tuvo.
+function tasaDeHoy(from, to) {
+  if (rate !== null && el.from.value === from && el.to.value === to) return rate;
+  return tasasBase?.de === from ? tasasBase.rates[to] ?? null : null;
+}
+
+function onRepetirGasto(original) {
+  const gasto = repetirGasto(original, {
+    id: `${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`,
+    cuando: Date.now(),
+    tasa: tasaDeHoy(original.from, original.to),
+    comision,
+  });
+  if (!gasto) return;
+  gastos = apuntarGasto(gastos, gasto);
+  gastoNuevo = gasto.id;
+  if (filtroCategoria && filtroCategoria !== gasto.categoria) filtroCategoria = null;
+  guardarViajes();
+  pintarGastos();
+  restartAnimation(el.abrirGastos, "is-apuntado");
+  el.gastosLista.scrollTop = 0;
 }
 
 function editarConcepto(gasto, que) {

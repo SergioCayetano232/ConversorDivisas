@@ -22,7 +22,9 @@ que necesitaba una conversión rápida. Ahora es un clic en la barra del navegad
   apunta sola cuando dejas de escribir, al darle a Enter o al copiar
 - Los gastos del viaje, en la cartera que hay al lado del reloj: con una
   cantidad puesta, le das a **+ 38,90 EUR** (con un concepto si quieres, "Cena",
-  "Taxi"…) y se apunta. Si lo escribiste mal, pulsas el concepto y lo cambias. Arriba sale el total en tu divisa y lo que llevas de media
+  "Taxi"…) y se apunta. Si lo escribiste mal, pulsas el concepto y lo cambias.
+  Con las flechas de al lado lo vuelves a apuntar hoy, para el metro o el café
+  de cada día, con la tasa de hoy. Arriba sale el total en tu divisa y lo que llevas de media
   al día, y debajo los gastos por días con lo de cada día. Cada uno se guarda con la tasa y la comisión de
   ese momento, así que lo que gastaste el lunes no cambia aunque el euro suba
   el martes. Hasta 200, y para vaciarlo hay que darle dos veces. Si
