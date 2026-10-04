@@ -1,7 +1,7 @@
 const { test } = require("node:test");
 const assert = require("node:assert");
 const {
-  GASTOS_MAX, CONCEPTO_MAX, crearGasto, leerGastos, apuntarGasto, quitarGasto, devolverGasto, devolverTodos, sumarPorDivisa, gastosPorDia, mediaPorDia, nombreDia,
+  GASTOS_MAX, CONCEPTO_MAX, crearGasto, leerGastos, apuntarGasto, quitarGasto, cambiarConcepto, devolverGasto, devolverTodos, sumarPorDivisa, gastosPorDia, mediaPorDia, nombreDia,
 } = require("../logica.js");
 
 const hora = (dia, h = 12) => new Date(...dia.split("-").map((n, i) => (i === 1 ? n - 1 : Number(n))), h).getTime();
@@ -139,6 +139,30 @@ test("agrupa por día, de lo último a lo primero", () => {
 test("pasada la medianoche es otro día, aunque sea la misma noche", () => {
   const lista = [gasto({ id: "2", cuando: hora("2026-10-02", 0) + 60000 }), gasto({ id: "1", cuando: hora("2026-10-01", 23) })];
   assert.equal(gastosPorDia(lista).length, 2);
+});
+
+test("cambiar el concepto toca solo ese gasto, y lo limpia como al apuntarlo", () => {
+  const lista = [gasto({ id: "2", concepto: "Cna", categoria: "comida" }), gasto({ id: "1", concepto: "Taxi" })];
+  const nueva = cambiarConcepto(lista, "2", "  Cena   con   Ana  ");
+  assert.equal(nueva[0].concepto, "Cena con Ana");
+  assert.equal(nueva[1], lista[1]);
+  assert.equal(cambiarConcepto(lista, "2", "x".repeat(60))[0].concepto.length, CONCEPTO_MAX);
+});
+
+test("si no cambia nada, o el gasto no está, la lista es la misma", () => {
+  const lista = [gasto({ concepto: "Cena" })];
+  assert.equal(cambiarConcepto(lista, "a", " Cena "), lista);
+  assert.equal(cambiarConcepto(lista, "otro", "Taxi"), lista);
+});
+
+test("se puede dejar sin concepto", () => {
+  assert.equal(cambiarConcepto([gasto()], "a", "   ")[0].concepto, "");
+});
+
+test("la categoría se adivina solo si estaba en otros", () => {
+  assert.equal(cambiarConcepto([gasto({ concepto: "Tazi", categoria: "otros" })], "a", "Taxi")[0].categoria, "transporte");
+  assert.equal(cambiarConcepto([gasto({ concepto: "Tazi", categoria: "otros" })], "a", "Cosas")[0].categoria, "otros");
+  assert.equal(cambiarConcepto([gasto({ concepto: "Cena", categoria: "ocio" })], "a", "Taxi")[0].categoria, "ocio");
 });
 
 test("la media cuenta del primer día al último, también los que no gastaste", () => {

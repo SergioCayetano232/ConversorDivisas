@@ -1925,10 +1925,14 @@ function crearFilaGasto(gasto, i) {
   icono.dataset.categoria = gasto.categoria;
   icono.title = tr(`cat.${gasto.categoria}`);
   icono.innerHTML = iconoCategoria(gasto.categoria);
-  const que = document.createElement("span");
+  const que = document.createElement("button");
+  que.type = "button";
   que.className = "gastos__que";
   que.classList.toggle("is-sin", !gasto.concepto);
   que.textContent = concepto;
+  que.title = tr("gastos.editar");
+  que.setAttribute("aria-label", tr("gastos.editarDe", { concepto }));
+  que.addEventListener("click", () => editarConcepto(gasto, que));
   const de = document.createElement("span");
   de.className = "gastos__de";
   de.textContent = `${nf.format(gasto.cantidad)} ${gasto.from}`;
@@ -2480,6 +2484,46 @@ function onApuntarGasto(event) {
   restartAnimation(el.abrirGastos, "is-apuntado");
   el.gastosLista.scrollTop = 0;
   el.gastosConcepto.focus();
+}
+
+function editarConcepto(gasto, que) {
+  const campo = document.createElement("input");
+  campo.type = "text";
+  campo.className = "gastos__editar";
+  campo.maxLength = CONCEPTO_MAX;
+  campo.value = gasto.concepto;
+  campo.placeholder = tr("gastos.sinConcepto");
+  campo.setAttribute("aria-label", tr("gastos.concepto"));
+  let hecho = false;
+  const acabar = (guardar) => {
+    if (hecho) return;
+    hecho = true;
+    const nuevos = guardar ? cambiarConcepto(gastos, gasto.id, campo.value) : gastos;
+    const cambia = nuevos !== gastos;
+    if (cambia) {
+      gastos = nuevos;
+      guardarViajes();
+    }
+    pintarGastos();
+    const otro = el.gastosLista.querySelector(`[data-id="${gasto.id}"] .gastos__que`);
+    if (cambia) restartAnimation(otro, "is-cambiado");
+    otro?.focus();
+  };
+  campo.addEventListener("keydown", (event) => {
+    if (event.key === "Enter") {
+      event.preventDefault();
+      acabar(true);
+    }
+    if (event.key === "Escape") {
+      event.preventDefault();
+      event.stopPropagation();
+      acabar(false);
+    }
+  });
+  campo.addEventListener("blur", () => acabar(true));
+  que.replaceWith(campo);
+  campo.focus();
+  campo.select();
 }
 
 function onQuitarGasto(id, fila) {

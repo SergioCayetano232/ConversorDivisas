@@ -947,10 +947,12 @@ const esGastoBueno = (g) => Boolean(g) && typeof g.id === "string" && isValidCod
 
 // El valor se guarda ya convertido, con la tasa y la comisión de ese día. Si lo
 // calculara al enseñarlo, el cambio de hoy me movería lo que gasté hace una semana.
+const limpiarConcepto = (concepto) => String(concepto ?? "").replace(/\s+/g, " ").trim().slice(0, CONCEPTO_MAX);
+
 function crearGasto({ id, from, to, cantidad, valor, concepto = "", cuando, categoria }) {
   const gasto = {
     id, from, to, cantidad, valor, cuando,
-    concepto: String(concepto ?? "").replace(/\s+/g, " ").trim().slice(0, CONCEPTO_MAX),
+    concepto: limpiarConcepto(concepto),
     categoria: categoriaBuena(categoria),
   };
   return esGastoBueno(gasto) && from !== to ? gasto : null;
@@ -988,6 +990,16 @@ function apuntarGasto(lista, gasto) {
 
 function quitarGasto(lista, id) {
   return lista.filter((g) => g.id !== id);
+}
+
+// La categoría solo la cambio si estaba en "otros": si ya era otra, puede que
+// la eligieras tú, y corregir una falta no debería deshacértela.
+function cambiarConcepto(lista, id, concepto) {
+  const limpio = limpiarConcepto(concepto);
+  const gasto = lista.find((g) => g.id === id);
+  if (!gasto || gasto.concepto === limpio) return lista;
+  const categoria = gasto.categoria === CATEGORIA_POR_DEFECTO ? adivinarCategoria(limpio) ?? gasto.categoria : gasto.categoria;
+  return lista.map((g) => (g.id === id ? { ...g, concepto: limpio, categoria } : g));
 }
 
 // Deshacer un "Vaciar": vuelven todos detrás de lo que hayas apuntado entretanto,
@@ -1451,7 +1463,7 @@ if (typeof module !== "undefined") {
     divisaDeIdioma, parPorIdioma, banderaDe,
     HISTORIAL_MAX, leerHistorial, apuntarConversion, haceCuanto, textoParaCopiar,
     celdaCsv, csvHistorial, csvGastos,
-    GASTOS_MAX, CONCEPTO_MAX, crearGasto, leerGastos, apuntarGasto, quitarGasto, devolverGasto, devolverTodos, sumarPorDivisa, gastosPorDia, mediaPorDia, nombreDia,
+    GASTOS_MAX, CONCEPTO_MAX, crearGasto, leerGastos, apuntarGasto, quitarGasto, cambiarConcepto, devolverGasto, devolverTodos, sumarPorDivisa, gastosPorDia, mediaPorDia, nombreDia,
     CATEGORIAS, CATEGORIA_POR_DEFECTO, adivinarCategoria, desglose,
     EMOJI_CATEGORIA, resumenParaCompartir,
     COPIA_APP, COPIA_VERSION, CLAVES_COPIA, limpiarCopia, crearCopia, leerCopia, resumenCopia,

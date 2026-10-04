@@ -1993,7 +1993,52 @@ body::after {
   min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
+  padding: 0;
+  background: none;
+  border: 0;
   color: var(--mist);
+  font: inherit;
+  text-align: left;
+  cursor: text;
+  text-decoration: underline dotted transparent;
+  text-underline-offset: 3px;
+  transition: text-decoration-color var(--fast) var(--ease);
+}
+
+.gastos__que:hover,
+.gastos__que:focus-visible {
+  text-decoration-color: var(--muted);
+}
+
+.gastos__que:focus-visible {
+  outline: 2px solid var(--brass);
+  outline-offset: 1px;
+  border-radius: 3px;
+}
+
+.gastos__que.is-cambiado {
+  animation: beat var(--mid) var(--ease-spring);
+}
+
+/* Ocupa el sitio del concepto sin mover el resto de la fila. */
+.gastos__editar {
+  flex: 1;
+  min-width: 0;
+  height: 18px;
+  padding: 0 4px;
+  margin-left: -4px;
+  background: transparent;
+  border: 1px solid var(--brass);
+  border-radius: 4px;
+  color: var(--mist);
+  font: inherit;
+  outline: none;
+  box-shadow: 0 0 0 3px var(--brass-glow);
+}
+
+.gastos__editar::placeholder {
+  color: var(--muted);
+  font-style: italic;
 }
 
 .gastos__que.is-sin {
