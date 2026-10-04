@@ -1964,7 +1964,8 @@ body::after {
 
 .gastos__concepto:focus-visible,
 .gastos__apuntar:focus-visible,
-.gastos__quitar:focus-visible {
+.gastos__quitar:focus-visible,
+.gastos__repetir:focus-visible {
   outline: 2px solid var(--brass);
   outline-offset: 1px;
 }
@@ -2101,7 +2102,8 @@ body::after {
   color: var(--brass);
 }
 
-.gastos__quitar {
+.gastos__quitar,
+.gastos__repetir {
   display: grid;
   place-items: center;
   flex-shrink: 0;

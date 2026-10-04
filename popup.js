@@ -1973,7 +1973,7 @@ function crearFilaGasto(gasto, i) {
 
   const repetir = document.createElement("button");
   repetir.type = "button";
-  repetir.className = "gastos__quitar gastos__repetir";
+  repetir.className = "gastos__repetir";
   repetir.innerHTML = '<svg viewBox="0 0 12 12" aria-hidden="true"><path d="M2.5 5.5a3.5 3.5 0 0 1 6-2.4L9.5 4M9.5 1.8V4H7.3M9.5 6.5a3.5 3.5 0 0 1-6 2.4L2.5 8M2.5 10.2V8h2.2"/></svg>';
   repetir.title = tr("gastos.repetir");
   repetir.setAttribute("aria-label", tr("gastos.repetirDe", { concepto, cantidad: `${nf.format(gasto.cantidad)} ${gasto.from}` }));
@@ -2844,6 +2844,7 @@ function hacerAtajo(accion) {
   else if (accion === "ayuda") abrirAyuda();
   else if (accion === "gastos") (el.gastos.hidden ? abrirGastos() : cerrarGastos()?.focus());
   else if (accion === "cuenta") (el.cuenta.hidden ? abrirCuenta() : cerrarCuenta()?.focus());
+  else if (accion === "deshacer") onDeshacer();
   else if (accion.startsWith("vista:")) cambiarVista(accion.slice(6));
 }
 
@@ -2893,11 +2894,15 @@ function onAtajo(event) {
     code: event.code, key: event.key, altKey: event.altKey,
     ctrlKey: event.ctrlKey, metaKey: event.metaKey, enCampo,
   });
-  if (!accion) return;
+  // Sin nada que deshacer la Z no hace nada, ni siquiera el aviso de abajo.
+  if (!accion || (accion === "deshacer" && !quitado)) return;
   event.preventDefault();
   hacerAtajo(accion);
   if (accion !== "ayuda") {
-    mostrarTecla(event.altKey ? textoAtajo(event.code, esMac) : event.code.replace(/^Key|^Digit/, ""), queHace(accion));
+    const conCmd = event.metaKey || event.ctrlKey;
+    const tecla = conCmd ? (esMac ? "⌘Z" : "Ctrl+Z")
+      : event.altKey ? textoAtajo(event.code, esMac) : event.code.replace(/^Key|^Digit/, "");
+    mostrarTecla(tecla, queHace(accion));
   }
 }
 
@@ -2968,6 +2973,7 @@ function ponerPistasDeAtajos() {
   el.copiar.title = tr("copiar.titulo", { tecla: pista("copiar") });
   el.abrirGastos.title = `${tr("gastos")} (${pista("gastos")})`;
   el.abrirCuenta.title = `${tr("cuenta")} (${pista("cuenta")})`;
+  el.deshacerBoton.title = `${tr("gastos.deshacer")} (${pista("deshacer")})`;
   for (const boton of el.botonesVista) {
     boton.title = `${boton.title} (${pista(`vista:${boton.dataset.vista}`)})`;
   }

@@ -45,6 +45,20 @@ test("Cmd y Ctrl no se tocan nunca", () => {
   assert.equal(atajoPara(tecla("KeyS", { ctrlKey: true, altKey: true, enCampo: true })), null);
 });
 
+test("deshacer con la Z, con Alt en un campo, y con Cmd o Ctrl fuera", () => {
+  assert.equal(atajoPara(tecla("KeyZ")), "deshacer");
+  assert.equal(atajoPara(tecla("KeyZ", { enCampo: true })), null);
+  assert.equal(atajoPara(tecla("KeyZ", { enCampo: true, altKey: true })), "deshacer");
+  assert.equal(atajoPara(tecla("KeyZ", { metaKey: true })), "deshacer");
+  assert.equal(atajoPara(tecla("KeyZ", { ctrlKey: true })), "deshacer");
+});
+
+test("en un campo Cmd+Z es deshacer lo escrito, y con Mayúsculas rehacer", () => {
+  assert.equal(atajoPara(tecla("KeyZ", { metaKey: true, enCampo: true })), null);
+  assert.equal(atajoPara(tecla("KeyZ", { ctrlKey: true, enCampo: true })), null);
+  assert.equal(atajoPara(tecla("KeyZ", { metaKey: true, shiftKey: true })), null);
+});
+
 test("la interrogación abre la ayuda fuera de un campo", () => {
   assert.equal(atajoPara({ ...tecla("Slash"), key: "?" }), "ayuda");
   assert.equal(atajoPara({ ...tecla("Minus"), key: "?" }), "ayuda", "en teclado español está en otra tecla");
@@ -53,7 +67,7 @@ test("la interrogación abre la ayuda fuera de un campo", () => {
 });
 
 test("lo que no es un atajo no hace nada", () => {
-  assert.equal(atajoPara(tecla("KeyZ")), null);
+  assert.equal(atajoPara(tecla("KeyQ")), null);
   assert.equal(atajoPara(tecla("Enter")), null);
 });
 

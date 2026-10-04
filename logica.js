@@ -1387,13 +1387,17 @@ const ATAJOS = {
   Digit6: "vista:timo",
   KeyG: "gastos",
   KeyP: "cuenta",
+  KeyZ: "deshacer",
   KeyH: "ayuda",
 };
 
 // Escribiendo en un campo las letras son letras (la x es "por" en las
 // cuentas), así que ahí hace falta Alt. Cmd y Ctrl no los toco nunca: son
 // copiar, pegar y compañía.
-function atajoPara({ code, key, altKey, ctrlKey, metaKey, enCampo }) {
+function atajoPara({ code, key, altKey, ctrlKey, metaKey, shiftKey, enCampo }) {
+  // La única excepción: Cmd+Z fuera de un campo no hace nada en el navegador, y
+  // es lo primero que pulsas cuando borras algo sin querer.
+  if ((ctrlKey || metaKey) && code === "KeyZ" && !enCampo && !altKey && !shiftKey) return "deshacer";
   if (ctrlKey || metaKey) return null;
   if (!enCampo && key === "?") return "ayuda";
   if (enCampo && !altKey) return null;
