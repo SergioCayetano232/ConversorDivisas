@@ -1,6 +1,6 @@
 const { test } = require("node:test");
 const assert = require("node:assert");
-const { resumenParaCompartir } = require("../logica.js");
+const { resumenParaCompartir, destacados } = require("../logica.js");
 const { ponerIdioma } = require("../textos.js");
 
 const hora = (dia, h = 12) => new Date(...dia.split("-").map((n, i) => (i === 1 ? n - 1 : Number(n))), h).getTime();
@@ -26,6 +26,8 @@ test("el resumen entero, con categorías, días y presupuesto", () => {
   assert.equal(resumenParaCompartir({ nombre: "Japón", gastos, presupuesto }, HOY), [
     "*🧳 Japón*",
     "Total: *100,00 EUR* en 3 gastos",
+    "🏆 Lo más caro: Comida, 50,00 EUR (1 oct)",
+    "📅 El día que más: 1 oct, 50,00 EUR",
     "",
     "*En qué se ha ido*",
     "🍽️ Comida: 80,00 EUR (80 %)",
@@ -65,4 +67,24 @@ test("en inglés, con los números a la inglesa", () => {
   assert.match(texto, /🍽️ Food: 80\.00 EUR \(80%\)/);
   assert.match(texto, /\*By day\*/);
   ponerIdioma("es");
+});
+
+test("lo más caro va con su concepto si lo tiene", () => {
+  ponerIdioma("es");
+  const conHotel = [...gastos, { ...gasto("4", "2026-10-02", 120, "alojamiento"), concepto: "Hotel" }];
+  assert.match(resumenParaCompartir({ nombre: "Japón", gastos: conHotel, presupuesto: null }, HOY), /\n🏆 Lo más caro: Hotel, 120,00 EUR \(Ayer\)\n📅 El día que más: Ayer, 150,00 EUR\n/);
+});
+
+test("con un gasto no hay destacados, y con dos días tampoco el día", () => {
+  assert.deepEqual(destacados([gasto("1", HOY, 10, "comida")]), { caro: null, dia: null });
+  const dos = destacados([gasto("2", HOY, 10, "comida"), gasto("1", "2026-10-02", 30, "comida")]);
+  assert.equal(dos.caro.id, "1");
+  assert.equal(dos.dia, null);
+});
+
+test("los destacados solo miran la divisa que más suma", () => {
+  const mezcla = [gasto("4", HOY, 60, "comida", "USD"), ...gastos];
+  const { caro, dia } = destacados(mezcla);
+  assert.equal(caro.id, "1");
+  assert.deepEqual(dia, { dia: "2026-10-01", total: 50, to: "EUR" });
 });

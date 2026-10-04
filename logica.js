@@ -1100,6 +1100,18 @@ const EMOJI_CATEGORIA = {
   comida: "🍽️", transporte: "🚕", alojamiento: "🏨", ocio: "🎟️", compras: "🛍️", otros: "📌",
 };
 
+// Lo que se comenta en el grupo. Con un gasto, el más caro es el total; y con
+// dos días, el que más se ve a simple vista en la lista de días.
+function destacados(gastos) {
+  const [principal] = sumarPorDivisa(gastos);
+  if (!principal || gastos.length < 2) return { caro: null, dia: null };
+  const suyos = gastos.filter((g) => g.to === principal.to);
+  const caro = suyos.reduce((max, g) => (g.valor > max.valor ? g : max));
+  const dias = gastosPorDia(suyos).map(({ dia, totales }) => ({ dia, total: totales[0].total, to: principal.to }));
+  const dia = dias.length >= 3 ? dias.reduce((max, d) => (d.total > max.total ? d : max)) : null;
+  return { caro, dia };
+}
+
 // Para pegarlo en WhatsApp: lo de entre asteriscos sale en negrita, y en
 // cualquier otro sitio se lee igual de bien. Los días van del primero al último,
 // que es como se cuenta un viaje.
@@ -1113,6 +1125,13 @@ function resumenParaCompartir({ nombre, gastos, presupuesto }, hoyIso = hoy()) {
     `*🧳 ${nombre}*`,
     tr("compartir.total", { total: `*${sumas(sumarPorDivisa(gastos))}*`, n: n === 1 ? tr("gastos.uno") : tr("gastos.n", { n }) }),
   ];
+
+  const { caro, dia } = destacados(gastos);
+  if (caro) {
+    const que = caro.concepto || tr(`cat.${caro.categoria}`);
+    lineas.push(tr("compartir.caro", { que, valor: dinero(caro.valor, caro.to), dia: nombreDia(isoLocal(new Date(caro.cuando)), hoyIso) }));
+  }
+  if (dia) lineas.push(tr("compartir.diaMas", { dia: nombreDia(dia.dia, hoyIso), valor: dinero(dia.total, dia.to) }));
 
   const trozos = desglose(gastos);
   if (trozos.length > 1) {
@@ -1489,7 +1508,7 @@ if (typeof module !== "undefined") {
     celdaCsv, csvHistorial, csvGastos,
     GASTOS_MAX, CONCEPTO_MAX, crearGasto, leerGastos, apuntarGasto, quitarGasto, cambiarConcepto, repetirGasto, devolverGasto, devolverTodos, sumarPorDivisa, gastosPorDia, mediaPorDia, nombreDia,
     CATEGORIAS, CATEGORIA_POR_DEFECTO, adivinarCategoria, desglose,
-    EMOJI_CATEGORIA, resumenParaCompartir,
+    EMOJI_CATEGORIA, destacados, resumenParaCompartir,
     COPIA_APP, COPIA_VERSION, CLAVES_COPIA, limpiarCopia, crearCopia, leerCopia, resumenCopia,
     VIAJES_MAX, NOMBRE_VIAJE_MAX, leerViajes, viajeActivo, crearViaje, renombrarViaje, elegirViaje, borrarViaje, cambiarViaje, resumenViaje, archivoGastos,
     diasHasta, leerPresupuesto, PRESUPUESTO_JUSTO, estadoPresupuesto,

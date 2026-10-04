@@ -38,7 +38,8 @@ que necesitaba una conversión rápida. Ahora es un clic en la barra del navegad
   lápiz, y para borrar uno hay que darle dos veces. Hasta ocho. Lo que tenías
   apuntado antes de esto pasa al primero, sin perder nada
 - El resumen del viaje para mandarlo: el bocadillo que hay al lado de **CSV**
-  copia el total, en qué se ha ido, lo de cada día y cómo va el presupuesto,
+  copia el total, lo más caro, el día que más, en qué se ha ido, lo de cada día y
+  cómo va el presupuesto,
   con negritas y emojis para que en WhatsApp se lea bien
 - Cada gasto con su categoría (comida, transporte, alojamiento, ocio, compras
   u otros), que sale sola por el concepto ("taxi", "cena", "hotel") y se cambia
