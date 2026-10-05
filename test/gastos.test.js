@@ -11,7 +11,7 @@ const gasto = (extra) => crearGasto({
 
 test("un gasto bueno se crea tal cual", () => {
   assert.deepEqual(gasto({ categoria: "comida" }), {
-    id: "a", from: "USD", to: "EUR", cantidad: 45, valor: 38.9, concepto: "Cena", cuando: hora("2026-10-02"), categoria: "comida",
+    id: "a", from: "USD", to: "EUR", cantidad: 45, valor: 38.9, concepto: "Cena", cuando: hora("2026-10-02"), categoria: "comida", pago: "tarjeta",
   });
 });
 
@@ -169,7 +169,7 @@ test("repetir un gasto lo apunta hoy con la tasa y la comisión de hoy", () => {
   const original = gasto({ concepto: "Metro", cantidad: 3, valor: 2.7, categoria: "transporte" });
   const otro = repetirGasto(original, { id: "b", cuando: hora("2026-10-04"), tasa: 0.95, comision: 2 });
   assert.deepEqual(otro, {
-    id: "b", from: "USD", to: "EUR", cantidad: 3, valor: 2.91, concepto: "Metro", cuando: hora("2026-10-04"), categoria: "transporte",
+    id: "b", from: "USD", to: "EUR", cantidad: 3, valor: 2.91, concepto: "Metro", cuando: hora("2026-10-04"), categoria: "transporte", pago: "tarjeta",
   });
 });
 

@@ -91,6 +91,7 @@ const el = {
   gastosMedia: document.getElementById("gastos-media"),
   gastosForm: document.getElementById("gastos-form"),
   gastosConcepto: document.getElementById("gastos-concepto"),
+  gastosPago: document.getElementById("gastos-pago"),
   gastosSugerencia: document.getElementById("gastos-sugerencia"),
   gastosApuntar: document.getElementById("gastos-apuntar"),
   gastosLista: document.getElementById("gastos-lista"),
@@ -219,6 +220,7 @@ let reparto = { ...CUENTA_POR_DEFECTO };
 // del concepto; si la eliges, ya no te la cambio por mucho que escribas.
 let categoriaNueva = CATEGORIA_POR_DEFECTO;
 let categoriaAMano = false;
+let pagoNuevo = PAGO_POR_DEFECTO;
 let filtroCategoria = null;
 
 // Con el mismo trazo que los iconos de las pestañas.
@@ -230,6 +232,12 @@ const ICONOS_CATEGORIA = {
   compras: '<path d="M3 5h8l-.6 7.5H3.6z"/><path d="M5.2 5V4a1.8 1.8 0 0 1 3.6 0v1"/>',
   otros: '<circle cx="3.2" cy="7" r="0.9"/><circle cx="7" cy="7" r="0.9"/><circle cx="10.8" cy="7" r="0.9"/>',
 };
+// Una tarjeta y un billete, del mismo trazo que los iconos de las categorías.
+const ICONOS_PAGO = {
+  tarjeta: '<svg viewBox="0 0 12 12" aria-hidden="true"><rect x="1.2" y="2.6" width="9.6" height="6.8" rx="1.3"/><path d="M1.2 4.9h9.6M3 7.6h2"/></svg>',
+  efectivo: '<svg viewBox="0 0 12 12" aria-hidden="true"><rect x="1" y="3" width="10" height="6" rx="1"/><circle cx="6" cy="6" r="1.4"/><path d="M2.8 4.8v2.4M9.2 4.8v2.4"/></svg>',
+};
+
 const iconoCategoria = (categoria) =>
   `<svg viewBox="0 0 14 14" aria-hidden="true">${ICONOS_CATEGORIA[categoria] ?? ICONOS_CATEGORIA.otros}</svg>`;
 
@@ -255,6 +263,7 @@ const EXTRAS_KEY = "divisasExtra";
 const VISTA_KEY = "vistaPanel";
 const AVISOS_KEY = "avisos";
 const COMISION_KEY = "comisionBanco";
+const PAGO_KEY = "pagoGasto";
 const FECHA_KEY = "fechaConsulta";
 const HISTORIAL_KEY = "historialConversiones";
 // Estas dos son de antes de los viajes: solo se leen para pasarlas al primero.
@@ -344,6 +353,24 @@ async function cargarComision() {
   } catch (error) {
     console.warn("No se pudo leer la comisión", error);
     return 0;
+  }
+}
+
+async function cargarPago() {
+  try {
+    const guardado = await chrome.storage.local.get(PAGO_KEY);
+    return leerPago(guardado[PAGO_KEY]);
+  } catch (error) {
+    console.warn("No se pudo leer cómo pagas", error);
+    return PAGO_POR_DEFECTO;
+  }
+}
+
+async function guardarPago() {
+  try {
+    await chrome.storage.local.set({ [PAGO_KEY]: pagoNuevo });
+  } catch (error) {
+    console.warn("No se pudo guardar cómo pagas", error);
   }
 }
 
@@ -1802,7 +1829,7 @@ const textoTotales = (totales) => totales.map(({ to, total }) => `${nf.format(to
 // extranjero eso es lo que te cuesta de verdad.
 function gastoDePantalla() {
   if (rate === null) return null;
-  const valor = conComision(leerImporte(el.result.value), comision);
+  const valor = conComision(leerImporte(el.result.value), comisionDelPago(pagoNuevo, comision));
   return crearGasto({
     id: `${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`,
     from: el.from.value,
@@ -1811,6 +1838,7 @@ function gastoDePantalla() {
     valor,
     concepto: el.gastosConcepto.value,
     categoria: categoriaNueva,
+    pago: pagoNuevo,
     cuando: Date.now(),
   });
 }
@@ -1869,6 +1897,24 @@ function onTeclaConcepto(event) {
     event.stopPropagation();
     pintarSugerencia(null);
   }
+}
+
+function pintarPago(conGiro = false) {
+  el.gastosPago.innerHTML = ICONOS_PAGO[pagoNuevo];
+  el.gastosPago.dataset.pago = pagoNuevo;
+  const nombre = tr(`pago.${pagoNuevo}`);
+  el.gastosPago.title = nombre;
+  el.gastosPago.setAttribute("aria-label", tr("pago.elegir", { nombre }));
+  if (conGiro) restartAnimation(el.gastosPago, "is-girando");
+}
+
+// Lo dejo como lo pusiste: si pagas en efectivo, sueles hacerlo varias veces seguidas.
+function onCambiarPago() {
+  pagoNuevo = pagoNuevo === "efectivo" ? "tarjeta" : "efectivo";
+  pintarPago(true);
+  pintarBotonGasto();
+  if (comision > 0) restartAnimation(el.gastosApuntar, "is-tic");
+  guardarPago();
 }
 
 function onConceptoGasto() {
@@ -1962,7 +2008,9 @@ function pintarBotonGasto() {
   }
   const valor = `${nf.format(gasto.valor)} ${gasto.to}`;
   el.gastosApuntar.textContent = tr("gastos.apuntar", { valor });
-  el.gastosApuntar.title = comision > 0 ? tr("gastos.comision", { pct: tr("pct", { n: nfComision.format(comision) }) }) : "";
+  el.gastosApuntar.title = comision === 0 ? ""
+    : pagoNuevo === "efectivo" ? tr("pago.efectivoNota")
+    : tr("gastos.comision", { pct: tr("pct", { n: nfComision.format(comision) }) });
   el.gastosApuntar.setAttribute(
     "aria-label",
     tr("gastos.apuntarAria", { cantidad: nf.format(gasto.cantidad), from: gasto.from, valor }),
@@ -2029,6 +2077,11 @@ function crearFilaGasto(gasto, i) {
   const texto = document.createElement("span");
   texto.className = "gastos__texto";
   texto.setAttribute("aria-label", tr("gastos.fila", { concepto, cantidad: nf.format(gasto.cantidad), from: gasto.from, valor }));
+  // El efectivo va como un punto en el icono: en la fila no cabe nada más.
+  if (gasto.pago === "efectivo") {
+    icono.classList.add("is-efectivo");
+    icono.title = `${tr(`cat.${gasto.categoria}`)} · ${tr("pago.efectivo")}`;
+  }
   texto.append(icono, que, de, cuanto);
 
   const quitar = document.createElement("button");
@@ -3656,6 +3709,7 @@ function bindEvents() {
   });
   el.gastosConcepto.addEventListener("click", () => pintarSugerencia(sugerenciaConcepto()));
   el.gastosCategoria.addEventListener("click", () => (el.categorias.hidden ? abrirCategorias() : cerrarCategorias()));
+  el.gastosPago.addEventListener("click", onCambiarPago);
   el.gastosCategoria.addEventListener("animationend", () => el.gastosCategoria.classList.remove("is-cambiada"));
   el.gastosVaciar.addEventListener("click", onVaciarGastos);
   el.deshacerBoton.addEventListener("click", onDeshacer);
@@ -3814,10 +3868,12 @@ async function init() {
   const idiomaCambiado = await cargarIdioma();
   traducirPagina();
   if (idiomaCambiado) saludarIdioma();
-  const [pair, rango, guardados, pendiente, guardadas, vistaGuardada, avisosGuardados, comisionGuardada, fechaGuardada, historialGuardado, viajesGuardados, repartoGuardado, alRevesGuardado] = await Promise.all([
+  const [pair, rango, guardados, pendiente, guardadas, vistaGuardada, avisosGuardados, comisionGuardada, fechaGuardada, historialGuardado, viajesGuardados, repartoGuardado, alRevesGuardado, pagoGuardado] = await Promise.all([
     loadPair(), cargarRango(), cargarRecientes(), tomarPendiente(), cargarExtras(), cargarVista(), cargarAvisos(),
-    cargarComision(), cargarFecha(), cargarHistorial(), cargarViajes(), cargarReparto(), cargarTasaAlReves(),
+    cargarComision(), cargarFecha(), cargarHistorial(), cargarViajes(), cargarReparto(), cargarTasaAlReves(), cargarPago(),
   ]);
+  pagoNuevo = pagoGuardado;
+  pintarPago();
   tasaAlReves = alRevesGuardado;
   reparto = repartoGuardado;
   historial = historialGuardado;

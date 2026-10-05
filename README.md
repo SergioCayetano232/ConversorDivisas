@@ -44,6 +44,9 @@ que necesitaba una conversión rápida. Ahora es un clic en la barra del navegad
   copia el total, lo más caro, el día que más, en qué se ha ido, lo de cada día y
   cómo va el presupuesto,
   con negritas y emojis para que en WhatsApp se lea bien
+- Cada gasto dice si fue con tarjeta o en efectivo, con el botón que hay al
+  lado de la categoría. En efectivo no se le suma la comisión del banco, y en
+  la lista lleva un puntito verde. Se queda como lo dejes
 - Cada gasto con su categoría (comida, transporte, alojamiento, ocio, compras
   u otros), que sale sola por el concepto ("taxi", "cena", "hotel") y se cambia
   con un clic. Arriba, en qué se te va el dinero en porcentajes; pulsando una

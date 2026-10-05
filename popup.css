@@ -2689,6 +2689,77 @@ body::after {
   animation: pop var(--mid) var(--ease-spring);
 }
 
+/* Al lado de la categoría, con qué pagas. El efectivo va en verde: sin comisión. */
+.gastos__pago {
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  background: var(--slate);
+  border: 1px solid var(--hairline-strong);
+  border-radius: 6px;
+  color: var(--mist);
+  cursor: pointer;
+  transition: transform var(--fast) var(--ease-spring), color var(--fast) var(--ease),
+    background-color var(--fast) var(--ease), border-color var(--fast) var(--ease);
+}
+
+.gastos__pago:hover {
+  border-color: var(--brass-dim);
+}
+
+.gastos__pago:active {
+  transform: scale(0.9);
+}
+
+.gastos__pago[data-pago="efectivo"] {
+  background: color-mix(in srgb, var(--jade) 14%, transparent);
+  border-color: color-mix(in srgb, var(--jade) 45%, transparent);
+  color: var(--jade);
+}
+
+.gastos__pago:focus-visible {
+  outline: 2px solid var(--brass);
+  outline-offset: 1px;
+}
+
+/* Al cambiar, el icono da media vuelta como una tarjeta que giras en la mano. */
+.gastos__pago.is-girando svg {
+  animation: girar-pago 420ms var(--ease-spring);
+}
+
+@keyframes girar-pago {
+  0% {
+    transform: rotateY(90deg) scale(0.7);
+  }
+  100% {
+    transform: none;
+  }
+}
+
+.gastos__icono.is-efectivo {
+  position: relative;
+}
+
+.gastos__icono.is-efectivo::after {
+  content: "";
+  position: absolute;
+  right: -2px;
+  bottom: -1px;
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--jade);
+  box-shadow: 0 0 0 1.5px var(--graphite), 0 0 6px var(--jade-glow);
+}
+
+.gastos__apuntar.is-tic {
+  animation: pop var(--mid) var(--ease-spring);
+}
+
+.gastos__pago svg,
 .gastos__categoria svg,
 .categorias__opcion svg,
 .gastos__icono svg,

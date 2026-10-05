@@ -991,6 +991,13 @@ function completarConcepto(texto, usados) {
   return { ...hallado, resto: hallado.concepto.slice(escrito.length) };
 }
 
+// En efectivo ya cambiaste antes en la casa de cambio: el banco no cobra nada.
+// Los de antes no lo dicen, y llevan la comisión dentro, así que son con tarjeta.
+const PAGOS = ["tarjeta", "efectivo"];
+const PAGO_POR_DEFECTO = "tarjeta";
+const leerPago = (pago) => (PAGOS.includes(pago) ? pago : PAGO_POR_DEFECTO);
+const comisionDelPago = (pago, comision) => (pago === "efectivo" ? 0 : comision);
+
 const categoriaBuena = (c) => (CATEGORIAS.includes(c) ? c : CATEGORIA_POR_DEFECTO);
 
 const esGastoBueno = (g) => Boolean(g) && typeof g.id === "string" && isValidCode(g.from) && isValidCode(g.to)
@@ -1001,11 +1008,12 @@ const esGastoBueno = (g) => Boolean(g) && typeof g.id === "string" && isValidCod
 // calculara al enseñarlo, el cambio de hoy me movería lo que gasté hace una semana.
 const limpiarConcepto = (concepto) => String(concepto ?? "").replace(/\s+/g, " ").trim().slice(0, CONCEPTO_MAX);
 
-function crearGasto({ id, from, to, cantidad, valor, concepto = "", cuando, categoria }) {
+function crearGasto({ id, from, to, cantidad, valor, concepto = "", cuando, categoria, pago }) {
   const gasto = {
     id, from, to, cantidad, valor, cuando,
     concepto: limpiarConcepto(concepto),
     categoria: categoriaBuena(categoria),
+    pago: leerPago(pago),
   };
   return esGastoBueno(gasto) && from !== to ? gasto : null;
 }
@@ -1017,6 +1025,7 @@ function leerGastos(guardado) {
   return guardado.filter(esGastoBueno).slice(0, GASTOS_MAX).map((g) => ({
     ...g,
     categoria: CATEGORIAS.includes(g.categoria) ? g.categoria : adivinarCategoria(g.concepto) ?? CATEGORIA_POR_DEFECTO,
+    pago: leerPago(g.pago),
   }));
 }
 
@@ -1048,7 +1057,7 @@ function quitarGasto(lista, id) {
 // hoy. Si no tengo la de hoy para ese par, uso la que tuvo, que es lo más cerca.
 function repetirGasto(gasto, { id, cuando, tasa = null, comision = 0 }) {
   const valor = Number.isFinite(tasa) && tasa > 0
-    ? Math.round(conComision(gasto.cantidad * tasa, comision) * 100) / 100
+    ? Math.round(conComision(gasto.cantidad * tasa, comisionDelPago(gasto.pago, comision)) * 100) / 100
     : gasto.valor;
   return crearGasto({ ...gasto, id, cuando, valor });
 }
@@ -1328,10 +1337,10 @@ function csvHistorial(lista) {
 // Del más antiguo al último: en una hoja de gastos se lee así, al revés que en el popup.
 function csvGastos(lista) {
   return filasCsv(
-    [tr("csv.fecha"), tr("csv.hora"), tr("csv.concepto"), tr("csv.categoria"), tr("csv.cantidad"), tr("csv.de"), tr("csv.importe"), tr("csv.a")],
+    [tr("csv.fecha"), tr("csv.hora"), tr("csv.concepto"), tr("csv.categoria"), tr("csv.cantidad"), tr("csv.de"), tr("csv.importe"), tr("csv.a"), tr("csv.pago")],
     [...lista].reverse().map((g) => [
       isoLocal(new Date(g.cuando)), horaLocal(g.cuando), g.concepto, tr(`cat.${g.categoria ?? CATEGORIA_POR_DEFECTO}`),
-      numeroCsv(g.cantidad), g.from, numeroCsv(g.valor), g.to,
+      numeroCsv(g.cantidad), g.from, numeroCsv(g.valor), g.to, tr(`pago.${leerPago(g.pago)}`),
     ]),
   );
 }
@@ -1527,6 +1536,7 @@ function limpiarCopia(crudo) {
   if (Array.isArray(d.historialConversiones)) datos.historialConversiones = leerHistorial(d.historialConversiones);
   if (d.rangoGrafico !== undefined) datos.rangoGrafico = leerRango(d.rangoGrafico);
   if (d.comisionBanco !== undefined) datos.comisionBanco = leerComision(d.comisionBanco);
+  if (d.pagoGasto !== undefined) datos.pagoGasto = leerPago(d.pagoGasto);
   if (d.cuentaReparto !== undefined) datos.cuentaReparto = leerCuenta(d.cuentaReparto);
   if (typeof d.insigniaActiva === "boolean") datos.insigniaActiva = d.insigniaActiva;
   if (typeof d.tasaAlReves === "boolean") datos.tasaAlReves = d.tasaAlReves;
@@ -1538,7 +1548,7 @@ function limpiarCopia(crudo) {
 // los viajes, para que no vuelvan a aparecer mezcladas.
 const CLAVES_COPIA = [
   "viajes", "gastosViaje", "presupuestoViaje", "lastPair", "paresRecientes", "divisasExtra", "avisos",
-  "historialConversiones", "rangoGrafico", "comisionBanco", "cuentaReparto", "insigniaActiva", "tasaAlReves", "idioma",
+  "historialConversiones", "rangoGrafico", "comisionBanco", "pagoGasto", "cuentaReparto", "insigniaActiva", "tasaAlReves", "idioma",
 ];
 
 function crearCopia(crudo, ahora = new Date()) {
@@ -1581,7 +1591,7 @@ if (typeof module !== "undefined") {
     HISTORIAL_MAX, leerHistorial, apuntarConversion, haceCuanto, textoParaCopiar,
     celdaCsv, csvHistorial, csvGastos,
     GASTOS_MAX, CONCEPTO_MAX, crearGasto, leerGastos, apuntarGasto, quitarGasto, cambiarConcepto, repetirGasto, devolverGasto, devolverTodos, sumarPorDivisa, gastosPorDia, pesoDeLosDias, mediaPorDia, nombreDia,
-    CATEGORIAS, CATEGORIA_POR_DEFECTO, adivinarCategoria, desglose, conceptosUsados, completarConcepto,
+    CATEGORIAS, CATEGORIA_POR_DEFECTO, adivinarCategoria, PAGOS, PAGO_POR_DEFECTO, leerPago, comisionDelPago, desglose, conceptosUsados, completarConcepto,
     EMOJI_CATEGORIA, destacados, resumenParaCompartir,
     COPIA_APP, COPIA_VERSION, CLAVES_COPIA, limpiarCopia, crearCopia, leerCopia, resumenCopia,
     VIAJES_MAX, NOMBRE_VIAJE_MAX, leerViajes, viajeActivo, crearViaje, renombrarViaje, elegirViaje, borrarViaje, cambiarViaje, resumenViaje, archivoGastos,
