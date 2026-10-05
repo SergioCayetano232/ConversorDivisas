@@ -961,6 +961,36 @@ function adivinarCategoria(concepto) {
   return PISTAS_CATEGORIA.find(([, patron]) => patron.test(texto))?.[0] ?? null;
 }
 
+// Los conceptos que ya has usado: el más repetido primero y, si empatan, el
+// último. Me quedo con la categoría del último, que si la cambiaste a mano es esa.
+function conceptosUsados(gastos) {
+  const vistos = new Map();
+  for (const g of gastos) {
+    const concepto = limpiarConcepto(g.concepto);
+    if (!concepto) continue;
+    const clave = normalizar(concepto);
+    const visto = vistos.get(clave);
+    if (!visto) vistos.set(clave, { concepto, categoria: g.categoria, veces: 1, cuando: g.cuando });
+    else {
+      visto.veces += 1;
+      if (g.cuando > visto.cuando) Object.assign(visto, { concepto, categoria: g.categoria, cuando: g.cuando });
+    }
+  }
+  return [...vistos.values()]
+    .sort((a, b) => b.veces - a.veces || b.cuando - a.cuando)
+    .map(({ concepto, categoria }) => ({ concepto, categoria: categoriaBuena(categoria) }));
+}
+
+// Con una letra sola saldría siempre lo mismo, así que espero a la segunda.
+function completarConcepto(texto, usados) {
+  const escrito = String(texto ?? "");
+  if (escrito.trim().length < 2) return null;
+  const clave = normalizar(escrito);
+  const hallado = usados.find((u) => u.concepto.length > escrito.length && normalizar(u.concepto).startsWith(clave));
+  if (!hallado) return null;
+  return { ...hallado, resto: hallado.concepto.slice(escrito.length) };
+}
+
 const categoriaBuena = (c) => (CATEGORIAS.includes(c) ? c : CATEGORIA_POR_DEFECTO);
 
 const esGastoBueno = (g) => Boolean(g) && typeof g.id === "string" && isValidCode(g.from) && isValidCode(g.to)
@@ -1542,7 +1572,7 @@ if (typeof module !== "undefined") {
     HISTORIAL_MAX, leerHistorial, apuntarConversion, haceCuanto, textoParaCopiar,
     celdaCsv, csvHistorial, csvGastos,
     GASTOS_MAX, CONCEPTO_MAX, crearGasto, leerGastos, apuntarGasto, quitarGasto, cambiarConcepto, repetirGasto, devolverGasto, devolverTodos, sumarPorDivisa, gastosPorDia, mediaPorDia, nombreDia,
-    CATEGORIAS, CATEGORIA_POR_DEFECTO, adivinarCategoria, desglose,
+    CATEGORIAS, CATEGORIA_POR_DEFECTO, adivinarCategoria, desglose, conceptosUsados, completarConcepto,
     EMOJI_CATEGORIA, destacados, resumenParaCompartir,
     COPIA_APP, COPIA_VERSION, CLAVES_COPIA, limpiarCopia, crearCopia, leerCopia, resumenCopia,
     VIAJES_MAX, NOMBRE_VIAJE_MAX, leerViajes, viajeActivo, crearViaje, renombrarViaje, elegirViaje, borrarViaje, cambiarViaje, resumenViaje, archivoGastos,

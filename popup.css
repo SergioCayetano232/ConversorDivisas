@@ -2028,8 +2028,16 @@ body::after {
   margin-bottom: var(--s-2);
 }
 
+.gastos__caja {
+  position: relative;
+  display: flex;
+  flex: 1;
+  min-width: 0;
+}
+
 .gastos__concepto {
   flex: 1;
+  width: 100%;
   min-width: 0;
   height: 24px;
   padding: 0 var(--s-2);
@@ -2050,6 +2058,79 @@ body::after {
   outline: none;
   border-color: var(--brass);
   box-shadow: 0 0 0 3px var(--brass-ghost);
+}
+
+/* Va encima del campo con la misma letra y el mismo hueco, para que el resto
+   empiece justo donde acaba lo escrito. El borde de 1px cuenta. */
+.gastos__sugerencia {
+  position: absolute;
+  inset: 1px;
+  padding: 0 var(--s-2);
+  overflow: hidden;
+  font-family: inherit;
+  font-size: 11px;
+  line-height: 22px;
+  white-space: pre;
+  pointer-events: none;
+  opacity: 0;
+}
+
+.gastos__caja:focus-within .gastos__sugerencia.is-visible {
+  opacity: 1;
+}
+
+.gastos__escrito {
+  visibility: hidden;
+}
+
+.gastos__resto {
+  display: inline-block;
+  color: var(--muted);
+}
+
+/* Al lado, la pista de qué tecla lo mete. */
+.gastos__resto::after {
+  content: "Tab";
+  display: inline-block;
+  margin-left: 6px;
+  padding: 0 4px;
+  border: 1px solid var(--hairline-strong);
+  border-radius: 4px;
+  font-family: var(--font-mono);
+  font-size: 9px;
+  line-height: 13px;
+  vertical-align: 1px;
+  color: var(--muted);
+}
+
+.gastos__resto.is-nueva {
+  animation: asomar 260ms var(--ease-out);
+}
+
+@keyframes asomar {
+  from {
+    opacity: 0;
+    transform: translateX(-4px);
+  }
+}
+
+/* Al aceptarla, el texto se queda y el campo da un destello de latón. */
+.gastos__concepto.is-completado {
+  animation: completado 520ms var(--ease-spring);
+}
+
+@keyframes completado {
+  0% {
+    box-shadow: 0 0 0 3px var(--brass-ghost);
+  }
+  35% {
+    box-shadow: 0 0 0 4px var(--brass-glow), 0 0 16px -2px var(--brass-glow);
+    transform: scale(1.015);
+  }
+  100% {
+    box-shadow: 0 0 0 3px var(--brass-ghost);
+    transform: none;
+  }
 }
 
 .gastos__apuntar {

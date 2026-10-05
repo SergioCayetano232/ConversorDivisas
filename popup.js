@@ -91,6 +91,7 @@ const el = {
   gastosMedia: document.getElementById("gastos-media"),
   gastosForm: document.getElementById("gastos-form"),
   gastosConcepto: document.getElementById("gastos-concepto"),
+  gastosSugerencia: document.getElementById("gastos-sugerencia"),
   gastosApuntar: document.getElementById("gastos-apuntar"),
   gastosLista: document.getElementById("gastos-lista"),
   gastosVacio: document.getElementById("gastos-vacio"),
@@ -1823,10 +1824,61 @@ function pintarCategoriaNueva(conSalto = false) {
   if (conSalto) restartAnimation(el.gastosCategoria, "is-cambiada");
 }
 
+// Lo de todos los viajes: el café de Lisboa también me vale en Japón.
+function sugerenciaConcepto() {
+  const todos = viajes.lista.flatMap((v) => (v.id === viajes.activo ? gastos : v.gastos));
+  return completarConcepto(el.gastosConcepto.value, conceptosUsados(todos));
+}
+
+// El resto sale en gris detrás de lo escrito. El trozo escrito va invisible
+// solo para empujar el resto justo hasta donde acaba el texto.
+function pintarSugerencia(sugerencia) {
+  const campo = el.gastosConcepto;
+  // Si el texto ya no cabe, el campo se desplaza y la sugerencia caería encima.
+  const cabe = campo.scrollWidth <= campo.clientWidth;
+  const hay = Boolean(sugerencia) && cabe && campo.selectionStart === campo.value.length;
+  const [escrito, resto] = el.gastosSugerencia.children;
+  escrito.textContent = hay ? campo.value : "";
+  if (hay && resto.textContent !== sugerencia.resto) restartAnimation(resto, "is-nueva");
+  resto.textContent = hay ? sugerencia.resto : "";
+  el.gastosSugerencia.classList.toggle("is-visible", hay);
+  return hay;
+}
+
+function aceptarSugerencia() {
+  const sugerencia = sugerenciaConcepto();
+  if (!sugerencia || !pintarSugerencia(sugerencia)) return false;
+  el.gastosConcepto.value = sugerencia.concepto;
+  pintarSugerencia(null);
+  restartAnimation(el.gastosConcepto, "is-completado");
+  pintarBotonGasto();
+  if (!categoriaAMano && sugerencia.categoria !== categoriaNueva) {
+    categoriaNueva = sugerencia.categoria;
+    pintarCategoriaNueva(true);
+  }
+  return true;
+}
+
+function onTeclaConcepto(event) {
+  if (event.altKey || event.metaKey || event.ctrlKey) return;
+  if ((event.key === "Tab" && !event.shiftKey) || event.key === "ArrowRight") {
+    if (aceptarSugerencia()) event.preventDefault();
+  } else if (event.key === "Escape" && el.gastosSugerencia.classList.contains("is-visible")) {
+    // Solo me como el Escape si había algo que quitar; si no, que cierre el panel.
+    event.preventDefault();
+    event.stopPropagation();
+    pintarSugerencia(null);
+  }
+}
+
 function onConceptoGasto() {
   pintarBotonGasto();
+  const sugerencia = sugerenciaConcepto();
+  const hay = pintarSugerencia(sugerencia);
   if (categoriaAMano) return;
-  const nueva = adivinarCategoria(el.gastosConcepto.value) ?? CATEGORIA_POR_DEFECTO;
+  // Si ya lo apuntaste antes, mejor la categoría que le pusiste que la que yo adivine.
+  const nueva = (hay ? sugerencia.categoria : null)
+    ?? adivinarCategoria(el.gastosConcepto.value) ?? CATEGORIA_POR_DEFECTO;
   if (nueva === categoriaNueva) return;
   categoriaNueva = nueva;
   pintarCategoriaNueva(true);
@@ -2502,6 +2554,7 @@ function onApuntarGasto(event) {
   gastos = apuntarGasto(gastos, gasto);
   gastoNuevo = gasto.id;
   el.gastosConcepto.value = "";
+  pintarSugerencia(null);
   categoriaNueva = CATEGORIA_POR_DEFECTO;
   categoriaAMano = false;
   // Si estabas mirando otra categoría, el que acabas de apuntar no se vería.
@@ -3579,6 +3632,12 @@ function bindEvents() {
   el.abrirGastos.addEventListener("animationend", () => el.abrirGastos.classList.remove("is-apuntado"));
   el.gastosForm.addEventListener("submit", onApuntarGasto);
   el.gastosConcepto.addEventListener("input", onConceptoGasto);
+  el.gastosConcepto.addEventListener("keydown", onTeclaConcepto);
+  // Mover el cursor no lanza input, y la sugerencia solo vale con él al final.
+  el.gastosConcepto.addEventListener("keyup", (event) => {
+    if (["ArrowLeft", "ArrowRight", "Home", "End"].includes(event.key)) pintarSugerencia(sugerenciaConcepto());
+  });
+  el.gastosConcepto.addEventListener("click", () => pintarSugerencia(sugerenciaConcepto()));
   el.gastosCategoria.addEventListener("click", () => (el.categorias.hidden ? abrirCategorias() : cerrarCategorias()));
   el.gastosCategoria.addEventListener("animationend", () => el.gastosCategoria.classList.remove("is-cambiada"));
   el.gastosVaciar.addEventListener("click", onVaciarGastos);

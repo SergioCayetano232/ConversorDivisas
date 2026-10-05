@@ -580,16 +580,19 @@
       <form class="gastos__nuevo" id="gastos-form" novalidate>
         <button class="gastos__categoria" type="button" id="gastos-categoria" aria-haspopup="true" aria-expanded="false" aria-controls="categorias"></button>
         <div class="categorias" id="categorias" role="group" aria-label="Elige la categoría" data-t-aria-label="cat.lista" hidden></div>
-        <input
-          class="gastos__concepto"
-          type="text"
-          id="gastos-concepto"
-          maxlength="40"
-          autocomplete="off"
-          placeholder="Concepto (opcional)"
-          aria-label="Concepto (opcional)"
-          data-t-placeholder="gastos.concepto"
-          data-t-aria-label="gastos.concepto">
+        <span class="gastos__caja">
+          <input
+            class="gastos__concepto"
+            type="text"
+            id="gastos-concepto"
+            maxlength="40"
+            autocomplete="off"
+            placeholder="Concepto (opcional)"
+            aria-label="Concepto (opcional)"
+            data-t-placeholder="gastos.concepto"
+            data-t-aria-label="gastos.concepto">
+          <span class="gastos__sugerencia" id="gastos-sugerencia" aria-hidden="true"><span class="gastos__escrito"></span><span class="gastos__resto"></span></span>
+        </span>
         <button class="gastos__apuntar" type="submit" id="gastos-apuntar"></button>
       </form>
       <ul class="historial__lista gastos__lista" id="gastos-lista"></ul>
