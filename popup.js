@@ -132,6 +132,7 @@ const el = {
   comisionRapidas: document.getElementById("comision-rapidas"),
   comisionCampo: document.getElementById("comision-campo"),
   chuletaTabla: document.getElementById("chuleta-tabla"),
+  chuletaCompartir: document.getElementById("chuleta-compartir"),
   campana: document.getElementById("vista-avisos"),
   abrirAyuda: document.getElementById("abrir-ayuda"),
   abrirCopia: document.getElementById("abrir-copia"),
@@ -1325,6 +1326,7 @@ function pintarChuleta() {
   const from = el.from.value;
   const to = el.to.value;
   const filas = chuleta(rate, comision);
+  el.chuletaCompartir.disabled = filas[0].valor === null;
   const tuya = cantidadOrigen();
   if (el.chuletaTabla.children.length !== filas.length) {
     el.chuletaTabla.replaceChildren(...filas.map(crearFilaChuleta));
@@ -1353,6 +1355,23 @@ function pintarChuleta() {
       tr("chuleta.aria", { cantidad: nfEntero.format(cantidad), from, valor: texto, to }),
     );
   });
+}
+
+async function onCompartirChuleta() {
+  const texto = chuletaParaCompartir(chuleta(rate, comision), el.from.value, el.to.value, comision);
+  if (!texto) return;
+  const bien = await copiar(texto);
+  const boton = el.chuletaCompartir;
+  boton.classList.toggle("is-fallo", !bien);
+  restartAnimation(boton, "is-hecho");
+  clearTimeout(boton.vuelta);
+  boton.vuelta = setTimeout(() => boton.classList.remove("is-hecho", "is-fallo"), 1600);
+  // Una ola por las filas, como si se las llevara el portapapeles.
+  if (bien) {
+    restartAnimation(el.chuletaTabla, "is-copiada");
+    setTimeout(() => el.chuletaTabla.classList.remove("is-copiada"), 1000);
+  }
+  mostrarFlash([tr(bien ? "chuleta.copiada" : "compartir.fallo")], 2200);
 }
 
 function onElegirChuleta(cantidad) {
@@ -3755,6 +3774,7 @@ function bindEvents() {
   el.historialBorrar.addEventListener("click", onBorrarHistorial);
   el.historialCsv.addEventListener("click", () => descargarCsv(csvHistorial(historial), tr("csv.archivoHistorial"), el.historialCsv));
   el.gastosCompartir.addEventListener("click", onCompartir);
+  el.chuletaCompartir.addEventListener("click", onCompartirChuleta);
   el.gastosCsv.addEventListener("click", () => descargarCsv(csvGastos(gastos), archivoGastos(viajeActivo(viajes).nombre), el.gastosCsv));
   el.abrirGastos.addEventListener("click", () => (el.gastos.hidden ? abrirGastos() : cerrarGastos()));
   el.abrirGastos.addEventListener("animationend", () => el.abrirGastos.classList.remove("is-apuntado"));

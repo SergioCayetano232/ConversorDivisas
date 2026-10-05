@@ -3769,6 +3769,55 @@ body::after {
   min-width: 0;
 }
 
+.chuleta__pie {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 5px;
+}
+
+/* El bocadillo de compartir de los gastos, con su nombre al lado. */
+.chuleta__compartir {
+  grid-template-columns: 11px auto;
+  gap: 4px;
+  width: auto;
+  padding: 1px 6px;
+  border-color: var(--hairline-strong);
+}
+
+.chuleta__compartir-texto {
+  grid-area: 1 / 2;
+}
+
+.chuleta__compartir:hover:not(:disabled) {
+  color: var(--brass);
+  border-color: var(--brass-dim);
+  background: var(--brass-ghost);
+}
+
+.chuleta__compartir:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+.chuleta__compartir.is-hecho:not(.is-fallo) {
+  color: var(--jade);
+  border-color: color-mix(in srgb, var(--jade) 45%, transparent);
+  background: color-mix(in srgb, var(--jade) 10%, transparent);
+}
+
+.chuleta__tabla.is-copiada .chuleta__boton {
+  animation: ola 520ms var(--ease-out) backwards;
+  animation-delay: calc(var(--i, 0) * 45ms);
+}
+
+@keyframes ola {
+  30% {
+    border-color: var(--brass);
+    box-shadow: 0 0 0 2px var(--brass-ghost), 0 0 14px -4px var(--brass-glow);
+    transform: translateY(-2px);
+  }
+}
+
 .chuleta__fila.is-nueva {
   animation: pop var(--mid) var(--ease-spring) backwards;
   animation-delay: calc(var(--i, 0) * 40ms);
@@ -5273,6 +5322,10 @@ kbd {
 
   .presupuesto__esto {
     animation: none;
+  }
+
+  .chuleta__tabla.is-copiada .chuleta__boton {
+    animation-delay: 0s;
   }
 
   .trend__line {

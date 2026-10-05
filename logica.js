@@ -572,6 +572,21 @@ function chuleta(rate, comision = 0) {
   return CHULETA.map((n) => ({ cantidad: n * escala, valor: hay ? conComision(n * escala * rate, comision) : null }));
 }
 
+// Para el grupo del viaje. Las filas van entre ``` para que WhatsApp las ponga
+// en letra de máquina y los números queden en columna.
+function chuletaParaCompartir(filas, from, to, comision = 0) {
+  if (filas.length === 0 || filas.some((f) => f.valor === null)) return "";
+  const entero = numeros({ maximumFractionDigits: 0 });
+  const dinero = numeros({ minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  const izquierda = filas.map((f) => `${entero.format(f.cantidad)} ${from}`);
+  const derecha = filas.map((f) => `${dinero.format(f.valor)} ${to}`);
+  const ancho = (lista) => Math.max(...lista.map((t) => t.length));
+  const lineas = filas.map((_, i) => `${izquierda[i].padStart(ancho(izquierda))} = ${derecha[i].padStart(ancho(derecha))}`);
+  const texto = [`*💱 ${tr("chuleta.titulo", { from, to })}*`, "```", ...lineas, "```"];
+  if (comision > 0) texto.push(`_${tr("chuleta.conComision", { pct: tr("pct", { n: numeros({ maximumFractionDigits: 2 }).format(comision) }) })}_`);
+  return texto.join("\n");
+}
+
 // Las tarjetas normales cobran entre un 1 y un 3 %. Más de un 10 % seguro que
 // es un error al teclear.
 const COMISION_MAX = 10;
@@ -1627,7 +1642,7 @@ if (typeof module !== "undefined") {
     VIAJES_MAX, NOMBRE_VIAJE_MAX, leerViajes, viajeActivo, crearViaje, renombrarViaje, elegirViaje, borrarViaje, cambiarViaje, resumenViaje, archivoGastos,
     diasHasta, leerPresupuesto, PRESUPUESTO_JUSTO, estadoPresupuesto, loQueSeLleva, redondearDias,
     EXTRAS_MAX, EXTRAS_POR_DEFECTO, leerExtras, anadirExtra, quitarExtra,
-    extrasVisibles, disponiblesParaAnadir, convertirExtras, semanaDe, trazoMini, CHULETA, escalaChuleta, chuleta,
+    extrasVisibles, disponiblesParaAnadir, convertirExtras, semanaDe, trazoMini, CHULETA, escalaChuleta, chuleta, chuletaParaCompartir,
     COMISION_MAX, COMISIONES_RAPIDAS, leerComision, leerPorcentaje, conComision,
     PROPINAS_RAPIDAS, PROPINA_MAX, PERSONAS_MAX, CUENTA_POR_DEFECTO, leerCuenta, repartirCuenta,
     MARGENES, tasaOfrecida, analizarCambio,

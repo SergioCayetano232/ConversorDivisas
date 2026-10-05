@@ -121,6 +121,10 @@ const TEXTOS = {
     "avisos.notiBaja": "Ha bajado de {umbral}, como pediste.",
 
     "chuleta.aria": "{cantidad} {from} son {valor} {to}. Ponerlo como cantidad",
+    "chuleta.titulo": "Chuleta {from} → {to}",
+    "chuleta.conComision": "Con la comisión del {pct} de la tarjeta",
+    "chuleta.compartir": "Copiar la chuleta, lista para pegar en WhatsApp",
+    "chuleta.copiada": "Chuleta copiada. Pégala en el grupo del viaje",
 
     "fecha.campo": "Día que quieres consultar",
     "fecha.rapidas": "Hace cuánto",
@@ -469,6 +473,10 @@ const TEXTOS = {
     "avisos.notiBaja": "It has fallen below {umbral}, as you asked.",
 
     "chuleta.aria": "{cantidad} {from} is {valor} {to}. Use it as the amount",
+    "chuleta.titulo": "Cheat sheet {from} → {to}",
+    "chuleta.conComision": "Including the {pct} card fee",
+    "chuleta.compartir": "Copy the cheat sheet, ready to paste into WhatsApp",
+    "chuleta.copiada": "Cheat sheet copied. Paste it into the trip group",
 
     "fecha.campo": "Day to look up",
     "fecha.rapidas": "How long ago",

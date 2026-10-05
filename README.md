@@ -99,7 +99,8 @@ que necesitaba una conversión rápida. Ahora es un clic en la barra del navegad
 - Una chuleta de viaje en otra pestaña: 1, 5, 10, 20, 50 y 100 en las dos
   divisas, para mirar precios de un vistazo. Si la divisa es muy pequeña (yenes,
   rupias…) empieza en 100 o en 10.000, que si no la tabla no sirve. Pulsando una
-  fila la pones como cantidad
+  fila la pones como cantidad. Con el botón de **WhatsApp** la copias en
+  columna, lista para pegar en el grupo del viaje
 - La tasa de un día concreto: eliges la fecha (o "hace 1 mes, 6 meses, 1 año")
   y te dice cuánto era tu cantidad entonces y cuánto ha cambiado hasta hoy. Si
   ese día fue fin de semana o festivo, te avisa y usa la del último día con tasa
