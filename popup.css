@@ -977,7 +977,61 @@ body::after {
   animation: beat var(--mid) var(--ease-spring);
 }
 
+/* Con Shift el borde pasa a discontinuo: va a copiar más de lo normal. */
+.copiar.is-frase {
+  color: var(--brass);
+  border-color: var(--brass-dim);
+  border-style: dashed;
+}
+
+/* La frase copiada, en un globito que cae del botón. Por arriba lo cortaría la
+   tarjeta, que no deja salir nada. */
+.copiar__frase {
+  position: absolute;
+  right: 0;
+  top: calc(100% + 6px);
+  z-index: 5;
+  padding: 4px 9px;
+  white-space: nowrap;
+  background: var(--glass);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  border: 1px solid var(--brass-dim);
+  border-radius: 999px;
+  box-shadow: inset 0 1px 0 var(--sheen), var(--shadow-md), 0 0 18px -6px var(--brass-glow);
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-variant-numeric: tabular-nums;
+  color: var(--mist);
+  pointer-events: none;
+  animation: globo-frase 1600ms var(--ease-out) forwards;
+}
+
+@keyframes globo-frase {
+  0% {
+    opacity: 0;
+    transform: translateY(-6px) scale(0.85);
+  }
+  18% {
+    opacity: 1;
+    transform: translateY(0) scale(1.04);
+    animation-timing-function: var(--ease-spring);
+  }
+  30% {
+    transform: none;
+  }
+  80% {
+    opacity: 1;
+    transform: none;
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(-4px) scale(0.96);
+  }
+}
+
 .result__acciones {
+  position: relative;
   display: flex;
   align-items: center;
   gap: 6px;

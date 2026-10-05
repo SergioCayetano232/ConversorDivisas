@@ -1368,6 +1368,14 @@ function csvGastos(lista) {
 
 // El número a secas, sin código ni separador de miles: lo normal es que acabe
 // pegado en una hoja de cálculo y ahí estorba. El decimal, el del idioma.
+// Con Shift, la frase entera, para mandársela a alguien. Esa sí con los miles,
+// que la va a leer una persona y no una hoja de cálculo.
+function fraseParaCopiar({ cantidad, from, valor, to }) {
+  if (![cantidad, valor].every(Number.isFinite) || !isValidCode(from) || !isValidCode(to)) return "";
+  const dinero = (n, code) => `${numeros({ minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(n)} ${code}`;
+  return `${dinero(cantidad, from)} = ${dinero(valor, to)}`;
+}
+
 function textoParaCopiar(valor) {
   return valor.toFixed(2).replace(".", separadorDecimal());
 }
@@ -1524,7 +1532,8 @@ function atajoPara({ code, key, altKey, ctrlKey, metaKey, shiftKey, enCampo }) {
   if (ctrlKey || metaKey) return null;
   if (!enCampo && key === "?") return "ayuda";
   if (enCampo && !altKey) return null;
-  return ATAJOS[code] ?? null;
+  const accion = ATAJOS[code] ?? null;
+  return accion === "copiar" && shiftKey ? "copiarFrase" : accion;
 }
 
 function textoAtajo(code, esMac) {
@@ -1609,7 +1618,7 @@ if (typeof module !== "undefined") {
     RANGOS, RANGO_POR_DEFECTO, leerRango, coordenadas, alturaEn, MOMENTO_UMBRAL, momento, textoMomento, indiceCercano, extremos, fechaCorta, largoEnPantalla,
     leerNumero, divisaDe, leerSeleccion, destinoPara, leerPegado, buscarPrecios, precioEntero, leerOmnibox, escaparXml,
     divisaDeIdioma, parPorIdioma, banderaDe,
-    HISTORIAL_MAX, leerHistorial, apuntarConversion, haceCuanto, textoParaCopiar,
+    HISTORIAL_MAX, leerHistorial, apuntarConversion, haceCuanto, textoParaCopiar, fraseParaCopiar,
     celdaCsv, csvHistorial, csvGastos,
     GASTOS_MAX, CONCEPTO_MAX, crearGasto, leerGastos, apuntarGasto, quitarGasto, cambiarConcepto, repetirGasto, devolverGasto, devolverTodos, sumarPorDivisa, gastosPorDia, pesoDeLosDias, mediaPorDia, nombreDia,
     CATEGORIAS, CATEGORIA_POR_DEFECTO, adivinarCategoria, PAGOS, PAGO_POR_DEFECTO, leerPago, comisionDelPago, desglose, conceptosUsados, completarConcepto,

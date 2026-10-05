@@ -2988,6 +2988,7 @@ const queHace = (accion) => tr(`atajo.${accion}`);
 function hacerAtajo(accion) {
   if (accion === "intercambiar" && !el.swap.disabled) onSwap();
   else if (accion === "copiar") onCopiar();
+  else if (accion === "copiarFrase") onCopiar(true);
   else if (accion === "origen") el.from.click();
   else if (accion === "destino") el.to.click();
   else if (accion === "ayuda") abrirAyuda();
@@ -3041,7 +3042,7 @@ function onAtajo(event) {
   const enCampo = t instanceof HTMLInputElement || t instanceof HTMLTextAreaElement || t.isContentEditable;
   const accion = atajoPara({
     code: event.code, key: event.key, altKey: event.altKey,
-    ctrlKey: event.ctrlKey, metaKey: event.metaKey, enCampo,
+    ctrlKey: event.ctrlKey, metaKey: event.metaKey, shiftKey: event.shiftKey, enCampo,
   });
   // Sin nada que deshacer la Z no hace nada, ni siquiera el aviso de abajo.
   if (!accion || (accion === "deshacer" && !quitado)) return;
@@ -3051,7 +3052,8 @@ function onAtajo(event) {
     const conCmd = event.metaKey || event.ctrlKey;
     const tecla = conCmd ? (esMac ? "⌘Z" : "Ctrl+Z")
       : event.altKey ? textoAtajo(event.code, esMac) : event.code.replace(/^Key|^Digit/, "");
-    mostrarTecla(tecla, queHace(accion));
+    const prefijo = accion === "copiarFrase" ? (esMac ? "⇧" : "Shift+") : "";
+    mostrarTecla(prefijo + tecla, queHace(accion));
   }
 }
 
@@ -3456,13 +3458,40 @@ function onResultInput() {
 
 let avisoCopiado = null;
 
-async function onCopiar() {
+async function onCopiar(entera = false) {
   const valor = leerImporte(el.result.value);
   if (valor === null || rate === null) return;
   // Si lo copias es que era esa: la apunto ya, sin esperar.
   tocado = true;
   apuntarAhora();
-  avisar(tr(await copiar(textoParaCopiar(valor)) ? "copiado" : "copiar.fallo"));
+  const frase = entera ? fraseParaCopiar({ cantidad: leerImporte(el.amount.value), from: el.from.value, valor, to: el.to.value }) : "";
+  if (entera && !frase) return;
+  const bien = await copiar(frase || textoParaCopiar(valor));
+  avisar(tr(!bien ? "copiar.fallo" : frase ? "copiado.frase" : "copiado"));
+  if (bien && frase) soltarFrase(frase);
+}
+
+// La frase sube desde el botón para que veas qué se ha llevado el portapapeles.
+function soltarFrase(frase) {
+  el.copiar.parentElement.querySelector(".copiar__frase")?.remove();
+  const globo = document.createElement("span");
+  globo.className = "copiar__frase";
+  globo.setAttribute("aria-hidden", "true");
+  globo.textContent = frase;
+  el.copiar.parentElement.appendChild(globo);
+  globo.addEventListener("animationend", () => globo.remove());
+}
+
+// Con Shift pulsado el botón ya dice lo que va a copiar, antes de hacer clic.
+let conShift = false;
+const etiquetaCopiar = () => tr(conShift ? "copiar.frase" : "copiar");
+
+function onShift(event) {
+  const ahora = event.type === "blur" ? false : event.shiftKey;
+  if (ahora === conShift) return;
+  conShift = ahora;
+  el.copiar.classList.toggle("is-frase", conShift);
+  if (!el.copiar.classList.contains("is-hecho")) el.copiarTexto.textContent = etiquetaCopiar();
 }
 
 async function copiar(texto) {
@@ -3502,7 +3531,7 @@ function avisar(texto) {
 
   clearTimeout(avisoCopiado);
   avisoCopiado = setTimeout(() => {
-    el.copiarTexto.textContent = tr("copiar");
+    el.copiarTexto.textContent = etiquetaCopiar();
     el.copiar.classList.remove("is-hecho");
   }, 1400);
 }
@@ -3682,7 +3711,10 @@ function bindEvents() {
   el.calculo.addEventListener("animationend", () => el.calculo.classList.remove("is-resuelto"));
   el.swap.addEventListener("click", onSwap);
   el.retry.addEventListener("click", refresh);
-  el.copiar.addEventListener("click", onCopiar);
+  el.copiar.addEventListener("click", (event) => onCopiar(event.shiftKey));
+  document.addEventListener("keydown", onShift);
+  document.addEventListener("keyup", onShift);
+  window.addEventListener("blur", onShift);
   for (const boton of el.rangos) boton.addEventListener("click", onRango);
   el.lienzo.addEventListener("pointermove", onPunteroGrafico);
   el.lienzo.addEventListener("pointerdown", onPunteroGrafico);
