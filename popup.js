@@ -1969,7 +1969,7 @@ function pintarBotonGasto() {
   );
 }
 
-function crearDiaGastos({ dia, totales }) {
+function crearDiaGastos({ dia, gastos: suyos, totales }, peso, d) {
   const fila = document.createElement("li");
   fila.className = "gastos__dia";
   const nombre = document.createElement("span");
@@ -1978,6 +1978,21 @@ function crearDiaGastos({ dia, totales }) {
   suma.className = "gastos__dia-suma";
   suma.textContent = textoTotales(totales);
   fila.append(nombre, suma);
+
+  if (peso > 0) {
+    const barra = document.createElement("span");
+    barra.className = "gastos__barra";
+    barra.setAttribute("aria-hidden", "true");
+    barra.style.setProperty("--peso", peso);
+    barra.classList.toggle("is-maximo", peso === 1);
+    // Crece al abrir el panel o si el gasto nuevo es de ese día, no cada vez
+    // que se pinta la lista: con cada borrado bailarían todas.
+    if (cascadaGastos || suyos.some((g) => g.id === gastoNuevo)) {
+      barra.classList.add("is-creciendo");
+      barra.style.setProperty("--d", cascadaGastos ? Math.min(d, 8) : 0);
+    }
+    fila.append(barra);
+  }
   return fila;
 }
 
@@ -2064,8 +2079,10 @@ function pintarGastos() {
   pintarDesglose();
   const visibles = filtroCategoria ? gastos.filter((g) => g.categoria === filtroCategoria) : gastos;
   let i = 0;
-  el.gastosLista.replaceChildren(...gastosPorDia(visibles).flatMap((dia) => [
-    crearDiaGastos(dia),
+  const dias = gastosPorDia(visibles);
+  const pesos = pesoDeLosDias(dias);
+  el.gastosLista.replaceChildren(...dias.flatMap((dia, d) => [
+    crearDiaGastos(dia, pesos[d], d),
     ...dia.gastos.map((gasto) => crearFilaGasto(gasto, i++)),
   ]));
   cascadaGastos = false;

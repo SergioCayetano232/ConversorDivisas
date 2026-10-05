@@ -1230,6 +1230,15 @@ function gastosPorDia(gastos) {
   return [...dias].map(([dia, lista]) => ({ dia, gastos: lista, totales: sumarPorDivisa(lista) }));
 }
 
+// Lo que pesa cada día al lado del que más, en la divisa que más suma. Un día
+// con solo de la otra divisa se queda sin barra: no se pueden comparar.
+function pesoDeLosDias(dias) {
+  const principal = sumarPorDivisa(dias.flatMap((d) => d.gastos))[0];
+  const suyos = dias.map((d) => d.totales.find((t) => t.to === principal?.to)?.total ?? 0);
+  const maximo = Math.max(0, ...suyos);
+  return suyos.map((total) => (maximo > 0 ? total / maximo : 0));
+}
+
 // Del primer día al último con gastos, contando los de en medio sin nada: en el
 // viaje estabas igual. Con un solo día la media sería el total, no la enseño.
 function mediaPorDia(gastos) {
@@ -1571,7 +1580,7 @@ if (typeof module !== "undefined") {
     divisaDeIdioma, parPorIdioma, banderaDe,
     HISTORIAL_MAX, leerHistorial, apuntarConversion, haceCuanto, textoParaCopiar,
     celdaCsv, csvHistorial, csvGastos,
-    GASTOS_MAX, CONCEPTO_MAX, crearGasto, leerGastos, apuntarGasto, quitarGasto, cambiarConcepto, repetirGasto, devolverGasto, devolverTodos, sumarPorDivisa, gastosPorDia, mediaPorDia, nombreDia,
+    GASTOS_MAX, CONCEPTO_MAX, crearGasto, leerGastos, apuntarGasto, quitarGasto, cambiarConcepto, repetirGasto, devolverGasto, devolverTodos, sumarPorDivisa, gastosPorDia, pesoDeLosDias, mediaPorDia, nombreDia,
     CATEGORIAS, CATEGORIA_POR_DEFECTO, adivinarCategoria, desglose, conceptosUsados, completarConcepto,
     EMOJI_CATEGORIA, destacados, resumenParaCompartir,
     COPIA_APP, COPIA_VERSION, CLAVES_COPIA, limpiarCopia, crearCopia, leerCopia, resumenCopia,

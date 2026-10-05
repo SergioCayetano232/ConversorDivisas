@@ -2183,8 +2183,9 @@ body::after {
 
 .gastos__dia {
   display: flex;
+  flex-wrap: wrap;
   justify-content: space-between;
-  gap: var(--s-2);
+  gap: 0 var(--s-2);
   flex-shrink: 0;
   padding: 4px 2px 1px;
   font-size: 9px;
@@ -2196,6 +2197,33 @@ body::after {
 
 .gastos__dia:first-child {
   padding-top: 0;
+}
+
+/* Debajo del nombre del día, lo que gastaste al lado del día que más. */
+.gastos__barra {
+  flex-basis: 100%;
+  height: 3px;
+  margin-top: 3px;
+  border-radius: 999px;
+  background: var(--brass-dim);
+  transform: scaleX(var(--peso));
+  transform-origin: left center;
+}
+
+.gastos__barra.is-maximo {
+  background: linear-gradient(90deg, var(--brass), var(--brass-dim));
+  box-shadow: 0 0 10px -1px var(--brass-glow);
+}
+
+.gastos__barra.is-creciendo {
+  animation: crecer 700ms var(--ease-spring) backwards;
+  animation-delay: calc(var(--d, 0) * 60ms + 120ms);
+}
+
+@keyframes crecer {
+  from {
+    transform: scaleX(0);
+  }
 }
 
 .gastos__dia-suma {
@@ -5048,7 +5076,8 @@ kbd {
   .trend__marca,
   .trend__media,
   .trend__media-texto,
-  .trend__pie {
+  .trend__pie,
+  .gastos__barra.is-creciendo {
     animation-delay: 0s;
   }
 
