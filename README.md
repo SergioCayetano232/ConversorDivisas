@@ -14,6 +14,8 @@ que necesitaba una conversión rápida. Ahora es un clic en la barra del navegad
 - Puedes escribir una cuenta en vez de un número: `20+15`, `3*12,50`,
   `(40+60)/4` o `100-15%`. Mientras escribes te enseña el total, y al darle a
   Enter se queda con él
+- Si pegas un precio con su divisa ("1.299,00 £", "$49.99"), pone la cantidad
+  y cambia la divisa a la vez. Pegado abajo, cambia la de destino
 - Buscas la divisa escribiendo: pones "mex" y sale el peso mexicano
 - Un botón para dar la vuelta al par sin tocar los dos desplegables
 - Un botón para copiar el resultado

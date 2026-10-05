@@ -1310,6 +1310,19 @@ function destinoPara(divisa, par) {
 
 // La insignia del icono corta a partir de unos cuatro caracteres, así que los
 // decimales se van quitando según crece la tasa: 1,14 · 20,3 · 178 · 20k.
+// Al pegar solo me meto si es un precio entero con su divisa. "20+15" o un
+// "49,99" a secas se pegan como siempre. Abajo manda el destino, no el origen.
+function leerPegado(texto, lado, par) {
+  const precio = precioEntero(texto);
+  if (!precio) return null;
+  const { cantidad, divisa } = precio;
+  if (lado === "result") {
+    const al = destinoPara(divisa, { from: par.to, to: par.from });
+    return { cantidad, from: al.to, to: al.from };
+  }
+  return { cantidad, ...destinoPara(divisa, par) };
+}
+
 function textoInsignia(rate) {
   if (typeof rate !== "number" || !Number.isFinite(rate) || rate <= 0) return "";
   const es = (n, dec) => n.toFixed(dec).replace(".", separadorDecimal());
@@ -1524,7 +1537,7 @@ if (typeof module !== "undefined") {
     normalizar, filtrarDivisas, buildPaths, startDateFor, errorMessageFor,
     RECIENTES_MAX, FIJOS_MAX, apuntarReciente, fijarReciente, leerRecientes, recientesVisibles,
     RANGOS, RANGO_POR_DEFECTO, leerRango, coordenadas, alturaEn, MOMENTO_UMBRAL, momento, textoMomento, indiceCercano, extremos, fechaCorta, largoEnPantalla,
-    leerNumero, divisaDe, leerSeleccion, destinoPara, buscarPrecios, precioEntero, leerOmnibox, escaparXml,
+    leerNumero, divisaDe, leerSeleccion, destinoPara, leerPegado, buscarPrecios, precioEntero, leerOmnibox, escaparXml,
     divisaDeIdioma, parPorIdioma, banderaDe,
     HISTORIAL_MAX, leerHistorial, apuntarConversion, haceCuanto, textoParaCopiar,
     celdaCsv, csvHistorial, csvGastos,

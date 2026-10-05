@@ -402,6 +402,50 @@ body::after {
   animation: absorber 420ms var(--ease-out);
 }
 
+/* La divisa que he sacado de lo pegado: sale con muelle a la derecha del campo
+   y se va hacia arriba, hacia los desplegables. */
+.pegado {
+  position: absolute;
+  top: 50%;
+  right: var(--s-3);
+  padding: 2px 8px;
+  border: 1px solid var(--brass-dim);
+  border-radius: 999px;
+  background: var(--brass-ghost);
+  box-shadow: 0 0 18px -4px var(--brass-glow);
+  font-family: var(--font-mono);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  color: var(--brass);
+  pointer-events: none;
+  animation: pegado 1100ms var(--ease-out) forwards;
+}
+
+.result__row:has(.pegado) {
+  position: relative;
+}
+
+@keyframes pegado {
+  0% {
+    opacity: 0;
+    transform: translateY(-50%) scale(0.6);
+  }
+  22% {
+    opacity: 1;
+    transform: translateY(-50%) scale(1.08);
+    animation-timing-function: var(--ease-spring);
+  }
+  60% {
+    opacity: 1;
+    transform: translateY(-50%) scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(-190%) scale(0.9);
+  }
+}
+
 @keyframes absorber {
   from {
     opacity: 0.9;

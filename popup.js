@@ -3226,6 +3226,51 @@ function resolverCalculo(campo) {
   restartAnimation(campo, "is-resuelto");
 }
 
+// Pegar "1.299,00 £" pone el 1299 y las libras de una vez. Si no es un precio
+// con su divisa, el navegador pega lo que sea como siempre.
+function onPegar(event) {
+  const campo = event.currentTarget;
+  const lado = campo === el.result ? "result" : "amount";
+  const antes = { from: el.from.value, to: el.to.value };
+  const pegado = leerPegado(event.clipboardData?.getData("text") ?? "", lado, antes);
+  if (!pegado) return;
+  event.preventDefault();
+
+  const cambia = pegado.from !== antes.from || pegado.to !== antes.to;
+  const vuelta = pegado.from === antes.to && pegado.to === antes.from;
+  // Con la vuelta la tasa vale al revés; con otra divisa no vale de nada y
+  // prefiero no enseñar un resultado con la tasa vieja mientras llega la nueva.
+  if (vuelta && rate) rate = 1 / rate;
+  else if (cambia) rate = null;
+
+  buscadores.from.poner(pegado.from);
+  buscadores.to.poner(pegado.to);
+  campo.value = nf.format(pegado.cantidad);
+  if (lado === "result") onResultInput();
+  else onAmountInput();
+  restartAnimation(campo, "is-cambiado");
+  marcarTocado();
+
+  const divisa = lado === "result" ? pegado.to : pegado.from;
+  soltarEtiqueta(campo, divisa);
+  if (cambia) {
+    restartAnimation(lado === "result" ? el.to : el.from, "is-cambiado");
+    if (vuelta) restartAnimation(el.swap, "is-swapping");
+    onCurrencyChange();
+  }
+}
+
+// La etiqueta con la divisa que he leído, que sube y se va.
+function soltarEtiqueta(campo, divisa) {
+  campo.parentElement.querySelector(".pegado")?.remove();
+  const etiqueta = document.createElement("span");
+  etiqueta.className = "pegado";
+  etiqueta.setAttribute("aria-hidden", "true");
+  etiqueta.textContent = divisa;
+  campo.parentElement.appendChild(etiqueta);
+  etiqueta.addEventListener("animationend", () => etiqueta.remove());
+}
+
 function onAmountInput() {
   ladoActivo = "amount";
   pintarCalculo();
@@ -3472,6 +3517,8 @@ function bindEvents() {
   el.result.addEventListener("input", onResultInput);
   el.amount.addEventListener("input", marcarTocado);
   el.result.addEventListener("input", marcarTocado);
+  el.amount.addEventListener("paste", onPegar);
+  el.result.addEventListener("paste", onPegar);
   el.result.addEventListener("focus", () => el.result.select());
   for (const campo of [el.amount, el.result]) {
     campo.addEventListener("keydown", (event) => {
