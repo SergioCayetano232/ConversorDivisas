@@ -1297,6 +1297,27 @@ function estadoPresupuesto(presupuesto, gastos, hoyIso = hoy()) {
   };
 }
 
+// Lo que se llevaría el gasto que vas a apuntar: qué trozo del presupuesto y
+// cuántos días de lo que te queda al día. En otra divisa no cuenta, igual que arriba.
+function loQueSeLleva(presupuesto, gastos, gasto, hoyIso = hoy()) {
+  if (!presupuesto || !gasto || gasto.to !== presupuesto.to || !(gasto.valor > 0)) return null;
+  const estado = estadoPresupuesto(presupuesto, gastos, hoyIso);
+  const trozo = gasto.valor / presupuesto.importe;
+  return {
+    desde: Math.min(estado.fraccion, 1),
+    trozo: Math.max(0, Math.min(trozo, 1 - estado.fraccion)),
+    pasaria: estado.fraccion + trozo > 1,
+    dias: estado.porDia ? redondearDias(gasto.valor / estado.porDia) : null,
+  };
+}
+
+// Con un decimal hasta diez días; de ahí, sin decimales. Por debajo de una
+// décima no lo digo: un café no te arruina el viaje.
+function redondearDias(dias) {
+  if (dias < 0.1) return null;
+  return dias < 10 ? Math.round(dias * 10) / 10 : Math.round(dias);
+}
+
 function nombreDia(dia, hoyIso = hoy()) {
   const [a, m, d] = hoyIso.split("-").map(Number);
   if (dia === hoyIso) return tr("dia.hoy");
@@ -1595,7 +1616,7 @@ if (typeof module !== "undefined") {
     EMOJI_CATEGORIA, destacados, resumenParaCompartir,
     COPIA_APP, COPIA_VERSION, CLAVES_COPIA, limpiarCopia, crearCopia, leerCopia, resumenCopia,
     VIAJES_MAX, NOMBRE_VIAJE_MAX, leerViajes, viajeActivo, crearViaje, renombrarViaje, elegirViaje, borrarViaje, cambiarViaje, resumenViaje, archivoGastos,
-    diasHasta, leerPresupuesto, PRESUPUESTO_JUSTO, estadoPresupuesto,
+    diasHasta, leerPresupuesto, PRESUPUESTO_JUSTO, estadoPresupuesto, loQueSeLleva, redondearDias,
     EXTRAS_MAX, EXTRAS_POR_DEFECTO, leerExtras, anadirExtra, quitarExtra,
     extrasVisibles, disponiblesParaAnadir, convertirExtras, semanaDe, trazoMini, CHULETA, escalaChuleta, chuleta,
     COMISION_MAX, COMISIONES_RAPIDAS, leerComision, leerPorcentaje, conComision,

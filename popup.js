@@ -92,6 +92,8 @@ const el = {
   gastosForm: document.getElementById("gastos-form"),
   gastosConcepto: document.getElementById("gastos-concepto"),
   gastosPago: document.getElementById("gastos-pago"),
+  presupuestoEsto: document.getElementById("presupuesto-esto"),
+  presupuestoEstoTexto: document.getElementById("presupuesto-esto-texto"),
   gastosSugerencia: document.getElementById("gastos-sugerencia"),
   gastosApuntar: document.getElementById("gastos-apuntar"),
   gastosLista: document.getElementById("gastos-lista"),
@@ -247,6 +249,7 @@ const iconoCategoria = (categoria) =>
 const formatoNumero = (opciones) => ({ format: (n) => numeros(opciones).format(n) });
 
 const nf = formatoNumero({ minimumFractionDigits: 2, maximumFractionDigits: 2 });
+const nfDias = formatoNumero({ maximumFractionDigits: 1 });
 const nfRate = formatoNumero({ minimumFractionDigits: 4, maximumFractionDigits: 4 });
 const nfEntero = formatoNumero({ maximumFractionDigits: 0 });
 const nfComision = formatoNumero({ maximumFractionDigits: 2 });
@@ -1997,8 +2000,30 @@ function pintarDesglose() {
 
 const porCientoEntero = (fraccion) => tr("pct", { n: Math.round(fraccion * 100) });
 
+// Antes de apuntarlo ya ves cuánto se come: un trozo a rayas en la barra y los
+// días de presupuesto que son.
+function pintarLoQueSeLleva(gasto = gastoDePantalla()) {
+  const r = loQueSeLleva(presupuesto, gastos, gasto);
+  const hay = Boolean(r) && (r.trozo > 0 || r.pasaria);
+  el.presupuestoEsto.style.left = hay ? `${r.desde * 100}%` : "";
+  el.presupuestoEsto.style.width = hay ? `${r.trozo * 100}%` : "0";
+  el.presupuestoEsto.classList.toggle("is-pasa", hay && r.pasaria);
+
+  const texto = !hay ? ""
+    : r.pasaria ? tr("presupuesto.estoPasa")
+    : r.dias === null ? ""
+    : r.dias === 1 ? tr("presupuesto.estoUno")
+    : tr("presupuesto.esto", { dias: nfDias.format(r.dias) });
+  if (el.presupuestoEstoTexto.textContent === texto) return;
+  el.presupuestoEstoTexto.textContent = texto;
+  el.presupuestoEstoTexto.title = texto ? tr("presupuesto.estoTitulo") : "";
+  el.presupuestoEstoTexto.classList.toggle("is-pasa", hay && r.pasaria);
+  if (texto) restartAnimation(el.presupuestoEstoTexto, "is-tic");
+}
+
 function pintarBotonGasto() {
   const gasto = gastoDePantalla();
+  pintarLoQueSeLleva(gasto);
   el.gastosApuntar.disabled = !gasto;
   if (!gasto) {
     el.gastosApuntar.textContent = "+";
@@ -2170,6 +2195,7 @@ function pintarPresupuesto() {
   const antes = el.presupuestoVer.dataset.tono;
   el.presupuestoVer.dataset.tono = estado.tono;
   if (antes && antes !== "pasado" && estado.tono === "pasado") restartAnimation(el.presupuestoVer, "is-alarma");
+  pintarLoQueSeLleva();
 }
 
 function editarPresupuesto() {

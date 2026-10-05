@@ -2564,6 +2564,53 @@ body::after {
   transition: width var(--slow) var(--ease-spring), background-color var(--mid) var(--ease);
 }
 
+/* El gasto que vas a apuntar, a rayas detrás de lo ya gastado. Las rayas
+   corren despacio para que se note que aún no está. */
+.presupuesto__esto {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 0;
+  background: repeating-linear-gradient(-45deg, var(--tono) 0 2px, transparent 2px 4px);
+  background-size: 5.66px 100%;
+  opacity: 0.75;
+  animation: rayas 900ms linear infinite;
+  transition: width var(--mid) var(--ease-out), left var(--slow) var(--ease-spring);
+}
+
+.presupuesto__esto.is-pasa {
+  --tono: var(--cinnabar);
+}
+
+@keyframes rayas {
+  to {
+    background-position: 5.66px 0;
+  }
+}
+
+.presupuesto__fila {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--s-2);
+  min-width: 0;
+}
+
+.presupuesto__esto-texto {
+  flex-shrink: 0;
+  font-size: 9px;
+  font-variant-numeric: tabular-nums;
+  color: var(--muted);
+}
+
+.presupuesto__esto-texto.is-pasa {
+  color: var(--cinnabar);
+}
+
+.presupuesto__esto-texto.is-tic {
+  animation: pop var(--mid) var(--ease-spring);
+}
+
 .presupuesto__texto {
   overflow: hidden;
   text-overflow: ellipsis;
@@ -5168,6 +5215,10 @@ kbd {
     animation: none;
     opacity: 1;
     transform: translate(-50%, 0);
+  }
+
+  .presupuesto__esto {
+    animation: none;
   }
 
   .trend__line {

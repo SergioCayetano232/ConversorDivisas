@@ -53,7 +53,8 @@ que necesitaba una conversión rápida. Ahora es un clic en la barra del navegad
   ves solo esos gastos
 - Un presupuesto para el viaje: le dices cuánto quieres gastar y hasta qué día,
   y una barra te enseña lo que llevas (verde, dorada pasado el 80 %, roja si te
-  pasas) y cuánto te queda al día
+  pasas) y cuánto te queda al día. Antes de apuntar un gasto, sale a rayas en
+  la barra lo que se llevaría y cuántos días de presupuesto son ("≈ 0,6 días")
 - Las conversiones y los gastos se bajan en CSV con el botón **CSV** de cada
   panel, listos para abrir en Excel o en Google Sheets: en español van con
   punto y coma y "12,50", en inglés con coma y "12.50", y las tildes no se rompen
