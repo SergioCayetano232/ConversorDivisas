@@ -587,9 +587,14 @@
           aria-label="Cuánto quieres gastar"
           data-t-aria-label="presupuesto.importe">
         <span class="presupuesto__codigo" id="presupuesto-codigo" aria-hidden="true"></span>
-        <input class="presupuesto__hasta" type="date" id="presupuesto-hasta" aria-label="Hasta qué día" data-t-aria-label="presupuesto.hasta">
         <button class="gastos__apuntar presupuesto__ok" type="submit" data-t="presupuesto.guardar">OK</button>
         <button class="gastos__quitar" type="button" id="presupuesto-quitar" aria-label="Quitar el presupuesto" data-t-aria-label="presupuesto.quitar">✕</button>
+        <span class="presupuesto__fechas">
+          <span class="presupuesto__del" data-t="presupuesto.del">del</span>
+          <input class="presupuesto__fecha" type="date" id="presupuesto-desde" aria-label="Qué día sales" data-t-aria-label="presupuesto.desde">
+          <span class="presupuesto__del" data-t="presupuesto.al">al</span>
+          <input class="presupuesto__fecha" type="date" id="presupuesto-hasta" aria-label="Hasta qué día" data-t-aria-label="presupuesto.hasta">
+        </span>
       </form>
       <form class="gastos__nuevo" id="gastos-form" novalidate>
         <button class="gastos__categoria" type="button" id="gastos-categoria" aria-haspopup="true" aria-expanded="false" aria-controls="categorias"></button>

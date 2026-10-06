@@ -1337,9 +1337,15 @@ function leerPresupuesto(guardado) {
   if (!guardado || typeof guardado !== "object") return null;
   const { importe, to, hasta } = guardado;
   if (!Number.isFinite(importe) || importe <= 0 || !isValidCode(to)) return null;
-  if (typeof hasta !== "string" || !/^\d{4}-\d{2}-\d{2}$/.test(hasta)) return null;
-  return { importe, to, hasta };
+  if (!esIso(hasta)) return null;
+  // Los de antes no traen el día de salida: entonces cuenta desde el primer gasto.
+  const { desde } = guardado;
+  if (desde === undefined || desde === null) return { importe, to, hasta };
+  if (!esIso(desde) || desde > hasta) return null;
+  return { importe, to, hasta, desde };
 }
+
+const esIso = (texto) => typeof texto === "string" && /^\d{4}-\d{2}-\d{2}$/.test(texto);
 
 // Hasta el 80 % vas bien; de ahí al 100 %, justo; pasado, pasado.
 const PRESUPUESTO_JUSTO = 0.8;
@@ -1349,7 +1355,10 @@ function estadoPresupuesto(presupuesto, gastos, hoyIso = hoy()) {
   const gastado = gastos.filter((g) => g.to === presupuesto.to).reduce((suma, g) => suma + g.valor, 0);
   const queda = presupuesto.importe - gastado;
   const fraccion = gastado / presupuesto.importe;
-  const dias = Math.max(diasHasta(presupuesto.hasta, hoyIso), 0);
+  // Si aún no has salido, el dinero se reparte entre los días del viaje, no
+  // entre los que faltan desde hoy.
+  const empieza = presupuesto.desde && presupuesto.desde > hoyIso ? presupuesto.desde : hoyIso;
+  const dias = Math.max(diasHasta(presupuesto.hasta, empieza), 0);
   return {
     gastado,
     queda,
@@ -1361,12 +1370,18 @@ function estadoPresupuesto(presupuesto, gastos, hoyIso = hoy()) {
   };
 }
 
-// En qué día del viaje vas. Empieza el día del primer gasto, o hoy si aún no
-// hay ninguno; acabado el viaje ya no lo digo.
+// El día que sales. Si el presupuesto no lo trae, el del primer gasto, y si
+// aún no hay ninguno, hoy.
+function inicioDelViaje(presupuesto, gastos, hoyIso = hoy()) {
+  if (presupuesto?.desde) return presupuesto.desde;
+  const primero = gastos.reduce((min, g) => Math.min(min, g.cuando), Infinity);
+  return Number.isFinite(primero) ? isoLocal(new Date(primero)) : hoyIso;
+}
+
+// En qué día del viaje vas. Antes de salir o acabado el viaje, no lo digo.
 function diaDelViaje(presupuesto, gastos, hoyIso = hoy()) {
   if (!presupuesto) return null;
-  const primero = gastos.reduce((min, g) => Math.min(min, g.cuando), Infinity);
-  const inicio = Number.isFinite(primero) ? isoLocal(new Date(primero)) : hoyIso;
+  const inicio = inicioDelViaje(presupuesto, gastos, hoyIso);
   const total = diasHasta(presupuesto.hasta, inicio);
   const dia = diasHasta(hoyIso, inicio);
   if (dia < 1 || dia > total) return null;
@@ -1718,7 +1733,7 @@ if (typeof module !== "undefined") {
     EMOJI_CATEGORIA, destacados, resumenParaCompartir,
     COPIA_APP, COPIA_VERSION, CLAVES_COPIA, limpiarCopia, crearCopia, leerCopia, resumenCopia,
     VIAJES_MAX, NOMBRE_VIAJE_MAX, leerViajes, viajeActivo, crearViaje, renombrarViaje, elegirViaje, borrarViaje, cambiarViaje, resumenViaje, archivoGastos,
-    diasHasta, leerPresupuesto, PRESUPUESTO_JUSTO, estadoPresupuesto, diaDelViaje, loQueSeLleva, redondearDias,
+    diasHasta, leerPresupuesto, PRESUPUESTO_JUSTO, estadoPresupuesto, inicioDelViaje, diaDelViaje, loQueSeLleva, redondearDias,
     EXTRAS_MAX, EXTRAS_POR_DEFECTO, leerExtras, anadirExtra, quitarExtra,
     extrasVisibles, disponiblesParaAnadir, convertirExtras, semanaDe, trazoMini, CHULETA, escalaChuleta, chuleta, chuletaParaCompartir,
     COMISION_MAX, COMISIONES_RAPIDAS, leerComision, leerPorcentaje, conComision,

@@ -115,6 +115,7 @@ const el = {
   presupuestoImporte: document.getElementById("presupuesto-importe"),
   presupuestoCodigo: document.getElementById("presupuesto-codigo"),
   presupuestoHasta: document.getElementById("presupuesto-hasta"),
+  presupuestoDesde: document.getElementById("presupuesto-desde"),
   presupuestoQuitar: document.getElementById("presupuesto-quitar"),
   historialCuenta: document.getElementById("historial-cuenta"),
   historial: document.getElementById("historial"),
@@ -2296,9 +2297,10 @@ function editarPresupuesto() {
   const to = presupuesto?.to ?? el.to.value;
   el.presupuestoCodigo.textContent = to;
   el.presupuestoImporte.value = presupuesto ? nf.format(presupuesto.importe) : "";
+  el.presupuestoDesde.value = inicioDelViaje(presupuesto, gastos);
+  ajustarHasta();
   // Una semana si no hay nada, que es lo que dura un viaje normal.
-  const [a, m, d] = hoy().split("-").map(Number);
-  el.presupuestoHasta.min = hoy();
+  const [a, m, d] = el.presupuestoHasta.min.split("-").map(Number);
   el.presupuestoHasta.value = presupuesto?.hasta ?? isoLocal(new Date(a, m - 1, d + 6));
   el.presupuestoQuitar.hidden = !presupuesto;
   el.presupuestoForm.hidden = false;
@@ -2326,15 +2328,25 @@ function ponerPresupuesto(nuevo) {
   guardarViajes();
 }
 
+// La vuelta no puede ser antes de hoy ni antes de salir.
+function ajustarHasta() {
+  const desde = el.presupuestoDesde.value;
+  el.presupuestoHasta.min = desde > hoy() ? desde : hoy();
+}
+
 function onGuardarPresupuesto(event) {
   event.preventDefault();
+  const desde = el.presupuestoDesde.value;
+  const hasta = el.presupuestoHasta.value;
   const nuevo = leerPresupuesto({
     importe: leerImporte(el.presupuestoImporte.value),
     to: el.presupuestoCodigo.textContent,
-    hasta: el.presupuestoHasta.value,
+    hasta,
+    desde: desde || null,
   });
   if (!nuevo) {
-    const mal = leerImporte(el.presupuestoImporte.value) > 0 ? el.presupuestoHasta : el.presupuestoImporte;
+    const mal = !(leerImporte(el.presupuestoImporte.value) > 0) ? el.presupuestoImporte
+      : desde && hasta && desde > hasta ? el.presupuestoDesde : el.presupuestoHasta;
     restartAnimation(mal, "is-mal");
     mal.focus();
     return;
@@ -3945,6 +3957,7 @@ function bindEvents() {
   el.presupuestoAnadir.addEventListener("click", editarPresupuesto);
   el.presupuestoVer.addEventListener("click", editarPresupuesto);
   el.presupuestoForm.addEventListener("submit", onGuardarPresupuesto);
+  el.presupuestoDesde.addEventListener("input", ajustarHasta);
   el.presupuestoQuitar.addEventListener("click", () => ponerPresupuesto(null));
   el.presupuestoVer.addEventListener("animationend", () => el.presupuestoVer.classList.remove("is-nuevo", "is-alarma"));
   el.presupuestoForm.addEventListener("animationend", (event) => {

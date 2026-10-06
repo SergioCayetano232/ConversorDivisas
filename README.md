@@ -55,7 +55,8 @@ que necesitaba una conversión rápida. Ahora es un clic en la barra del navegad
   u otros), que sale sola por el concepto ("taxi", "cena", "hotel") y se cambia
   con un clic. Arriba, en qué se te va el dinero en porcentajes; pulsando una
   ves solo esos gastos
-- Un presupuesto para el viaje: le dices cuánto quieres gastar y hasta qué día,
+- Un presupuesto para el viaje: le dices cuánto quieres gastar, qué día sales y
+  hasta qué día (si aún no has salido, lo de al día se reparte entre los días del viaje),
   y una barra te enseña lo que llevas (verde, dorada pasado el 80 %, roja si te
   pasas) y cuánto te queda al día. Antes de apuntar un gasto, sale a rayas en
   la barra lo que se llevaría y cuántos días de presupuesto son ("≈ 0,6 días"). Al lado, en qué

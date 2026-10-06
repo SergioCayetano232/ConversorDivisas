@@ -289,6 +289,9 @@ const TEXTOS = {
     "presupuesto.titulo": "{gastado} de {importe}, hasta el {fecha}. Pulsa para cambiarlo",
     "presupuesto.importe": "Cuánto quieres gastar",
     "presupuesto.hasta": "Hasta qué día",
+    "presupuesto.desde": "Qué día sales",
+    "presupuesto.del": "del",
+    "presupuesto.al": "al",
     "presupuesto.guardar": "OK",
     "presupuesto.quitar": "Quitar el presupuesto",
 
@@ -650,6 +653,9 @@ const TEXTOS = {
     "presupuesto.titulo": "{gastado} of {importe}, until {fecha}. Click to change it",
     "presupuesto.importe": "How much you want to spend",
     "presupuesto.hasta": "Until which day",
+    "presupuesto.desde": "Which day you leave",
+    "presupuesto.del": "from",
+    "presupuesto.al": "to",
     "presupuesto.guardar": "OK",
     "presupuesto.quitar": "Remove the budget",
 

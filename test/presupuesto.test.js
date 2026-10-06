@@ -80,3 +80,28 @@ test("acabado el viaje o sin presupuesto, nada", () => {
   assert.equal(diaDelViaje(viaje, [], "2026-10-09"), null);
   assert.equal(diaDelViaje(null, [], "2026-10-06"), null);
 });
+
+test("el día de salida se guarda si tiene sentido", () => {
+  const p = { importe: 500, to: "EUR", hasta: "2026-10-10" };
+  assert.deepEqual(leerPresupuesto({ ...p, desde: "2026-10-04" }), { ...p, desde: "2026-10-04" });
+  assert.deepEqual(leerPresupuesto({ ...p, desde: "2026-10-10" }), { ...p, desde: "2026-10-10" }, "un viaje de un día");
+  assert.equal(leerPresupuesto({ ...p, desde: "2026-10-11" }), null, "después de volver no se sale");
+  assert.equal(leerPresupuesto({ ...p, desde: "ayer" }), null);
+});
+
+test("con día de salida, el viaje cuenta desde ahí aunque gastaras antes", () => {
+  const conSalida = { ...viaje, desde: "2026-10-03" };
+  const gastos = [{ ...gasto(20), cuando: el("2026-09-28") }];
+  assert.deepEqual(diaDelViaje(conSalida, gastos, "2026-10-04"), { dia: 2, total: 6 });
+});
+
+test("antes de salir no hay día del viaje", () => {
+  assert.equal(diaDelViaje({ ...viaje, desde: "2026-10-07" }, [], "2026-10-04"), null);
+});
+
+test("antes de salir, lo de al día se reparte entre los días del viaje", () => {
+  const p = { importe: 500, to: "EUR", hasta: "2026-10-14", desde: "2026-10-10" };
+  const e = estadoPresupuesto(p, [], "2026-10-02");
+  assert.equal(e.dias, 5);
+  assert.equal(e.porDia, 100);
+});
