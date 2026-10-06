@@ -1,7 +1,7 @@
 const { test } = require("node:test");
 const assert = require("node:assert");
 const {
-  GASTOS_MAX, CONCEPTO_MAX, crearGasto, leerGastos, apuntarGasto, quitarGasto, cambiarConcepto, repetirGasto, devolverGasto, devolverTodos, sumarPorDivisa, gastosPorDia, mediaPorDia, nombreDia,
+  GASTOS_MAX, CONCEPTO_MAX, crearGasto, leerGastos, apuntarGasto, quitarGasto, cambiarConcepto, repetirGasto, devolverGasto, devolverTodos, sumarPorDivisa, gastosPorDia, mediaPorDia, nombreDia, comisionesPagadas,
 } = require("../logica.js");
 
 const hora = (dia, h = 12) => new Date(...dia.split("-").map((n, i) => (i === 1 ? n - 1 : Number(n))), h).getTime();
@@ -11,7 +11,7 @@ const gasto = (extra) => crearGasto({
 
 test("un gasto bueno se crea tal cual", () => {
   assert.deepEqual(gasto({ categoria: "comida" }), {
-    id: "a", from: "USD", to: "EUR", cantidad: 45, valor: 38.9, concepto: "Cena", cuando: hora("2026-10-02"), categoria: "comida", pago: "tarjeta",
+    id: "a", from: "USD", to: "EUR", cantidad: 45, valor: 38.9, concepto: "Cena", cuando: hora("2026-10-02"), categoria: "comida", pago: "tarjeta", comision: 0,
   });
 });
 
@@ -169,7 +169,7 @@ test("repetir un gasto lo apunta hoy con la tasa y la comisión de hoy", () => {
   const original = gasto({ concepto: "Metro", cantidad: 3, valor: 2.7, categoria: "transporte" });
   const otro = repetirGasto(original, { id: "b", cuando: hora("2026-10-04"), tasa: 0.95, comision: 2 });
   assert.deepEqual(otro, {
-    id: "b", from: "USD", to: "EUR", cantidad: 3, valor: 2.91, concepto: "Metro", cuando: hora("2026-10-04"), categoria: "transporte", pago: "tarjeta",
+    id: "b", from: "USD", to: "EUR", cantidad: 3, valor: 2.91, concepto: "Metro", cuando: hora("2026-10-04"), categoria: "transporte", pago: "tarjeta", comision: 2,
   });
 });
 
@@ -206,4 +206,43 @@ test("hoy y ayer con nombre; lo de antes, con fecha", () => {
   assert.equal(nombreDia("2026-10-01", "2026-10-02"), "Ayer");
   assert.equal(nombreDia("2026-09-30", "2026-10-01"), "Ayer", "el día antes del 1 es el 30");
   assert.equal(nombreDia("2026-09-28", "2026-10-02"), "28 sept");
+});
+
+test("repetir en efectivo no lleva comisión aunque la tengas puesta", () => {
+  const original = gasto({ pago: "efectivo", cantidad: 3, valor: 2.7 });
+  assert.equal(repetirGasto(original, { id: "b", cuando: 2, tasa: 0.95, comision: 2 }).comision, 0);
+});
+
+test("lo que se ha llevado el banco sale de quitar la comisión al valor", () => {
+  const lista = [
+    gasto({ id: "1", valor: 102, comision: 2 }),
+    gasto({ id: "2", valor: 51.5, comision: 3 }),
+    gasto({ id: "3", valor: 20, comision: 0, pago: "efectivo" }),
+  ];
+  const c = comisionesPagadas(lista);
+  assert.equal(c.to, "EUR");
+  assert.ok(Math.abs(c.total - 3.5) < 1e-9, String(c.total));
+});
+
+test("solo cuenta la divisa que más suma, como el total", () => {
+  const lista = [
+    gasto({ id: "1", valor: 102, comision: 2 }),
+    gasto({ id: "2", to: "GBP", valor: 10.5, comision: 5 }),
+  ];
+  assert.ok(Math.abs(comisionesPagadas(lista).total - 2) < 1e-9);
+});
+
+test("sin comisiones, o con gastos de antes que no la guardaban, no sale nada", () => {
+  assert.equal(comisionesPagadas([]), null);
+  assert.equal(comisionesPagadas([gasto({ comision: 0 })]), null);
+  const antiguo = { id: "v", from: "USD", to: "EUR", cantidad: 10, valor: 9, concepto: "", cuando: 1 };
+  const [leido] = leerGastos([antiguo]);
+  assert.equal(leido.comision, 0);
+  assert.equal(comisionesPagadas([leido]), null);
+});
+
+test("una comisión rara guardada a mano se queda en cero", () => {
+  assert.equal(gasto({ comision: 50 }).comision, 0);
+  assert.equal(gasto({ comision: "2" }).comision, 0);
+  assert.equal(gasto({ comision: -1 }).comision, 0);
 });

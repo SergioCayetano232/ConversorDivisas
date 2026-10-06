@@ -2,7 +2,7 @@ const { test } = require("node:test");
 const assert = require("node:assert");
 const { COPIA_APP, COPIA_VERSION, CLAVES_COPIA, limpiarCopia, crearCopia, leerCopia, resumenCopia } = require("../logica.js");
 
-const gasto = (id) => ({ id, from: "USD", to: "EUR", cantidad: 12, valor: 10, concepto: "", cuando: 1, categoria: "otros", pago: "tarjeta" });
+const gasto = (id) => ({ id, from: "USD", to: "EUR", cantidad: 12, valor: 10, concepto: "", cuando: 1, categoria: "otros", pago: "tarjeta", comision: 0 });
 const viajes = {
   activo: "j",
   lista: [

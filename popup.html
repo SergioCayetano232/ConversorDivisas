@@ -10,7 +10,7 @@
 
     <header class="header">
       <h1 class="header__title">ConversorDivisas</h1>
-      <p class="header__rate" aria-live="polite"><button class="header__tasa" type="button" id="rate-line" title="Pulsa para verla al revés" data-t-title="tasa.alReves"></button></p>
+      <p class="header__rate" aria-live="polite"><button class="header__tasa" type="button" id="rate-line" title="Pulsa para verla al revés" data-t-title="tasa.alReves"></button><span class="header__cambio" id="cambio-dia" hidden></span></p>
       <p class="momento" id="momento" tabindex="0" hidden>
         <span class="momento__titulo" id="momento-titulo"></span>
         <span class="momento__detalle" id="momento-detalle"></span>
@@ -527,6 +527,7 @@
           </button>
           <span class="gastos__suma" id="gastos-suma" aria-live="polite"></span>
           <span class="gastos__media" id="gastos-media" hidden></span>
+          <span class="gastos__comisiones" id="gastos-comisiones" title="Lo que se ha quedado el banco con la tarjeta. Los gastos que no guardaron su comisión no cuentan" data-t-title="gastos.comisionesTitulo" hidden></span>
         </div>
         <div class="gastos__lado">
           <span class="gastos__arriba">

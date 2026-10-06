@@ -21,7 +21,8 @@ que necesitaba una conversión rápida. Ahora es un clic en la barra del navegad
 - Un botón para copiar el resultado. Con Shift (clic o `Shift+C`) copia la
   frase entera, "38,90 EUR = 42,79 USD", para mandársela a alguien
 - Pulsando la tasa de arriba la ves al revés (`1 JPY = 0,005650 EUR`), que en
-  la tienda muchas veces se piensa así. Se queda como la dejes
+  la tienda muchas veces se piensa así. Se queda como la dejes. Debajo, cuánto ha
+  subido o bajado desde el día anterior, en verde o en rojo
 - Las últimas diez conversiones, en el reloj que hay al lado de **Copiar**. Pulsando
   una copias su resultado; con la flecha de al lado la vuelves a poner. Se
   apunta sola cuando dejas de escribir, al darle a Enter o al copiar
@@ -47,7 +48,8 @@ que necesitaba una conversión rápida. Ahora es un clic en la barra del navegad
   con negritas y emojis para que en WhatsApp se lea bien
 - Cada gasto dice si fue con tarjeta o en efectivo, con el botón que hay al
   lado de la categoría. En efectivo no se le suma la comisión del banco, y en
-  la lista lleva un puntito verde. Se queda como lo dejes
+  la lista lleva un puntito verde. Se queda como lo dejes. Arriba, con un
+  puntito rojo, lo que llevas pagado en comisiones en el viaje
 - Cada gasto con su categoría (comida, transporte, alojamiento, ocio, compras
   u otros), que sale sola por el concepto ("taxi", "cena", "hotel") y se cambia
   con un clic. Arriba, en qué se te va el dinero en porcentajes; pulsando una

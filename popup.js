@@ -90,6 +90,7 @@ const el = {
   gastosSuma: document.getElementById("gastos-suma"),
   gastosN: document.getElementById("gastos-n"),
   gastosMedia: document.getElementById("gastos-media"),
+  gastosComisiones: document.getElementById("gastos-comisiones"),
   gastosForm: document.getElementById("gastos-form"),
   gastosConcepto: document.getElementById("gastos-concepto"),
   gastosPago: document.getElementById("gastos-pago"),
@@ -1908,6 +1909,7 @@ function gastoDePantalla() {
     concepto: el.gastosConcepto.value,
     categoria: categoriaNueva,
     pago: pagoNuevo,
+    comision: comisionDelPago(pagoNuevo, comision),
     cuando: Date.now(),
   });
 }
@@ -2197,6 +2199,15 @@ function crearFilaGasto(gasto, i) {
   return fila;
 }
 
+function pintarComisiones() {
+  const pagadas = comisionesPagadas(gastos);
+  const texto = pagadas ? tr("gastos.comisiones", { importe: `${nf.format(pagadas.total)} ${pagadas.to}` }) : "";
+  const habia = el.gastosComisiones.textContent;
+  el.gastosComisiones.hidden = !pagadas;
+  el.gastosComisiones.textContent = texto;
+  if (habia && texto && habia !== texto) restartAnimation(el.gastosComisiones, "is-tic");
+}
+
 function pintarGastos() {
   const n = gastos.length;
   el.gastosCuenta.hidden = n === 0;
@@ -2219,6 +2230,7 @@ function pintarGastos() {
     el.gastosMedia.textContent = tr("gastos.media", { media: `${nf.format(media.media)} ${media.to}` });
     el.gastosMedia.title = tr("gastos.mediaTitulo", { dias: media.dias });
   }
+  pintarComisiones();
 
   pintarDesglose();
   const visibles = filtroCategoria ? gastos.filter((g) => g.categoria === filtroCategoria) : gastos;
@@ -3914,6 +3926,7 @@ function bindEvents() {
   window.addEventListener("pagehide", apuntarAhora);
   el.momento.addEventListener("animationend", () => el.momento.classList.remove("is-nuevo"));
   el.cambioDia.addEventListener("animationend", () => el.cambioDia.classList.remove("is-nuevo"));
+  el.gastosComisiones.addEventListener("animationend", () => el.gastosComisiones.classList.remove("is-tic"));
   el.fechaCampo.addEventListener("input", onCampoFecha);
   el.fechaCampo.addEventListener("blur", onSalirCampoFecha);
   el.fechaCampo.addEventListener("animationend", () => {

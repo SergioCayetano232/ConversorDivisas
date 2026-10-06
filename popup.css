@@ -170,6 +170,9 @@ body::after {
 
 .header {
   position: relative;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  column-gap: var(--s-3);
   padding: var(--s-4) var(--s-4) var(--s-3);
   border-bottom: 1px solid var(--hairline);
 }
@@ -187,9 +190,9 @@ body::after {
 /* El veredicto va arriba a la derecha, que es donde sobra sitio; por encima
    de todo lo demás y sin empujar nada, que el alto va justo. */
 .momento {
-  position: absolute;
-  top: var(--s-4);
-  right: var(--s-4);
+  grid-column: 2;
+  grid-row: 1 / span 2;
+  align-self: start;
   display: flex;
   flex-direction: column;
   align-items: flex-end;
@@ -259,6 +262,11 @@ body::after {
   }
 }
 
+.header__title,
+.header__rate {
+  grid-column: 1;
+}
+
 .header__title {
   font-size: 12px;
   font-weight: 600;
@@ -266,7 +274,13 @@ body::after {
   color: var(--mist);
 }
 
+/* El veredicto va encima, a la derecha. Si la tasa es larga (el yen o la
+   rupia al revés) la pastilla de ayer baja a otra línea en vez de pisarlo. */
 .header__rate {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 3px 8px;
   margin-top: var(--s-1);
   min-height: 15px;
   font-family: var(--font-mono);
@@ -315,7 +329,6 @@ body::after {
 
 .header__cambio {
   display: inline-block;
-  margin-left: 8px;
   padding: 1px 6px;
   border-radius: 999px;
   font-size: 10px;
@@ -2197,6 +2210,54 @@ body::after {
   font-size: 10px;
   color: var(--muted);
   cursor: default;
+}
+
+/* Lo del banco en rojo apagado: que escueza, pero sin gritar más que el total. */
+.gastos__comisiones {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  overflow: hidden;
+  white-space: nowrap;
+  font-size: 10px;
+  color: color-mix(in srgb, var(--cinnabar) 70%, var(--muted));
+  font-variant-numeric: tabular-nums;
+  cursor: default;
+}
+
+.gastos__comisiones::before {
+  content: "";
+  flex-shrink: 0;
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--cinnabar);
+  box-shadow: 0 0 6px var(--cinnabar);
+}
+
+.gastos__comisiones[hidden] {
+  display: none;
+}
+
+.gastos__comisiones.is-tic {
+  animation: comision-pica 600ms var(--ease-spring);
+}
+
+.gastos__comisiones.is-tic::before {
+  animation: comision-punto 600ms var(--ease-out);
+}
+
+@keyframes comision-pica {
+  30% {
+    color: var(--cinnabar);
+    transform: translateX(3px);
+  }
+}
+
+@keyframes comision-punto {
+  30% {
+    transform: scale(1.8);
+  }
 }
 
 .gastos__nuevo {

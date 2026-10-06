@@ -1052,12 +1052,13 @@ const esGastoBueno = (g) => Boolean(g) && typeof g.id === "string" && isValidCod
 // calculara al enseñarlo, el cambio de hoy me movería lo que gasté hace una semana.
 const limpiarConcepto = (concepto) => String(concepto ?? "").replace(/\s+/g, " ").trim().slice(0, CONCEPTO_MAX);
 
-function crearGasto({ id, from, to, cantidad, valor, concepto = "", cuando, categoria, pago }) {
+function crearGasto({ id, from, to, cantidad, valor, concepto = "", cuando, categoria, pago, comision }) {
   const gasto = {
     id, from, to, cantidad, valor, cuando,
     concepto: limpiarConcepto(concepto),
     categoria: categoriaBuena(categoria),
     pago: leerPago(pago),
+    comision: leerComision(comision),
   };
   return esGastoBueno(gasto) && from !== to ? gasto : null;
 }
@@ -1070,6 +1071,8 @@ function leerGastos(guardado) {
     ...g,
     categoria: CATEGORIAS.includes(g.categoria) ? g.categoria : adivinarCategoria(g.concepto) ?? CATEGORIA_POR_DEFECTO,
     pago: leerPago(g.pago),
+    // Los de antes no la guardaban: ya va dentro del valor y no sé cuánta era.
+    comision: leerComision(g.comision),
   }));
 }
 
@@ -1100,10 +1103,10 @@ function quitarGasto(lista, id) {
 // El metro de cada mañana: la misma cantidad, pero con la tasa y la comisión de
 // hoy. Si no tengo la de hoy para ese par, uso la que tuvo, que es lo más cerca.
 function repetirGasto(gasto, { id, cuando, tasa = null, comision = 0 }) {
-  const valor = Number.isFinite(tasa) && tasa > 0
-    ? Math.round(conComision(gasto.cantidad * tasa, comisionDelPago(gasto.pago, comision)) * 100) / 100
-    : gasto.valor;
-  return crearGasto({ ...gasto, id, cuando, valor });
+  if (!(Number.isFinite(tasa) && tasa > 0)) return crearGasto({ ...gasto, id, cuando });
+  const pct = comisionDelPago(gasto.pago, comision);
+  const valor = Math.round(conComision(gasto.cantidad * tasa, pct) * 100) / 100;
+  return crearGasto({ ...gasto, id, cuando, valor, comision: pct });
 }
 
 // La categoría solo la cambio si estaba en "otros": si ya era otra, puede que
@@ -1294,6 +1297,17 @@ function pesoDeLosDias(dias) {
 
 // Del primer día al último con gastos, contando los de en medio sin nada: en el
 // viaje estabas igual. Con un solo día la media sería el total, no la enseño.
+// Lo que se ha quedado el banco, en la divisa que más suma, como el total. El
+// valor ya la lleva dentro, así que sale de quitársela.
+function comisionesPagadas(gastos) {
+  const principal = sumarPorDivisa(gastos)[0];
+  if (!principal) return null;
+  const total = gastos
+    .filter((g) => g.to === principal.to && g.comision > 0)
+    .reduce((suma, g) => suma + g.valor - g.valor / (1 + g.comision / 100), 0);
+  return total >= 0.005 ? { total, to: principal.to } : null;
+}
+
 function mediaPorDia(gastos) {
   const principal = sumarPorDivisa(gastos)[0];
   if (!principal) return null;
@@ -1681,7 +1695,7 @@ if (typeof module !== "undefined") {
     divisaDeIdioma, parPorIdioma, banderaDe, banderaDivisa,
     HISTORIAL_MAX, leerHistorial, apuntarConversion, haceCuanto, textoParaCopiar, fraseParaCopiar,
     celdaCsv, csvHistorial, csvGastos,
-    GASTOS_MAX, CONCEPTO_MAX, crearGasto, leerGastos, apuntarGasto, quitarGasto, cambiarConcepto, repetirGasto, devolverGasto, devolverTodos, sumarPorDivisa, gastosPorDia, pesoDeLosDias, mediaPorDia, nombreDia,
+    GASTOS_MAX, CONCEPTO_MAX, crearGasto, leerGastos, apuntarGasto, quitarGasto, cambiarConcepto, repetirGasto, devolverGasto, devolverTodos, sumarPorDivisa, gastosPorDia, pesoDeLosDias, mediaPorDia, comisionesPagadas, nombreDia,
     CATEGORIAS, CATEGORIA_POR_DEFECTO, adivinarCategoria, PAGOS, PAGO_POR_DEFECTO, leerPago, comisionDelPago, desglose, conceptosUsados, completarConcepto,
     EMOJI_CATEGORIA, destacados, resumenParaCompartir,
     COPIA_APP, COPIA_VERSION, CLAVES_COPIA, limpiarCopia, crearCopia, leerCopia, resumenCopia,
