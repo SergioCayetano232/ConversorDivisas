@@ -233,6 +233,13 @@ function pasoCantidad(valor, sentido, grande = false) {
   return Math.max(nuevo, 0);
 }
 
+// La cantidad que dejaste puesta, para encontrarla al volver. Redondeada al
+// céntimo: escribiendo abajo sale de dividir por la tasa y trae mil decimales.
+function leerCantidad(guardado) {
+  if (!Number.isFinite(guardado) || guardado < 0) return null;
+  return Math.round(guardado * 100) / 100;
+}
+
 // Fecha local en formato ISO. No uso toISOString() porque pasa a UTC y aquí,
 // a partir de las dos de la tarde en verano, ya me daba el día siguiente.
 function isoLocal(date) {
@@ -1649,7 +1656,7 @@ function resumenCopia(datos) {
 if (typeof module !== "undefined") {
   module.exports = {
     CURRENCIES, isValidCode, nombreDe, parseAmount, isoLocal, hoy, isFresh,
-    evaluar, completar, leerImporte, esOperacion, pasoCantidad,
+    evaluar, completar, leerImporte, esOperacion, pasoCantidad, leerCantidad,
     normalizar, filtrarDivisas, buildPaths, startDateFor, errorMessageFor,
     RECIENTES_MAX, FIJOS_MAX, apuntarReciente, fijarReciente, leerRecientes, recientesVisibles,
     RANGOS, RANGO_POR_DEFECTO, leerRango, coordenadas, alturaEn, MOMENTO_UMBRAL, momento, textoMomento, indiceCercano, extremos, fechaCorta, largoEnPantalla,

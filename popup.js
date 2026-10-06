@@ -276,6 +276,7 @@ const PRESUPUESTO_KEY = "presupuestoViaje";
 const VIAJES_KEY = "viajes";
 const CUENTA_KEY = "cuentaReparto";
 const AL_REVES_KEY = "tasaAlReves";
+const CANTIDAD_KEY = "ultimaCantidad";
 // Lo que tardo en dar por buena una cantidad: mientras escribes "1", "12",
 // "125" no quiero tres entradas, solo la última.
 const PAUSA_APUNTE = 2000;
@@ -394,6 +395,32 @@ async function guardarTasaAlReves() {
   } catch (error) {
     console.warn("No se pudo guardar cómo ver la tasa", error);
   }
+}
+
+async function cargarCantidad() {
+  try {
+    const guardado = await chrome.storage.local.get(CANTIDAD_KEY);
+    return leerCantidad(guardado[CANTIDAD_KEY]);
+  } catch (error) {
+    console.warn("No se pudo leer la última cantidad", error);
+    return null;
+  }
+}
+
+// Con cada tecla, pero esperando un poco: si cierras el popup a medias se
+// queda lo último que dio tiempo a guardar, que es casi lo mismo.
+let cantidadId = 0;
+function guardarCantidad() {
+  clearTimeout(cantidadId);
+  cantidadId = setTimeout(async () => {
+    const cantidad = leerCantidad(cantidadOrigen());
+    if (cantidad === null) return;
+    try {
+      await chrome.storage.local.set({ [CANTIDAD_KEY]: cantidad });
+    } catch (error) {
+      console.warn("No se pudo guardar la cantidad", error);
+    }
+  }, 250);
 }
 
 async function cargarFecha() {
@@ -3484,6 +3511,7 @@ function onAmountInput() {
   el.amountError.textContent = invalid ? tr("cantidad.invalida") : "";
 
   renderResult();
+  guardarCantidad();
 }
 
 function onResultInput() {
@@ -3505,6 +3533,7 @@ function onResultInput() {
   el.amountError.textContent = "";
 
   renderResult();
+  guardarCantidad();
 }
 
 let avisoCopiado = null;
@@ -3748,7 +3777,7 @@ function bindEvents() {
   el.result.addEventListener("input", marcarTocado);
   el.amount.addEventListener("paste", onPegar);
   el.amount.addEventListener("keydown", onFlechaCantidad);
-  el.amount.addEventListener("animationend", () => el.amount.classList.remove("is-sube", "is-baja"));
+  el.amount.addEventListener("animationend", () => el.amount.classList.remove("is-sube", "is-baja", "is-recuperada"));
   el.result.addEventListener("paste", onPegar);
   el.result.addEventListener("focus", () => el.result.select());
   for (const campo of [el.amount, el.result]) {
@@ -3980,9 +4009,10 @@ async function init() {
   const idiomaCambiado = await cargarIdioma();
   traducirPagina();
   if (idiomaCambiado) saludarIdioma();
-  const [pair, rango, guardados, pendiente, guardadas, vistaGuardada, avisosGuardados, comisionGuardada, fechaGuardada, historialGuardado, viajesGuardados, repartoGuardado, alRevesGuardado, pagoGuardado] = await Promise.all([
+  const [pair, rango, guardados, pendiente, guardadas, vistaGuardada, avisosGuardados, comisionGuardada, fechaGuardada, historialGuardado, viajesGuardados, repartoGuardado, alRevesGuardado, pagoGuardado, cantidadGuardada] = await Promise.all([
     loadPair(), cargarRango(), cargarRecientes(), tomarPendiente(), cargarExtras(), cargarVista(), cargarAvisos(),
     cargarComision(), cargarFecha(), cargarHistorial(), cargarViajes(), cargarReparto(), cargarTasaAlReves(), cargarPago(),
+    cargarCantidad(),
   ]);
   pagoNuevo = pagoGuardado;
   pintarPago();
@@ -4025,6 +4055,10 @@ async function init() {
     restartAnimation(el.amount, "is-cambiado");
   } else {
     pintarRecientes();
+    if (cantidadGuardada !== null) {
+      el.amount.value = Number.isInteger(cantidadGuardada) ? nfEntero.format(cantidadGuardada) : nf.format(cantidadGuardada);
+      el.amount.classList.add("is-recuperada");
+    }
   }
   ponerPistasDeAtajos();
   bindEvents();

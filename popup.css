@@ -471,6 +471,19 @@ body::after {
   }
 }
 
+/* Lo que dejaste puesto la otra vez entra sin prisa, sin el destello de un
+   cambio: no lo has tocado ahora. */
+.field__input.is-recuperada {
+  animation: recuperada 480ms var(--ease-out);
+}
+
+@keyframes recuperada {
+  from {
+    color: var(--muted);
+    letter-spacing: 0.08em;
+  }
+}
+
 /* Con las flechas el número da un saltito hacia donde va. */
 .field__input.is-sube {
   animation: paso-sube 260ms var(--ease-spring);

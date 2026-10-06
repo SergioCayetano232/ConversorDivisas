@@ -1,6 +1,6 @@
 const { test } = require("node:test");
 const assert = require("node:assert");
-const { evaluar, completar, leerImporte, esOperacion, parseAmount, pasoCantidad } = require("../logica.js");
+const { evaluar, completar, leerImporte, esOperacion, parseAmount, pasoCantidad, leerCantidad } = require("../logica.js");
 
 const casi = (a, b) => assert.ok(a !== null && Math.abs(a - b) < 1e-9, `${a} no es ${b}`);
 
@@ -148,4 +148,14 @@ test("de cero no baja, y sin cantidad empieza en cero", () => {
   assert.equal(pasoCantidad(5, -1, true), 0);
   assert.equal(pasoCantidad(null, 1), 1);
   assert.equal(pasoCantidad(null, -1), 0);
+});
+
+test("la cantidad guardada vuelve al céntimo, y si no vale no vuelve", () => {
+  assert.equal(leerCantidad(38.9), 38.9);
+  assert.equal(leerCantidad(9.090909), 9.09);
+  assert.equal(leerCantidad(0), 0);
+  assert.equal(leerCantidad(undefined), null, "la primera vez no hay nada");
+  assert.equal(leerCantidad("20"), null);
+  assert.equal(leerCantidad(-5), null);
+  assert.equal(leerCantidad(NaN), null);
 });
