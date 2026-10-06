@@ -21,6 +21,7 @@ const el = {
   resultBox: document.querySelector(".result"),
   resultMeta: document.getElementById("result-meta"),
   rateLine: document.getElementById("rate-line"),
+  cambioDia: document.getElementById("cambio-dia"),
   amountError: document.getElementById("amount-error"),
   updated: document.getElementById("updated"),
   status: document.getElementById("status"),
@@ -803,6 +804,8 @@ function hideTrend() {
   el.trendChange.textContent = "";
   el.trendChange.classList.remove("is-up", "is-down");
   pintarMomento(null);
+  parDeLaSerie = "";
+  pintarCambioDia();
 }
 
 // Las coordenadas van sobre el viewBox de 100x28; en porcentaje valen tal cual
@@ -933,6 +936,8 @@ function renderTrend(puntos) {
   hayGrafico = true;
   pintarVista();
   pintarMomento(values);
+  parDeLaSerie = `${el.from.value}-${el.to.value}`;
+  pintarCambioDia(true);
   if (!el.trend.hidden) dibujarLinea();
 }
 
@@ -3208,6 +3213,7 @@ function traducirPagina() {
 }
 
 function renderRateLine(from, to) {
+  pintarCambioDia();
   if (rate === null) {
     el.rateLine.textContent = "";
     return;
@@ -3215,9 +3221,24 @@ function renderRateLine(from, to) {
   el.rateLine.textContent = lineaTasa(rate, from, to, tasaAlReves);
 }
 
+// Sale de la serie del gráfico, así que solo vale si es de este par: mientras
+// llega la del par nuevo, mejor nada que el cambio del anterior.
+let parDeLaSerie = "";
+
+function pintarCambioDia(animar = false) {
+  const c = parDeLaSerie === `${el.from.value}-${el.to.value}` ? cambioDelDia(serie, tasaAlReves) : null;
+  el.cambioDia.hidden = !c;
+  if (!c) return;
+  el.cambioDia.textContent = textoCambioDia(c);
+  el.cambioDia.dataset.sentido = c.sentido;
+  el.cambioDia.title = tr("cambioDia.titulo", { fecha: fechaCorta(c.desde) });
+  if (animar) restartAnimation(el.cambioDia, "is-nuevo");
+}
+
 function onDarLaVueltaATasa() {
   tasaAlReves = !tasaAlReves;
   renderRateLine(el.from.value, el.to.value);
+  pintarCambioDia(true);
   restartAnimation(el.rateLine, "is-vuelta");
   guardarTasaAlReves();
 }
@@ -3892,6 +3913,7 @@ function bindEvents() {
   // Si cierras el popup antes de los dos segundos, que no se pierda.
   window.addEventListener("pagehide", apuntarAhora);
   el.momento.addEventListener("animationend", () => el.momento.classList.remove("is-nuevo"));
+  el.cambioDia.addEventListener("animationend", () => el.cambioDia.classList.remove("is-nuevo"));
   el.fechaCampo.addEventListener("input", onCampoFecha);
   el.fechaCampo.addEventListener("blur", onSalirCampoFecha);
   el.fechaCampo.addEventListener("animationend", () => {

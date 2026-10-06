@@ -313,6 +313,51 @@ body::after {
   }
 }
 
+.header__cambio {
+  display: inline-block;
+  margin-left: 8px;
+  padding: 1px 6px;
+  border-radius: 999px;
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--muted);
+  background: var(--hairline);
+  cursor: default;
+}
+
+.header__cambio[data-sentido="sube"] {
+  color: var(--jade);
+  background: color-mix(in srgb, var(--jade) 14%, transparent);
+}
+
+.header__cambio[data-sentido="baja"] {
+  color: var(--cinnabar);
+  background: color-mix(in srgb, var(--cinnabar) 14%, transparent);
+}
+
+/* Entra desde donde apunta la flecha: si sube, desde abajo. */
+.header__cambio.is-nuevo {
+  animation: cambio-entra 520ms var(--ease-spring);
+}
+
+.header__cambio[data-sentido="baja"].is-nuevo {
+  animation-name: cambio-entra-baja;
+}
+
+@keyframes cambio-entra {
+  from {
+    opacity: 0;
+    transform: translateY(5px) scale(0.85);
+  }
+}
+
+@keyframes cambio-entra-baja {
+  from {
+    opacity: 0;
+    transform: translateY(-5px) scale(0.85);
+  }
+}
+
 .converter {
   padding: var(--s-4);
   display: flex;

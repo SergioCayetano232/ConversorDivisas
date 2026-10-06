@@ -1473,6 +1473,23 @@ function sentidoDe(cambio) {
   return cambio > 0 ? "sube" : "baja";
 }
 
+// Lo de ayer para la línea de la tasa, en el sentido en que la estés viendo:
+// al revés, si el euro sube el yen baja. Tiene que ver con lo que pone al lado.
+function cambioDelDia(puntos, alReves = false) {
+  if (!Array.isArray(puntos) || puntos.length < 2) return null;
+  const valores = puntos.slice(-2).map((p) => (alReves ? 1 / p.valor : p.valor));
+  if (!valores.every((v) => Number.isFinite(v) && v > 0)) return null;
+  const cambio = cambioDiario(valores);
+  return { cambio, sentido: sentidoDe(cambio), desde: puntos[puntos.length - 2].fecha };
+}
+
+const FLECHA_SENTIDO = { sube: "▲", baja: "▼", igual: "=" };
+
+function textoCambioDia({ cambio, sentido }) {
+  const pct = numeros({ style: "percent", minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  return `${FLECHA_SENTIDO[sentido]} ${pct.format(sentido === "igual" ? 0 : Math.abs(cambio))}`;
+}
+
 const tasaLarga = (n) => numeros({ minimumFractionDigits: 4, maximumFractionDigits: 4 }).format(n);
 
 // Al revés, el yen se queda en "1 JPY = 0,0061 EUR" y con cuatro decimales casi
@@ -1676,7 +1693,7 @@ if (typeof module !== "undefined") {
     PROPINAS_RAPIDAS, PROPINA_MAX, PERSONAS_MAX, CUENTA_POR_DEFECTO, leerCuenta, repartirCuenta,
     MARGENES, tasaOfrecida, analizarCambio,
     FECHA_MINIMA, fechaLarga, fechaValida, diaDelGrafico, mesesAtras, FECHAS_RAPIDAS, leerFecha, cambioDesde, notaDiaHabil,
-    textoInsignia, cambioDiario, sentidoDe, tituloInsignia, lineaTasa,
+    textoInsignia, cambioDiario, sentidoDe, cambioDelDia, textoCambioDia, tituloInsignia, lineaTasa,
     AVISOS_MAX, sentidoAviso, crearAviso, leerAvisos, avisoCumplido, repartirAvisos, mensajeAviso,
     ATAJOS, atajoPara, textoAtajo,
   };
