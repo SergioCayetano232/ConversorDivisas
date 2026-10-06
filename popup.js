@@ -3106,7 +3106,11 @@ function pintarAyuda() {
     fila.append(kbd, texto);
     return fila;
   }));
-  el.ayudaNota.replaceChildren(tr("ayuda.nota", { alt }), document.createElement("br"), tr("ayuda.idioma"));
+  el.ayudaNota.replaceChildren(
+    tr("ayuda.nota", { alt }), document.createElement("br"),
+    tr("ayuda.flechas"), document.createElement("br"),
+    tr("ayuda.idioma"),
+  );
   pintarAtajoSeleccion();
 }
 
@@ -3456,6 +3460,19 @@ function soltarEtiqueta(campo, divisa) {
   etiqueta.addEventListener("animationend", () => etiqueta.remove());
 }
 
+function onFlechaCantidad(event) {
+  if (event.key !== "ArrowUp" && event.key !== "ArrowDown") return;
+  if (event.altKey || event.metaKey || event.ctrlKey) return;
+  event.preventDefault();
+  const sentido = event.key === "ArrowUp" ? 1 : -1;
+  const valor = pasoCantidad(leerImporte(el.amount.value), sentido, event.shiftKey);
+  el.amount.value = Number.isInteger(valor) ? nfEntero.format(valor) : nf.format(valor);
+  el.amount.classList.remove(sentido > 0 ? "is-baja" : "is-sube");
+  restartAnimation(el.amount, sentido > 0 ? "is-sube" : "is-baja");
+  onAmountInput();
+  marcarTocado();
+}
+
 function onAmountInput() {
   ladoActivo = "amount";
   pintarCalculo();
@@ -3730,6 +3747,8 @@ function bindEvents() {
   el.amount.addEventListener("input", marcarTocado);
   el.result.addEventListener("input", marcarTocado);
   el.amount.addEventListener("paste", onPegar);
+  el.amount.addEventListener("keydown", onFlechaCantidad);
+  el.amount.addEventListener("animationend", () => el.amount.classList.remove("is-sube", "is-baja"));
   el.result.addEventListener("paste", onPegar);
   el.result.addEventListener("focus", () => el.result.select());
   for (const campo of [el.amount, el.result]) {

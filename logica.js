@@ -225,6 +225,14 @@ function esOperacion(texto) {
   return HAY_OPERACION.test(t) || HAY_MULTIPLO.test(t);
 }
 
+// Con las flechas en la cantidad: de uno en uno, o de diez con Shift. Los
+// céntimos se quedan ("12,50" sube a "13,50") y de cero no baja.
+function pasoCantidad(valor, sentido, grande = false) {
+  const base = Number.isFinite(valor) ? valor : 0;
+  const nuevo = Math.round((base + sentido * (grande ? 10 : 1)) * 100) / 100;
+  return Math.max(nuevo, 0);
+}
+
 // Fecha local en formato ISO. No uso toISOString() porque pasa a UTC y aquí,
 // a partir de las dos de la tarde en verano, ya me daba el día siguiente.
 function isoLocal(date) {
@@ -1641,7 +1649,7 @@ function resumenCopia(datos) {
 if (typeof module !== "undefined") {
   module.exports = {
     CURRENCIES, isValidCode, nombreDe, parseAmount, isoLocal, hoy, isFresh,
-    evaluar, completar, leerImporte, esOperacion,
+    evaluar, completar, leerImporte, esOperacion, pasoCantidad,
     normalizar, filtrarDivisas, buildPaths, startDateFor, errorMessageFor,
     RECIENTES_MAX, FIJOS_MAX, apuntarReciente, fijarReciente, leerRecientes, recientesVisibles,
     RANGOS, RANGO_POR_DEFECTO, leerRango, coordenadas, alturaEn, MOMENTO_UMBRAL, momento, textoMomento, indiceCercano, extremos, fechaCorta, largoEnPantalla,

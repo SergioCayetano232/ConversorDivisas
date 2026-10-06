@@ -1,6 +1,6 @@
 const { test } = require("node:test");
 const assert = require("node:assert");
-const { evaluar, completar, leerImporte, esOperacion, parseAmount } = require("../logica.js");
+const { evaluar, completar, leerImporte, esOperacion, parseAmount, pasoCantidad } = require("../logica.js");
 
 const casi = (a, b) => assert.ok(a !== null && Math.abs(a - b) < 1e-9, `${a} no es ${b}`);
 
@@ -133,4 +133,19 @@ test("una letra que no es k ni m, o pegada a más letras, no vale", () => {
   assert.equal(evaluar("k"), null);
   assert.equal(evaluar("2kk"), null);
   assert.ok(!esOperacion("20"));
+});
+
+test("las flechas suben de uno en uno, o de diez con Shift", () => {
+  assert.equal(pasoCantidad(20, 1), 21);
+  assert.equal(pasoCantidad(20, -1), 19);
+  assert.equal(pasoCantidad(20, 1, true), 30);
+  assert.equal(pasoCantidad(12.5, 1), 13.5);
+  assert.equal(pasoCantidad(0.1, 1), 1.1, "sin restos de decimales");
+});
+
+test("de cero no baja, y sin cantidad empieza en cero", () => {
+  assert.equal(pasoCantidad(0.5, -1), 0);
+  assert.equal(pasoCantidad(5, -1, true), 0);
+  assert.equal(pasoCantidad(null, 1), 1);
+  assert.equal(pasoCantidad(null, -1), 0);
 });

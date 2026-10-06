@@ -471,6 +471,35 @@ body::after {
   }
 }
 
+/* Con las flechas el número da un saltito hacia donde va. */
+.field__input.is-sube {
+  animation: paso-sube 260ms var(--ease-spring);
+}
+
+.field__input.is-baja {
+  animation: paso-baja 260ms var(--ease-spring);
+}
+
+@keyframes paso-sube {
+  0% {
+    color: var(--brass);
+    transform: translateY(2px);
+  }
+  50% {
+    transform: translateY(-1.5px);
+  }
+}
+
+@keyframes paso-baja {
+  0% {
+    color: var(--brass);
+    transform: translateY(-2px);
+  }
+  50% {
+    transform: translateY(1.5px);
+  }
+}
+
 .field__input:hover,
 .field__select:hover {
   border-color: var(--brass-dim);
