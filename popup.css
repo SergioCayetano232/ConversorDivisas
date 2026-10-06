@@ -3308,6 +3308,18 @@ body::after {
   animation: beat var(--mid) var(--ease-spring);
 }
 
+/* Al copiarla con doble clic la cifra late y se enciende, como si saliera. */
+.result__value.is-copiada {
+  animation: copiada 520ms var(--ease-spring);
+}
+
+@keyframes copiada {
+  40% {
+    transform: scale(1.06);
+    text-shadow: 0 0 36px var(--brass), 0 0 12px var(--brass-glow);
+  }
+}
+
 .result.is-loading .result__value {
   color: var(--muted);
   text-shadow: none;

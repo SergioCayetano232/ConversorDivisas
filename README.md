@@ -19,7 +19,8 @@ que necesitaba una conversión rápida. Ahora es un clic en la barra del navegad
 - Buscas la divisa escribiendo: pones "mex" y sale el peso mexicano
 - Un botón para dar la vuelta al par sin tocar los dos desplegables
 - Un botón para copiar el resultado. Con Shift (clic o `Shift+C`) copia la
-  frase entera, "38,90 EUR = 42,79 USD", para mandársela a alguien
+  frase entera, "38,90 EUR = 42,79 USD", para mandársela a alguien. También
+  se copia con doble clic en la cifra
 - Pulsando la tasa de arriba la ves al revés (`1 JPY = 0,005650 EUR`), que en
   la tienda muchas veces se piensa así. Se queda como la dejes. Debajo, cuánto ha
   subido o bajado desde el día anterior, en verde o en rojo

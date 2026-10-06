@@ -3599,6 +3599,15 @@ async function onCopiar(entera = false) {
   if (bien && frase) soltarFrase(frase);
 }
 
+// Un clic es para escribir en él; con doble clic lo copias sin ir al botón. El
+// doble clic también selecciona una palabra, y la cifra la quiero entera.
+async function onCopiarCifra(event) {
+  if (leerImporte(el.result.value) === null || rate === null) return;
+  el.result.select();
+  restartAnimation(el.result, "is-copiada");
+  await onCopiar(event.shiftKey);
+}
+
 // La frase sube desde el botón para que veas qué se ha llevado el portapapeles.
 function soltarFrase(frase) {
   el.copiar.parentElement.querySelector(".copiar__frase")?.remove();
@@ -3842,6 +3851,10 @@ function bindEvents() {
   el.swap.addEventListener("click", onSwap);
   el.retry.addEventListener("click", refresh);
   el.copiar.addEventListener("click", (event) => onCopiar(event.shiftKey));
+  el.result.addEventListener("dblclick", onCopiarCifra);
+  el.result.addEventListener("animationend", (event) => {
+    if (event.animationName === "copiada") el.result.classList.remove("is-copiada");
+  });
   document.addEventListener("keydown", onShift);
   document.addEventListener("keyup", onShift);
   window.addEventListener("blur", onShift);
