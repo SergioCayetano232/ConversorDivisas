@@ -48,3 +48,8 @@ test("lo que no se entiende no se convierte", () => {
 test("el XML de la sugerencia no se rompe con un &", () => {
   assert.equal(escaparXml("A & B <c>"), "A &amp; B &lt;c&gt;");
 });
+
+test("en la barra también vale 2k", () => {
+  assert.deepEqual(leer("2k"), { cantidad: 2000, from: "EUR", to: "USD" });
+  assert.deepEqual(leer("1,5m jpy"), { cantidad: 1500000, from: "JPY", to: "USD" });
+});

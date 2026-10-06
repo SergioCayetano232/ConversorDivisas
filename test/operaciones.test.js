@@ -114,3 +114,23 @@ test("esOperacion distingue una cuenta de un número", () => {
   assert.equal(esOperacion("1.000,50"), false);
   assert.equal(esOperacion("  42 "), false);
 });
+
+test("2k son dos mil y 1,5m millón y medio", () => {
+  assert.equal(evaluar("2k"), 2000);
+  assert.equal(evaluar("2K"), 2000);
+  assert.equal(evaluar("1,5m"), 1500000);
+  assert.equal(evaluar("1,5 M"), 1500000);
+  assert.equal(evaluar("250k+30k"), 280000);
+  assert.equal(evaluar("1,2k*3"), 3600);
+  assert.equal(evaluar("2k-10%"), 1800);
+  assert.ok(esOperacion("2k"));
+});
+
+test("una letra que no es k ni m, o pegada a más letras, no vale", () => {
+  assert.equal(evaluar("2km"), null);
+  assert.equal(evaluar("2kg"), null);
+  assert.equal(evaluar("2j"), null);
+  assert.equal(evaluar("k"), null);
+  assert.equal(evaluar("2kk"), null);
+  assert.ok(!esOperacion("20"));
+});

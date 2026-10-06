@@ -98,6 +98,11 @@ function parseAmount(raw) {
 const OPERADORES = { "+": "+", "-": "-", "−": "-", "*": "*", "×": "*", x: "*", X: "*", "/": "/", "÷": "/", ":": "/" };
 const HAY_OPERACION = /[-+−*×xX/÷:()%]/;
 
+// "2k" y "1,5m", como se escriben los precios de pisos y coches. La letra va
+// pegada al número y sola: "2 km" no es nada.
+const MULTIPLOS = { k: 1e3, m: 1e6 };
+const HAY_MULTIPLO = /\d\s*[km](?![a-z])/i;
+
 function trocear(texto) {
   const fichas = [];
   let i = 0;
@@ -113,8 +118,10 @@ function trocear(texto) {
     if (num) {
       const v = parseAmount(num[0]);
       if (v === null) return null;
-      fichas.push({ tipo: "num", v });
       i += num[0].length;
+      const letra = texto.slice(i).match(/^\s*([km])(?![a-z])/i);
+      if (letra) i += letra[0].length;
+      fichas.push({ tipo: "num", v: letra ? v * MULTIPLOS[letra[1].toLowerCase()] : v });
     } else if (OPERADORES[c]) {
       fichas.push({ tipo: "op", v: OPERADORES[c] });
       i++;
@@ -132,7 +139,7 @@ function trocear(texto) {
 // prioridad de siempre. Sin eval: lo que pegues en el campo no se ejecuta.
 function evaluar(texto) {
   if (typeof texto !== "string") return null;
-  if (!HAY_OPERACION.test(texto)) return parseAmount(texto);
+  if (!esOperacion(texto)) return parseAmount(texto);
 
   const fichas = trocear(texto);
   if (!fichas || fichas.length === 0) return null;
@@ -214,7 +221,8 @@ function leerImporte(texto) {
 }
 
 function esOperacion(texto) {
-  return HAY_OPERACION.test(String(texto).trim());
+  const t = String(texto).trim();
+  return HAY_OPERACION.test(t) || HAY_MULTIPLO.test(t);
 }
 
 // Fecha local en formato ISO. No uso toISOString() porque pasa a UTC y aquí,

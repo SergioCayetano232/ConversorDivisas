@@ -13,7 +13,7 @@ que necesitaba una conversión rápida. Ahora es un clic en la barra del navegad
 - Escribes en cualquiera de las dos cantidades y calcula la otra
 - Puedes escribir una cuenta en vez de un número: `20+15`, `3*12,50`,
   `(40+60)/4` o `100-15%`. Mientras escribes te enseña el total, y al darle a
-  Enter se queda con él
+  Enter se queda con él. `2k` son dos mil y `1,5m`, millón y medio
 - Si pegas un precio con su divisa ("1.299,00 £", "$49.99"), pone la cantidad
   y cambia la divisa a la vez. Pegado abajo, cambia la de destino
 - Buscas la divisa escribiendo: pones "mex" y sale el peso mexicano
