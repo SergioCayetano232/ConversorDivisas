@@ -246,3 +246,9 @@ test("una comisión rara guardada a mano se queda en cero", () => {
   assert.equal(gasto({ comision: "2" }).comision, 0);
   assert.equal(gasto({ comision: -1 }).comision, 0);
 });
+
+test("el valor se guarda al céntimo", () => {
+  assert.equal(gasto({ valor: 90.5148 }).valor, 90.51);
+  assert.equal(gasto({ valor: 0.005 }).valor, 0.01);
+  assert.equal(gasto({ valor: null }), null, "sin valor no hay gasto");
+});

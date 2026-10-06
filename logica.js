@@ -1053,8 +1053,10 @@ const esGastoBueno = (g) => Boolean(g) && typeof g.id === "string" && isValidCod
 const limpiarConcepto = (concepto) => String(concepto ?? "").replace(/\s+/g, " ").trim().slice(0, CONCEPTO_MAX);
 
 function crearGasto({ id, from, to, cantidad, valor, concepto = "", cuando, categoria, pago, comision }) {
+  // Al céntimo: con la comisión salía 90,5148 y en el CSV se veía la cola.
   const gasto = {
-    id, from, to, cantidad, valor, cuando,
+    id, from, to, cantidad, cuando,
+    valor: Number.isFinite(valor) ? Math.round(valor * 100) / 100 : valor,
     concepto: limpiarConcepto(concepto),
     categoria: categoriaBuena(categoria),
     pago: leerPago(pago),
