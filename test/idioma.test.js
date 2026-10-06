@@ -1,6 +1,6 @@
 const { test } = require("node:test");
 const assert = require("node:assert");
-const { CURRENCIES, divisaDeIdioma, parPorIdioma, banderaDe } = require("../logica.js");
+const { CURRENCIES, divisaDeIdioma, parPorIdioma, banderaDe, banderaDivisa } = require("../logica.js");
 
 const par = (idiomas) => {
   const { from, to } = parPorIdioma(idiomas);
@@ -81,4 +81,14 @@ test("la bandera sale del país", () => {
   assert.equal(banderaDe("zh-Hant-HK"), "🇭🇰");
   assert.equal(banderaDe("ja"), "");
   assert.equal(banderaDe(null), "");
+});
+
+test("cada divisa tiene su bandera, y el euro la de la UE", () => {
+  assert.equal(banderaDivisa("EUR"), "🇪🇺");
+  assert.equal(banderaDivisa("USD"), "🇺🇸");
+  assert.equal(banderaDivisa("GBP"), "🇬🇧");
+  assert.equal(banderaDivisa("ZAR"), "🇿🇦");
+  for (const { code } of CURRENCIES) assert.equal([...banderaDivisa(code)].length, 2, code);
+  assert.equal(banderaDivisa("XXX"), "");
+  assert.equal(banderaDivisa(undefined), "");
 });

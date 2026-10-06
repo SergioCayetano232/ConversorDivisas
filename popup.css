@@ -647,6 +647,43 @@ body::after {
   text-overflow: ellipsis;
 }
 
+.buscador__bandera {
+  display: inline-block;
+  flex-shrink: 0;
+  margin-right: 6px;
+  font-size: 14px;
+  line-height: 1;
+  vertical-align: -1px;
+  filter: saturate(0.9);
+}
+
+.buscador__opcion .buscador__bandera {
+  margin-right: 0;
+  transition: transform 160ms var(--ease-spring);
+}
+
+.buscador__opcion.is-marcada .buscador__bandera {
+  transform: scale(1.18) rotate(-6deg);
+}
+
+.buscador__bandera.is-nueva {
+  animation: bandera-entra 520ms var(--ease-spring);
+}
+
+@keyframes bandera-entra {
+  0% {
+    transform: scale(0.3) rotate(-25deg);
+    opacity: 0;
+  }
+  60% {
+    transform: scale(1.25) rotate(6deg);
+    opacity: 1;
+  }
+  100% {
+    transform: none;
+  }
+}
+
 .buscador__vacio {
   padding: var(--s-3);
   font-size: 11px;

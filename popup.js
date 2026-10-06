@@ -562,7 +562,7 @@ function crearBuscador(lado) {
       nom.className = "buscador__nombre";
       nom.textContent = nombreDe(divisa.code);
 
-      fila.append(cod, nom);
+      fila.append(crearBandera(divisa.code), cod, nom);
       fila.addEventListener("mousedown", (e) => {
         e.preventDefault();
         elegir(divisa.code);
@@ -602,8 +602,15 @@ function crearBuscador(lado) {
   }
 
   function poner(code) {
+    const cambia = boton.value !== code;
     boton.value = code;
-    boton.textContent = `${code} · ${nombreDe(code)}`;
+    const bandera = crearBandera(code);
+    const texto = document.createElement("span");
+    texto.textContent = `${code} · ${nombreDe(code)}`;
+    boton.replaceChildren(bandera, texto);
+    // Al abrir el popup no salta: solo cuando cambias tú la divisa.
+    if (cambia && boton.dataset.puesto) bandera.classList.add("is-nueva");
+    boton.dataset.puesto = "1";
   }
 
   boton.addEventListener("click", () => (abierto ? cerrar() : abrir()));
@@ -637,6 +644,14 @@ function crearBuscador(lado) {
   });
 
   return { poner, cerrar };
+}
+
+function crearBandera(code) {
+  const bandera = document.createElement("span");
+  bandera.className = "buscador__bandera";
+  bandera.setAttribute("aria-hidden", "true");
+  bandera.textContent = banderaDivisa(code);
+  return bandera;
 }
 
 function populateSelects(pair) {

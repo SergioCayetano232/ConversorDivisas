@@ -918,6 +918,12 @@ function banderaDe(etiqueta) {
   return String.fromCodePoint(...[...region].map((c) => 0x1f1e6 + c.charCodeAt(0) - 65));
 }
 
+// Las dos primeras letras del código ISO son el país, y la del euro es "EU",
+// que también tiene bandera. Así no hace falta una tabla.
+function banderaDivisa(code) {
+  return isValidCode(code) ? banderaDe(`x-${code.slice(0, 2)}`) : "";
+}
+
 // Diez: más y ya no es "lo último que convertí", es un registro que nadie mira.
 const HISTORIAL_MAX = 10;
 
@@ -1632,7 +1638,7 @@ if (typeof module !== "undefined") {
     RECIENTES_MAX, FIJOS_MAX, apuntarReciente, fijarReciente, leerRecientes, recientesVisibles,
     RANGOS, RANGO_POR_DEFECTO, leerRango, coordenadas, alturaEn, MOMENTO_UMBRAL, momento, textoMomento, indiceCercano, extremos, fechaCorta, largoEnPantalla,
     leerNumero, divisaDe, leerSeleccion, destinoPara, leerPegado, buscarPrecios, precioEntero, leerOmnibox, escaparXml,
-    divisaDeIdioma, parPorIdioma, banderaDe,
+    divisaDeIdioma, parPorIdioma, banderaDe, banderaDivisa,
     HISTORIAL_MAX, leerHistorial, apuntarConversion, haceCuanto, textoParaCopiar, fraseParaCopiar,
     celdaCsv, csvHistorial, csvGastos,
     GASTOS_MAX, CONCEPTO_MAX, crearGasto, leerGastos, apuntarGasto, quitarGasto, cambiarConcepto, repetirGasto, devolverGasto, devolverTodos, sumarPorDivisa, gastosPorDia, pesoDeLosDias, mediaPorDia, nombreDia,
