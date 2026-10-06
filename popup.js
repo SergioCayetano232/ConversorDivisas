@@ -108,6 +108,8 @@ const el = {
   presupuestoAnadir: document.getElementById("presupuesto-anadir"),
   presupuestoVer: document.getElementById("presupuesto-ver"),
   presupuestoLleno: document.getElementById("presupuesto-lleno"),
+  presupuestoHoy: document.getElementById("presupuesto-hoy"),
+  presupuestoDia: document.getElementById("presupuesto-dia"),
   presupuestoTexto: document.getElementById("presupuesto-texto"),
   presupuestoForm: document.getElementById("presupuesto-form"),
   presupuestoImporte: document.getElementById("presupuesto-importe"),
@@ -2259,15 +2261,28 @@ function pintarPresupuesto() {
     return;
   }
   const dinero = (n) => `${nf.format(n)} ${presupuesto.to}`;
+  const dia = diaDelViaje(presupuesto, gastos);
   const partes = estado.queda < 0
     ? [tr("presupuesto.pasado", { pasado: dinero(-estado.queda) })]
     : [tr("presupuesto.queda", { queda: dinero(estado.queda) })];
   if (estado.porDia !== null) partes.push(tr("presupuesto.alDia", { porDia: nf.format(estado.porDia) }));
   el.presupuestoTexto.textContent = partes.join(" · ");
+  el.presupuestoDia.hidden = !dia;
+  if (dia) el.presupuestoDia.textContent = tr("presupuesto.dia", dia);
   el.presupuestoVer.title = tr("presupuesto.titulo", {
     gastado: nf.format(estado.gastado), importe: dinero(presupuesto.importe), fecha: fechaLarga(presupuesto.hasta),
   });
-  el.presupuestoVer.setAttribute("aria-label", `${el.presupuestoTexto.textContent}. ${el.presupuestoVer.title}`);
+  // La marca es hasta dónde deberías llevar gastado al acabar hoy, si fueras
+  // parejo. El último día no la pongo: estaría pegada al final y no dice nada.
+  const marca = dia && dia.dia < dia.total;
+  el.presupuestoHoy.hidden = !marca;
+  if (marca) {
+    el.presupuestoHoy.style.left = `${(dia.dia / dia.total) * 100}%`;
+    el.presupuestoHoy.classList.toggle("is-adelantado", estado.fraccion > dia.dia / dia.total);
+    el.presupuestoVer.title += `\n${tr("presupuesto.marca", dia)}`;
+  }
+  const leido = dia ? `${el.presupuestoDia.textContent}. ${el.presupuestoTexto.textContent}` : el.presupuestoTexto.textContent;
+  el.presupuestoVer.setAttribute("aria-label", `${leido}. ${el.presupuestoVer.title}`);
   el.presupuestoLleno.style.width = `${Math.min(estado.fraccion, 1) * 100}%`;
   // El temblor solo al pasarte, no cada vez que abres el panel ya pasado.
   const antes = el.presupuestoVer.dataset.tono;

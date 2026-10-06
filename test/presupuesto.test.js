@@ -1,6 +1,6 @@
 const { test } = require("node:test");
 const assert = require("node:assert");
-const { diasHasta, leerPresupuesto, estadoPresupuesto } = require("../logica.js");
+const { diasHasta, leerPresupuesto, estadoPresupuesto, diaDelViaje } = require("../logica.js");
 
 const gasto = (valor, to = "EUR") => ({ id: String(valor), from: "USD", to, cantidad: valor, valor, concepto: "", cuando: 0 });
 const cerca = (a, b) => assert.ok(Math.abs(a - b) < 1e-9, `${a} ≠ ${b}`);
@@ -61,4 +61,22 @@ test("acabado el viaje no hay reparto por día", () => {
 
 test("sin presupuesto no hay estado", () => {
   assert.equal(estadoPresupuesto(null, []), null);
+});
+
+const el = (dia) => new Date(...dia.split("-").map((n, i) => (i === 1 ? n - 1 : Number(n))), 12).getTime();
+const viaje = { importe: 700, to: "EUR", hasta: "2026-10-08" };
+
+test("el día del viaje cuenta desde el primer gasto", () => {
+  const gastos = [{ ...gasto(10), cuando: el("2026-10-04") }, { ...gasto(20), cuando: el("2026-10-02") }];
+  assert.deepEqual(diaDelViaje(viaje, gastos, "2026-10-04"), { dia: 3, total: 7 });
+  assert.deepEqual(diaDelViaje(viaje, gastos, "2026-10-08"), { dia: 7, total: 7 }, "el último también cuenta");
+});
+
+test("sin gastos el viaje empieza hoy", () => {
+  assert.deepEqual(diaDelViaje(viaje, [], "2026-10-06"), { dia: 1, total: 3 });
+});
+
+test("acabado el viaje o sin presupuesto, nada", () => {
+  assert.equal(diaDelViaje(viaje, [], "2026-10-09"), null);
+  assert.equal(diaDelViaje(null, [], "2026-10-06"), null);
 });

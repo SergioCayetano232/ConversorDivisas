@@ -1355,6 +1355,18 @@ function estadoPresupuesto(presupuesto, gastos, hoyIso = hoy()) {
   };
 }
 
+// En qué día del viaje vas. Empieza el día del primer gasto, o hoy si aún no
+// hay ninguno; acabado el viaje ya no lo digo.
+function diaDelViaje(presupuesto, gastos, hoyIso = hoy()) {
+  if (!presupuesto) return null;
+  const primero = gastos.reduce((min, g) => Math.min(min, g.cuando), Infinity);
+  const inicio = Number.isFinite(primero) ? isoLocal(new Date(primero)) : hoyIso;
+  const total = diasHasta(presupuesto.hasta, inicio);
+  const dia = diasHasta(hoyIso, inicio);
+  if (dia < 1 || dia > total) return null;
+  return { dia, total };
+}
+
 // Lo que se llevaría el gasto que vas a apuntar: qué trozo del presupuesto y
 // cuántos días de lo que te queda al día. En otra divisa no cuenta, igual que arriba.
 function loQueSeLleva(presupuesto, gastos, gasto, hoyIso = hoy()) {
@@ -1700,7 +1712,7 @@ if (typeof module !== "undefined") {
     EMOJI_CATEGORIA, destacados, resumenParaCompartir,
     COPIA_APP, COPIA_VERSION, CLAVES_COPIA, limpiarCopia, crearCopia, leerCopia, resumenCopia,
     VIAJES_MAX, NOMBRE_VIAJE_MAX, leerViajes, viajeActivo, crearViaje, renombrarViaje, elegirViaje, borrarViaje, cambiarViaje, resumenViaje, archivoGastos,
-    diasHasta, leerPresupuesto, PRESUPUESTO_JUSTO, estadoPresupuesto, loQueSeLleva, redondearDias,
+    diasHasta, leerPresupuesto, PRESUPUESTO_JUSTO, estadoPresupuesto, diaDelViaje, loQueSeLleva, redondearDias,
     EXTRAS_MAX, EXTRAS_POR_DEFECTO, leerExtras, anadirExtra, quitarExtra,
     extrasVisibles, disponiblesParaAnadir, convertirExtras, semanaDe, trazoMini, CHULETA, escalaChuleta, chuleta, chuletaParaCompartir,
     COMISION_MAX, COMISIONES_RAPIDAS, leerComision, leerPorcentaje, conComision,

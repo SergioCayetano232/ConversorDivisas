@@ -2803,6 +2803,38 @@ body::after {
   transition: width var(--slow) var(--ease-spring), background-color var(--mid) var(--ease);
 }
 
+/* Hoy, en el tiempo del viaje. Si la barra la pasa, vas más rápido de la
+   cuenta y se pone del color de la barra. */
+.presupuesto__hoy {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  z-index: 2;
+  width: 2px;
+  margin-left: -1px;
+  border-radius: 1px;
+  background: var(--mist);
+  opacity: 0.55;
+  transition: left var(--slow) var(--ease-spring), background-color var(--mid) var(--ease), opacity var(--mid) var(--ease);
+  animation: hoy-entra 700ms var(--ease-out);
+}
+
+.presupuesto__hoy[hidden] {
+  display: none;
+}
+
+.presupuesto__hoy.is-adelantado {
+  background: var(--graphite);
+  opacity: 0.9;
+}
+
+@keyframes hoy-entra {
+  from {
+    opacity: 0;
+    transform: scaleY(0);
+  }
+}
+
 /* El gasto que vas a apuntar, a rayas detrás de lo ya gastado. Las rayas
    corren despacio para que se note que aún no está. */
 .presupuesto__esto {
@@ -2840,6 +2872,20 @@ body::after {
   font-size: 9px;
   font-variant-numeric: tabular-nums;
   color: var(--muted);
+}
+
+/* Mientras miras lo que se llevaría un gasto, el día se aparta. */
+.presupuesto__dia {
+  flex-shrink: 0;
+  font-size: 9px;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.04em;
+  color: var(--muted);
+}
+
+.presupuesto__dia[hidden],
+.presupuesto__esto-texto:not(:empty) + .presupuesto__dia {
+  display: none;
 }
 
 .presupuesto__esto-texto.is-pasa {
