@@ -32,8 +32,8 @@ test("repetir uno en efectivo no le suma la comisión, y sigue en efectivo", () 
 
 test("el CSV dice cómo se pagó", () => {
   ponerIdioma("es");
-  assert.match(csvGastos([gasto({ pago: "efectivo" })]).split("\r\n")[1], /;Efectivo$/);
+  assert.match(csvGastos([gasto({ pago: "efectivo" })]).split("\r\n")[1], /;Efectivo;0,00$/);
   ponerIdioma("en");
-  assert.match(csvGastos([gasto({ pago: "efectivo" })]).split("\r\n")[0], /,Paid with$/);
+  assert.match(csvGastos([gasto({ pago: "efectivo" })]).split("\r\n")[0], /,Paid with,Fee$/);
   ponerIdioma("es");
 });

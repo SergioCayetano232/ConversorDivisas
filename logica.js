@@ -1242,6 +1242,8 @@ function resumenParaCompartir({ nombre, gastos, presupuesto }, hoyIso = hoy()) {
     lineas.push(tr("compartir.caro", { que, valor: dinero(caro.valor, caro.to), dia: nombreDia(isoLocal(new Date(caro.cuando)), hoyIso) }));
   }
   if (dia) lineas.push(tr("compartir.diaMas", { dia: nombreDia(dia.dia, hoyIso), valor: dinero(dia.total, dia.to) }));
+  const pagadas = comisionesPagadas(gastos);
+  if (pagadas) lineas.push(tr("compartir.comisiones", { valor: dinero(pagadas.total, pagadas.to) }));
 
   const trozos = desglose(gastos);
   if (trozos.length > 1) {
@@ -1301,12 +1303,14 @@ function pesoDeLosDias(dias) {
 // viaje estabas igual. Con un solo día la media sería el total, no la enseño.
 // Lo que se ha quedado el banco, en la divisa que más suma, como el total. El
 // valor ya la lleva dentro, así que sale de quitársela.
+const comisionDe = (g) => (g.comision > 0 ? g.valor - g.valor / (1 + g.comision / 100) : 0);
+
 function comisionesPagadas(gastos) {
   const principal = sumarPorDivisa(gastos)[0];
   if (!principal) return null;
   const total = gastos
-    .filter((g) => g.to === principal.to && g.comision > 0)
-    .reduce((suma, g) => suma + g.valor - g.valor / (1 + g.comision / 100), 0);
+    .filter((g) => g.to === principal.to)
+    .reduce((suma, g) => suma + comisionDe(g), 0);
   return total >= 0.005 ? { total, to: principal.to } : null;
 }
 
@@ -1430,10 +1434,10 @@ function csvHistorial(lista) {
 // Del más antiguo al último: en una hoja de gastos se lee así, al revés que en el popup.
 function csvGastos(lista) {
   return filasCsv(
-    [tr("csv.fecha"), tr("csv.hora"), tr("csv.concepto"), tr("csv.categoria"), tr("csv.cantidad"), tr("csv.de"), tr("csv.importe"), tr("csv.a"), tr("csv.pago")],
+    [tr("csv.fecha"), tr("csv.hora"), tr("csv.concepto"), tr("csv.categoria"), tr("csv.cantidad"), tr("csv.de"), tr("csv.importe"), tr("csv.a"), tr("csv.pago"), tr("csv.comision")],
     [...lista].reverse().map((g) => [
       isoLocal(new Date(g.cuando)), horaLocal(g.cuando), g.concepto, tr(`cat.${g.categoria ?? CATEGORIA_POR_DEFECTO}`),
-      numeroCsv(g.cantidad), g.from, numeroCsv(g.valor), g.to, tr(`pago.${leerPago(g.pago)}`),
+      numeroCsv(g.cantidad), g.from, numeroCsv(g.valor), g.to, tr(`pago.${leerPago(g.pago)}`), numeroCsv(comisionDe(g)),
     ]),
   );
 }

@@ -36,13 +36,13 @@ test("en inglés, coma y punto decimal", () => {
 
 test("los gastos van del primero al último, con el concepto", () => {
   const lineas = csvGastos(gastos).split("\r\n");
-  assert.equal(lineas[0], "Fecha;Hora;Concepto;Categoría;Cantidad;Divisa;Importe;En;Pago");
-  assert.equal(lineas[1], '2026-10-01;14:00;"Cena; con vino";Comida;45,00;USD;39,83;EUR;Tarjeta', "el ; del concepto va entre comillas");
-  assert.equal(lineas[2], "2026-10-02;21:30;Taxi;Otros;12,00;USD;10,62;EUR;Tarjeta", "sin categoría, otros");
+  assert.equal(lineas[0], "Fecha;Hora;Concepto;Categoría;Cantidad;Divisa;Importe;En;Pago;Comisión");
+  assert.equal(lineas[1], '2026-10-01;14:00;"Cena; con vino";Comida;45,00;USD;39,83;EUR;Tarjeta;0,00', "el ; del concepto va entre comillas");
+  assert.equal(lineas[2], "2026-10-02;21:30;Taxi;Otros;12,00;USD;10,62;EUR;Tarjeta;0,00", "sin categoría, otros");
 });
 
 test("sin nada, solo la cabecera", () => {
-  assert.equal(csvGastos([]), "Fecha;Hora;Concepto;Categoría;Cantidad;Divisa;Importe;En;Pago");
+  assert.equal(csvGastos([]), "Fecha;Hora;Concepto;Categoría;Cantidad;Divisa;Importe;En;Pago;Comisión");
 });
 
 test("las comillas se doblan", () => {
@@ -59,4 +59,11 @@ test("la coma solo obliga a comillas cuando es el separador", () => {
   assert.equal(celdaCsv("pan, leche"), "pan, leche");
   ponerIdioma("en");
   assert.equal(celdaCsv("pan, leche"), '"pan, leche"');
+});
+
+test("la comisión va en su columna, en la divisa del importe", () => {
+  const conTarjeta = [{ ...gastos[0], valor: 102, comision: 2 }];
+  assert.equal(csvGastos(conTarjeta).split("\r\n")[1], "2026-10-02;21:30;Taxi;Otros;12,00;USD;102,00;EUR;Tarjeta;2,00");
+  ponerIdioma("en");
+  assert.match(csvGastos(conTarjeta), /^Date,Time,What for,Category,Amount,Currency,Cost,In,Paid with,Fee\r\n.*,2\.00$/);
 });

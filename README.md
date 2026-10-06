@@ -44,8 +44,8 @@ que necesitaba una conversión rápida. Ahora es un clic en la barra del navegad
   lápiz, y para borrar uno hay que darle dos veces. Hasta ocho. Lo que tenías
   apuntado antes de esto pasa al primero, sin perder nada
 - El resumen del viaje para mandarlo: el bocadillo que hay al lado de **CSV**
-  copia el total, lo más caro, el día que más, en qué se ha ido, lo de cada día y
-  cómo va el presupuesto,
+  copia el total, lo más caro, el día que más, lo que se ha llevado el banco, en
+  qué se ha ido, lo de cada día y cómo va el presupuesto,
   con negritas y emojis para que en WhatsApp se lea bien
 - Cada gasto dice si fue con tarjeta o en efectivo, con el botón que hay al
   lado de la categoría. En efectivo no se le suma la comisión del banco, y en
@@ -63,7 +63,8 @@ que necesitaba una conversión rápida. Ahora es un clic en la barra del navegad
   gastado hoy yendo parejo: si la pasas, vas rápido
 - Las conversiones y los gastos se bajan en CSV con el botón **CSV** de cada
   panel, listos para abrir en Excel o en Google Sheets: en español van con
-  punto y coma y "12,50", en inglés con coma y "12.50", y las tildes no se rompen
+  punto y coma y "12,50", en inglés con coma y "12.50", y las tildes no se rompen.
+  Los gastos llevan una columna con la comisión de cada uno
 - Dividir la cuenta, en el tique que hay al lado de la cartera: con lo que
   pone la cuenta arriba, eliges la propina (sin, 10, 15, 20 % o la que quieras)
   y entre cuántos sois, y te dice lo que paga cada uno, en esa divisa y en la

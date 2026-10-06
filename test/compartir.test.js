@@ -88,3 +88,10 @@ test("los destacados solo miran la divisa que más suma", () => {
   assert.equal(caro.id, "1");
   assert.deepEqual(dia, { dia: "2026-10-01", total: 50, to: "EUR" });
 });
+
+test("con comisiones, dice lo que se ha llevado el banco", () => {
+  ponerIdioma("es");
+  const conComision = [{ ...gastos[0], valor: 20.4, comision: 2 }, ...gastos.slice(1)];
+  const lineas = resumenParaCompartir({ nombre: "Japón", gastos: conComision, presupuesto: null }, HOY).split("\n");
+  assert.equal(lineas[4], "💳 Comisiones del banco: 0,40 EUR");
+});
