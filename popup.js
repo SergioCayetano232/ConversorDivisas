@@ -2239,9 +2239,10 @@ function pintarGastos() {
   el.gastosMedia.hidden = !media;
   if (media) {
     // Hoy solo al lado de la media: solo, ya lo dice la lista; con ella ves si hoy vas por encima.
+    // Sin la divisa, que ya está en el total y si no, al lado de los botones no cabe.
     const deHoy = gastadoHoy(gastos);
     el.gastosMedia.textContent = deHoy
-      ? tr("gastos.hoyMedia", { hoy: nf.format(deHoy.total), media: `${nf.format(media.media)} ${media.to}` })
+      ? tr("gastos.hoyMedia", { hoy: nf.format(deHoy.total), media: nf.format(media.media) })
       : tr("gastos.media", { media: `${nf.format(media.media)} ${media.to}` });
     el.gastosMedia.title = tr("gastos.mediaTitulo", { dias: media.dias });
   }
@@ -2277,11 +2278,13 @@ function pintarPresupuesto() {
   const dinero = (n) => `${nf.format(n)} ${presupuesto.to}`;
   const dia = diaDelViaje(presupuesto, gastos);
   // Si a este ritmo no llegas, eso importa más que el "al día", que pasa al título.
-  // Y "Quedan" a secas, que si no la fecha no cabe.
+  // Y "Quedan" a secas y sin divisa, que si no la fecha no cabe.
   const llega = hastaCuandoLlega(presupuesto, gastos);
   const partes = estado.queda < 0
     ? [tr("presupuesto.pasado", { pasado: dinero(-estado.queda) })]
-    : [tr(llega ? "presupuesto.quedaCorto" : "presupuesto.queda", { queda: dinero(estado.queda) })];
+    : llega
+      ? [tr("presupuesto.quedaCorto", { queda: nf.format(estado.queda) })]
+      : [tr("presupuesto.queda", { queda: dinero(estado.queda) })];
   if (llega) partes.push(tr("presupuesto.llega", { fecha: fechaCorta(llega) }));
   else if (estado.porDia !== null) partes.push(tr("presupuesto.alDia", { porDia: nf.format(estado.porDia) }));
   el.presupuestoTexto.textContent = partes.join(" · ");
