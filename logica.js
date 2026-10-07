@@ -1425,6 +1425,20 @@ function diaDelViaje(presupuesto, gastos, hoyIso = hoy()) {
   return { dia, total };
 }
 
+// Al ritmo que llevas, hasta qué día te llega lo que queda. Solo si no llega al
+// final: si llega, ya lo dice la barra. El primer día no, que el hotel pagado
+// por adelantado haría pensar que te arruinas.
+function hastaCuandoLlega(presupuesto, gastos, hoyIso = hoy()) {
+  const estado = estadoPresupuesto(presupuesto, gastos, hoyIso);
+  const dia = diaDelViaje(presupuesto, gastos, hoyIso);
+  if (!estado || !dia || dia.dia < 2 || estado.queda <= 0) return null;
+  const ritmo = estado.gastado / dia.dia;
+  const llega = Math.floor(estado.queda / ritmo);
+  if (llega >= dia.total - dia.dia) return null;
+  const [a, m, d] = hoyIso.split("-").map(Number);
+  return isoLocal(new Date(a, m - 1, d + llega));
+}
+
 // Lo que se llevaría el gasto que vas a apuntar: qué trozo del presupuesto y
 // cuántos días de lo que te queda al día. En otra divisa no cuenta, igual que arriba.
 function loQueSeLleva(presupuesto, gastos, gasto, hoyIso = hoy()) {
@@ -1793,7 +1807,7 @@ if (typeof module !== "undefined") {
     EMOJI_CATEGORIA, destacados, resumenParaCompartir,
     COPIA_APP, COPIA_VERSION, CLAVES_COPIA, limpiarCopia, crearCopia, leerCopia, resumenCopia,
     VIAJES_MAX, NOMBRE_VIAJE_MAX, leerViajes, viajeActivo, crearViaje, renombrarViaje, elegirViaje, borrarViaje, cambiarViaje, resumenViaje, archivoGastos,
-    diasHasta, leerPresupuesto, PRESUPUESTO_JUSTO, estadoPresupuesto, inicioDelViaje, diaDelViaje, loQueSeLleva, redondearDias,
+    diasHasta, leerPresupuesto, PRESUPUESTO_JUSTO, estadoPresupuesto, inicioDelViaje, diaDelViaje, hastaCuandoLlega, loQueSeLleva, redondearDias,
     EXTRAS_MAX, EXTRAS_POR_DEFECTO, leerExtras, anadirExtra, quitarExtra,
     extrasVisibles, disponiblesParaAnadir, convertirExtras, semanaDe, trazoMini, CHULETA, escalaChuleta, chuleta, chuletaParaCompartir,
     COMISION_MAX, COMISIONES_RAPIDAS, leerComision, leerPorcentaje, conComision,

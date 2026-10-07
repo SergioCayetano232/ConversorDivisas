@@ -1,6 +1,6 @@
 const { test } = require("node:test");
 const assert = require("node:assert");
-const { diasHasta, leerPresupuesto, estadoPresupuesto, diaDelViaje } = require("../logica.js");
+const { diasHasta, leerPresupuesto, estadoPresupuesto, diaDelViaje, hastaCuandoLlega } = require("../logica.js");
 
 const gasto = (valor, to = "EUR") => ({ id: String(valor), from: "USD", to, cantidad: valor, valor, concepto: "", cuando: 0 });
 const cerca = (a, b) => assert.ok(Math.abs(a - b) < 1e-9, `${a} ≠ ${b}`);
@@ -104,4 +104,23 @@ test("antes de salir, lo de al día se reparte entre los días del viaje", () =>
   const e = estadoPresupuesto(p, [], "2026-10-02");
   assert.equal(e.dias, 5);
   assert.equal(e.porDia, 100);
+});
+
+test("a este ritmo, hasta qué día te llega", () => {
+  const p = { importe: 1000, to: "EUR", desde: "2026-10-01", hasta: "2026-10-10" };
+  // Día 4 con 400 gastados: 100 al día, los 600 que quedan dan para 6 días más.
+  assert.equal(hastaCuandoLlega(p, [gasto(400)], "2026-10-04"), null, "justo llega al día 10");
+  // Con 500 gastados son 125 al día: los 500 que quedan, 4 días, hasta el 8.
+  assert.equal(hastaCuandoLlega(p, [gasto(500)], "2026-10-04"), "2026-10-08");
+  // Si no te llega ni para mañana, hasta hoy.
+  assert.equal(hastaCuandoLlega(p, [gasto(900)], "2026-10-04"), "2026-10-04");
+});
+
+test("el primer día, pasado, fuera del viaje o sin gastar, no se dice", () => {
+  const p = { importe: 1000, to: "EUR", desde: "2026-10-01", hasta: "2026-10-10" };
+  assert.equal(hastaCuandoLlega(p, [gasto(800)], "2026-10-01"), null, "el primer día");
+  assert.equal(hastaCuandoLlega(p, [gasto(1200)], "2026-10-04"), null, "ya pasado");
+  assert.equal(hastaCuandoLlega(p, [gasto(500)], "2026-10-12"), null, "acabado el viaje");
+  assert.equal(hastaCuandoLlega(p, [], "2026-10-04"), null, "sin gastar");
+  assert.equal(hastaCuandoLlega(null, [gasto(500)], "2026-10-04"), null);
 });

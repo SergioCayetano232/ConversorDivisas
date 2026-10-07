@@ -2276,16 +2276,21 @@ function pintarPresupuesto() {
   }
   const dinero = (n) => `${nf.format(n)} ${presupuesto.to}`;
   const dia = diaDelViaje(presupuesto, gastos);
+  // Si a este ritmo no llegas, eso importa más que el "al día", que pasa al título.
+  // Y "Quedan" a secas, que si no la fecha no cabe.
+  const llega = hastaCuandoLlega(presupuesto, gastos);
   const partes = estado.queda < 0
     ? [tr("presupuesto.pasado", { pasado: dinero(-estado.queda) })]
-    : [tr("presupuesto.queda", { queda: dinero(estado.queda) })];
-  if (estado.porDia !== null) partes.push(tr("presupuesto.alDia", { porDia: nf.format(estado.porDia) }));
+    : [tr(llega ? "presupuesto.quedaCorto" : "presupuesto.queda", { queda: dinero(estado.queda) })];
+  if (llega) partes.push(tr("presupuesto.llega", { fecha: fechaCorta(llega) }));
+  else if (estado.porDia !== null) partes.push(tr("presupuesto.alDia", { porDia: nf.format(estado.porDia) }));
   el.presupuestoTexto.textContent = partes.join(" · ");
   el.presupuestoDia.hidden = !dia;
   if (dia) el.presupuestoDia.textContent = tr("presupuesto.dia", dia);
   el.presupuestoVer.title = tr("presupuesto.titulo", {
     gastado: nf.format(estado.gastado), importe: dinero(presupuesto.importe), fecha: fechaLarga(presupuesto.hasta),
   });
+  if (llega) el.presupuestoVer.title += `\n${tr("presupuesto.llegaTitulo", { fecha: fechaLarga(llega), porDia: dinero(estado.porDia) })}`;
   // La marca es hasta dónde deberías llevar gastado al acabar hoy, si fueras
   // parejo. El último día no la pongo: estaría pegada al final y no dice nada.
   const marca = dia && dia.dia < dia.total;
