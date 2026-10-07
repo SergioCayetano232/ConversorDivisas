@@ -1633,6 +1633,28 @@ function repartirAvisos(avisos, tasas) {
   return { cumplidos, pendientes };
 }
 
+// Solo sé la tasa del par que tienes puesto. Con el par dado la vuelta también
+// vale: el aviso EUR→USD se mira con 1/rate.
+function faltaParaAviso(aviso, { from, to }, rate) {
+  if (!(rate > 0)) return null;
+  const suya = aviso.from === from && aviso.to === to ? rate
+    : aviso.from === to && aviso.to === from ? 1 / rate : null;
+  if (suya === null) return null;
+  const falta = aviso.sentido === "sube" ? aviso.umbral / suya - 1 : 1 - aviso.umbral / suya;
+  return Math.max(falta, 0);
+}
+
+// Lo que lleva recorrido, para rellenar la pastilla: a un 5 % o más está
+// vacía, que más lejos ya no es "a punto de saltar" sino esperar.
+const cercaniaAviso = (falta) => Math.min(Math.max(1 - falta / 0.05, 0), 1);
+
+// Por debajo de una décima "0,0 %" parece un fallo, mejor decir que está al caer.
+function textoFalta(falta) {
+  if (falta < 0.0005) return tr("avisos.casi");
+  const pct = numeros({ style: "percent", minimumFractionDigits: 1, maximumFractionDigits: 1 }).format(falta);
+  return tr("avisos.falta", { pct });
+}
+
 function mensajeAviso(aviso, rate) {
   return {
     titulo: tr("avisos.notiTitulo", { from: aviso.from, tasa: tasaLarga(rate), to: aviso.to }),
@@ -1770,7 +1792,7 @@ if (typeof module !== "undefined") {
     MARGENES, tasaOfrecida, analizarCambio,
     FECHA_MINIMA, fechaLarga, fechaValida, diaDelGrafico, mesesAtras, FECHAS_RAPIDAS, leerFecha, cambioDesde, notaDiaHabil,
     textoInsignia, cambioDiario, sentidoDe, cambioDelDia, textoCambioDia, tituloInsignia, lineaTasa,
-    AVISOS_MAX, sentidoAviso, crearAviso, leerAvisos, avisoCumplido, repartirAvisos, mensajeAviso,
+    AVISOS_MAX, sentidoAviso, crearAviso, leerAvisos, avisoCumplido, repartirAvisos, mensajeAviso, faltaParaAviso, cercaniaAviso, textoFalta,
     ATAJOS, atajoPara, textoAtajo,
   };
 }

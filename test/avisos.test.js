@@ -1,7 +1,7 @@
 const { test } = require("node:test");
 const assert = require("node:assert");
 const {
-  AVISOS_MAX, sentidoAviso, crearAviso, leerAvisos, avisoCumplido, repartirAvisos, mensajeAviso,
+  AVISOS_MAX, sentidoAviso, crearAviso, leerAvisos, avisoCumplido, repartirAvisos, mensajeAviso, faltaParaAviso, cercaniaAviso, textoFalta,
 } = require("../logica.js");
 
 const aviso = (extra) => ({ id: "a1", from: "EUR", to: "USD", sentido: "sube", umbral: 1.15, ...extra });
@@ -89,4 +89,33 @@ test("compara con la tasa como se ve, a cuatro decimales", () => {
 test("con tasas grandes también redondea a cuatro decimales", () => {
   assert.equal(sentidoAviso(20350.09, 20350.090004), null);
   assert.equal(sentidoAviso(20351, 20350.09), "sube");
+});
+
+const eurUsd = { from: "EUR", to: "USD" };
+
+test("lo que falta para que salte, en los dos sentidos", () => {
+  const sube = { from: "EUR", to: "USD", sentido: "sube", umbral: 1.15 };
+  const baja = { from: "EUR", to: "USD", sentido: "baja", umbral: 1.0 };
+  assert.ok(Math.abs(faltaParaAviso(sube, eurUsd, 1.1) - 0.05 / 1.1) < 1e-12);
+  assert.ok(Math.abs(faltaParaAviso(baja, eurUsd, 1.25) - 0.2) < 1e-12);
+  // Si ya ha pasado y aún no ha llegado la notificación, cero, no negativo.
+  assert.equal(faltaParaAviso(sube, eurUsd, 1.2), 0);
+});
+
+test("con el par dado la vuelta también sale, y con otro par no", () => {
+  const sube = { from: "EUR", to: "USD", sentido: "sube", umbral: 1.1 };
+  assert.ok(Math.abs(faltaParaAviso(sube, { from: "USD", to: "EUR" }, 1 / 1.0) - 0.1) < 1e-12);
+  assert.equal(faltaParaAviso(sube, { from: "EUR", to: "GBP" }, 0.85), null);
+  assert.equal(faltaParaAviso(sube, eurUsd, null), null);
+});
+
+test("la pastilla se llena según se acerca, y el texto va con un decimal", () => {
+  const { ponerIdioma } = require("../textos.js");
+  ponerIdioma("es");
+  assert.equal(cercaniaAviso(0), 1);
+  assert.ok(Math.abs(cercaniaAviso(0.01) - 0.8) < 1e-12);
+  assert.equal(cercaniaAviso(0.05), 0);
+  assert.equal(cercaniaAviso(0.3), 0);
+  assert.equal(textoFalta(0.0291).replace(/\u00a0/g, " "), "Le falta un 2,9 % para saltar");
+  assert.equal(textoFalta(0.0004), "Está al caer");
 });

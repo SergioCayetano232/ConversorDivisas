@@ -3058,9 +3058,22 @@ function pintarAvisos() {
   });
   const antes = [...el.avisosLista.children].map((p) => p.dataset.id).join();
   if (antes !== avisos.map((a) => a.id).join()) el.avisosLista.replaceChildren(...pastillas);
+  pintarFaltas();
   // Un punto en la campana para que se vea que hay avisos sin entrar a mirar.
   el.campana.classList.toggle("tiene-avisos", avisos.length > 0);
   pintarNota();
+}
+
+function pintarFaltas() {
+  const par = { from: el.from.value, to: el.to.value };
+  for (const pastilla of el.avisosLista.children) {
+    const aviso = avisos.find((a) => a.id === pastilla.dataset.id);
+    const falta = aviso ? faltaParaAviso(aviso, par, rate) : null;
+    const ir = pastilla.querySelector(".aviso__ir");
+    ir.title = falta === null ? "" : textoFalta(falta);
+    if (falta === null) ir.style.removeProperty("--cerca");
+    else ir.style.setProperty("--cerca", `${cercaniaAviso(falta) * 100}%`);
+  }
 }
 
 function onCrearAviso(event) {
@@ -3278,6 +3291,7 @@ function traducirPagina() {
 
 function renderRateLine(from, to) {
   pintarCambioDia();
+  pintarFaltas();
   if (rate === null) {
     el.rateLine.textContent = "";
     return;
@@ -3461,6 +3475,7 @@ async function refresh() {
     el.resultMeta.textContent = "";
     el.rateLine.textContent = "";
     el.updated.textContent = "";
+    pintarFaltas();
     pintarChuleta();
     pintarFecha();
     pintarTimo();
