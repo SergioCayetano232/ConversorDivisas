@@ -134,7 +134,7 @@ que necesitaba una conversión rápida. Ahora es un clic en la barra del navegad
   sugerencias de Chrome, con tus otras divisas debajo, y con Enter se abre el
   popup con esa conversión puesta
 - Atajos dentro del popup: `S` da la vuelta al par, `C` copia, `D` y `A` abren
-  los desplegables, `G` los gastos, `P` dividir la cuenta, `Z` (o `Cmd+Z`, `Ctrl+Z`) deshace lo último que
+  los desplegables, `G` los gastos, `P` dividir la cuenta, `R` las últimas conversiones, `Z` (o `Cmd+Z`, `Ctrl+Z`) deshace lo último que
   has quitado de los gastos y del `1` al `6` cambian de pestaña. Si estás escribiendo en
   un campo, con `Alt` delante (`⌥` en Mac). En la cantidad, `↑` y `↓` suben o
   bajan 1, y con Shift, 10. Con `?` salen todos

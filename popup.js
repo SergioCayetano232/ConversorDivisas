@@ -3186,6 +3186,7 @@ function hacerAtajo(accion) {
   else if (accion === "ayuda") abrirAyuda();
   else if (accion === "gastos") (el.gastos.hidden ? abrirGastos() : cerrarGastos()?.focus());
   else if (accion === "cuenta") (el.cuenta.hidden ? abrirCuenta() : cerrarCuenta()?.focus());
+  else if (accion === "historial") (el.historial.hidden ? abrirHistorial() : cerrarHistorial()?.focus());
   else if (accion === "deshacer") onDeshacer();
   else if (accion.startsWith("vista:")) cambiarVista(accion.slice(6));
 }
@@ -3320,6 +3321,7 @@ function ponerPistasDeAtajos() {
   el.copiar.title = tr("copiar.titulo", { tecla: pista("copiar") });
   el.abrirGastos.title = `${tr("gastos")} (${pista("gastos")})`;
   el.abrirCuenta.title = `${tr("cuenta")} (${pista("cuenta")})`;
+  el.abrirHistorial.title = `${tr("historial")} (${pista("historial")})`;
   el.deshacerBoton.title = `${tr("gastos.deshacer")} (${pista("deshacer")})`;
   for (const boton of el.botonesVista) {
     boton.title = `${boton.title} (${pista(`vista:${boton.dataset.vista}`)})`;

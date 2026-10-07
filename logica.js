@@ -1705,6 +1705,8 @@ const ATAJOS = {
   Digit6: "vista:timo",
   KeyG: "gastos",
   KeyP: "cuenta",
+  // La H ya es la ayuda: R de "recientes".
+  KeyR: "historial",
   KeyZ: "deshacer",
   KeyH: "ayuda",
 };
