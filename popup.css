@@ -2239,6 +2239,33 @@ body::after {
   display: none;
 }
 
+.gastos__efectivo {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  overflow: hidden;
+  white-space: nowrap;
+  font-size: 10px;
+  color: color-mix(in srgb, var(--jade) 70%, var(--muted));
+  font-variant-numeric: tabular-nums;
+  cursor: default;
+}
+
+/* El mismo puntito verde que llevan en la lista los gastos en efectivo. */
+.gastos__efectivo::before {
+  content: "";
+  flex-shrink: 0;
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--jade);
+  box-shadow: 0 0 6px var(--jade-glow);
+}
+
+.gastos__efectivo[hidden] {
+  display: none;
+}
+
 .gastos__comisiones.is-tic {
   animation: comision-pica 600ms var(--ease-spring);
 }

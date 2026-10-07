@@ -91,6 +91,7 @@ const el = {
   gastosN: document.getElementById("gastos-n"),
   gastosMedia: document.getElementById("gastos-media"),
   gastosComisiones: document.getElementById("gastos-comisiones"),
+  gastosEfectivo: document.getElementById("gastos-efectivo"),
   gastosForm: document.getElementById("gastos-form"),
   gastosConcepto: document.getElementById("gastos-concepto"),
   gastosPago: document.getElementById("gastos-pago"),
@@ -2211,6 +2212,12 @@ function pintarComisiones() {
   if (habia && texto && habia !== texto) restartAnimation(el.gastosComisiones, "is-tic");
 }
 
+function pintarEfectivo() {
+  const pagado = pagadoEnEfectivo(gastos);
+  el.gastosEfectivo.hidden = !pagado;
+  el.gastosEfectivo.textContent = pagado ? tr("gastos.efectivo", { importe: `${nf.format(pagado.total)} ${pagado.to}` }) : "";
+}
+
 function pintarGastos() {
   const n = gastos.length;
   el.gastosCuenta.hidden = n === 0;
@@ -2234,6 +2241,7 @@ function pintarGastos() {
     el.gastosMedia.title = tr("gastos.mediaTitulo", { dias: media.dias });
   }
   pintarComisiones();
+  pintarEfectivo();
 
   pintarDesglose();
   const visibles = filtroCategoria ? gastos.filter((g) => g.categoria === filtroCategoria) : gastos;

@@ -1,7 +1,7 @@
 const { test } = require("node:test");
 const assert = require("node:assert");
 const {
-  GASTOS_MAX, CONCEPTO_MAX, crearGasto, leerGastos, apuntarGasto, quitarGasto, cambiarConcepto, repetirGasto, devolverGasto, devolverTodos, sumarPorDivisa, gastosPorDia, mediaPorDia, nombreDia, comisionesPagadas,
+  GASTOS_MAX, CONCEPTO_MAX, crearGasto, leerGastos, apuntarGasto, quitarGasto, cambiarConcepto, repetirGasto, devolverGasto, devolverTodos, sumarPorDivisa, gastosPorDia, mediaPorDia, nombreDia, comisionesPagadas, pagadoEnEfectivo,
 } = require("../logica.js");
 
 const hora = (dia, h = 12) => new Date(...dia.split("-").map((n, i) => (i === 1 ? n - 1 : Number(n))), h).getTime();
@@ -251,4 +251,23 @@ test("el valor se guarda al céntimo", () => {
   assert.equal(gasto({ valor: 90.5148 }).valor, 90.51);
   assert.equal(gasto({ valor: 0.005 }).valor, 0.01);
   assert.equal(gasto({ valor: null }), null, "sin valor no hay gasto");
+});
+
+test("lo pagado en efectivo suma solo esos, en la divisa del total", () => {
+  const lista = [
+    gasto({ id: "1", valor: 102, comision: 2 }),
+    gasto({ id: "2", valor: 20, pago: "efectivo" }),
+    gasto({ id: "3", valor: 7.5, pago: "efectivo" }),
+    gasto({ id: "4", to: "GBP", valor: 15, pago: "efectivo" }),
+  ];
+  const e = pagadoEnEfectivo(lista);
+  assert.equal(e.to, "EUR");
+  assert.ok(Math.abs(e.total - 27.5) < 1e-9, String(e.total));
+});
+
+test("sin nada en efectivo, o con gastos de antes sin pago, no sale", () => {
+  assert.equal(pagadoEnEfectivo([]), null);
+  assert.equal(pagadoEnEfectivo([gasto({ comision: 2 })]), null);
+  const [antiguo] = leerGastos([{ id: "v", from: "USD", to: "EUR", cantidad: 10, valor: 9, concepto: "", cuando: 1 }]);
+  assert.equal(pagadoEnEfectivo([antiguo]), null);
 });

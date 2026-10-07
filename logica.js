@@ -1314,6 +1314,15 @@ function comisionesPagadas(gastos) {
   return total >= 0.005 ? { total, to: principal.to } : null;
 }
 
+function pagadoEnEfectivo(gastos) {
+  const principal = sumarPorDivisa(gastos)[0];
+  if (!principal) return null;
+  const total = gastos
+    .filter((g) => g.to === principal.to && g.pago === "efectivo")
+    .reduce((suma, g) => suma + g.valor, 0);
+  return total >= 0.005 ? { total, to: principal.to } : null;
+}
+
 function mediaPorDia(gastos) {
   const principal = sumarPorDivisa(gastos)[0];
   if (!principal) return null;
@@ -1728,7 +1737,7 @@ if (typeof module !== "undefined") {
     divisaDeIdioma, parPorIdioma, banderaDe, banderaDivisa,
     HISTORIAL_MAX, leerHistorial, apuntarConversion, haceCuanto, textoParaCopiar, fraseParaCopiar,
     celdaCsv, csvHistorial, csvGastos,
-    GASTOS_MAX, CONCEPTO_MAX, crearGasto, leerGastos, apuntarGasto, quitarGasto, cambiarConcepto, repetirGasto, devolverGasto, devolverTodos, sumarPorDivisa, gastosPorDia, pesoDeLosDias, mediaPorDia, comisionesPagadas, nombreDia,
+    GASTOS_MAX, CONCEPTO_MAX, crearGasto, leerGastos, apuntarGasto, quitarGasto, cambiarConcepto, repetirGasto, devolverGasto, devolverTodos, sumarPorDivisa, gastosPorDia, pesoDeLosDias, mediaPorDia, comisionesPagadas, pagadoEnEfectivo, nombreDia,
     CATEGORIAS, CATEGORIA_POR_DEFECTO, adivinarCategoria, PAGOS, PAGO_POR_DEFECTO, leerPago, comisionDelPago, desglose, conceptosUsados, completarConcepto,
     EMOJI_CATEGORIA, destacados, resumenParaCompartir,
     COPIA_APP, COPIA_VERSION, CLAVES_COPIA, limpiarCopia, crearCopia, leerCopia, resumenCopia,
