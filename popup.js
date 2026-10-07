@@ -2238,7 +2238,11 @@ function pintarGastos() {
   const media = mediaPorDia(gastos);
   el.gastosMedia.hidden = !media;
   if (media) {
-    el.gastosMedia.textContent = tr("gastos.media", { media: `${nf.format(media.media)} ${media.to}` });
+    // Hoy solo al lado de la media: solo, ya lo dice la lista; con ella ves si hoy vas por encima.
+    const deHoy = gastadoHoy(gastos);
+    el.gastosMedia.textContent = deHoy
+      ? tr("gastos.hoyMedia", { hoy: nf.format(deHoy.total), media: `${nf.format(media.media)} ${media.to}` })
+      : tr("gastos.media", { media: `${nf.format(media.media)} ${media.to}` });
     el.gastosMedia.title = tr("gastos.mediaTitulo", { dias: media.dias });
   }
   pintarComisiones();

@@ -1,7 +1,7 @@
 const { test } = require("node:test");
 const assert = require("node:assert");
 const {
-  GASTOS_MAX, CONCEPTO_MAX, crearGasto, leerGastos, apuntarGasto, quitarGasto, cambiarConcepto, repetirGasto, devolverGasto, devolverTodos, sumarPorDivisa, gastosPorDia, mediaPorDia, nombreDia, comisionesPagadas, pagadoEnEfectivo,
+  GASTOS_MAX, CONCEPTO_MAX, crearGasto, leerGastos, apuntarGasto, quitarGasto, cambiarConcepto, repetirGasto, devolverGasto, devolverTodos, sumarPorDivisa, gastosPorDia, mediaPorDia, nombreDia, comisionesPagadas, pagadoEnEfectivo, gastadoHoy,
 } = require("../logica.js");
 
 const hora = (dia, h = 12) => new Date(...dia.split("-").map((n, i) => (i === 1 ? n - 1 : Number(n))), h).getTime();
@@ -270,4 +270,16 @@ test("sin nada en efectivo, o con gastos de antes sin pago, no sale", () => {
   assert.equal(pagadoEnEfectivo([gasto({ comision: 2 })]), null);
   const [antiguo] = leerGastos([{ id: "v", from: "USD", to: "EUR", cantidad: 10, valor: 9, concepto: "", cuando: 1 }]);
   assert.equal(pagadoEnEfectivo([antiguo]), null);
+});
+
+test("lo de hoy suma solo los de ese día, en la divisa del total", () => {
+  const lista = [
+    gasto({ id: "1", valor: 30, cuando: hora("2026-10-04", 9) }),
+    gasto({ id: "2", valor: 12.5, cuando: hora("2026-10-04", 22) }),
+    gasto({ id: "3", valor: 80, cuando: hora("2026-10-03") }),
+    gasto({ id: "4", to: "GBP", valor: 5, cuando: hora("2026-10-04") }),
+  ];
+  assert.deepEqual(gastadoHoy(lista, "2026-10-04"), { total: 42.5, to: "EUR" });
+  assert.equal(gastadoHoy(lista, "2026-10-05"), null);
+  assert.equal(gastadoHoy([], "2026-10-04"), null);
 });
