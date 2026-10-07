@@ -1558,13 +1558,14 @@ function lineaTasa(rate, from, to, alReves = false) {
   return alReves ? `1 ${to} = ${texto} ${from}` : `1 ${from} = ${texto} ${to}`;
 }
 
-function tituloInsignia(par, rate, cambio) {
+// Con la fecha se entiende por qué el sábado no se mueve: el BCE no publica.
+function tituloInsignia(par, rate, cambio, fecha = null) {
   const tasa = `1 ${par.from} = ${tasaLarga(rate)} ${par.to}`;
-  if (cambio === null) return tasa;
-  const pct = numeros({
+  const pct = cambio === null ? null : numeros({
     style: "percent", minimumFractionDigits: 2, maximumFractionDigits: 2, signDisplay: "exceptZero",
   }).format(cambio);
-  return tr("insignia.cambio", { tasa, cambio: pct });
+  const linea = pct === null ? tasa : tr("insignia.cambio", { tasa, cambio: pct });
+  return fecha ? `${linea}\n${tr("insignia.fecha", { fecha: fechaCorta(fecha) })}` : linea;
 }
 
 // Cuatro caben en dos filas de la pestaña sin que el popup crezca.

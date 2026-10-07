@@ -1,6 +1,6 @@
 const { test } = require("node:test");
 const assert = require("node:assert");
-const { textoInsignia, cambioDiario, sentidoDe, tituloInsignia: titulo } = require("../logica.js");
+const { textoInsignia, cambioDiario, sentidoDe, tituloInsignia: titulo, cambioDelDia, textoCambioDia } = require("../logica.js");
 
 test("tasas normales con dos decimales", () => {
   assert.equal(textoInsignia(1.1355), "1,14");
@@ -74,4 +74,50 @@ test("el título dice la tasa entera y el cambio", () => {
 test("las tasas de cuatro cifras llevan el punto de los miles", () => {
   // En español Intl deja "1650,1200" sin punto, y al lado de "20.315,3400" quedaba raro.
   assert.equal(titulo({ from: "EUR", to: "KRW" }, 1650.12, null), "1 EUR = 1.650,1200 KRW");
+});
+
+const sinEspacios = (t) => t.replace(/[\s\u00a0\u202f]/g, " ");
+const dias = (...valores) => valores.map((valor, i) => ({ fecha: `2026-10-0${i + 1}`, valor }));
+
+test("lo de ayer sale de los dos últimos días publicados", () => {
+  const c = cambioDelDia(dias(1.08, 1.10, 1.111));
+  assert.ok(Math.abs(c.cambio - 0.01) < 1e-9);
+  assert.equal(c.sentido, "sube");
+  assert.equal(c.desde, "2026-10-02");
+  assert.equal(sinEspacios(textoCambioDia(c)), "▲ 1,00 %");
+});
+
+test("al revés el sentido también se da la vuelta", () => {
+  const c = cambioDelDia(dias(1.10, 1.111), true);
+  assert.equal(c.sentido, "baja");
+  assert.equal(sinEspacios(textoCambioDia(c)), "▼ 0,99 %");
+});
+
+test("un movimiento de nada sale como igual, sin signo", () => {
+  const c = cambioDelDia(dias(1.1, 1.100001));
+  assert.equal(c.sentido, "igual");
+  assert.equal(sinEspacios(textoCambioDia(c)), "= 0,00 %");
+});
+
+test("sin dos días buenos no hay cambio", () => {
+  assert.equal(cambioDelDia(dias(1.1)), null);
+  assert.equal(cambioDelDia([]), null);
+  assert.equal(cambioDelDia(undefined), null);
+  assert.equal(cambioDelDia(dias(0, 1.1)), null);
+});
+
+test("con la fecha, debajo dice de qué día es la tasa", () => {
+  const { ponerIdioma } = require("../textos.js");
+  const ano = new Date().getFullYear();
+  const par = { from: "EUR", to: "USD" };
+  const duros = (x) => x.replace(/[\u00a0\u202f]/g, " ");
+  const t = duros(titulo(par, 1.1355, 0.0021, `${ano}-10-06`));
+  assert.equal(t, "1 EUR = 1,1355 USD · +0,21 % desde el día anterior\nTasa del BCE del 6 oct");
+  assert.equal(duros(titulo(par, 1.1355, null, `${ano - 1}-12-31`)), `1 EUR = 1,1355 USD\nTasa del BCE del 31 dic ${ano - 1}`);
+  ponerIdioma("en");
+  try {
+    assert.equal(titulo(par, 1.1355, null, `${ano}-10-06`), "1 EUR = 1.1355 USD\nECB rate from Oct 6");
+  } finally {
+    ponerIdioma("es");
+  }
 });

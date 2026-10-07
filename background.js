@@ -120,8 +120,8 @@ async function serieCorta(from, to) {
     const data = await response.json();
     return Object.keys(data.rates ?? {})
       .sort()
-      .map((fecha) => data.rates[fecha]?.[to])
-      .filter((v) => typeof v === "number");
+      .map((fecha) => ({ fecha, valor: data.rates[fecha]?.[to] }))
+      .filter((p) => typeof p.valor === "number");
   } finally {
     clearTimeout(timer);
   }
@@ -142,9 +142,10 @@ async function actualizarInsignia() {
   }
 
   try {
-    const valores = await serieCorta(par.from, par.to);
+    const puntos = await serieCorta(par.from, par.to);
     // Si mientras tanto has cambiado de par, esta respuesta ya no vale.
-    if (actual !== insigniaId || valores.length === 0) return;
+    if (actual !== insigniaId || puntos.length === 0) return;
+    const valores = puntos.map((p) => p.valor);
     const rate = valores[valores.length - 1];
     const cambio = cambioDiario(valores);
     const texto = textoInsignia(rate);
@@ -152,7 +153,7 @@ async function actualizarInsignia() {
     const antes = await chrome.action.getBadgeText({});
 
     await chrome.action.setBadgeTextColor({ color: "#0B0E13" });
-    await chrome.action.setTitle({ title: `${tituloInsignia(par, rate, cambio)}\n${TITULO}` });
+    await chrome.action.setTitle({ title: `${tituloInsignia(par, rate, cambio, puntos[puntos.length - 1].fecha)}\n${TITULO}` });
     await chrome.action.setBadgeText({ text: texto });
     // Si la cifra ha cambiado, un destello en blanco antes del color: es el
     // latido de la cifra del popup, pero en el icono.

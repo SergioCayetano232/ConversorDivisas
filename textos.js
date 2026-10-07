@@ -343,6 +343,7 @@ const TEXTOS = {
     "menu.idioma.auto": "Automático (el de Chrome)",
 
     "insignia.cambio": "{tasa} · {cambio} desde el día anterior",
+    "insignia.fecha": "Tasa del BCE del {fecha}",
     "menu.convertir": "Convertir «%s»",
     "menu.insignia": "Mostrar la tasa en el icono",
 
@@ -709,6 +710,7 @@ const TEXTOS = {
     "menu.idioma.auto": "Automatic (Chrome's)",
 
     "insignia.cambio": "{tasa} · {cambio} since the previous day",
+    "insignia.fecha": "ECB rate from {fecha}",
     "menu.convertir": "Convert “%s”",
     "menu.insignia": "Show the rate on the icon",
 
