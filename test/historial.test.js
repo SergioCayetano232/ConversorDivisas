@@ -1,6 +1,6 @@
 const { test } = require("node:test");
 const assert = require("node:assert");
-const { HISTORIAL_MAX, leerHistorial, apuntarConversion, haceCuanto, textoParaCopiar } = require("../logica.js");
+const { HISTORIAL_MAX, leerHistorial, apuntarConversion, quitarConversion, haceCuanto, textoParaCopiar } = require("../logica.js");
 
 const conv = (cantidad, extra) => ({ from: "EUR", to: "USD", cantidad, resultado: cantidad * 1.1, cuando: 1000, ...extra });
 
@@ -70,4 +70,11 @@ test("días y, pasada la semana, la fecha", () => {
 test("el texto para copiar va con coma y sin miles", () => {
   assert.equal(textoParaCopiar(1234.5), "1234,50");
   assert.equal(textoParaCopiar(0.056), "0,06");
+});
+
+test("quitar una conversión deja las demás como estaban", () => {
+  const lista = [conv(30), conv(20), conv(10), conv(20, { to: "GBP" })];
+  const quedan = quitarConversion(lista, conv(20));
+  assert.deepEqual(quedan.map((e) => `${e.cantidad} ${e.to}`), ["30 USD", "10 USD", "20 GBP"]);
+  assert.deepEqual(quitarConversion(lista, conv(99)), lista);
 });

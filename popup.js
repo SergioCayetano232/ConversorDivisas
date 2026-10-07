@@ -1810,15 +1810,27 @@ function crearFilaHistorial(entrada, i) {
   usar.innerHTML = '<svg viewBox="0 0 14 14" aria-hidden="true"><path d="M2.5 7a4.5 4.5 0 1 0 1.4-3.3"/><path d="M2 1.8v2.6h2.6"/></svg>';
   usar.addEventListener("click", () => onUsarHistorial(entrada));
 
-  fila.append(botonCopiar, usar);
+  const quitar = document.createElement("button");
+  quitar.type = "button";
+  quitar.className = "gastos__quitar historial__quitar";
+  quitar.textContent = "✕";
+  quitar.setAttribute("aria-label", tr("historial.quitar", { cantidad: nf.format(entrada.cantidad), from: entrada.from, to: entrada.to }));
+  quitar.addEventListener("click", () => onQuitarConversion(entrada, fila));
+
+  fila.append(botonCopiar, usar, quitar);
   return fila;
 }
 
-function pintarHistorial() {
+function pintarCuentaHistorial() {
   const hay = historial.length > 0;
   el.historialCuenta.hidden = !hay;
   el.historialCuenta.textContent = historial.length;
   el.abrirHistorial.setAttribute("aria-label", hay ? tr("historial.cuenta", { n: historial.length }) : tr("historial"));
+}
+
+function pintarHistorial() {
+  const hay = historial.length > 0;
+  pintarCuentaHistorial();
   if (el.historial.hidden) return;
   el.historialLista.replaceChildren(...historial.map(crearFilaHistorial));
   el.historialVacio.hidden = hay;
@@ -1854,6 +1866,31 @@ function onUsarHistorial({ from, to, cantidad }) {
   onAmountInput();
   onCurrencyChange();
   el.amount.focus();
+}
+
+function onQuitarConversion(entrada, fila) {
+  // El foco a la de al lado, que si no se va al body y el teclado se pierde.
+  const siguiente = (fila.nextElementSibling ?? fila.previousElementSibling)?.querySelector(".gastos__quitar");
+  const quitar = () => {
+    historial = quitarConversion(historial, entrada);
+    // Solo esa fila: repintar la lista entera haría saltar otra vez a todas.
+    if (historial.length) {
+      fila.remove();
+      pintarCuentaHistorial();
+    } else {
+      pintarHistorial();
+    }
+    (siguiente ?? el.abrirHistorial).focus();
+    try {
+      chrome.storage.local.set({ [HISTORIAL_KEY]: historial });
+    } catch (error) {
+      console.warn("No se pudo guardar el historial", error);
+    }
+  };
+  if (sinMovimiento.matches) return quitar();
+  fila.style.setProperty("--i", 0);
+  fila.classList.add("is-saliendo");
+  fila.addEventListener("animationend", quitar, { once: true });
 }
 
 // Las filas se van en cascada y luego se vacía de verdad.

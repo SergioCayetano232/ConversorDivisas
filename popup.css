@@ -1427,6 +1427,35 @@ body::after {
   animation-delay: calc(var(--i, 0) * 30ms);
 }
 
+/* La ✕ va encima del "hace 6 min" y solo al pasar por la fila: un botón más
+   le quitaba sitio a la cifra, que se cortaba. */
+.historial__fila {
+  position: relative;
+}
+
+/* Con la fila delante: .gastos__quitar va más abajo en el archivo y le pisaría el fondo. */
+.historial__fila .historial__quitar {
+  position: absolute;
+  top: 50%;
+  right: 31px;
+  width: 20px;
+  height: 20px;
+  margin-top: -10px;
+  background: var(--graphite);
+  opacity: 0;
+  pointer-events: none;
+}
+
+.historial__fila:hover .historial__quitar,
+.historial__fila .historial__quitar:focus-visible {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.historial__fila .historial__quitar:hover {
+  background: linear-gradient(color-mix(in srgb, var(--cinnabar) 10%, transparent), color-mix(in srgb, var(--cinnabar) 10%, transparent)), var(--graphite);
+}
+
 .historial__fila.is-saliendo {
   animation: fuera 220ms var(--ease) forwards;
   animation-delay: calc(var(--i, 0) * 30ms);

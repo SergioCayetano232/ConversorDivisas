@@ -986,6 +986,11 @@ function apuntarConversion(lista, entrada) {
   return [{ from, to, cantidad, resultado, cuando }, ...lista.filter(otra)].slice(0, HISTORIAL_MAX);
 }
 
+// No llevan id: el par y la cantidad ya no se repiten, apuntarConversion se encarga.
+function quitarConversion(lista, { from, to, cantidad }) {
+  return lista.filter((e) => !(e.from === from && e.to === to && e.cantidad === cantidad));
+}
+
 // Los días van por calendario y no de 24 en 24 horas: lo de anoche a las once
 // es "ayer" aunque sean las nueve de la mañana.
 function haceCuanto(cuando, ahora = Date.now()) {
@@ -1800,7 +1805,7 @@ if (typeof module !== "undefined") {
     RANGOS, RANGO_POR_DEFECTO, leerRango, coordenadas, alturaEn, MOMENTO_UMBRAL, momento, textoMomento, indiceCercano, extremos, fechaCorta, largoEnPantalla,
     leerNumero, divisaDe, leerSeleccion, destinoPara, leerPegado, buscarPrecios, precioEntero, leerOmnibox, escaparXml,
     divisaDeIdioma, parPorIdioma, banderaDe, banderaDivisa,
-    HISTORIAL_MAX, leerHistorial, apuntarConversion, haceCuanto, textoParaCopiar, fraseParaCopiar,
+    HISTORIAL_MAX, leerHistorial, apuntarConversion, quitarConversion, haceCuanto, textoParaCopiar, fraseParaCopiar,
     celdaCsv, csvHistorial, csvGastos,
     GASTOS_MAX, CONCEPTO_MAX, crearGasto, leerGastos, apuntarGasto, quitarGasto, cambiarConcepto, repetirGasto, devolverGasto, devolverTodos, sumarPorDivisa, gastosPorDia, pesoDeLosDias, mediaPorDia, comisionesPagadas, pagadoEnEfectivo, gastadoHoy, nombreDia,
     CATEGORIAS, CATEGORIA_POR_DEFECTO, adivinarCategoria, PAGOS, PAGO_POR_DEFECTO, leerPago, comisionDelPago, desglose, conceptosUsados, completarConcepto,

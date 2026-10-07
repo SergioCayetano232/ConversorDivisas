@@ -46,6 +46,7 @@ const TEXTOS = {
     "historial.fallo": "no se pudo",
     "historial.usar": "Volver a ponerla",
     "historial.usarAria": "Volver a poner {cantidad} {from} a {to}",
+    "historial.quitar": "Quitar {cantidad} {from} a {to}",
 
     "comision.titulo": "Comisión de tu banco",
     "comision.rapidas": "Comisiones habituales",
@@ -424,6 +425,7 @@ const TEXTOS = {
     "historial.fallo": "failed",
     "historial.usar": "Use it again",
     "historial.usarAria": "Use {cantidad} {from} to {to} again",
+    "historial.quitar": "Remove {cantidad} {from} to {to}",
 
     "comision.titulo": "Your bank's fee",
     "comision.rapidas": "Common fees",
