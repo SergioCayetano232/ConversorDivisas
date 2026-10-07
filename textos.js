@@ -331,6 +331,11 @@ const TEXTOS = {
     "cuenta.total": "{total} en total",
     "cuenta.nada": "Escribe arriba lo que pone la cuenta",
     "cuenta.redondeo": "Redondeado hacia arriba, para que no falte nada",
+    "cuenta.compartir": "Copiar el reparto, listo para pegar en WhatsApp",
+    "cuenta.compartir.total": "La cuenta: {total}",
+    "cuenta.compartir.propina": "{cuenta} + {propina} de propina ({pct})",
+    "cuenta.compartir.cadaUno": "{cada} cada uno, entre {n}",
+    "cuenta.copiada": "Reparto copiado. Pégalo en el grupo",
     "atajo.ayuda": "Esta ayuda",
 
     "idioma.puesta": "puesta por tu idioma",
@@ -698,6 +703,11 @@ const TEXTOS = {
     "cuenta.total": "{total} in total",
     "cuenta.nada": "Type the bill amount above",
     "cuenta.redondeo": "Rounded up, so nobody comes up short",
+    "cuenta.compartir": "Copy the split, ready to paste in WhatsApp",
+    "cuenta.compartir.total": "The bill: {total}",
+    "cuenta.compartir.propina": "{cuenta} + {propina} tip ({pct})",
+    "cuenta.compartir.cadaUno": "{cada} each, split {n} ways",
+    "cuenta.copiada": "Split copied. Paste it in the group",
     "atajo.ayuda": "This help",
 
     "idioma.puesta": "set from your language",

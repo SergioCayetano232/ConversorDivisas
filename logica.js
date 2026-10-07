@@ -671,6 +671,25 @@ function repartirCuenta(cantidad, rate, { propina, personas }, comision = 0) {
   };
 }
 
+// Para pegarlo en el grupo de la cena: lo que paga cada uno, en negrita, que es
+// lo único que se lee. Lo de tu divisa solo si es otra.
+function cuentaParaCompartir(r, from, to, { propina, personas }) {
+  if (!r) return "";
+  const dinero = numeros({ minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  const texto = [`*🧾 ${tr("cuenta.compartir.total", { total: `${dinero.format(r.total)} ${from}` })}*`];
+  if (propina > 0) {
+    texto.push(tr("cuenta.compartir.propina", {
+      cuenta: dinero.format(r.total - r.propina),
+      propina: dinero.format(r.propina),
+      pct: tr("pct", { n: numeros({ maximumFractionDigits: 2 }).format(propina) }),
+    }));
+  }
+  if (personas > 1) texto.push(`*👥 ${tr("cuenta.compartir.cadaUno", { cada: `${dinero.format(r.cadaUno)} ${from}`, n: personas })}*`);
+  const tuyo = personas > 1 ? r.cadaUnoTuyo : r.totalTuyo;
+  if (tuyo != null && to !== from) texto.push(`_≈ ${dinero.format(tuyo)} ${to}_`);
+  return texto.join("\n");
+}
+
 // Hasta un 1 % es lo que cobra una buena tarjeta; del 7 % para arriba ya es
 // tarifa de aeropuerto.
 const MARGENES = [
@@ -1747,7 +1766,7 @@ if (typeof module !== "undefined") {
     EXTRAS_MAX, EXTRAS_POR_DEFECTO, leerExtras, anadirExtra, quitarExtra,
     extrasVisibles, disponiblesParaAnadir, convertirExtras, semanaDe, trazoMini, CHULETA, escalaChuleta, chuleta, chuletaParaCompartir,
     COMISION_MAX, COMISIONES_RAPIDAS, leerComision, leerPorcentaje, conComision,
-    PROPINAS_RAPIDAS, PROPINA_MAX, PERSONAS_MAX, CUENTA_POR_DEFECTO, leerCuenta, repartirCuenta,
+    PROPINAS_RAPIDAS, PROPINA_MAX, PERSONAS_MAX, CUENTA_POR_DEFECTO, leerCuenta, repartirCuenta, cuentaParaCompartir,
     MARGENES, tasaOfrecida, analizarCambio,
     FECHA_MINIMA, fechaLarga, fechaValida, diaDelGrafico, mesesAtras, FECHAS_RAPIDAS, leerFecha, cambioDesde, notaDiaHabil,
     textoInsignia, cambioDiario, sentidoDe, cambioDelDia, textoCambioDia, tituloInsignia, lineaTasa,

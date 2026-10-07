@@ -476,7 +476,13 @@
     <div class="historial gastos cuenta" id="cuenta" role="dialog" aria-labelledby="cuenta-titulo" hidden>
       <div class="cuenta__cabeza">
         <p class="historial__titulo" id="cuenta-titulo" data-t="cuenta">Dividir la cuenta</p>
-        <button class="gastos__cerrar" type="button" id="cuenta-cerrar" aria-label="Cerrar" data-t-aria-label="cerrar">✕</button>
+        <span class="gastos__arriba">
+          <button class="csv compartir cuenta__compartir" type="button" id="cuenta-compartir" title="Copiar el reparto, listo para pegar en WhatsApp" aria-label="Copiar el reparto, listo para pegar en WhatsApp" data-t-title="cuenta.compartir" data-t-aria-label="cuenta.compartir" disabled>
+            <svg class="compartir__icono" viewBox="0 0 12 12" aria-hidden="true"><path d="M2 9.5V3a1.2 1.2 0 0 1 1.2-1.2h5.6A1.2 1.2 0 0 1 10 3v3.6a1.2 1.2 0 0 1-1.2 1.2H4.2z"/><path class="compartir__puntos" d="M4.4 4.8h.01M6 4.8h.01M7.6 4.8h.01"/></svg>
+            <svg class="compartir__ok" viewBox="0 0 12 12" aria-hidden="true"><path d="M2.5 6.3l2.3 2.2 4.7-5"/></svg>
+          </button>
+          <button class="gastos__cerrar" type="button" id="cuenta-cerrar" aria-label="Cerrar" data-t-aria-label="cerrar">✕</button>
+        </span>
       </div>
       <div class="cuenta__cada" aria-live="polite">
         <span class="cuenta__etiqueta" id="cuenta-etiqueta" data-t="cuenta.cadaUno">Cada uno</span>

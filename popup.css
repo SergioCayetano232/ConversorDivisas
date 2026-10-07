@@ -1662,6 +1662,12 @@ body::after {
   align-items: center;
 }
 
+.cuenta__compartir:disabled {
+  opacity: 0.4;
+  cursor: default;
+  pointer-events: none;
+}
+
 /* Lo que paga cada uno es lo que se mira: grande y en dorado, como el total de
    los gastos. Lo de tu divisa al lado, más bajito. */
 .cuenta__cada {

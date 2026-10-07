@@ -67,6 +67,7 @@ const el = {
   abrirCuenta: document.getElementById("abrir-cuenta"),
   cuenta: document.getElementById("cuenta"),
   cuentaCerrar: document.getElementById("cuenta-cerrar"),
+  cuentaCompartir: document.getElementById("cuenta-compartir"),
   cuentaEtiqueta: document.getElementById("cuenta-etiqueta"),
   cuentaCifra: document.getElementById("cuenta-cifra"),
   cuentaTuyo: document.getElementById("cuenta-tuyo"),
@@ -2414,6 +2415,7 @@ function pintarCuenta() {
   el.cuentaMenos.disabled = reparto.personas <= 1;
   el.cuentaMas.disabled = reparto.personas >= PERSONAS_MAX;
   pintarGente();
+  el.cuentaCompartir.disabled = !r;
 
   if (!r) {
     el.cuentaPie.textContent = tr("cuenta.nada");
@@ -2430,6 +2432,21 @@ function pintarCuenta() {
   tuyo.className = "cuenta__pie-tuyo";
   if (r.totalTuyo !== null) tuyo.textContent = `${nf.format(r.totalTuyo)} ${to}`;
   el.cuentaPie.replaceChildren(texto, tuyo);
+}
+
+async function onCompartirCuenta() {
+  const from = el.from.value;
+  const to = el.to.value;
+  const r = repartirCuenta(cantidadOrigen(), from === to ? null : rate, reparto, comision);
+  const texto = cuentaParaCompartir(r, from, to, reparto);
+  if (!texto) return;
+  const bien = await copiar(texto);
+  const boton = el.cuentaCompartir;
+  boton.classList.toggle("is-fallo", !bien);
+  restartAnimation(boton, "is-hecho");
+  clearTimeout(boton.vuelta);
+  boton.vuelta = setTimeout(() => boton.classList.remove("is-hecho", "is-fallo"), 1600);
+  mostrarFlash([tr(bien ? "cuenta.copiada" : "compartir.fallo")], 2200);
 }
 
 function guardarReparto() {
@@ -3953,6 +3970,7 @@ function bindEvents() {
   el.viajesLista.addEventListener("animationend", (event) => event.target.classList.remove("is-renombrado"));
   el.abrirCuenta.addEventListener("click", () => (el.cuenta.hidden ? abrirCuenta() : cerrarCuenta()));
   el.cuentaCerrar.addEventListener("click", () => cerrarCuenta()?.focus());
+  el.cuentaCompartir.addEventListener("click", onCompartirCuenta);
   el.cuentaCampo.addEventListener("input", onCampoPropina);
   el.cuentaCampo.addEventListener("keydown", onTeclaCampoPropina);
   el.cuentaCampo.addEventListener("animationend", () => el.cuentaCampo.classList.remove("is-mal"));

@@ -1,7 +1,7 @@
 const { test } = require("node:test");
 const assert = require("node:assert");
 const {
-  PROPINA_MAX, PERSONAS_MAX, CUENTA_POR_DEFECTO, leerCuenta, repartirCuenta, leerPorcentaje,
+  PROPINA_MAX, PERSONAS_MAX, CUENTA_POR_DEFECTO, leerCuenta, repartirCuenta, cuentaParaCompartir, leerPorcentaje,
 } = require("../logica.js");
 
 test("sin nada guardado, un 10 % entre dos", () => {
@@ -59,4 +59,42 @@ test("sin cantidad no hay cuenta, y sin tasa solo la de la divisa de origen", ()
   assert.equal(sinTasa.cadaUno, 27.5);
   assert.equal(sinTasa.totalTuyo, null);
   assert.equal(sinTasa.cadaUnoTuyo, null);
+});
+
+test("el reparto para el grupo lleva la cuenta, la propina y lo de cada uno", () => {
+  const { ponerIdioma } = require("../textos.js");
+  ponerIdioma("es");
+  const reparto = { propina: 10, personas: 2 };
+  const texto = cuentaParaCompartir(repartirCuenta(120, 0.9, reparto), "USD", "EUR", reparto).replace(/\u00a0/g, " ");
+  assert.equal(texto, [
+    "*🧾 La cuenta: 132,00 USD*",
+    "120,00 + 12,00 de propina (10 %)",
+    "*👥 66,00 USD cada uno, entre 2*",
+    "_≈ 59,40 EUR_",
+  ].join("\n"));
+});
+
+test("sin propina, solo o en la misma divisa, sobra lo que no aporta", () => {
+  const { ponerIdioma } = require("../textos.js");
+  ponerIdioma("es");
+  const solo = { propina: 0, personas: 1 };
+  assert.equal(cuentaParaCompartir(repartirCuenta(50, 0.9, solo), "USD", "EUR", solo), "*🧾 La cuenta: 50,00 USD*\n_≈ 45,00 EUR_");
+  const mismo = { propina: 0, personas: 3 };
+  assert.equal(cuentaParaCompartir(repartirCuenta(10, null, mismo), "EUR", "EUR", mismo), "*🧾 La cuenta: 10,00 EUR*\n*👥 3,34 EUR cada uno, entre 3*");
+  assert.equal(cuentaParaCompartir(null, "USD", "EUR", mismo), "");
+});
+
+test("en inglés el reparto también se entiende", () => {
+  const { ponerIdioma } = require("../textos.js");
+  ponerIdioma("en");
+  try {
+    const reparto = { propina: 15, personas: 4 };
+    assert.equal(cuentaParaCompartir(repartirCuenta(80, null, reparto), "GBP", "GBP", reparto), [
+      "*🧾 The bill: 92.00 GBP*",
+      "80.00 + 12.00 tip (15%)",
+      "*👥 23.00 GBP each, split 4 ways*",
+    ].join("\n"));
+  } finally {
+    ponerIdioma("es");
+  }
 });
