@@ -129,6 +129,7 @@ const el = {
   desglose: document.getElementById("desglose"),
   buscar: document.getElementById("buscar"),
   buscarAbrir: document.getElementById("buscar-abrir"),
+  gastosOrdenar: document.getElementById("gastos-ordenar"),
   buscarCampo: document.getElementById("buscar-campo"),
   buscarTotal: document.getElementById("buscar-total"),
   presupuesto: document.getElementById("presupuesto"),
@@ -262,6 +263,7 @@ let categoriaAMano = false;
 let pagoNuevo = PAGO_POR_DEFECTO;
 let filtroCategoria = null;
 let busqueda = "";
+let ordenado = false;
 let cajero = [];
 // El precio de aquí va en la divisa de destino: si cambia, el de antes ya no vale.
 let compararDivisa = null;
@@ -2293,9 +2295,14 @@ function crearDiaGastos({ dia, gastos: suyos, totales }, peso, d) {
   return fila;
 }
 
-function crearFilaGasto(gasto, i) {
+function crearFilaGasto(gasto, i, peso) {
   const fila = document.createElement("li");
   fila.className = "gastos__fila";
+  // Ordenados por importe, una barra de fondo con lo que pesa al lado del más caro.
+  if (peso !== undefined) {
+    fila.classList.add("is-peso");
+    fila.style.setProperty("--peso", peso);
+  }
   fila.dataset.id = gasto.id;
   if (cascadaGastos || gasto.id === gastoNuevo) {
     fila.classList.add("is-nueva");
@@ -2330,6 +2337,12 @@ function crearFilaGasto(gasto, i) {
   const de = document.createElement("span");
   de.className = "gastos__de";
   de.textContent = `${nf.format(gasto.cantidad)} ${gasto.from}`;
+  // Sin los días como cabecera, el día va en la fila en vez de lo pagado, que
+  // con los dos no le quedaba sitio al concepto.
+  if (peso !== undefined) {
+    de.title = de.textContent;
+    de.textContent = nombreDia(isoLocal(new Date(gasto.cuando)));
+  }
   const cuanto = document.createElement("span");
   cuanto.className = "gastos__valor";
   cuanto.textContent = valor;
@@ -2530,13 +2543,32 @@ function pintarGastos() {
   if (!el.buscar.hidden) el.desglose.hidden = true;
   const visibles = buscarGastos(filtroCategoria ? gastos.filter((g) => g.categoria === filtroCategoria) : gastos, busqueda);
   pintarBusqueda(visibles);
-  let i = 0;
-  const dias = gastosPorDia(visibles);
-  const pesos = pesoDeLosDias(dias);
-  el.gastosLista.replaceChildren(...dias.flatMap((dia, d) => [
-    crearDiaGastos(dia, pesos[d], d),
-    ...dia.gastos.map((gasto) => crearFilaGasto(gasto, i++)),
-  ]));
+  if (n < 3) ordenado = false;
+  el.gastosOrdenar.hidden = n < 3;
+  el.gastosOrdenar.setAttribute("aria-pressed", String(ordenado));
+  el.gastosOrdenar.title = tr(ordenado ? "ordenar.dias" : "ordenar");
+  el.gastosOrdenar.setAttribute("aria-label", el.gastosOrdenar.title);
+  if (ordenado && visibles.length > 0) {
+    const lista = ordenarPorImporte(visibles);
+    const pesos = pesoDeLosGastos(lista);
+    const cabeza = document.createElement("li");
+    cabeza.className = "gastos__dia gastos__dia--orden";
+    const nombre = document.createElement("span");
+    nombre.textContent = tr("ordenar.cabeza");
+    const suma = document.createElement("span");
+    suma.className = "gastos__dia-suma";
+    suma.textContent = textoTotales(sumarPorDivisa(lista));
+    cabeza.append(nombre, suma);
+    el.gastosLista.replaceChildren(cabeza, ...lista.map((gasto, i) => crearFilaGasto(gasto, i, pesos[i])));
+  } else {
+    let i = 0;
+    const dias = gastosPorDia(visibles);
+    const pesos = pesoDeLosDias(dias);
+    el.gastosLista.replaceChildren(...dias.flatMap((dia, d) => [
+      crearDiaGastos(dia, pesos[d], d),
+      ...dia.gastos.map((gasto) => crearFilaGasto(gasto, i++)),
+    ]));
+  }
   cascadaGastos = false;
   gastoNuevo = null;
   pintarPresupuesto();
@@ -3045,6 +3077,7 @@ function ponerViaje(nuevos) {
   quitado = null;
   el.deshacer.hidden = true;
   filtroCategoria = null;
+  ordenado = false;
   cerrarBusqueda();
   cerrarCajero();
   dejarDeEditarPresupuesto();
@@ -4566,6 +4599,13 @@ function bindEvents() {
     pintarGastos();
   });
   el.buscarCampo.addEventListener("keydown", onTeclaBuscar);
+  // Las filas vuelven a entrar en cascada: así se ve que se han recolocado.
+  el.gastosOrdenar.addEventListener("click", () => {
+    ordenado = !ordenado;
+    cascadaGastos = true;
+    pintarGastos();
+    el.gastosLista.scrollTop = 0;
+  });
   el.buscarTotal.addEventListener("animationend", () => el.buscarTotal.classList.remove("is-tic"));
   el.impuestoCampo.addEventListener("keydown", onTeclaCampoImpuesto);
   el.impuestoCampo.addEventListener("animationend", () => el.impuestoCampo.classList.remove("is-mal"));

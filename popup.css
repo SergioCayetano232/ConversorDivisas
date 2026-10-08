@@ -3776,6 +3776,54 @@ body::after {
 
 /* El desglose: cada pastilla se rellena por detrás en proporción a lo que
    pesa, como una barrita dentro del botón. */
+/* Las tres barras se recolocan al pasar por encima, como si se ordenaran. */
+.ordenar svg {
+  stroke-width: 1.5;
+}
+
+.ordenar__barra {
+  transition: transform var(--mid) var(--ease-spring);
+}
+
+.ordenar:hover .ordenar__barra:nth-child(2) {
+  transform: translateX(1px);
+}
+
+.ordenar:hover .ordenar__barra:nth-child(3) {
+  transform: translateX(2px);
+}
+
+.ordenar[aria-pressed="true"] {
+  color: var(--graphite);
+  background: var(--brass);
+  border-color: var(--brass);
+}
+
+.ordenar[hidden] {
+  display: none;
+}
+
+/* Con la lupa y este, la cabecera ya no cabía y se comía la media del día. */
+.gastos .historial__botones {
+  gap: 1px;
+}
+
+.gastos .historial__botones .compartir {
+  width: 18px;
+}
+
+/* Ordenados, el fondo de cada fila dice lo que pesa al lado del más caro. */
+.gastos__fila.is-peso .gastos__texto {
+  background:
+    linear-gradient(90deg, var(--brass-ghost) calc(var(--peso, 0) * 100%), transparent 0),
+    var(--slate);
+}
+
+/* El más caro, con el borde en latón. */
+.gastos__dia--orden + .gastos__fila .gastos__texto {
+  border-color: var(--brass-dim);
+}
+
 /* La lupa del panel: el mango gira un poco al pasar por encima. */
 .buscar__abrir svg {
   stroke-width: 1.4;

@@ -1454,6 +1454,25 @@ function gastosPorDia(gastos) {
   return [...dias].map(([dia, lista]) => ({ dia, gastos: lista, totales: sumarPorDivisa(lista) }));
 }
 
+// Los más caros primero. Los de otra divisa van detrás: 50 USD y 50 EUR no son
+// lo mismo y no tengo con qué compararlos. A igual importe, el más reciente.
+function ordenarPorImporte(gastos) {
+  const principal = sumarPorDivisa(gastos)[0]?.to;
+  return [...gastos].sort((a, b) => {
+    const suyaA = a.to === principal;
+    if (suyaA !== (b.to === principal)) return suyaA ? -1 : 1;
+    return b.valor - a.valor || b.cuando - a.cuando;
+  });
+}
+
+// Lo que pesa cada gasto al lado del más caro de su divisa, para la barra de
+// fondo. Cada divisa con su máximo, por lo mismo de arriba.
+function pesoDeLosGastos(gastos) {
+  const maximos = new Map();
+  for (const g of gastos) maximos.set(g.to, Math.max(maximos.get(g.to) ?? 0, g.valor));
+  return gastos.map((g) => (maximos.get(g.to) > 0 ? g.valor / maximos.get(g.to) : 0));
+}
+
 // Lo que pesa cada día al lado del que más, en la divisa que más suma. Un día
 // con solo de la otra divisa se queda sin barra: no se pueden comparar.
 function pesoDeLosDias(dias) {
@@ -2045,7 +2064,7 @@ if (typeof module !== "undefined") {
     divisaDeIdioma, parPorIdioma, banderaDe, banderaDivisa,
     HISTORIAL_MAX, leerHistorial, apuntarConversion, quitarConversion, haceCuanto, textoParaCopiar, fraseParaCopiar,
     celdaCsv, csvHistorial, csvGastos,
-    GASTOS_MAX, CONCEPTO_MAX, crearGasto, leerGastos, apuntarGasto, quitarGasto, cambiarConcepto, cambiarDia, buscarGastos, trozosResaltados, repetirGasto, devolverGasto, devolverTodos, sumarPorDivisa, gastosPorDia, pesoDeLosDias, mediaPorDia, comisionesPagadas, pagadoEnEfectivo,
+    GASTOS_MAX, CONCEPTO_MAX, crearGasto, leerGastos, apuntarGasto, quitarGasto, cambiarConcepto, cambiarDia, buscarGastos, trozosResaltados, repetirGasto, devolverGasto, devolverTodos, sumarPorDivisa, gastosPorDia, pesoDeLosDias, ordenarPorImporte, pesoDeLosGastos, mediaPorDia, comisionesPagadas, pagadoEnEfectivo,
     RETIRADAS_MAX, leerRetiradas, crearRetirada, apuntarRetirada, quitarRetirada, efectivoQueda, EFECTIVO_POCO, tonoEfectivo, gastadoHoy, nombreDia,
     CATEGORIAS, CATEGORIA_POR_DEFECTO, adivinarCategoria, PAGOS, PAGO_POR_DEFECTO, leerPago, comisionDelPago, desglose, conceptosUsados, completarConcepto,
     EMOJI_CATEGORIA, destacados, resumenParaCompartir,
