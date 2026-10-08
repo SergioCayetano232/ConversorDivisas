@@ -66,6 +66,19 @@ const el = {
   abrirGastos: document.getElementById("abrir-gastos"),
   abrirCuenta: document.getElementById("abrir-cuenta"),
   cuenta: document.getElementById("cuenta"),
+  comparar: document.getElementById("comparar"),
+  abrirComparar: document.getElementById("abrir-comparar"),
+  compararCerrar: document.getElementById("comparar-cerrar"),
+  compararBrazo: document.getElementById("comparar-brazo"),
+  compararPlatoAlli: document.getElementById("comparar-plato-alli"),
+  compararPlatoAqui: document.getElementById("comparar-plato-aqui"),
+  compararLadoAlli: document.getElementById("comparar-lado-alli"),
+  compararLadoAqui: document.getElementById("comparar-lado-aqui"),
+  compararAlli: document.getElementById("comparar-alli"),
+  compararAlliNota: document.getElementById("comparar-alli-nota"),
+  compararCampo: document.getElementById("comparar-campo"),
+  compararCodigo: document.getElementById("comparar-codigo"),
+  compararVeredicto: document.getElementById("comparar-veredicto"),
   cuentaCerrar: document.getElementById("cuenta-cerrar"),
   cuentaCompartir: document.getElementById("cuenta-compartir"),
   cuentaEtiqueta: document.getElementById("cuenta-etiqueta"),
@@ -248,6 +261,8 @@ let pagoNuevo = PAGO_POR_DEFECTO;
 let filtroCategoria = null;
 let busqueda = "";
 let cajero = [];
+// El precio de aquí va en la divisa de destino: si cambia, el de antes ya no vale.
+let compararDivisa = null;
 let retiradaNueva = null;
 
 // Con el mismo trazo que los iconos de las pestañas.
@@ -1703,6 +1718,7 @@ function ponerComision(pct) {
   pintarChuleta();
   pintarTimo();
   pintarCuenta();
+  pintarComparar();
   pintarBotonGasto();
   pintarAvisoComision();
   for (const boton of el.comisionRapidas.children) {
@@ -1722,6 +1738,7 @@ function ponerImpuesto(pct) {
   const antes = impuesto;
   impuesto = pct;
   pintarComision();
+  pintarComparar();
   for (const boton of el.impuestoRapidas.children) {
     boton.setAttribute("aria-pressed", String(Number(boton.dataset.pct) === pct));
   }
@@ -1754,6 +1771,7 @@ function abrirBurbuja() {
   cerrarHistorial();
   cerrarGastos();
   cerrarCuenta();
+  cerrarComparar();
   el.comisionRapidas.replaceChildren(...COMISIONES_RAPIDAS.map((pct, i) => {
     const boton = document.createElement("button");
     boton.type = "button";
@@ -1933,6 +1951,7 @@ function abrirHistorial() {
   cerrarBurbuja();
   cerrarGastos();
   cerrarCuenta();
+  cerrarComparar();
   el.historial.hidden = false;
   el.abrirHistorial.setAttribute("aria-expanded", "true");
   pintarHistorial();
@@ -2823,6 +2842,7 @@ function abrirCuenta() {
   cerrarBurbuja();
   cerrarHistorial();
   cerrarGastos();
+  cerrarComparar();
   el.cuenta.style.setProperty("--gastos-arriba", `${el.resultBox.offsetTop}px`);
   el.cuentaPropinas.replaceChildren(...PROPINAS_RAPIDAS.map((pct, i) => {
     const boton = document.createElement("button");
@@ -2849,6 +2869,76 @@ function abrirCuenta() {
   el.abrirCuenta.setAttribute("aria-expanded", "true");
   pintarCuenta();
   (el.cuentaPropinas.querySelector('[aria-pressed="true"]') ?? el.cuentaCampo).focus();
+}
+
+function pintarComparar() {
+  if (el.comparar.hidden) return;
+  const to = el.to.value;
+  if (compararDivisa !== to) {
+    if (compararDivisa !== null) el.compararCampo.value = "";
+    compararDivisa = to;
+  }
+  el.compararCodigo.textContent = to;
+  el.compararCampo.setAttribute("aria-label", tr("comparar.aquiAria", { to }));
+  const alli = el.from.value === to || rate === null ? null : loQuePagas(leerImporte(el.result.value), comision, impuesto);
+  const aqui = leerImporte(el.compararCampo.value);
+  const r = compararPrecios(alli, aqui);
+
+  const cifra = alli === null ? "—" : `${nf.format(alli)} ${to}`;
+  if (el.compararAlli.textContent !== cifra) {
+    el.compararAlli.textContent = cifra;
+    if (alli !== null) restartAnimation(el.compararAlli, "is-tic");
+  }
+  const con = comision > 0 && impuesto > 0 ? "comparar.conAmbos" : comision > 0 ? "comparar.conComision" : impuesto > 0 ? "comparar.conImpuesto" : null;
+  el.compararAlliNota.textContent = alli === null ? ""
+    : `${nf.format(cantidadOrigen() ?? 0)} ${el.from.value}${con ? ` · ${tr(con)}` : ""}`;
+
+  // Los platos no giran con el brazo: suben y bajan colgados de sus puntas.
+  const grados = sinMovimiento.matches ? inclinacion(r) / 2 : inclinacion(r);
+  const caida = Math.sin((grados * Math.PI) / 180) * 70;
+  el.compararBrazo.style.transform = `rotate(${grados}deg)`;
+  el.compararPlatoAlli.style.transform = `translateY(${-caida}px)`;
+  el.compararPlatoAqui.style.transform = `translateY(${caida}px)`;
+  el.compararLadoAlli.classList.toggle("is-gana", r?.donde === "alli");
+  el.compararLadoAqui.classList.toggle("is-gana", r?.donde === "aqui");
+  el.compararPlatoAlli.classList.toggle("is-gana", r?.donde === "alli");
+  el.compararPlatoAqui.classList.toggle("is-gana", r?.donde === "aqui");
+
+  let texto;
+  if (alli === null) texto = tr("comparar.faltaAlli");
+  else if (!r) texto = tr("comparar.falta");
+  else if (r.donde === "igual") texto = tr("comparar.igual");
+  else {
+    texto = tr(r.donde === "alli" ? "comparar.ganaAlli" : "comparar.ganaAqui", {
+      ahorro: `${nf.format(r.ahorro)} ${to}`, pct: porCientoEntero(r.fraccion),
+    });
+  }
+  const donde = r?.donde ?? "";
+  if (el.compararVeredicto.textContent !== texto) {
+    el.compararVeredicto.textContent = texto;
+    if (r && el.compararVeredicto.dataset.donde !== donde) restartAnimation(el.compararVeredicto, "is-nuevo");
+  }
+  el.compararVeredicto.dataset.donde = donde;
+}
+
+function abrirComparar() {
+  cerrarBurbuja();
+  cerrarHistorial();
+  cerrarGastos();
+  cerrarCuenta();
+  el.comparar.style.setProperty("--gastos-arriba", `${el.resultBox.offsetTop}px`);
+  el.comparar.hidden = false;
+  el.abrirComparar.setAttribute("aria-expanded", "true");
+  pintarComparar();
+  el.compararCampo.focus();
+  el.compararCampo.select();
+}
+
+function cerrarComparar() {
+  if (el.comparar.hidden) return;
+  el.comparar.hidden = true;
+  el.abrirComparar.setAttribute("aria-expanded", "false");
+  return el.abrirComparar;
 }
 
 function cerrarCuenta() {
@@ -3076,6 +3166,7 @@ function abrirGastos() {
   cerrarBurbuja();
   cerrarHistorial();
   cerrarCuenta();
+  cerrarComparar();
   el.gastos.style.setProperty("--gastos-arriba", `${el.resultBox.offsetTop}px`);
   el.gastos.hidden = false;
   el.abrirGastos.setAttribute("aria-expanded", "true");
@@ -3521,6 +3612,7 @@ function hacerAtajo(accion) {
   else if (accion === "ayuda") abrirAyuda();
   else if (accion === "gastos") (el.gastos.hidden ? abrirGastos() : cerrarGastos()?.focus());
   else if (accion === "cuenta") (el.cuenta.hidden ? abrirCuenta() : cerrarCuenta()?.focus());
+  else if (accion === "comparar") (el.comparar.hidden ? abrirComparar() : cerrarComparar()?.focus());
   else if (accion === "historial") (el.historial.hidden ? abrirHistorial() : cerrarHistorial()?.focus());
   else if (accion === "deshacer") onDeshacer();
   else if (accion.startsWith("vista:")) cambiarVista(accion.slice(6));
@@ -3632,6 +3724,7 @@ function abrirAyuda() {
   cerrarHistorial();
   cerrarGastos();
   cerrarCuenta();
+  cerrarComparar();
   pintarAyuda();
   el.ayuda.hidden = false;
   el.abrirAyuda.setAttribute("aria-expanded", "true");
@@ -3656,6 +3749,7 @@ function ponerPistasDeAtajos() {
   el.copiar.title = tr("copiar.titulo", { tecla: pista("copiar") });
   el.abrirGastos.title = `${tr("gastos")} (${pista("gastos")})`;
   el.abrirCuenta.title = `${tr("cuenta")} (${pista("cuenta")})`;
+  el.abrirComparar.title = `${tr("comparar")} (${pista("comparar")})`;
   el.abrirHistorial.title = `${tr("historial")} (${pista("historial")})`;
   el.deshacerBoton.title = `${tr("gastos.deshacer")} (${pista("deshacer")})`;
   for (const boton of el.botonesVista) {
@@ -3765,11 +3859,13 @@ function renderResult() {
     ajustarAncho();
     el.resultMeta.textContent = "";
     pintarComision();
+    pintarComparar();
     return;
   }
 
   if (rate === null) {
     pintarComision();
+    pintarComparar();
     return;
   }
 
@@ -3780,6 +3876,7 @@ function renderResult() {
   const enviados = escribiendoAbajo ? convertido : valor;
   el.resultMeta.textContent = `${nf.format(enviados)} ${from}`;
   pintarComision();
+  pintarComparar();
   pintarBotonGasto();
 
   // El latido solo cuando cambia la cifra grande, que si no parpadea al teclear.
@@ -3866,6 +3963,7 @@ async function refresh() {
     pintarFecha();
     pintarTimo();
     pintarCuenta();
+    pintarComparar();
     pintarComision();
     hideTrend();
     showError(errorMessageFor(error));
@@ -4375,6 +4473,11 @@ function bindEvents() {
   el.viajesLista.addEventListener("animationend", (event) => event.target.classList.remove("is-renombrado"));
   el.abrirCuenta.addEventListener("click", () => (el.cuenta.hidden ? abrirCuenta() : cerrarCuenta()));
   el.cuentaCerrar.addEventListener("click", () => cerrarCuenta()?.focus());
+  el.abrirComparar.addEventListener("click", () => (el.comparar.hidden ? abrirComparar() : cerrarComparar()));
+  el.compararCerrar.addEventListener("click", () => cerrarComparar()?.focus());
+  el.compararCampo.addEventListener("input", pintarComparar);
+  el.compararAlli.addEventListener("animationend", () => el.compararAlli.classList.remove("is-tic"));
+  el.compararVeredicto.addEventListener("animationend", () => el.compararVeredicto.classList.remove("is-nuevo"));
   el.cuentaCompartir.addEventListener("click", onCompartirCuenta);
   el.cuentaCampo.addEventListener("input", onCampoPropina);
   el.cuentaCampo.addEventListener("keydown", onTeclaCampoPropina);
@@ -4465,6 +4568,10 @@ function bindEvents() {
       event.preventDefault();
       cerrarCuenta()?.focus();
     }
+    if (event.key === "Escape" && !el.comparar.hidden) {
+      event.preventDefault();
+      cerrarComparar()?.focus();
+    }
     if (event.key === "Escape" && !el.gastos.hidden) {
       event.preventDefault();
       // Primero se cierra lo de dentro (categorías, presupuesto), y con otro Escape el panel.
@@ -4489,6 +4596,11 @@ function bindEvents() {
       cerrarGastos();
     }
     // Arriba se puede tocar la cantidad sin que se cierre: es la cuenta que reparto.
+    // Como en la cuenta, arriba se puede cambiar el precio de allí sin cerrarlo.
+    if (!el.comparar.hidden && !el.comparar.contains(event.target) && !el.abrirComparar.contains(event.target)
+      && !el.form.contains(event.target)) {
+      cerrarComparar();
+    }
     if (!el.cuenta.hidden && !el.cuenta.contains(event.target) && !el.abrirCuenta.contains(event.target)
       && !el.form.contains(event.target)) {
       cerrarCuenta();

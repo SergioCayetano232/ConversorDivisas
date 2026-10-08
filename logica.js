@@ -656,6 +656,27 @@ function loQuePagas(valor, comision = 0, impuesto = 0) {
   return conComision(conComision(valor, impuesto), comision);
 }
 
+// Allí es lo de arriba convertido, con la comisión y el impuesto; aquí, lo que
+// pone la etiqueta de tu tienda. Por debajo de un 1 % lo doy por igual: es lo
+// que se mueve la tasa entre que lo miras y lo pagas.
+const COMPARAR_IGUAL = 0.01;
+
+function compararPrecios(alli, aqui) {
+  if (!(alli > 0) || !(aqui > 0)) return null;
+  const diferencia = aqui - alli;
+  const fraccion = Math.abs(diferencia) / Math.max(alli, aqui);
+  const donde = fraccion < COMPARAR_IGUAL ? "igual" : diferencia > 0 ? "alli" : "aqui";
+  return { donde, ahorro: Math.abs(diferencia), fraccion };
+}
+
+// La balanza: baja el lado que cuesta más. Con un 30 % ya está del todo, que si
+// no las diferencias normales casi no se notarían.
+function inclinacion(comparacion, maximo = 14) {
+  if (!comparacion || comparacion.donde === "igual") return 0;
+  const grados = Math.min(comparacion.fraccion / 0.3, 1) * maximo;
+  return comparacion.donde === "alli" ? grados : -grados;
+}
+
 // Las propinas de siempre: en Europa poco o nada, en Estados Unidos del 15 al 20.
 const PROPINAS_RAPIDAS = [0, 10, 15, 20];
 const PROPINA_MAX = 30;
@@ -1865,6 +1886,8 @@ const ATAJOS = {
   KeyP: "cuenta",
   // La H ya es la ayuda: R de "recientes".
   KeyR: "historial",
+  // B de balanza.
+  KeyB: "comparar",
   KeyZ: "deshacer",
   KeyH: "ayuda",
 };
@@ -1979,6 +2002,7 @@ if (typeof module !== "undefined") {
     extrasVisibles, disponiblesParaAnadir, convertirExtras, semanaDe, trazoMini, CHULETA, escalaChuleta, chuleta, chuletaParaCompartir,
     COMISION_MAX, COMISIONES_RAPIDAS, leerComision, leerPorcentaje, conComision,
     IMPUESTO_MAX, IMPUESTOS_RAPIDOS, leerImpuesto, leerImpuestoEscrito, loQuePagas,
+    COMPARAR_IGUAL, compararPrecios, inclinacion,
     PROPINAS_RAPIDAS, PROPINA_MAX, PERSONAS_MAX, CUENTA_POR_DEFECTO, leerCuenta, repartirCuenta, cuentaParaCompartir,
     MARGENES, tasaOfrecida, analizarCambio,
     FECHA_MINIMA, fechaLarga, fechaValida, diaDelGrafico, mesesAtras, FECHAS_RAPIDAS, leerFecha, cambioDesde, notaDiaHabil,

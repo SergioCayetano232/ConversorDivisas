@@ -112,6 +112,19 @@
           <h2 class="result__label" id="result-label" data-t="resultado">Resultado</h2>
           <div class="result__acciones">
             <button
+              class="reloj balanza"
+              type="button"
+              id="abrir-comparar"
+              aria-haspopup="dialog"
+              aria-expanded="false"
+              aria-controls="comparar"
+              aria-label="¿Dónde sale más barato?"
+              title="¿Dónde sale más barato?"
+              data-t-title="comparar"
+              data-t-aria-label="comparar">
+              <svg viewBox="0 0 14 14" aria-hidden="true"><path d="M7 2.5v9M4.5 11.5h5"/><g class="balanza__brazo"><path d="M2.5 4.5h9"/><path d="M2.5 4.5L1.2 7.6h2.6zM11.5 4.5l-1.3 3.1h2.6z"/></g></svg>
+            </button>
+            <button
               class="reloj mesa"
               type="button"
               id="abrir-cuenta"
@@ -489,6 +502,45 @@
         <ul class="ayuda__lista" id="ayuda-lista"></ul>
         <p class="ayuda__nota" id="ayuda-nota"></p>
       </div>
+    </div>
+
+    <div class="historial gastos cuenta comparar" id="comparar" role="dialog" aria-labelledby="comparar-titulo" hidden>
+      <div class="cuenta__cabeza">
+        <p class="historial__titulo" id="comparar-titulo" data-t="comparar">¿Dónde sale más barato?</p>
+        <span class="gastos__arriba">
+          <button class="gastos__cerrar" type="button" id="comparar-cerrar" aria-label="Cerrar" data-t-aria-label="cerrar">✕</button>
+        </span>
+      </div>
+      <svg class="comparar__dibujo" viewBox="0 0 220 70" aria-hidden="true">
+        <path class="comparar__pie" d="M110 18v44M90 62h40"/>
+        <circle class="comparar__eje" cx="110" cy="18" r="3"/>
+        <g class="comparar__brazo" id="comparar-brazo"><path d="M40 18h140"/></g>
+        <g class="comparar__plato" id="comparar-plato-alli"><path d="M40 18v12"/><path d="M22 30h36a18 8 0 0 1-36 0z"/></g>
+        <g class="comparar__plato" id="comparar-plato-aqui"><path d="M180 18v12"/><path d="M162 30h36a18 8 0 0 1-36 0z"/></g>
+      </svg>
+      <div class="comparar__lados">
+        <div class="comparar__lado" id="comparar-lado-alli">
+          <span class="cuenta__etiqueta" data-t="comparar.alli">Allí</span>
+          <span class="comparar__cifra" id="comparar-alli">—</span>
+          <span class="comparar__nota" id="comparar-alli-nota"></span>
+        </div>
+        <div class="comparar__lado" id="comparar-lado-aqui">
+          <label class="cuenta__etiqueta" for="comparar-campo" data-t="comparar.aqui">Aquí</label>
+          <span class="comparar__caja">
+            <input
+              class="burbuja__campo comparar__campo"
+              type="text"
+              id="comparar-campo"
+              inputmode="decimal"
+              autocomplete="off"
+              spellcheck="false"
+              placeholder="Lo que cuesta aquí"
+              data-t-placeholder="comparar.pista">
+            <span class="comparar__codigo" id="comparar-codigo"></span>
+          </span>
+        </div>
+      </div>
+      <p class="comparar__veredicto" id="comparar-veredicto" aria-live="polite"></p>
     </div>
 
     <!-- Fuera de .result, que recorta lo que se sale: así tiene alto para la lista. -->

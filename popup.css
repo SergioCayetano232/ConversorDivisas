@@ -1685,6 +1685,157 @@ body::after {
   }
 }
 
+/* La balanza de la cabecera se mece al pasar por encima. */
+.balanza__brazo {
+  transform-origin: 7px 4.5px;
+  transition: transform var(--slow) var(--ease-spring);
+}
+
+.balanza:hover .balanza__brazo,
+.balanza[aria-expanded="true"] .balanza__brazo {
+  transform: rotate(-14deg);
+}
+
+/* Baja el plato que cuesta más, como una balanza de verdad. El brazo gira y
+   los platos solo suben o bajan, colgados de sus puntas. */
+.comparar__dibujo {
+  display: block;
+  width: 100%;
+  height: 70px;
+  margin: 2px 0 6px;
+  overflow: visible;
+}
+
+.comparar__dibujo path {
+  fill: none;
+  stroke: var(--muted);
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.comparar__eje {
+  fill: var(--brass);
+}
+
+.comparar__brazo {
+  transform-origin: 110px 18px;
+  transition: transform 700ms var(--ease-spring);
+}
+
+.comparar__plato {
+  transition: transform 700ms var(--ease-spring);
+}
+
+.comparar__plato path:last-child {
+  fill: var(--slate);
+  transition: fill var(--mid) var(--ease), stroke var(--mid) var(--ease);
+}
+
+.comparar__plato.is-gana path:last-child {
+  fill: color-mix(in srgb, var(--jade) 22%, transparent);
+  stroke: var(--jade);
+  filter: drop-shadow(0 0 6px var(--jade-glow));
+}
+
+.comparar__lados {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--s-2);
+}
+
+.comparar__lado {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+  padding: 8px;
+  background: var(--slate);
+  border: 1px solid var(--hairline);
+  border-radius: var(--r-sm);
+  transition: border-color var(--mid) var(--ease), box-shadow var(--mid) var(--ease);
+}
+
+.comparar__lado.is-gana {
+  border-color: color-mix(in srgb, var(--jade) 55%, transparent);
+  box-shadow: 0 0 14px -6px var(--jade-glow);
+}
+
+/* La etiqueta es la de la cuenta, que va en fila y ocupa todo el ancho; aquí
+   va en columna y eso le daba todo el alto. */
+.comparar__lado .cuenta__etiqueta {
+  flex-basis: auto;
+}
+
+.comparar__cifra {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-family: var(--font-mono);
+  font-size: 14px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  line-height: 24px;
+  color: var(--brass);
+}
+
+.comparar__cifra.is-tic {
+  animation: tic 260ms var(--ease-out);
+}
+
+.comparar__nota {
+  min-height: 12px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-family: var(--font-mono);
+  font-size: 9px;
+  color: var(--muted);
+}
+
+.comparar__caja {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.comparar__campo {
+  flex: 1;
+  width: auto;
+  height: 24px;
+  font-size: 13px;
+  text-align: left;
+}
+
+.comparar__codigo {
+  flex-shrink: 0;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--muted);
+}
+
+.comparar__veredicto {
+  margin-top: var(--s-3);
+  font-size: 12px;
+  text-align: center;
+  color: var(--muted);
+}
+
+.comparar__veredicto[data-donde="alli"],
+.comparar__veredicto[data-donde="aqui"] {
+  font-weight: 600;
+  color: var(--jade);
+}
+
+.comparar__veredicto[data-donde="igual"] {
+  color: var(--brass);
+}
+
+.comparar__veredicto.is-nuevo {
+  animation: beat var(--mid) var(--ease-spring);
+}
+
 .cuenta__cabeza {
   display: flex;
   justify-content: space-between;
