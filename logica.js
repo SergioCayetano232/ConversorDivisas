@@ -1145,6 +1145,21 @@ function cambiarConcepto(lista, id, concepto) {
   return lista.map((g) => (g.id === id ? { ...g, concepto: limpio, categoria } : g));
 }
 
+// Para el gasto que se te olvidó apuntar. Dejo la hora, así dentro del día
+// sigue en su sitio, y el valor: de un día a otro la tasa apenas se mueve y no
+// merece otra petición por unos céntimos.
+function cambiarDia(lista, id, dia, hoyIso = hoy()) {
+  if (!esIso(dia) || dia > hoyIso) return lista;
+  const gasto = lista.find((g) => g.id === id);
+  if (!gasto || isoLocal(new Date(gasto.cuando)) === dia) return lista;
+  const antes = new Date(gasto.cuando);
+  const [a, m, d] = dia.split("-").map(Number);
+  const cuando = new Date(a, m - 1, d, antes.getHours(), antes.getMinutes(), antes.getSeconds(), antes.getMilliseconds()).getTime();
+  // Reordeno porque los días salen en el orden de la lista: si no, el de ayer
+  // quedaría arriba de hoy.
+  return lista.map((g) => (g.id === id ? { ...g, cuando } : g)).sort((x, y) => y.cuando - x.cuando);
+}
+
 // Deshacer un "Vaciar": vuelven todos detrás de lo que hayas apuntado entretanto,
 // que es más nuevo y va arriba.
 function devolverTodos(lista, vaciados) {
@@ -1855,7 +1870,7 @@ if (typeof module !== "undefined") {
     divisaDeIdioma, parPorIdioma, banderaDe, banderaDivisa,
     HISTORIAL_MAX, leerHistorial, apuntarConversion, quitarConversion, haceCuanto, textoParaCopiar, fraseParaCopiar,
     celdaCsv, csvHistorial, csvGastos,
-    GASTOS_MAX, CONCEPTO_MAX, crearGasto, leerGastos, apuntarGasto, quitarGasto, cambiarConcepto, repetirGasto, devolverGasto, devolverTodos, sumarPorDivisa, gastosPorDia, pesoDeLosDias, mediaPorDia, comisionesPagadas, pagadoEnEfectivo, gastadoHoy, nombreDia,
+    GASTOS_MAX, CONCEPTO_MAX, crearGasto, leerGastos, apuntarGasto, quitarGasto, cambiarConcepto, cambiarDia, repetirGasto, devolverGasto, devolverTodos, sumarPorDivisa, gastosPorDia, pesoDeLosDias, mediaPorDia, comisionesPagadas, pagadoEnEfectivo, gastadoHoy, nombreDia,
     CATEGORIAS, CATEGORIA_POR_DEFECTO, adivinarCategoria, PAGOS, PAGO_POR_DEFECTO, leerPago, comisionDelPago, desglose, conceptosUsados, completarConcepto,
     EMOJI_CATEGORIA, destacados, resumenParaCompartir,
     COPIA_APP, COPIA_VERSION, CLAVES_COPIA, limpiarCopia, crearCopia, leerCopia, resumenCopia,

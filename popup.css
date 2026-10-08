@@ -2625,6 +2625,93 @@ body::after {
   font-style: italic;
 }
 
+/* Debajo del concepto que estás cambiando, a qué día va. Sale como si se
+   desplegara de la fila, y las pastillas detrás, una a una. */
+.gastos__dias {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex-shrink: 0;
+  margin: -1px 54px 2px 0;
+  padding: 4px 6px;
+  background: var(--brass-ghost);
+  border: 1px solid color-mix(in srgb, var(--brass) 30%, transparent);
+  border-top: 0;
+  border-radius: 0 0 6px 6px;
+  color-scheme: dark;
+  transform-origin: top;
+  animation: dias-baja 260ms var(--ease-out);
+}
+
+@media (prefers-color-scheme: light) {
+  .gastos__dias {
+    color-scheme: light;
+  }
+}
+
+@keyframes dias-baja {
+  from {
+    opacity: 0;
+    transform: scaleY(0.4) translateY(-4px);
+  }
+}
+
+.gastos__dias-nombre {
+  margin-right: 2px;
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.gastos__dia-rapido,
+.gastos__dia-fecha {
+  height: 20px;
+  padding: 0 7px;
+  background: var(--slate);
+  border: 1px solid var(--hairline);
+  border-radius: 5px;
+  color: var(--mist);
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-variant-numeric: tabular-nums;
+  cursor: pointer;
+  animation: pop var(--mid) var(--ease-spring) backwards;
+  animation-delay: calc(var(--i, 0) * 40ms + 60ms);
+  transition: border-color var(--fast) var(--ease), background-color var(--fast) var(--ease),
+    color var(--fast) var(--ease), transform var(--fast) var(--ease-spring);
+}
+
+.gastos__dia-fecha {
+  flex: 1;
+  min-width: 0;
+  padding: 0 4px;
+}
+
+.gastos__dia-rapido:hover,
+.gastos__dia-fecha:hover {
+  border-color: color-mix(in srgb, var(--brass) 45%, transparent);
+  transform: translateY(-1px);
+}
+
+.gastos__dia-rapido:active {
+  transform: scale(0.94);
+}
+
+.gastos__dia-rapido.is-elegido,
+.gastos__dia-fecha.is-elegido {
+  background: color-mix(in srgb, var(--brass) 16%, var(--slate));
+  border-color: var(--brass);
+  color: var(--brass);
+}
+
+.gastos__dia-rapido:focus-visible,
+.gastos__dia-fecha:focus-visible {
+  outline: 2px solid var(--brass);
+  outline-offset: 1px;
+}
+
 .gastos__de,
 .gastos__valor {
   flex-shrink: 0;
@@ -5654,6 +5741,8 @@ kbd {
   .chuleta__fila.is-nueva,
   .historial__fila,
   .gastos__fila.is-nueva,
+  .gastos__dia-rapido,
+  .gastos__dia-fecha,
   .gastos__fila.is-saliendo,
   .viajes__fila,
   .extra__mini.is-dibujando,

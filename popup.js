@@ -2875,36 +2875,87 @@ function editarConcepto(gasto, que) {
   campo.value = gasto.concepto;
   campo.placeholder = tr("gastos.sinConcepto");
   campo.setAttribute("aria-label", tr("gastos.concepto"));
+  const fila = que.closest(".gastos__fila");
   let hecho = false;
-  const acabar = (guardar) => {
+  const acabar = (guardar, dia) => {
     if (hecho) return;
     hecho = true;
-    const nuevos = guardar ? cambiarConcepto(gastos, gasto.id, campo.value) : gastos;
-    const cambia = nuevos !== gastos;
-    if (cambia) {
+    const renombrados = guardar ? cambiarConcepto(gastos, gasto.id, campo.value) : gastos;
+    const nuevos = dia ? cambiarDia(renombrados, gasto.id, dia) : renombrados;
+    const movido = nuevos !== renombrados;
+    if (nuevos !== gastos) {
       gastos = nuevos;
       guardarViajes();
     }
+    // Como uno recién apuntado: rebota en su día y la barra del día crece.
+    if (movido) gastoNuevo = gasto.id;
     pintarGastos();
     const otro = el.gastosLista.querySelector(`[data-id="${gasto.id}"] .gastos__que`);
-    if (cambia) restartAnimation(otro, "is-cambiado");
+    if (renombrados !== gastos && !movido) restartAnimation(otro, "is-cambiado");
+    if (movido) otro?.closest(".gastos__fila").scrollIntoView({ block: "nearest", behavior: sinMovimiento.matches ? "auto" : "smooth" });
     otro?.focus();
   };
+  const tira = tiraDeDias(gasto, (dia) => acabar(true, dia));
   campo.addEventListener("keydown", (event) => {
     if (event.key === "Enter") {
       event.preventDefault();
       acabar(true);
     }
-    if (event.key === "Escape") {
+  });
+  // Pasar del concepto a los días no es acabar; irse a otro sitio, sí.
+  const fuera = (event) => {
+    if (!fila.contains(event.relatedTarget) && !tira.contains(event.relatedTarget)) acabar(true);
+  };
+  for (const parte of [campo, tira]) {
+    parte.addEventListener("focusout", fuera);
+    parte.addEventListener("keydown", (event) => {
+      if (event.key !== "Escape") return;
       event.preventDefault();
       event.stopPropagation();
       acabar(false);
-    }
-  });
-  campo.addEventListener("blur", () => acabar(true));
+    });
+  }
   que.replaceWith(campo);
+  fila.after(tira);
   campo.focus();
   campo.select();
+}
+
+function tiraDeDias(gasto, elegir) {
+  const tira = document.createElement("li");
+  tira.className = "gastos__dias";
+  const actual = isoLocal(new Date(gasto.cuando));
+  const hoyIso = hoy();
+  const [a, m, d] = hoyIso.split("-").map(Number);
+  const ayer = isoLocal(new Date(a, m - 1, d - 1));
+
+  const nombre = document.createElement("span");
+  nombre.className = "gastos__dias-nombre";
+  nombre.textContent = tr("gastos.dia");
+  const rapidos = [[hoyIso, tr("dia.hoy")], [ayer, tr("dia.ayer")]].map(([dia, texto], i) => {
+    const boton = document.createElement("button");
+    boton.type = "button";
+    boton.className = "gastos__dia-rapido";
+    boton.textContent = texto;
+    boton.style.setProperty("--i", i);
+    boton.classList.toggle("is-elegido", dia === actual);
+    boton.setAttribute("aria-pressed", String(dia === actual));
+    boton.addEventListener("click", () => elegir(dia));
+    return boton;
+  });
+  const fecha = document.createElement("input");
+  fecha.type = "date";
+  fecha.className = "gastos__dia-fecha";
+  fecha.value = actual;
+  fecha.max = hoyIso;
+  fecha.style.setProperty("--i", 2);
+  fecha.classList.toggle("is-elegido", actual !== hoyIso && actual !== ayer);
+  fecha.setAttribute("aria-label", tr("gastos.otroDia"));
+  fecha.addEventListener("change", () => {
+    if (fecha.value) elegir(fecha.value);
+  });
+  tira.append(nombre, ...rapidos, fecha);
+  return tira;
 }
 
 function onQuitarGasto(id, fila) {
