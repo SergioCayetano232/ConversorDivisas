@@ -348,6 +348,78 @@ body::after {
   background: color-mix(in srgb, var(--cinnabar) 14%, transparent);
 }
 
+/* La tasa es de hace días: el BCE ha publicado y no me ha llegado. Ámbar y
+   con la flecha de recargar, que es lo que hace al pulsarla. */
+.header__vieja {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 1px 7px 1px 5px;
+  background: var(--brass-ghost);
+  border: 1px solid var(--brass-dim);
+  border-radius: 999px;
+  color: var(--brass);
+  font: inherit;
+  font-size: 10px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color var(--fast) var(--ease), transform var(--fast) var(--ease-spring);
+}
+
+.header__vieja[hidden] {
+  display: none;
+}
+
+.header__vieja svg {
+  width: 10px;
+  height: 10px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.5;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  transition: transform var(--slow) var(--ease-spring);
+}
+
+.header__vieja:hover {
+  background: color-mix(in srgb, var(--brass) 20%, transparent);
+}
+
+.header__vieja:hover svg {
+  transform: rotate(120deg);
+}
+
+.header__vieja:active {
+  transform: scale(0.94);
+}
+
+.header__vieja:focus-visible {
+  outline: 2px solid var(--brass);
+  outline-offset: 1px;
+}
+
+.header__vieja.is-nuevo {
+  animation: cambio-entra 520ms var(--ease-spring);
+}
+
+.header__vieja.is-girando svg {
+  animation: recargar 800ms linear infinite;
+}
+
+@keyframes recargar {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.header__vieja.is-mal {
+  animation: shake 400ms var(--ease);
+}
+
+.footer__updated.is-vieja {
+  color: var(--brass);
+}
+
 /* Entra desde donde apunta la flecha: si sube, desde abajo. */
 .header__cambio.is-nuevo {
   animation: cambio-entra 520ms var(--ease-spring);

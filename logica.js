@@ -412,6 +412,60 @@ function fechaLarga(iso) {
     .replace(".", "");
 }
 
+// Domingo de Pascua, con el algoritmo de siempre (el de Meeus). Hace falta
+// por el Viernes Santo y el Lunes de Pascua, que el BCE no publica.
+function domingoDePascua(ano) {
+  const a = ano % 19;
+  const b = Math.floor(ano / 100);
+  const c = ano % 100;
+  const f = Math.floor((b + 8) / 25);
+  const g = Math.floor((b - f + 1) / 3);
+  const h = (19 * a + b - Math.floor(b / 4) - g + 15) % 30;
+  const l = (32 + 2 * (b % 4) + 2 * Math.floor(c / 4) - h - (c % 4)) % 7;
+  const m = Math.floor((a + 11 * h + 22 * l) / 451);
+  const mes = Math.floor((h + l - 7 * m + 114) / 31);
+  const dia = ((h + l - 7 * m + 114) % 31) + 1;
+  return new Date(ano, mes - 1, dia);
+}
+
+// Los días que el BCE publica tasas: laborables menos los festivos de TARGET.
+function hayTasaEl(fecha) {
+  const semana = fecha.getDay();
+  if (semana === 0 || semana === 6) return false;
+  const md = `${fecha.getMonth() + 1}-${fecha.getDate()}`;
+  if (["1-1", "5-1", "12-25", "12-26"].includes(md)) return false;
+  const pascua = domingoDePascua(fecha.getFullYear()).getTime();
+  const dia = 86400000;
+  const t = new Date(fecha.getFullYear(), fecha.getMonth(), fecha.getDate()).getTime();
+  // Con Math.round por el cambio de hora, que cae justo por esas fechas.
+  const desdePascua = Math.round((t - pascua) / dia);
+  return desdePascua !== -2 && desdePascua !== 1;
+}
+
+// Cuántos días con tasa ha habido entre la que tengo y hoy, sin contar hoy:
+// la de hoy sale por la tarde y por la mañana es normal no tenerla. Con
+// alguno ya me he perdido una publicación.
+function tasaVieja(fecha, hoyIso = hoy()) {
+  if (!esIso(fecha) || fecha >= hoyIso) return null;
+  const [a, m, d] = fecha.split("-").map(Number);
+  let dias = 0;
+  for (let dia = new Date(a, m - 1, d + 1); isoLocal(dia) < hoyIso; dia.setDate(dia.getDate() + 1)) {
+    if (hayTasaEl(dia)) dias++;
+    if (dias > 60) break;
+  }
+  return dias > 0 ? { fecha, dias } : null;
+}
+
+// "del lunes" si es de esta semana, que se entiende mejor; si no, la fecha.
+function textoTasaVieja(fecha, hoyIso = hoy()) {
+  const [a, m, d] = fecha.split("-").map(Number);
+  const desde = diasHasta(hoyIso, fecha) - 1;
+  const dia = desde < 7
+    ? fechas({ weekday: "long" }).format(new Date(a, m - 1, d))
+    : fechaCorta(fecha, Number(hoyIso.slice(0, 4)));
+  return tr("vieja.chip", { dia });
+}
+
 // El Date se traga el 30 de febrero y lo pasa a marzo, así que compruebo que
 // al montarla sigue siendo el mismo día.
 function fechaValida(iso, hoyIso = hoy()) {
@@ -2005,6 +2059,7 @@ if (typeof module !== "undefined") {
     COMPARAR_IGUAL, compararPrecios, inclinacion,
     PROPINAS_RAPIDAS, PROPINA_MAX, PERSONAS_MAX, CUENTA_POR_DEFECTO, leerCuenta, repartirCuenta, cuentaParaCompartir,
     MARGENES, tasaOfrecida, analizarCambio,
+    domingoDePascua, hayTasaEl, tasaVieja, textoTasaVieja,
     FECHA_MINIMA, fechaLarga, fechaValida, diaDelGrafico, mesesAtras, FECHAS_RAPIDAS, leerFecha, cambioDesde, notaDiaHabil,
     textoInsignia, cambioDiario, sentidoDe, cambioDelDia, textoCambioDia, tituloInsignia, lineaTasa,
     AVISOS_MAX, sentidoAviso, crearAviso, leerAvisos, avisoCumplido, repartirAvisos, mensajeAviso, faltaParaAviso, cercaniaAviso, textoFalta,

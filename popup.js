@@ -22,6 +22,8 @@ const el = {
   resultMeta: document.getElementById("result-meta"),
   rateLine: document.getElementById("rate-line"),
   cambioDia: document.getElementById("cambio-dia"),
+  tasaVieja: document.getElementById("tasa-vieja"),
+  tasaViejaTexto: document.getElementById("tasa-vieja-texto"),
   amountError: document.getElementById("amount-error"),
   updated: document.getElementById("updated"),
   status: document.getElementById("status"),
@@ -263,6 +265,7 @@ let busqueda = "";
 let cajero = [];
 // El precio de aquí va en la divisa de destino: si cambia, el de antes ya no vale.
 let compararDivisa = null;
+let pidiendoTasa = false;
 let retiradaNueva = null;
 
 // Con el mismo trazo que los iconos de las pestañas.
@@ -3803,6 +3806,24 @@ function onDarLaVueltaATasa() {
 
 function renderUpdated() {
   el.updated.textContent = rateDate ? tr("actualizado", { fecha: rateDate }) : "";
+  pintarTasaVieja();
+}
+
+// Mientras pido la nueva no la saco: casi siempre llega y sería un parpadeo.
+// Si ya estaba y la has pulsado, se queda dando vueltas hasta que responda.
+function pintarTasaVieja() {
+  const vieja = rate !== null && el.from.value !== el.to.value ? tasaVieja(rateDate) : null;
+  const mostrar = Boolean(vieja) && (!pidiendoTasa || !el.tasaVieja.hidden);
+  if (mostrar && el.tasaVieja.hidden) restartAnimation(el.tasaVieja, "is-nuevo");
+  el.tasaVieja.hidden = !mostrar;
+  el.tasaVieja.classList.toggle("is-girando", mostrar && pidiendoTasa);
+  el.updated.classList.toggle("is-vieja", Boolean(vieja));
+  if (!vieja) return;
+  el.tasaViejaTexto.textContent = textoTasaVieja(vieja.fecha);
+  el.tasaVieja.title = vieja.dias === 1
+    ? tr("vieja.tituloUno", { fecha: fechaLarga(vieja.fecha) })
+    : tr("vieja.titulo", { fecha: fechaLarga(vieja.fecha), n: vieja.dias });
+  el.tasaVieja.setAttribute("aria-label", el.tasaVieja.title);
 }
 
 function showError(message) {
@@ -3895,6 +3916,7 @@ async function refresh() {
   if (from === to) {
     rate = 1;
     rateDate = null;
+    pidiendoTasa = false;
     setLoading(false);
     clearError();
     renderRateLine(from, to);
@@ -3910,6 +3932,7 @@ async function refresh() {
   if (currentRequest !== requestId) return;
 
   const cached = cache[`${from}${to}`];
+  pidiendoTasa = !isFresh(cached);
   if (cached) {
     // Aunque esté caducada la pinto: ver la tasa de ayer un segundo es mejor
     // que ver un guion. Si sigue valiendo, ya no pido nada.
@@ -3933,6 +3956,7 @@ async function refresh() {
 
     rate = data.rate;
     rateDate = data.date;
+    pidiendoTasa = false;
     renderRateLine(from, to);
     renderUpdated();
     renderResult();
@@ -3943,9 +3967,13 @@ async function refresh() {
     });
   } catch (error) {
     if (currentRequest !== requestId) return;
+    pidiendoTasa = false;
 
     if (cached) {
       // Me quedo con lo viejo y aviso, que es más útil que dejarlo en blanco.
+      const reintento = el.tasaVieja.classList.contains("is-girando");
+      pintarTasaVieja();
+      if (reintento) restartAnimation(el.tasaVieja, "is-mal");
       showError(errorMessageFor(error));
       refreshTrend(from, to);
       return;
@@ -4473,6 +4501,13 @@ function bindEvents() {
   el.viajesLista.addEventListener("animationend", (event) => event.target.classList.remove("is-renombrado"));
   el.abrirCuenta.addEventListener("click", () => (el.cuenta.hidden ? abrirCuenta() : cerrarCuenta()));
   el.cuentaCerrar.addEventListener("click", () => cerrarCuenta()?.focus());
+  el.tasaVieja.addEventListener("click", () => {
+    if (pidiendoTasa) return;
+    refresh();
+  });
+  el.tasaVieja.addEventListener("animationend", (event) => {
+    if (event.target === el.tasaVieja) el.tasaVieja.classList.remove("is-nuevo", "is-mal");
+  });
   el.abrirComparar.addEventListener("click", () => (el.comparar.hidden ? abrirComparar() : cerrarComparar()));
   el.compararCerrar.addEventListener("click", () => cerrarComparar()?.focus());
   el.compararCampo.addEventListener("input", pintarComparar);
