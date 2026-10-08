@@ -624,16 +624,36 @@ function leerComision(guardado) {
   return redondearComision(guardado);
 }
 
-function leerPorcentaje(texto, max = COMISION_MAX) {
+function leerPorcentaje(texto, max = COMISION_MAX, redondear = redondearComision) {
   const limpio = String(texto ?? "").replace(/[\s%]/g, "").replace(",", ".");
   if (!/^\d+(\.\d+)?$/.test(limpio)) return null;
   const pct = Number(limpio);
-  return pct > max ? null : redondearComision(pct);
+  return pct > max ? null : redondear(pct);
 }
 
 function conComision(valor, pct) {
   if (valor === null || !Number.isFinite(valor)) return null;
   return valor * (1 + pct / 100);
+}
+
+// En Estados Unidos y Canadá la etiqueta va sin el impuesto, y cada sitio pone
+// el suyo. Tres decimales porque Nueva York cobra un 8,875 %.
+const IMPUESTO_MAX = 25;
+const IMPUESTOS_RAPIDOS = [0, 5, 8, 10];
+
+const redondearImpuesto = (pct) => Math.round(pct * 1000) / 1000;
+
+function leerImpuesto(guardado) {
+  if (typeof guardado !== "number" || !Number.isFinite(guardado)) return 0;
+  if (guardado < 0 || guardado > IMPUESTO_MAX) return 0;
+  return redondearImpuesto(guardado);
+}
+
+const leerImpuestoEscrito = (texto) => leerPorcentaje(texto, IMPUESTO_MAX, redondearImpuesto);
+
+// El banco cobra sobre lo que pasa por caja, que ya lleva el impuesto.
+function loQuePagas(valor, comision = 0, impuesto = 0) {
+  return conComision(conComision(valor, impuesto), comision);
 }
 
 // Las propinas de siempre: en Europa poco o nada, en Estados Unidos del 15 al 20.
@@ -1816,6 +1836,7 @@ function limpiarCopia(crudo) {
   if (Array.isArray(d.historialConversiones)) datos.historialConversiones = leerHistorial(d.historialConversiones);
   if (d.rangoGrafico !== undefined) datos.rangoGrafico = leerRango(d.rangoGrafico);
   if (d.comisionBanco !== undefined) datos.comisionBanco = leerComision(d.comisionBanco);
+  if (d.impuestoVenta !== undefined) datos.impuestoVenta = leerImpuesto(d.impuestoVenta);
   if (d.pagoGasto !== undefined) datos.pagoGasto = leerPago(d.pagoGasto);
   if (d.cuentaReparto !== undefined) datos.cuentaReparto = leerCuenta(d.cuentaReparto);
   if (typeof d.insigniaActiva === "boolean") datos.insigniaActiva = d.insigniaActiva;
@@ -1828,7 +1849,7 @@ function limpiarCopia(crudo) {
 // los viajes, para que no vuelvan a aparecer mezcladas.
 const CLAVES_COPIA = [
   "viajes", "gastosViaje", "presupuestoViaje", "lastPair", "paresRecientes", "divisasExtra", "avisos",
-  "historialConversiones", "rangoGrafico", "comisionBanco", "pagoGasto", "cuentaReparto", "insigniaActiva", "tasaAlReves", "idioma",
+  "historialConversiones", "rangoGrafico", "comisionBanco", "impuestoVenta", "pagoGasto", "cuentaReparto", "insigniaActiva", "tasaAlReves", "idioma",
 ];
 
 function crearCopia(crudo, ahora = new Date()) {
@@ -1879,6 +1900,7 @@ if (typeof module !== "undefined") {
     EXTRAS_MAX, EXTRAS_POR_DEFECTO, leerExtras, anadirExtra, quitarExtra,
     extrasVisibles, disponiblesParaAnadir, convertirExtras, semanaDe, trazoMini, CHULETA, escalaChuleta, chuleta, chuletaParaCompartir,
     COMISION_MAX, COMISIONES_RAPIDAS, leerComision, leerPorcentaje, conComision,
+    IMPUESTO_MAX, IMPUESTOS_RAPIDOS, leerImpuesto, leerImpuestoEscrito, loQuePagas,
     PROPINAS_RAPIDAS, PROPINA_MAX, PERSONAS_MAX, CUENTA_POR_DEFECTO, leerCuenta, repartirCuenta, cuentaParaCompartir,
     MARGENES, tasaOfrecida, analizarCambio,
     FECHA_MINIMA, fechaLarga, fechaValida, diaDelGrafico, mesesAtras, FECHAS_RAPIDAS, leerFecha, cambioDesde, notaDiaHabil,

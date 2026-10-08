@@ -196,11 +196,12 @@
             aria-expanded="false"
             aria-controls="comision-burbuja">
             <span class="comision__pct" id="comision-pct"></span>
+            <span class="comision__imp" id="comision-imp" hidden></span>
             <span class="comision__total" id="comision-total"></span>
           </button>
-          <div class="burbuja" id="comision-burbuja" role="dialog" aria-labelledby="burbuja-titulo" hidden>
-            <p class="burbuja__titulo" id="burbuja-titulo" data-t="comision.titulo">Comisión de tu banco</p>
+          <div class="burbuja burbuja--doble" id="comision-burbuja" role="dialog" aria-label="Comisión de tu banco e impuesto de venta" data-t-aria-label="comision.dialogo" hidden>
             <div class="burbuja__fila">
+              <span class="burbuja__nombre" title="Comisión de tu banco" data-t="comision.nombre" data-t-title="comision.titulo">Banco</span>
               <div class="burbuja__rapidas" id="comision-rapidas" role="group" aria-label="Comisiones habituales" data-t-aria-label="comision.rapidas"></div>
               <label class="burbuja__otra">
                 <input
@@ -217,7 +218,25 @@
                 <span aria-hidden="true">%</span>
               </label>
             </div>
-            <p class="burbuja__nota" data-t="comision.nota">Se suma a lo convertido. Las tarjetas suelen cobrar entre un 1 y un 3 %.</p>
+            <div class="burbuja__fila">
+              <span class="burbuja__nombre" title="Impuesto de venta" data-t="impuesto.nombre" data-t-title="impuesto.titulo">Impuesto</span>
+              <div class="burbuja__rapidas" id="impuesto-rapidas" role="group" aria-label="Impuestos habituales" data-t-aria-label="impuesto.rapidas"></div>
+              <label class="burbuja__otra">
+                <input
+                  class="burbuja__campo"
+                  type="text"
+                  id="impuesto-campo"
+                  inputmode="decimal"
+                  autocomplete="off"
+                  spellcheck="false"
+                  placeholder="otro"
+                  aria-label="Otro impuesto, en tanto por ciento"
+                  data-t-placeholder="impuesto.otro"
+                  data-t-aria-label="impuesto.otroAria">
+                <span aria-hidden="true">%</span>
+              </label>
+            </div>
+            <p class="burbuja__nota" data-t="comision.nota">Las tarjetas cobran del 1 al 3 %. El impuesto, si la etiqueta va sin él, como en EE. UU. o Canadá.</p>
           </div>
         </div>
 

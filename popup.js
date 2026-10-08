@@ -135,6 +135,9 @@ const el = {
   panelComision: document.getElementById("panel-comision"),
   comisionPct: document.getElementById("comision-pct"),
   comisionTotal: document.getElementById("comision-total"),
+  comisionImp: document.getElementById("comision-imp"),
+  impuestoRapidas: document.getElementById("impuesto-rapidas"),
+  impuestoCampo: document.getElementById("impuesto-campo"),
   burbuja: document.getElementById("comision-burbuja"),
   comisionRapidas: document.getElementById("comision-rapidas"),
   comisionCampo: document.getElementById("comision-campo"),
@@ -199,6 +202,7 @@ let avisos = [];
 // la tasa nueva, pero mientras sea el mismo no le toco lo que hayas escrito.
 let parDelUmbral = null;
 let comision = 0;
+let impuesto = 0;
 let tasaAlReves = false;
 let historial = [];
 // Abrir el popup y verlo con su 1 de siempre no es convertir nada: solo apunto
@@ -261,6 +265,7 @@ const nfDias = formatoNumero({ maximumFractionDigits: 1 });
 const nfRate = formatoNumero({ minimumFractionDigits: 4, maximumFractionDigits: 4 });
 const nfEntero = formatoNumero({ maximumFractionDigits: 0 });
 const nfComision = formatoNumero({ maximumFractionDigits: 2 });
+const nfImpuesto = formatoNumero({ maximumFractionDigits: 3 });
 const nfMargen = formatoNumero({ style: "percent", minimumFractionDigits: 1, maximumFractionDigits: 1 });
 const nfPercent = formatoNumero({
   style: "percent", minimumFractionDigits: 2, maximumFractionDigits: 2, signDisplay: "exceptZero",
@@ -274,6 +279,7 @@ const EXTRAS_KEY = "divisasExtra";
 const VISTA_KEY = "vistaPanel";
 const AVISOS_KEY = "avisos";
 const COMISION_KEY = "comisionBanco";
+const IMPUESTO_KEY = "impuestoVenta";
 const PAGO_KEY = "pagoGasto";
 const FECHA_KEY = "fechaConsulta";
 const HISTORIAL_KEY = "historialConversiones";
@@ -355,6 +361,16 @@ async function cargarAvisos() {
   } catch (error) {
     console.warn("No se pudieron leer los avisos", error);
     return [];
+  }
+}
+
+async function cargarImpuesto() {
+  try {
+    const guardado = await chrome.storage.local.get(IMPUESTO_KEY);
+    return leerImpuesto(guardado[IMPUESTO_KEY]);
+  } catch (error) {
+    console.warn("No se pudo leer el impuesto", error);
+    return 0;
   }
 }
 
@@ -1620,15 +1636,22 @@ function pintarTimo() {
   el.timoNota.dataset.tarjeta = r?.tarjeta ?? "";
 }
 
-// Lo de abajo más la comisión: lo que te cobra el banco de verdad.
+// Lo de abajo más el impuesto y la comisión: lo que pagas de verdad.
 function pintarComision() {
-  const hay = comision > 0;
-  const total = rate === null ? null : conComision(leerImporte(el.result.value), comision);
+  const hay = comision > 0 || impuesto > 0;
+  const total = rate === null ? null : loQuePagas(leerImporte(el.result.value), comision, impuesto);
   const texto = total === null ? "—" : `${nf.format(total)} ${el.to.value}`;
 
   el.comision.classList.toggle("is-puesta", hay);
   const pct = tr("pct", { n: nfComision.format(comision) });
-  el.comisionPct.textContent = hay ? `+${pct}` : tr("comision.anadir");
+  // Con solo el impuesto, la pastilla de la comisión sobra.
+  el.comisionPct.hidden = hay && comision === 0;
+  el.comisionPct.textContent = comision > 0 ? `+${pct}` : tr("comision.anadir");
+  const imp = impuesto > 0 ? tr("impuesto.pastilla", { pct: tr("pct", { n: nfImpuesto.format(impuesto) }) }) : "";
+  if (el.comisionImp.textContent !== imp && imp) restartAnimation(el.comisionImp, "is-tic");
+  el.comisionImp.hidden = !imp;
+  el.comision.classList.toggle("is-con-impuesto", Boolean(imp));
+  el.comisionImp.textContent = imp;
   if (!hay) {
     el.comisionTotal.textContent = "";
     el.comision.setAttribute("aria-label", tr("comision.anadirAria"));
@@ -1640,8 +1663,13 @@ function pintarComision() {
     el.comisionTotal.textContent = texto;
     if (habia && texto !== "—") restartAnimation(el.comisionTotal, "is-tic");
   }
-  el.comision.setAttribute("aria-label", tr("comision.aria", { pct, total: texto }));
-  el.comision.title = tr("comision.conTitulo", { total: texto });
+  if (impuesto === 0) {
+    el.comision.setAttribute("aria-label", tr("comision.aria", { pct, total: texto }));
+    el.comision.title = tr("comision.conTitulo", { total: texto });
+    return;
+  }
+  el.comision.title = tr(comision > 0 ? "impuesto.yComisionTitulo" : "impuesto.conTitulo", { total: texto });
+  el.comision.setAttribute("aria-label", `${el.comision.title}. ${tr("impuesto.cambiar")}`);
 }
 
 // En la chuleta y en las otras divisas las cifras ya llevan la comisión: que se
@@ -1669,12 +1697,44 @@ function ponerComision(pct) {
   }
   // El salto solo al pasar de no tener a tener, que al cambiar de 2 a 3 ya
   // basta con el tic de la cifra.
-  if (antes === 0 && pct > 0) restartAnimation(el.comision, "is-estrenada");
+  if (antes === 0 && pct > 0 && impuesto === 0) restartAnimation(el.comision, "is-estrenada");
   try {
     chrome.storage.local.set({ [COMISION_KEY]: comision });
   } catch (error) {
     console.warn("No se pudo guardar la comisión", error);
   }
+}
+
+function ponerImpuesto(pct) {
+  const antes = impuesto;
+  impuesto = pct;
+  pintarComision();
+  for (const boton of el.impuestoRapidas.children) {
+    boton.setAttribute("aria-pressed", String(Number(boton.dataset.pct) === pct));
+  }
+  if (antes === 0 && pct > 0 && comision === 0) restartAnimation(el.comision, "is-estrenada");
+  try {
+    chrome.storage.local.set({ [IMPUESTO_KEY]: impuesto });
+  } catch (error) {
+    console.warn("No se pudo guardar el impuesto", error);
+  }
+}
+
+function onCampoImpuesto() {
+  const pct = leerImpuestoEscrito(el.impuestoCampo.value);
+  el.impuestoCampo.removeAttribute("aria-invalid");
+  if (pct !== null) ponerImpuesto(pct);
+}
+
+function onTeclaCampoImpuesto(event) {
+  if (event.key !== "Enter") return;
+  event.preventDefault();
+  if (leerImpuestoEscrito(el.impuestoCampo.value) === null) {
+    el.impuestoCampo.setAttribute("aria-invalid", "true");
+    restartAnimation(el.impuestoCampo, "is-mal");
+    return;
+  }
+  cerrarBurbuja()?.focus();
 }
 
 function abrirBurbuja() {
@@ -1696,6 +1756,24 @@ function abrirBurbuja() {
     });
     return boton;
   }));
+  el.impuestoRapidas.replaceChildren(...IMPUESTOS_RAPIDOS.map((pct, i) => {
+    const boton = document.createElement("button");
+    boton.type = "button";
+    boton.className = "burbuja__rapida";
+    // Entran detrás de las de la comisión, que están encima.
+    boton.style.setProperty("--i", i + COMISIONES_RAPIDAS.length);
+    boton.dataset.pct = pct;
+    boton.textContent = pct === 0 ? tr("comision.sin") : tr("pct", { n: pct });
+    boton.setAttribute("aria-label", pct === 0 ? tr("impuesto.sinAria") : tr("pct", { n: pct }));
+    boton.setAttribute("aria-pressed", String(pct === impuesto));
+    boton.addEventListener("click", () => {
+      ponerImpuesto(pct);
+      cerrarBurbuja()?.focus();
+    });
+    return boton;
+  }));
+  el.impuestoCampo.value = IMPUESTOS_RAPIDOS.includes(impuesto) ? "" : nfImpuesto.format(impuesto);
+  el.impuestoCampo.removeAttribute("aria-invalid");
   const rapida = COMISIONES_RAPIDAS.includes(comision);
   el.comisionCampo.value = rapida ? "" : nfComision.format(comision);
   el.comisionCampo.removeAttribute("aria-invalid");
@@ -4130,6 +4208,10 @@ function bindEvents() {
   el.comisionCampo.addEventListener("input", onCampoComision);
   el.comisionCampo.addEventListener("keydown", onTeclaCampoComision);
   el.comisionCampo.addEventListener("animationend", () => el.comisionCampo.classList.remove("is-mal"));
+  el.impuestoCampo.addEventListener("input", onCampoImpuesto);
+  el.impuestoCampo.addEventListener("keydown", onTeclaCampoImpuesto);
+  el.impuestoCampo.addEventListener("animationend", () => el.impuestoCampo.classList.remove("is-mal"));
+  el.comisionImp.addEventListener("animationend", () => el.comisionImp.classList.remove("is-tic"));
   el.avisoForm.addEventListener("submit", onCrearAviso);
   el.avisoUmbral.addEventListener("input", pintarSentidoAviso);
   el.avisoUmbral.addEventListener("animationend", () => el.avisoUmbral.classList.remove("is-mal"));
@@ -4229,10 +4311,10 @@ async function init() {
   const idiomaCambiado = await cargarIdioma();
   traducirPagina();
   if (idiomaCambiado) saludarIdioma();
-  const [pair, rango, guardados, pendiente, guardadas, vistaGuardada, avisosGuardados, comisionGuardada, fechaGuardada, historialGuardado, viajesGuardados, repartoGuardado, alRevesGuardado, pagoGuardado, cantidadGuardada] = await Promise.all([
+  const [pair, rango, guardados, pendiente, guardadas, vistaGuardada, avisosGuardados, comisionGuardada, fechaGuardada, historialGuardado, viajesGuardados, repartoGuardado, alRevesGuardado, pagoGuardado, cantidadGuardada, impuestoGuardado] = await Promise.all([
     loadPair(), cargarRango(), cargarRecientes(), tomarPendiente(), cargarExtras(), cargarVista(), cargarAvisos(),
     cargarComision(), cargarFecha(), cargarHistorial(), cargarViajes(), cargarReparto(), cargarTasaAlReves(), cargarPago(),
-    cargarCantidad(),
+    cargarCantidad(), cargarImpuesto(),
   ]);
   pagoNuevo = pagoGuardado;
   pintarPago();
@@ -4245,6 +4327,7 @@ async function init() {
   pintarCategoriaNueva();
   pintarGastos();
   comision = comisionGuardada;
+  impuesto = impuestoGuardado;
   fecha = fechaGuardada;
   crearFechasRapidas();
   dias = rango;

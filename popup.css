@@ -3628,6 +3628,26 @@ body::after {
   font-weight: 700;
 }
 
+/* El impuesto va con borde y no relleno: así no se confunde con la comisión. */
+.comision__imp {
+  flex-shrink: 0;
+  padding: 0 5px;
+  line-height: 10px;
+  border: 1px solid var(--brass);
+  border-radius: 999px;
+  color: var(--brass);
+  font-weight: 700;
+}
+
+.comision__imp[hidden],
+.comision__pct[hidden] {
+  display: none;
+}
+
+.comision__imp.is-tic {
+  animation: estreno 420ms var(--ease-spring);
+}
+
 .comision__total {
   display: inline-block;
   min-width: 0;
@@ -3786,6 +3806,35 @@ body::after {
   font-size: 10px;
   line-height: 1.4;
   color: var(--muted);
+}
+
+/* Comisión e impuesto en dos filas con su nombre delante: con un título encima
+   de cada una no cabía y la tarjeta del resultado la cortaba por abajo. */
+.burbuja--doble {
+  width: 284px;
+}
+
+.burbuja--doble .burbuja__fila + .burbuja__fila {
+  margin-top: 6px;
+}
+
+.burbuja--doble .burbuja__rapida {
+  padding: 0 5px;
+}
+
+.burbuja__nombre {
+  flex: 0 0 52px;
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--muted);
+  cursor: help;
+}
+
+/* Con el impuesto puesto hay una pastilla más: le dejo sitio al total. */
+.comision.is-con-impuesto {
+  max-width: 82%;
 }
 
 .panel {
