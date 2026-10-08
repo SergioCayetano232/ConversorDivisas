@@ -31,6 +31,8 @@ que necesitaba una conversión rápida. Ahora es un clic en la barra del navegad
   cantidad puesta, le das a **+ 38,90 EUR** (con un concepto si quieres, "Cena",
   "Taxi"…) y se apunta. El concepto se completa con los que ya has usado
   (escribes "ca" y sale "Café", con su categoría), y lo aceptas con Tab o →. Si lo escribiste mal, pulsas el concepto y lo cambias.
+  Ahí mismo sale una tira con **Hoy**, **Ayer** y un calendario, para la cena
+  que se te olvidó apuntar: el gasto se va a su día con lo que valía.
   Con las flechas de al lado lo vuelves a apuntar hoy, para el metro o el café
   de cada día, con la tasa de hoy. Arriba sale el total en tu divisa y lo que llevas de media
   al día, y debajo los gastos por días con lo de cada día y una barrita que dice cuánto pesa al lado del día que más. Cada uno se guarda con la tasa y la comisión de
@@ -38,6 +40,11 @@ que necesitaba una conversión rápida. Ahora es un clic en la barra del navegad
   el martes. Hasta 200, y para vaciarlo hay que darle dos veces. Si
   quitas uno o los vacías todos sin querer, tienes cinco segundos para
   deshacerlo
+- Buscar en los gastos con la lupa: escribes "taxi" y salen solo esos, con lo
+  que coincide marcado y cuántos son y cuánto suman al lado. Busca también por
+  la categoría, así que "comida" encuentra la cena aunque no lo pusieras. Y con
+  el botón de las tres barras, del más caro al más barato, con una barra de
+  fondo en cada uno que dice lo que pesa al lado del que más
 - Varios viajes, cada uno con sus gastos y su presupuesto: pulsando el nombre
   del viaje, arriba del panel, cambias de uno a otro, ves cuánto llevas en
   cada uno y empiezas otro ("Japón", "Lisboa"). Se les cambia el nombre con el
@@ -51,6 +58,11 @@ que necesitaba una conversión rápida. Ahora es un clic en la barra del navegad
   lado de la categoría. En efectivo no se le suma la comisión del banco, y en
   la lista lleva un puntito verde. Se queda como lo dejes. Arriba, con un
   puntito rojo, lo que llevas pagado en comisiones en el viaje
+- El efectivo que te queda: pulsando la línea verde apuntas lo que sacas del
+  cajero ("20k" son veinte mil) y los gastos en efectivo lo van descontando, en
+  yenes y no en euros, que es lo que llevas en la cartera. Arriba pone "Quedan
+  3.000 JPY", en dorado si te queda menos de una quinta parte y en rojo si has
+  pagado más de lo sacado. Cada viaje con el suyo
 - Cada gasto con su categoría (comida, transporte, alojamiento, ocio, compras
   u otros), que sale sola por el concepto ("taxi", "cena", "hotel") y se cambia
   con un clic. Arriba, en qué se te va el dinero en porcentajes; pulsando una
@@ -61,7 +73,9 @@ que necesitaba una conversión rápida. Ahora es un clic en la barra del navegad
   pasas) y cuánto te queda al día. Antes de apuntar un gasto, sale a rayas en
   la barra lo que se llevaría y cuántos días de presupuesto son ("≈ 0,6 días"). Al lado, en qué
   día del viaje vas ("Día 3/7"), y una marca en la barra con lo que llevarías
-  gastado hoy yendo parejo: si la pasas, vas rápido
+  gastado hoy yendo parejo: si la pasas, vas rápido. Cuando un gasto te lleva
+  al 80 % o te pasas, te salta una notificación, y la barra da un latido con
+  un brillo dorado
 - Las conversiones y los gastos se bajan en CSV con el botón **CSV** de cada
   panel, listos para abrir en Excel o en Google Sheets: en español van con
   punto y coma y "12,50", en inglés con coma y "12.50", y las tildes no se rompen.
@@ -76,6 +90,15 @@ que necesitaba una conversión rápida. Ahora es un clic en la barra del navegad
   que quieras) y al lado del resultado sale lo que pagarías de verdad. También
   va sumada en la chuleta y en las otras divisas. Se queda guardada para la
   próxima vez
+- El impuesto de venta, en la misma burbuja que la comisión: en Estados Unidos
+  y Canadá la etiqueta va sin él, así que pones el tuyo (5, 8, 10 % o el 8,875
+  de Nueva York) y la pastilla te da lo que pasa por caja, con la comisión
+  encima
+- Dónde sale más barato, en la balanza que hay al lado del tique: con el precio
+  de allí puesto arriba, escribes lo que cuesta aquí y te dice dónde te ahorras
+  y cuánto ("Allí te ahorras 255,20 EUR, un 22 %"). La balanza baja hacia el
+  lado caro. Lo de allí lleva tu comisión y tu impuesto, y por debajo de un 1 %
+  lo da por igual
 - Seleccionas un precio en cualquier web, clic derecho, **Convertir**, y te sale
   el resultado en una tarjeta al lado del texto. Entiende "1.299,00 €",
   "$1,049.99", "R$ 10,50" o "20 euros". Sin ratón, con `Alt+Shift+C` (`⌥⇧C`
@@ -121,7 +144,11 @@ que necesitaba una conversión rápida. Ahora es un clic en la barra del navegad
   en MXN → USD, con `en-GB` en GBP → EUR. Si no lo tiene claro, EUR → USD
 - Recuerda la última pareja de divisas, la cantidad, el periodo del gráfico,
   la pestaña y las divisas que tienes puestas
-- Guarda las tasas del día, así que al abrirlo ya está el número puesto
+- Guarda las tasas del día, así que al abrirlo ya está el número puesto. Si
+  la que tiene es de hace días (llevas tiempo sin conexión y el BCE ha
+  publicado otras), al lado de la tasa sale "del lunes" en ámbar, y pulsándolo
+  lo vuelve a intentar. Sabe que el BCE no publica los fines de semana ni en
+  los festivos de TARGET, Semana Santa incluida
 - La tasa de tu par en el propio icono de la barra, en verde si ha subido desde
   el día anterior, en rojo si ha bajado. Se actualiza cada hora; si no la
   quieres, clic derecho en el icono y la quitas
@@ -134,7 +161,7 @@ que necesitaba una conversión rápida. Ahora es un clic en la barra del navegad
   sugerencias de Chrome, con tus otras divisas debajo, y con Enter se abre el
   popup con esa conversión puesta
 - Atajos dentro del popup: `S` da la vuelta al par, `C` copia, `D` y `A` abren
-  los desplegables, `G` los gastos, `P` dividir la cuenta, `R` las últimas conversiones, `Z` (o `Cmd+Z`, `Ctrl+Z`) deshace lo último que
+  los desplegables, `G` los gastos, `P` dividir la cuenta, `B` la balanza, `R` las últimas conversiones, `Z` (o `Cmd+Z`, `Ctrl+Z`) deshace lo último que
   has quitado de los gastos y del `1` al `6` cambian de pestaña. Si estás escribiendo en
   un campo, con `Alt` delante (`⌥` en Mac). En la cantidad, `↑` y `↓` suben o
   bajan 1, y con Shift, 10. Con `?` salen todos
@@ -152,7 +179,7 @@ que necesitaba una conversión rápida. Ahora es un clic en la barra del navegad
 
 Pide lo justo: guardar tus preferencias, hablar con la API de las tasas, una
 alarma para refrescar el icono y mirar los avisos cada hora, mandar las
-notificaciones de esos avisos y, para lo del clic derecho, el menú y poner la
+notificaciones de esos avisos y de los del presupuesto y, para lo del clic derecho, el menú y poner la
 tarjeta en la pestaña en la que estás.
 Esto último solo pasa cuando pulsas **Convertir**, **Convertir los precios de
 la página** o el atajo; no lee ninguna web por su cuenta, y por eso Chrome no avisa de nada al instalarla. No hay analítica ni
