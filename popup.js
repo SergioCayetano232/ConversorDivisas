@@ -2347,6 +2347,7 @@ function pintarPresupuesto() {
   const antes = el.presupuestoVer.dataset.tono;
   el.presupuestoVer.dataset.tono = estado.tono;
   if (antes && antes !== "pasado" && estado.tono === "pasado") restartAnimation(el.presupuestoVer, "is-alarma");
+  if (antes === "bien" && estado.tono === "justo") restartAnimation(el.presupuestoVer, "is-justo");
   pintarLoQueSeLleva();
 }
 

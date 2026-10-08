@@ -2981,6 +2981,39 @@ body::after {
   animation: shake 400ms var(--ease);
 }
 
+/* Al llegar al 80 % la barra late y la cruza un brillo dorado: lo mismo que
+   la notificación, pero aquí, que lo estás mirando. */
+.presupuesto__barra::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  background: linear-gradient(90deg, transparent 20%, var(--brass-glow) 42%, var(--sheen) 50%, var(--brass-glow) 58%, transparent 80%);
+  transform: translateX(-100%);
+  pointer-events: none;
+}
+
+.presupuesto__ver.is-justo .presupuesto__barra {
+  animation: barra-late 700ms var(--ease-spring);
+}
+
+.presupuesto__ver.is-justo .presupuesto__barra::after {
+  animation: barra-brillo 900ms var(--ease) 120ms;
+}
+
+@keyframes barra-late {
+  40% {
+    transform: scaleY(2);
+    box-shadow: 0 0 10px var(--brass-glow);
+  }
+}
+
+@keyframes barra-brillo {
+  to {
+    transform: translateX(100%);
+  }
+}
+
 .presupuesto__anadir:focus-visible,
 .presupuesto__ver:focus-visible,
 .presupuesto__importe:focus-visible,
@@ -5656,7 +5689,8 @@ kbd {
     transform: translate(-50%, 0);
   }
 
-  .presupuesto__esto {
+  .presupuesto__esto,
+  .presupuesto__ver.is-justo .presupuesto__barra::after {
     animation: none;
   }
 

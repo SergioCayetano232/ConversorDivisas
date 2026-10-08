@@ -1690,6 +1690,52 @@ function mensajeAviso(aviso, rate) {
   };
 }
 
+// 0 vas bien, 1 pasado el 80 %, 2 pasado del todo.
+const nivelPresupuesto = (fraccion) => (fraccion > 1 ? 2 : fraccion >= PRESUPUESTO_JUSTO ? 1 : 0);
+
+// Lo avisado va atado al importe y la divisa: si subes el presupuesto puede
+// volver a avisar, pero quitar un gasto y deshacerlo no.
+const firmaPresupuesto = (p) => `${p.importe}|${p.to}`;
+
+// Solo cuando entra un gasto nuevo, y uno solo: al poner un presupuesto que ya
+// te pasas lo estás viendo, y restaurar una copia no es gastar.
+function avisosPresupuesto(antes, despues, avisados = {}, hoyIso = hoy()) {
+  const previos = new Map((antes?.lista ?? []).map((v) => [v.id, v]));
+  const memoria = {};
+  const avisos = [];
+  for (const viaje of despues?.lista ?? []) {
+    if (!viaje.presupuesto) continue;
+    const firma = firmaPresupuesto(viaje.presupuesto);
+    const estado = estadoPresupuesto(viaje.presupuesto, viaje.gastos, hoyIso);
+    const nivel = nivelPresupuesto(estado.fraccion);
+    const previo = previos.get(viaje.id);
+    const comoAntes = previo?.presupuesto && firmaPresupuesto(previo.presupuesto) === firma;
+    const base = avisados[viaje.id]?.firma === firma ? avisados[viaje.id].nivel
+      : comoAntes ? nivelPresupuesto(estadoPresupuesto(previo.presupuesto, previo.gastos, hoyIso).fraccion)
+        : nivel;
+    const ids = new Set((previo?.gastos ?? []).map((g) => g.id));
+    const nuevos = viaje.gastos.filter((g) => !ids.has(g.id)).length;
+    if (comoAntes && nuevos === 1 && nivel > base) avisos.push({ viaje, nivel, estado });
+    // Me quedo con el más alto: si borras el gasto y lo vuelves a poner, ya lo sabías.
+    memoria[viaje.id] = { firma, nivel: Math.max(base, nivel) };
+  }
+  return { avisos, avisados: memoria };
+}
+
+function mensajePresupuesto({ viaje, nivel, estado }) {
+  const { importe, to } = viaje.presupuesto;
+  const dinero = (n) => `${numeros({ minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(n)} ${to}`;
+  // Hacia abajo: con 79,6 % no quiero decir "80 %".
+  const pct = numeros({ style: "percent", maximumFractionDigits: 0 }).format(Math.floor(estado.fraccion * 100) / 100);
+  const titulo = nivel === 2 ? tr("presupuesto.notiPasado") : tr("presupuesto.notiJusto", { pct });
+  const cuerpo = nivel === 2
+    ? tr("presupuesto.notiPasadoCuerpo", { gastado: dinero(estado.gastado), importe: dinero(importe), pasado: dinero(-estado.queda) })
+    : estado.porDia !== null
+      ? tr("presupuesto.notiQueda", { queda: dinero(estado.queda), porDia: dinero(estado.porDia) })
+      : tr("presupuesto.notiQuedaSolo", { queda: dinero(estado.queda) });
+  return { titulo: viaje.nombre ? `${viaje.nombre} · ${titulo}` : titulo, cuerpo };
+}
+
 // Por event.code y no por event.key: en Mac, Opción+S escribe "ß", y en otros
 // teclados la tecla de la S puede traer otra letra.
 const ATAJOS = {
@@ -1823,6 +1869,7 @@ if (typeof module !== "undefined") {
     FECHA_MINIMA, fechaLarga, fechaValida, diaDelGrafico, mesesAtras, FECHAS_RAPIDAS, leerFecha, cambioDesde, notaDiaHabil,
     textoInsignia, cambioDiario, sentidoDe, cambioDelDia, textoCambioDia, tituloInsignia, lineaTasa,
     AVISOS_MAX, sentidoAviso, crearAviso, leerAvisos, avisoCumplido, repartirAvisos, mensajeAviso, faltaParaAviso, cercaniaAviso, textoFalta,
+    nivelPresupuesto, avisosPresupuesto, mensajePresupuesto,
     ATAJOS, atajoPara, textoAtajo,
   };
 }

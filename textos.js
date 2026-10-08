@@ -303,6 +303,11 @@ const TEXTOS = {
     "presupuesto.al": "al",
     "presupuesto.guardar": "OK",
     "presupuesto.quitar": "Quitar el presupuesto",
+    "presupuesto.notiJusto": "Llevas el {pct} del presupuesto",
+    "presupuesto.notiPasado": "Te has pasado del presupuesto",
+    "presupuesto.notiQueda": "Te quedan {queda}, {porDia} al día.",
+    "presupuesto.notiQuedaSolo": "Te quedan {queda}.",
+    "presupuesto.notiPasadoCuerpo": "{gastado} de {importe}: {pasado} de más.",
 
     "ayuda.titulo": "Atajos de teclado",
     "ayuda.nota": "Si estás escribiendo en un campo, con {alt} delante: {alt}S, {alt}C… (la ayuda, {alt}H).",
@@ -683,6 +688,11 @@ const TEXTOS = {
     "presupuesto.al": "to",
     "presupuesto.guardar": "OK",
     "presupuesto.quitar": "Remove the budget",
+    "presupuesto.notiJusto": "You've used {pct} of your budget",
+    "presupuesto.notiPasado": "You're over budget",
+    "presupuesto.notiQueda": "{queda} left, {porDia} a day.",
+    "presupuesto.notiQuedaSolo": "{queda} left.",
+    "presupuesto.notiPasadoCuerpo": "{gastado} of {importe}: {pasado} over.",
 
     "ayuda.titulo": "Keyboard shortcuts",
     "ayuda.nota": "While typing in a field, add {alt} first: {alt}S, {alt}C… (help is {alt}H).",

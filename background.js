@@ -96,6 +96,7 @@ chrome.alarms.onAlarm.addListener((alarma) => {
 // El popup guarda el par al cambiarlo; con esto el icono cambia a la vez.
 chrome.storage.onChanged.addListener((cambios, zona) => {
   if (zona !== "local") return;
+  if (cambios.viajes) revisarPresupuesto(cambios.viajes.oldValue, cambios.viajes.newValue);
   if (cambios[IDIOMA_KEY]) {
     idiomaListo = aplicarIdioma();
     crearMenus();
@@ -493,6 +494,35 @@ async function revisarAvisos() {
       title: titulo,
       message: cuerpo,
       priority: 2,
+    });
+  }));
+}
+
+// En cola: dos gastos seguidos leerían a la vez lo ya avisado y saldría el
+// mismo aviso dos veces.
+let colaPresupuesto = Promise.resolve();
+
+function revisarPresupuesto(antes, despues) {
+  colaPresupuesto = colaPresupuesto.then(() => avisarPresupuesto(antes, despues)).catch((error) => {
+    console.warn("No se pudo revisar el presupuesto", error);
+  });
+}
+
+async function avisarPresupuesto(antes, despues) {
+  if (!despues) return;
+  await idiomaListo;
+  const { presupuestoAvisado } = await chrome.storage.local.get("presupuestoAvisado");
+  const { avisos, avisados } = avisosPresupuesto(leerViajes(antes), leerViajes(despues), presupuestoAvisado ?? {});
+  await chrome.storage.local.set({ presupuestoAvisado: avisados });
+  await Promise.all(avisos.map((aviso) => {
+    const { titulo, cuerpo } = mensajePresupuesto(aviso);
+    // Sin par en el id: al pulsarla solo se abre el popup.
+    return chrome.notifications.create(`presupuesto:${aviso.viaje.id}:${aviso.nivel}`, {
+      type: "basic",
+      iconUrl: "icons/icon128.png",
+      title: titulo,
+      message: cuerpo,
+      priority: 1,
     });
   }));
 }
