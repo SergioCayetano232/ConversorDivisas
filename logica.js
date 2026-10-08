@@ -1180,6 +1180,35 @@ function cambiarDia(lista, id, dia, hoyIso = hoy()) {
   return lista.map((g) => (g.id === id ? { ...g, cuando } : g)).sort((x, y) => y.cuando - x.cuando);
 }
 
+// Tienen que estar todas las palabras, en el concepto o en el nombre de la
+// categoría: así "comida" encuentra la cena aunque no lo pusieras.
+function buscarGastos(gastos, consulta) {
+  const palabras = normalizar(String(consulta ?? "")).split(/\s+/).filter(Boolean);
+  if (palabras.length === 0) return gastos;
+  return gastos.filter((g) => {
+    const texto = normalizar(`${g.concepto} ${tr(`cat.${g.categoria}`)}`);
+    return palabras.every((p) => texto.includes(p));
+  });
+}
+
+// El concepto en trozos, marcando lo que coincide con la búsqueda. Normalizo
+// letra a letra para que las posiciones casen: "é" sigue ocupando una.
+function trozosResaltados(texto, consulta) {
+  const palabras = normalizar(String(consulta ?? "")).split(/\s+/).filter(Boolean);
+  const plano = [...texto].map((c) => normalizar(c).charAt(0) || c).join("");
+  const marcadas = new Array(plano.length).fill(false);
+  for (const p of palabras) {
+    for (let i = plano.indexOf(p); i !== -1; i = plano.indexOf(p, i + p.length)) marcadas.fill(true, i, i + p.length);
+  }
+  const trozos = [];
+  [...texto].forEach((c, i) => {
+    const ultimo = trozos[trozos.length - 1];
+    if (ultimo && ultimo.resaltado === marcadas[i]) ultimo.texto += c;
+    else trozos.push({ texto: c, resaltado: marcadas[i] });
+  });
+  return trozos;
+}
+
 // Deshacer un "Vaciar": vuelven todos detrás de lo que hayas apuntado entretanto,
 // que es más nuevo y va arriba.
 function devolverTodos(lista, vaciados) {
@@ -1891,7 +1920,7 @@ if (typeof module !== "undefined") {
     divisaDeIdioma, parPorIdioma, banderaDe, banderaDivisa,
     HISTORIAL_MAX, leerHistorial, apuntarConversion, quitarConversion, haceCuanto, textoParaCopiar, fraseParaCopiar,
     celdaCsv, csvHistorial, csvGastos,
-    GASTOS_MAX, CONCEPTO_MAX, crearGasto, leerGastos, apuntarGasto, quitarGasto, cambiarConcepto, cambiarDia, repetirGasto, devolverGasto, devolverTodos, sumarPorDivisa, gastosPorDia, pesoDeLosDias, mediaPorDia, comisionesPagadas, pagadoEnEfectivo, gastadoHoy, nombreDia,
+    GASTOS_MAX, CONCEPTO_MAX, crearGasto, leerGastos, apuntarGasto, quitarGasto, cambiarConcepto, cambiarDia, buscarGastos, trozosResaltados, repetirGasto, devolverGasto, devolverTodos, sumarPorDivisa, gastosPorDia, pesoDeLosDias, mediaPorDia, comisionesPagadas, pagadoEnEfectivo, gastadoHoy, nombreDia,
     CATEGORIAS, CATEGORIA_POR_DEFECTO, adivinarCategoria, PAGOS, PAGO_POR_DEFECTO, leerPago, comisionDelPago, desglose, conceptosUsados, completarConcepto,
     EMOJI_CATEGORIA, destacados, resumenParaCompartir,
     COPIA_APP, COPIA_VERSION, CLAVES_COPIA, limpiarCopia, crearCopia, leerCopia, resumenCopia,

@@ -106,6 +106,10 @@ const el = {
   gastosCategoria: document.getElementById("gastos-categoria"),
   categorias: document.getElementById("categorias"),
   desglose: document.getElementById("desglose"),
+  buscar: document.getElementById("buscar"),
+  buscarAbrir: document.getElementById("buscar-abrir"),
+  buscarCampo: document.getElementById("buscar-campo"),
+  buscarTotal: document.getElementById("buscar-total"),
   presupuesto: document.getElementById("presupuesto"),
   presupuestoAnadir: document.getElementById("presupuesto-anadir"),
   presupuestoVer: document.getElementById("presupuesto-ver"),
@@ -236,6 +240,7 @@ let categoriaNueva = CATEGORIA_POR_DEFECTO;
 let categoriaAMano = false;
 let pagoNuevo = PAGO_POR_DEFECTO;
 let filtroCategoria = null;
+let busqueda = "";
 
 // Con el mismo trazo que los iconos de las pestañas.
 const ICONOS_CATEGORIA = {
@@ -2277,7 +2282,17 @@ function crearFilaGasto(gasto, i) {
   que.type = "button";
   que.className = "gastos__que";
   que.classList.toggle("is-sin", !gasto.concepto);
-  que.textContent = concepto;
+  if (busqueda && gasto.concepto) {
+    que.replaceChildren(...trozosResaltados(concepto, busqueda).map(({ texto, resaltado }) => {
+      if (!resaltado) return texto;
+      const marca = document.createElement("mark");
+      marca.className = "gastos__marca";
+      marca.textContent = texto;
+      return marca;
+    }));
+  } else {
+    que.textContent = concepto;
+  }
   que.title = tr("gastos.editar");
   que.setAttribute("aria-label", tr("gastos.editarDe", { concepto }));
   que.addEventListener("click", () => editarConcepto(gasto, que));
@@ -2365,7 +2380,11 @@ function pintarGastos() {
   pintarEfectivo();
 
   pintarDesglose();
-  const visibles = filtroCategoria ? gastos.filter((g) => g.categoria === filtroCategoria) : gastos;
+  // Buscando, las categorías se esconden: busco en todos.
+  if (n < 2) cerrarBusqueda();
+  if (!el.buscar.hidden) el.desglose.hidden = true;
+  const visibles = buscarGastos(filtroCategoria ? gastos.filter((g) => g.categoria === filtroCategoria) : gastos, busqueda);
+  pintarBusqueda(visibles);
   let i = 0;
   const dias = gastosPorDia(visibles);
   const pesos = pesoDeLosDias(dias);
@@ -2376,10 +2395,65 @@ function pintarGastos() {
   cascadaGastos = false;
   gastoNuevo = null;
   pintarPresupuesto();
-  el.gastosVacio.hidden = n > 0;
+  const nada = n > 0 && visibles.length === 0;
+  el.gastosVacio.hidden = n > 0 && !nada;
+  el.gastosVacio.textContent = nada ? tr("buscar.nada", { busqueda: busqueda.trim() }) : tr("gastos.vacio");
+  el.gastosVacio.classList.toggle("is-busqueda", nada);
+  el.buscarAbrir.hidden = n < 2;
   el.gastosVaciar.hidden = n === 0;
   el.gastosCsv.hidden = n === 0;
   el.gastosCompartir.hidden = n === 0;
+}
+
+function pintarBusqueda(visibles) {
+  const texto = el.buscar.hidden || !busqueda.trim() ? ""
+    : visibles.length === 0 ? tr("buscar.ninguno")
+      : tr(visibles.length === 1 ? "buscar.uno" : "buscar.total", { n: visibles.length, total: textoTotales(sumarPorDivisa(visibles)) });
+  if (el.buscarTotal.textContent === texto) return;
+  el.buscarTotal.textContent = texto;
+  el.buscarTotal.classList.toggle("is-nada", visibles.length === 0);
+  if (texto) restartAnimation(el.buscarTotal, "is-tic");
+}
+
+function abrirBusqueda() {
+  cerrarCategorias();
+  filtroCategoria = null;
+  el.buscar.hidden = false;
+  el.buscarAbrir.setAttribute("aria-expanded", "true");
+  restartAnimation(el.buscar, "is-nuevo");
+  pintarGastos();
+  el.buscarCampo.focus();
+}
+
+// Sin pintar: quien la cierra ya pinta después.
+function cerrarBusqueda() {
+  if (el.buscar.hidden) return false;
+  el.buscar.hidden = true;
+  busqueda = "";
+  el.buscarCampo.value = "";
+  el.buscarTotal.textContent = "";
+  el.buscarAbrir.setAttribute("aria-expanded", "false");
+  return true;
+}
+
+// Si lo que apuntas no casa con lo que buscas, no lo verías: fuera la búsqueda.
+function dejarVerGasto(gasto) {
+  if (busqueda && buscarGastos([gasto], busqueda).length === 0) cerrarBusqueda();
+}
+
+function onTeclaBuscar(event) {
+  if (event.key !== "Escape") return;
+  event.preventDefault();
+  event.stopPropagation();
+  // El primer Escape borra lo escrito; el segundo, cierra.
+  if (el.buscarCampo.value) {
+    el.buscarCampo.value = "";
+    busqueda = "";
+  } else {
+    cerrarBusqueda();
+    el.buscarAbrir.focus();
+  }
+  pintarGastos();
 }
 
 function pintarPresupuesto() {
@@ -2754,6 +2828,7 @@ function ponerViaje(nuevos) {
   quitado = null;
   el.deshacer.hidden = true;
   filtroCategoria = null;
+  cerrarBusqueda();
   dejarDeEditarPresupuesto();
   delete el.presupuestoVer.dataset.tono;
   cascadaGastos = true;
@@ -2890,6 +2965,7 @@ function cerrarGastos() {
   cerrarViajes();
   dejarDeEditarPresupuesto();
   cerrarCategorias();
+  cerrarBusqueda();
   el.gastos.hidden = true;
   el.abrirGastos.setAttribute("aria-expanded", "false");
   noVaciar();
@@ -2913,6 +2989,7 @@ function onApuntarGasto(event) {
   categoriaAMano = false;
   // Si estabas mirando otra categoría, el que acabas de apuntar no se vería.
   if (filtroCategoria && filtroCategoria !== gasto.categoria) filtroCategoria = null;
+  dejarVerGasto(gasto);
   pintarCategoriaNueva();
   guardarViajes();
   pintarGastos();
@@ -2939,6 +3016,7 @@ function onRepetirGasto(original) {
   gastos = apuntarGasto(gastos, gasto);
   gastoNuevo = gasto.id;
   if (filtroCategoria && filtroCategoria !== gasto.categoria) filtroCategoria = null;
+  dejarVerGasto(gasto);
   guardarViajes();
   pintarGastos();
   restartAnimation(el.abrirGastos, "is-apuntado");
@@ -3100,6 +3178,7 @@ function onDeshacer() {
   gastos = devolverGasto(gastos, gasto, indice);
   gastoNuevo = gasto.id;
   if (filtroCategoria && filtroCategoria !== gasto.categoria) filtroCategoria = null;
+  dejarVerGasto(gasto);
   olvidarDeshacer();
   guardarViajes();
   pintarGastos();
@@ -4209,6 +4288,17 @@ function bindEvents() {
   el.comisionCampo.addEventListener("keydown", onTeclaCampoComision);
   el.comisionCampo.addEventListener("animationend", () => el.comisionCampo.classList.remove("is-mal"));
   el.impuestoCampo.addEventListener("input", onCampoImpuesto);
+  el.buscarAbrir.addEventListener("click", () => {
+    if (el.buscar.hidden) return abrirBusqueda();
+    cerrarBusqueda();
+    pintarGastos();
+  });
+  el.buscarCampo.addEventListener("input", () => {
+    busqueda = el.buscarCampo.value;
+    pintarGastos();
+  });
+  el.buscarCampo.addEventListener("keydown", onTeclaBuscar);
+  el.buscarTotal.addEventListener("animationend", () => el.buscarTotal.classList.remove("is-tic"));
   el.impuestoCampo.addEventListener("keydown", onTeclaCampoImpuesto);
   el.impuestoCampo.addEventListener("animationend", () => el.impuestoCampo.classList.remove("is-mal"));
   el.comisionImp.addEventListener("animationend", () => el.comisionImp.classList.remove("is-tic"));
