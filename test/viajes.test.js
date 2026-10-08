@@ -14,7 +14,7 @@ const ids = (viajes) => viajes.lista.map((v) => v.id);
 
 test("sin nada guardado hay un viaje vacío", () => {
   const viajes = leerViajes(undefined);
-  assert.deepEqual(viajes, { activo: "primero", lista: [{ id: "primero", nombre: "", gastos: [], presupuesto: null }] });
+  assert.deepEqual(viajes, { activo: "primero", lista: [{ id: "primero", nombre: "", gastos: [], presupuesto: null, cajero: [] }] });
 });
 
 test("los gastos y el presupuesto de antes pasan al primer viaje", () => {

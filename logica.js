@@ -1231,7 +1231,7 @@ const NOMBRE_VIAJE_MAX = 24;
 
 const limpiarNombreViaje = (nombre) => String(nombre ?? "").replace(/\s+/g, " ").trim().slice(0, NOMBRE_VIAJE_MAX);
 
-const viajeVacio = (id, nombre = "") => ({ id, nombre: limpiarNombreViaje(nombre), gastos: [], presupuesto: null });
+const viajeVacio = (id, nombre = "") => ({ id, nombre: limpiarNombreViaje(nombre), gastos: [], presupuesto: null, cajero: [] });
 
 // Antes de los viajes había una sola lista y un presupuesto sueltos: pasan a
 // ser el primer viaje, sin nombre, para que nadie pierda lo que tenía.
@@ -1242,6 +1242,7 @@ function leerViajes(guardado, gastosSueltos, presupuestoSuelto) {
     .slice(0, VIAJES_MAX)
     .map((v) => ({
       id: v.id, nombre: limpiarNombreViaje(v.nombre), gastos: leerGastos(v.gastos), presupuesto: leerPresupuesto(v.presupuesto),
+      cajero: leerRetiradas(v.cajero),
     }));
   if (lista.length === 0) {
     lista.push({ ...viajeVacio("primero"), gastos: leerGastos(gastosSueltos), presupuesto: leerPresupuesto(presupuestoSuelto) });
@@ -1419,6 +1420,53 @@ function pagadoEnEfectivo(gastos) {
     .reduce((suma, g) => suma + g.valor, 0);
   return total >= 0.005 ? { total, to: principal.to } : null;
 }
+
+// Lo que sacas del cajero en cada viaje. Treinta dan para un viaje largo.
+const RETIRADAS_MAX = 30;
+
+const esRetiradaBuena = (r) => Boolean(r) && typeof r.id === "string" && r.id !== ""
+  && Number.isFinite(r.cantidad) && r.cantidad > 0 && isValidCode(r.divisa) && Number.isFinite(r.cuando);
+
+// Los viajes de antes no traen cajero: sin retiradas, como si no hubieras sacado.
+function leerRetiradas(guardado) {
+  if (!Array.isArray(guardado)) return [];
+  return guardado.filter(esRetiradaBuena).slice(0, RETIRADAS_MAX)
+    .map(({ id, cantidad, divisa, cuando }) => ({ id, cantidad, divisa, cuando }));
+}
+
+function crearRetirada({ id, cantidad, divisa, cuando }) {
+  const r = { id, cantidad: Math.round(cantidad * 100) / 100, divisa, cuando };
+  return esRetiradaBuena(r) ? r : null;
+}
+
+function apuntarRetirada(lista, retirada) {
+  if (!esRetiradaBuena(retirada)) return lista;
+  return [retirada, ...lista].slice(0, RETIRADAS_MAX);
+}
+
+const quitarRetirada = (lista, id) => lista.filter((r) => r.id !== id);
+
+// Lo que te queda en la cartera, en cada divisa que hayas sacado. Cuenta la
+// cantidad pagada y no lo convertido: los billetes son yenes, no euros.
+function efectivoQueda(retiradas, gastos) {
+  const cuentas = new Map();
+  for (const r of retiradas) {
+    const c = cuentas.get(r.divisa) ?? { divisa: r.divisa, sacado: 0, gastado: 0 };
+    c.sacado += r.cantidad;
+    cuentas.set(r.divisa, c);
+  }
+  for (const g of gastos) {
+    if (g.pago === "efectivo" && cuentas.has(g.from)) cuentas.get(g.from).gastado += g.cantidad;
+  }
+  return [...cuentas.values()]
+    .map((c) => ({ ...c, queda: c.sacado - c.gastado, fraccion: Math.max(0, (c.sacado - c.gastado) / c.sacado) }))
+    .sort((a, b) => b.sacado - a.sacado);
+}
+
+// Por debajo de una quinta parte toca ir pensando en el cajero.
+const EFECTIVO_POCO = 0.2;
+
+const tonoEfectivo = (cuenta) => (cuenta.queda < 0 ? "falta" : cuenta.fraccion < EFECTIVO_POCO ? "poco" : "bien");
 
 function mediaPorDia(gastos) {
   const principal = sumarPorDivisa(gastos)[0];
@@ -1920,7 +1968,8 @@ if (typeof module !== "undefined") {
     divisaDeIdioma, parPorIdioma, banderaDe, banderaDivisa,
     HISTORIAL_MAX, leerHistorial, apuntarConversion, quitarConversion, haceCuanto, textoParaCopiar, fraseParaCopiar,
     celdaCsv, csvHistorial, csvGastos,
-    GASTOS_MAX, CONCEPTO_MAX, crearGasto, leerGastos, apuntarGasto, quitarGasto, cambiarConcepto, cambiarDia, buscarGastos, trozosResaltados, repetirGasto, devolverGasto, devolverTodos, sumarPorDivisa, gastosPorDia, pesoDeLosDias, mediaPorDia, comisionesPagadas, pagadoEnEfectivo, gastadoHoy, nombreDia,
+    GASTOS_MAX, CONCEPTO_MAX, crearGasto, leerGastos, apuntarGasto, quitarGasto, cambiarConcepto, cambiarDia, buscarGastos, trozosResaltados, repetirGasto, devolverGasto, devolverTodos, sumarPorDivisa, gastosPorDia, pesoDeLosDias, mediaPorDia, comisionesPagadas, pagadoEnEfectivo,
+    RETIRADAS_MAX, leerRetiradas, crearRetirada, apuntarRetirada, quitarRetirada, efectivoQueda, EFECTIVO_POCO, tonoEfectivo, gastadoHoy, nombreDia,
     CATEGORIAS, CATEGORIA_POR_DEFECTO, adivinarCategoria, PAGOS, PAGO_POR_DEFECTO, leerPago, comisionDelPago, desglose, conceptosUsados, completarConcepto,
     EMOJI_CATEGORIA, destacados, resumenParaCompartir,
     COPIA_APP, COPIA_VERSION, CLAVES_COPIA, limpiarCopia, crearCopia, leerCopia, resumenCopia,

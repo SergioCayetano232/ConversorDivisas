@@ -2275,15 +2275,54 @@ body::after {
 }
 
 .gastos__efectivo {
+  --tono: var(--jade);
   display: flex;
   align-items: center;
   gap: 5px;
+  max-width: 100%;
+  padding: 0;
   overflow: hidden;
+  background: none;
+  border: 0;
   white-space: nowrap;
+  font: inherit;
   font-size: 10px;
-  color: color-mix(in srgb, var(--jade) 70%, var(--muted));
+  color: color-mix(in srgb, var(--tono) 70%, var(--muted));
   font-variant-numeric: tabular-nums;
-  cursor: default;
+  text-align: left;
+  cursor: pointer;
+  text-decoration: underline dotted transparent;
+  text-underline-offset: 2px;
+  transition: color var(--fast) var(--ease), text-decoration-color var(--fast) var(--ease);
+}
+
+.gastos__efectivo:hover,
+.gastos__efectivo[aria-expanded="true"] {
+  color: var(--tono);
+  text-decoration-color: currentColor;
+}
+
+.gastos__efectivo:focus-visible {
+  outline: 2px solid var(--brass);
+  outline-offset: 1px;
+  border-radius: 3px;
+}
+
+.gastos__efectivo[data-tono="poco"] {
+  --tono: var(--brass);
+}
+
+.gastos__efectivo[data-tono="falta"] {
+  --tono: var(--cinnabar);
+}
+
+/* Sin nada sacado ni pagado, es una invitación: más discreta. */
+.gastos__efectivo.is-vacio {
+  color: var(--muted);
+}
+
+.gastos__efectivo.is-tic {
+  animation: tic 260ms var(--ease-out);
 }
 
 /* El mismo puntito verde que llevan en la lista los gastos en efectivo. */
@@ -2293,8 +2332,164 @@ body::after {
   width: 5px;
   height: 5px;
   border-radius: 50%;
-  background: var(--jade);
-  box-shadow: 0 0 6px var(--jade-glow);
+  background: var(--tono);
+  box-shadow: 0 0 6px color-mix(in srgb, var(--tono) 60%, transparent);
+}
+
+/* Lo del cajero, flotando debajo del total como el cambio de viaje. */
+.cajero {
+  position: absolute;
+  top: var(--cajero-arriba, 56px);
+  left: 8px;
+  right: 8px;
+  z-index: 4;
+  padding: 8px;
+  background: color-mix(in srgb, var(--graphite) 88%, transparent);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  border: 1px solid var(--hairline-strong);
+  border-radius: var(--r-sm);
+  box-shadow: inset 0 1px 0 var(--sheen), var(--shadow-lg);
+  transform-origin: top left;
+  animation: bandeja 300ms var(--ease-spring);
+}
+
+.cajero[hidden] {
+  display: none;
+}
+
+.cajero__titulo {
+  margin-bottom: 6px;
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.cajero__cuentas {
+  display: grid;
+  gap: 8px;
+  margin: 0 0 8px;
+  padding: 0;
+  list-style: none;
+}
+
+.cajero__cuentas:empty {
+  display: none;
+}
+
+.cajero__cuenta {
+  --tono: var(--jade);
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 2px 6px;
+}
+
+.cajero__cuenta[data-tono="poco"] {
+  --tono: var(--brass);
+}
+
+.cajero__cuenta[data-tono="falta"] {
+  --tono: var(--cinnabar);
+}
+
+.cajero__queda {
+  font-family: var(--font-mono);
+  font-size: 15px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: var(--tono);
+}
+
+.cajero__de {
+  font-size: 10px;
+  color: var(--muted);
+}
+
+/* Lo que queda, como el depósito de un coche: se vacía hacia la izquierda. */
+.cajero__barra {
+  position: relative;
+  flex-basis: 100%;
+  height: 4px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: var(--hairline-strong);
+}
+
+.cajero__barra::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  width: calc(var(--queda, 0) * 100%);
+  border-radius: inherit;
+  background: var(--tono);
+  box-shadow: 0 0 8px color-mix(in srgb, var(--tono) 50%, transparent);
+  animation: crecer 600ms var(--ease-out);
+  transform-origin: left;
+}
+
+/* Al sacar, la cifra da un salto y la barra se llena desde donde estaba. */
+.cajero__cuenta.is-sube .cajero__queda {
+  animation: beat var(--mid) var(--ease-spring);
+}
+
+.cajero__nuevo {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.cajero__nuevo .gastos__concepto {
+  flex: 1;
+  min-width: 0;
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+}
+
+.cajero__nuevo .gastos__concepto.is-mal {
+  border-color: var(--cinnabar);
+  animation: shake 400ms var(--ease);
+}
+
+.cajero__divisa {
+  flex-shrink: 0;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--muted);
+}
+
+.cajero__lista {
+  display: grid;
+  gap: 3px;
+  max-height: 96px;
+  margin: 6px 0 0;
+  padding: 6px 0 0;
+  overflow-y: auto;
+  border-top: 1px solid var(--hairline);
+  list-style: none;
+}
+
+.cajero__lista:empty {
+  display: none;
+}
+
+.cajero__retirada {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+  padding-left: 4px;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-variant-numeric: tabular-nums;
+  color: var(--mist);
+}
+
+.cajero__retirada.is-nueva {
+  animation: pop var(--mid) var(--ease-spring);
 }
 
 .gastos__efectivo[hidden] {
@@ -5904,6 +6099,7 @@ kbd {
   .chuleta__fila.is-nueva,
   .historial__fila,
   .gastos__fila.is-nueva,
+  .cajero__retirada.is-nueva,
   .gastos__dia-rapido,
   .gastos__dia-fecha,
   .gastos__fila.is-saliendo,

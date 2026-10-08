@@ -555,7 +555,7 @@
           <span class="gastos__suma" id="gastos-suma" aria-live="polite"></span>
           <span class="gastos__media" id="gastos-media" hidden></span>
           <span class="gastos__comisiones" id="gastos-comisiones" title="Lo que se ha quedado el banco con la tarjeta. Los gastos que no guardaron su comisión no cuentan" data-t-title="gastos.comisionesTitulo" hidden></span>
-          <span class="gastos__efectivo" id="gastos-efectivo" title="Lo que has pagado en efectivo, para saber cuánto sacar" data-t-title="gastos.efectivoTitulo" hidden></span>
+          <button class="gastos__efectivo" type="button" id="gastos-efectivo" aria-expanded="false" aria-controls="cajero" hidden></button>
         </div>
         <div class="gastos__lado">
           <span class="gastos__arriba">
@@ -591,6 +591,26 @@
           <button class="gastos__apuntar" type="submit" aria-label="Crear el viaje" data-t-aria-label="viajes.crear">+</button>
         </form>
         <p class="viajes__lleno" id="viajes-lleno" hidden></p>
+      </div>
+      <div class="cajero" id="cajero" role="group" aria-labelledby="cajero-titulo" hidden>
+        <p class="cajero__titulo" id="cajero-titulo" data-t="cajero.titulo">Efectivo</p>
+        <ul class="cajero__cuentas" id="cajero-cuentas"></ul>
+        <form class="cajero__nuevo" id="cajero-form" novalidate>
+          <input
+            class="gastos__concepto"
+            type="text"
+            id="cajero-cantidad"
+            inputmode="decimal"
+            autocomplete="off"
+            spellcheck="false"
+            placeholder="Lo que has sacado"
+            aria-label="Lo que has sacado del cajero"
+            data-t-placeholder="cajero.cantidad"
+            data-t-aria-label="cajero.cantidadAria">
+          <span class="cajero__divisa" id="cajero-divisa"></span>
+          <button class="gastos__apuntar" type="submit" id="cajero-sacar" data-t="cajero.sacar">Sacar</button>
+        </form>
+        <ul class="cajero__lista" id="cajero-lista"></ul>
       </div>
       <div class="presupuesto" id="presupuesto">
         <button class="presupuesto__anadir" type="button" id="presupuesto-anadir" data-t="presupuesto.anadir" title="Ponte un presupuesto y te digo cuánto te queda al día" data-t-title="presupuesto.anadirTitulo">+ presupuesto</button>
