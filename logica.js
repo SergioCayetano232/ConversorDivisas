@@ -1422,6 +1422,36 @@ function resumenViaje(viaje) {
   return { n: viaje.gastos.length, total: sumarPorDivisa(viaje.gastos)[0] ?? null };
 }
 
+// Para comparar viajes, lo justo es lo de cada día: una semana en Japón siempre
+// suma más que un finde en Lisboa. Cuento del primer día con gastos al último.
+// Solo se comparan los de la divisa más repetida; con otra no tengo con qué.
+function compararViajes(lista) {
+  const filas = lista.map((viaje) => {
+    const total = sumarPorDivisa(viaje.gastos)[0];
+    if (!total) return { id: viaje.id, media: null };
+    const dias = gastosPorDia(viaje.gastos).map((d) => d.dia).sort();
+    const n = diasHasta(dias[dias.length - 1], dias[0]);
+    const [top] = desglose(viaje.gastos);
+    return { id: viaje.id, media: total.total / n, to: total.to, dias: n, categoria: top ?? null };
+  });
+  const veces = new Map();
+  for (const f of filas) if (f.media !== null) veces.set(f.to, (veces.get(f.to) ?? 0) + 1);
+  const comun = [...veces].sort((a, b) => b[1] - a[1])[0]?.[0];
+  const comparables = filas.filter((f) => f.media !== null && f.to === comun);
+  const max = Math.max(...comparables.map((f) => f.media));
+  const min = Math.min(...comparables.map((f) => f.media));
+  return filas.map((f) => {
+    if (f.media === null) return f;
+    const cuenta = f.to === comun && comparables.length > 1;
+    return {
+      ...f,
+      peso: cuenta ? f.media / max : null,
+      // Si todos gastan lo mismo, ninguno es el caro ni el barato.
+      extremo: !cuenta || max === min ? null : f.media === max ? "caro" : f.media === min ? "barato" : null,
+    };
+  });
+}
+
 const EMOJI_CATEGORIA = {
   comida: "🍽️", transporte: "🚕", alojamiento: "🏨", ocio: "🎟️", compras: "🛍️", otros: "📌",
 };
@@ -2175,7 +2205,7 @@ if (typeof module !== "undefined") {
     CATEGORIAS, CATEGORIA_POR_DEFECTO, adivinarCategoria, PAGOS, PAGO_POR_DEFECTO, leerPago, comisionDelPago, desglose, conceptosUsados, completarConcepto,
     EMOJI_CATEGORIA, destacados, resumenParaCompartir,
     COPIA_APP, COPIA_VERSION, CLAVES_COPIA, limpiarCopia, crearCopia, leerCopia, resumenCopia,
-    VIAJES_MAX, NOMBRE_VIAJE_MAX, leerViajes, leerPersonas, porPersona, viajeActivo, crearViaje, renombrarViaje, elegirViaje, borrarViaje, cambiarViaje, resumenViaje, archivoGastos,
+    VIAJES_MAX, NOMBRE_VIAJE_MAX, leerViajes, leerPersonas, porPersona, compararViajes, viajeActivo, crearViaje, renombrarViaje, elegirViaje, borrarViaje, cambiarViaje, resumenViaje, archivoGastos,
     diasHasta, leerPresupuesto, PRESUPUESTO_JUSTO, estadoPresupuesto, inicioDelViaje, diaDelViaje, hastaCuandoLlega, loQueSeLleva, redondearDias,
     EXTRAS_MAX, EXTRAS_POR_DEFECTO, leerExtras, anadirExtra, quitarExtra,
     extrasVisibles, disponiblesParaAnadir, convertirExtras, semanaDe, trazoMini, CHULETA, escalaChuleta, chuleta, chuletaParaCompartir,

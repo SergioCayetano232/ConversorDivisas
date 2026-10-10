@@ -3069,6 +3069,8 @@ function crearFilaViaje(viaje, i) {
     ? tr("viajes.vacio")
     : `${n === 1 ? tr("gastos.uno") : tr("gastos.n", { n })} · ${nf.format(total.total)} ${total.to}`;
   elegir.append(nombre, meta);
+  const compara = comparacion.get(viaje.id);
+  if (compara?.media != null) elegir.append(crearComparacion(compara));
   elegir.addEventListener("click", () => onElegirViaje(viaje.id));
 
   const renombrar = document.createElement("button");
@@ -3092,7 +3094,44 @@ function crearFilaViaje(viaje, i) {
   return fila;
 }
 
+// Debajo del nombre, lo de cada día y en qué se va, con una barra que se mide
+// contra el viaje que más gasta al día.
+function crearComparacion(f) {
+  const linea = document.createElement("span");
+  linea.className = "viajes__compara";
+  if (f.extremo) linea.dataset.extremo = f.extremo;
+  const media = document.createElement("span");
+  media.className = "viajes__media";
+  media.textContent = tr("viajes.alDia", { media: nf.format(f.media) });
+  linea.append(media);
+  if (f.extremo) {
+    const marca = document.createElement("span");
+    marca.className = "viajes__extremo";
+    marca.textContent = tr(`viajes.${f.extremo}`);
+    linea.append(marca);
+  }
+  if (f.categoria) {
+    const cat = document.createElement("span");
+    cat.className = "viajes__cat";
+    cat.textContent = `${EMOJI_CATEGORIA[f.categoria.categoria]} ${tr("pct", { n: Math.round(f.categoria.fraccion * 100) })}`;
+    cat.title = tr(`cat.${f.categoria.categoria}`);
+    linea.append(cat);
+  }
+  if (f.peso !== null) {
+    const barra = document.createElement("span");
+    barra.className = "viajes__peso";
+    barra.setAttribute("aria-hidden", "true");
+    barra.style.setProperty("--peso", f.peso);
+    linea.append(barra);
+  }
+  linea.title = tr("viajes.compararTitulo", { media: `${nf.format(f.media)} ${f.to}`, dias: f.dias });
+  return linea;
+}
+
+let comparacion = new Map();
+
 function pintarViajes() {
+  comparacion = new Map(compararViajes(viajes.lista).map((f) => [f.id, f]));
   el.viajesLista.replaceChildren(...viajes.lista.map(crearFilaViaje));
   const lleno = viajes.lista.length >= VIAJES_MAX;
   el.viajesNuevo.hidden = lleno;

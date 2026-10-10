@@ -2336,6 +2336,89 @@ body::after {
   color: var(--muted);
 }
 
+/* Con la comparación debajo la fila crece a dos líneas. */
+.viajes__elegir:has(.viajes__compara) {
+  flex-wrap: wrap;
+  row-gap: 3px;
+  height: auto;
+  min-height: 28px;
+  padding-top: 5px;
+  padding-bottom: 6px;
+}
+
+.viajes__elegir:has(.viajes__compara)::before {
+  top: 12px;
+}
+
+.viajes__compara {
+  --tono: var(--muted);
+  position: relative;
+  flex-basis: 100%;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  padding-bottom: 5px;
+  font-family: var(--font-mono);
+  font-size: 9.5px;
+  font-variant-numeric: tabular-nums;
+  color: var(--muted);
+}
+
+.viajes__compara[data-extremo="caro"] {
+  --tono: var(--cinnabar);
+}
+
+.viajes__compara[data-extremo="barato"] {
+  --tono: var(--jade);
+}
+
+.viajes__media {
+  color: var(--mist);
+}
+
+.viajes__extremo {
+  padding: 0 5px;
+  border-radius: 999px;
+  font-family: var(--font-ui);
+  font-size: 9px;
+  color: var(--tono);
+  background: color-mix(in srgb, var(--tono) 14%, transparent);
+}
+
+.viajes__cat {
+  margin-left: auto;
+  white-space: nowrap;
+}
+
+.viajes__peso {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 2px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: var(--hairline);
+}
+
+.viajes__peso::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  width: calc(var(--peso, 0) * 100%);
+  border-radius: inherit;
+  background: var(--brass);
+  transform-origin: left;
+  animation: crecer 600ms var(--ease-out) backwards;
+  animation-delay: calc(var(--i, 0) * 40ms + 120ms);
+}
+
+.viajes__compara[data-extremo] .viajes__peso::after {
+  background: var(--tono);
+  box-shadow: 0 0 6px color-mix(in srgb, var(--tono) 50%, transparent);
+}
+
 .viajes__accion {
   display: grid;
   place-items: center;
@@ -6530,6 +6613,7 @@ kbd {
   .extra__mini.is-dibujando,
   .categorias__opcion,
   .desglose__trozo,
+  .viajes__peso::after,
   .aviso.is-nueva,
   .burbuja__rapida,
   .ayuda__fila,
