@@ -358,9 +358,75 @@ function pistaBarra(texto) {
   chrome.omnibox.setDefaultSuggestion({ description: escaparXml(texto) });
 }
 
+// Lo que hace falta para apuntar desde la barra, con la tasa de hoy.
+async function prepararGasto(texto) {
+  const leido = leerGastoBarra(texto, await leerPar());
+  if (!leido) return null;
+  const guardado = await chrome.storage.local.get(["viajes", "gastosViaje", "presupuestoViaje", "comisionBanco", "pagoGasto"]);
+  const viajes = leerViajes(guardado.viajes, guardado.gastosViaje, guardado.presupuestoViaje);
+  const rates = await tasasDe(leido.from);
+  const gasto = gastoDeBarra(leido, {
+    id: `${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`,
+    cuando: Date.now(),
+    tasa: rates[leido.to],
+    comision: leerComision(guardado.comisionBanco),
+    pago: guardado.pagoGasto,
+    usados: conceptosUsados(viajes.lista.flatMap((v) => v.gastos)),
+  });
+  return gasto && { gasto, viajes, viaje: viajeActivo(viajes) };
+}
+
+const cifraGasto = (n, divisa) => `${nf.format(n)} ${divisa}`;
+
+async function sugerirGasto(texto, sugerir, actual) {
+  sugerir([]);
+  try {
+    const listo = await prepararGasto(texto);
+    if (actual !== barraId) return;
+    if (!listo) {
+      pistaBarra(tr("barra.gastoPista"));
+      return;
+    }
+    const { gasto, viaje } = listo;
+    const que = [cifraGasto(gasto.cantidad, gasto.from), gasto.concepto || tr(`cat.${gasto.categoria}`)].join(" · ");
+    const donde = viaje.nombre ? tr("barra.gastoEn", { viaje: viaje.nombre }) : tr("barra.gastoApunta");
+    chrome.omnibox.setDefaultSuggestion({
+      description: `${escaparXml(donde)} <match>${escaparXml(que)}</match>`
+        + ` <dim>${escaparXml(`= ${cifraGasto(gasto.valor, gasto.to)} · ${tr(`pago.${gasto.pago}`)} · ${tr("barra.gastoEnter")}`)}</dim>`,
+    });
+  } catch (error) {
+    if (actual !== barraId) return;
+    pistaBarra(errorMessageFor(error));
+  }
+}
+
+async function apuntarDesdeBarra(texto) {
+  try {
+    const listo = await prepararGasto(texto);
+    if (!listo) return false;
+    const { gasto, viajes, viaje } = listo;
+    await chrome.storage.local.set({ viajes: cambiarViaje(viajes, viaje.id, { gastos: apuntarGasto(viaje.gastos, gasto) }) });
+    await chrome.storage.local.remove(["gastosViaje", "presupuestoViaje"]);
+    const cuerpo = [gasto.concepto || tr(`cat.${gasto.categoria}`), cifraGasto(gasto.valor, gasto.to)].join(" · ");
+    await chrome.notifications.create(`gasto:${viaje.id}:${gasto.id}`, {
+      type: "basic",
+      iconUrl: "icons/icon128.png",
+      title: viaje.nombre ? tr("barra.apuntadoEn", { importe: cifraGasto(gasto.cantidad, gasto.from), viaje: viaje.nombre })
+        : tr("barra.apuntado", { importe: cifraGasto(gasto.cantidad, gasto.from) }),
+      message: cuerpo,
+      priority: 0,
+    });
+  } catch (error) {
+    console.warn("No se pudo apuntar el gasto", error);
+    pistaBarra(errorMessageFor(error));
+  }
+  return true;
+}
+
 async function sugerirEnBarra(texto, sugerir) {
   const actual = ++barraId;
   await idiomaListo;
+  if (/^\s*\+/.test(texto)) return sugerirGasto(texto, sugerir, actual);
   const leido = leerOmnibox(texto, await leerPar());
   if (actual !== barraId) return;
   if (!leido) {
@@ -400,6 +466,10 @@ async function sugerirEnBarra(texto, sugerir) {
 // cuando la selección viene de una página donde no se puede poner la tarjeta.
 async function abrirDesdeBarra(texto) {
   await idiomaListo;
+  if (/^\s*\+/.test(texto)) {
+    await apuntarDesdeBarra(texto);
+    return;
+  }
   const leido = leerOmnibox(texto, await leerPar());
   if (leido) await chrome.storage.session.set({ pendiente: leido });
   try {
@@ -570,6 +640,7 @@ async function irAGastos(viajeId) {
 chrome.notifications.onClicked.addListener(async (id) => {
   chrome.notifications.clear(id);
   if (id.startsWith("recordatorio:")) await irAGastos(id.slice(13));
+  if (id.startsWith("gasto:")) await irAGastos(id.split(":")[1]);
   const [, from, to] = id.split(":");
   if (isValidCode(from) && isValidCode(to)) await chrome.storage.local.set({ lastPair: { from, to } });
   try {

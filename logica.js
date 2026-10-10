@@ -988,6 +988,48 @@ function leerOmnibox(texto, par) {
   return from === to ? null : { cantidad, from, to };
 }
 
+// "+ 20 cena", "+ 1.500 jpy taxi efectivo": un gasto sin abrir el popup. Lo
+// del principio que parece cantidad o divisa es la cantidad; lo demás, el concepto.
+const PAGO_POR_PALABRA = { efectivo: "efectivo", cash: "efectivo", metalico: "efectivo", tarjeta: "tarjeta", card: "tarjeta" };
+
+const esDeCantidad = (palabra) => /^[\d.,+\-*/()%]+[km]?$/i.test(palabra) || /^[€$£¥₹₩₪฿₱₺]$/.test(palabra)
+  || (/^[a-z]{3}$/i.test(palabra) && isValidCode(palabra.toUpperCase()));
+
+function leerGastoBarra(texto, par) {
+  if (typeof texto !== "string" || !/^\s*\+/.test(texto)) return null;
+  const palabras = texto.replace(/^\s*\+/, "").replace(/([€$£¥₹₩₪฿₱₺])/g, " $1 ").trim().split(/\s+/).filter(Boolean);
+  let i = 0;
+  while (i < palabras.length && (esDeCantidad(palabras[i])
+    || (ENLACES.has(palabras[i].toLowerCase()) && i > 0 && esDeCantidad(palabras[i + 1] ?? "") && /[a-z]/i.test(palabras[i + 1])))) i += 1;
+  const leido = leerOmnibox(palabras.slice(0, i).join(" "), par);
+  if (!leido) return null;
+  let pago = null;
+  const concepto = palabras.slice(i).filter((p) => {
+    const dicho = PAGO_POR_PALABRA[normalizar(p)];
+    if (dicho) pago = dicho;
+    return !dicho;
+  }).join(" ");
+  return { ...leido, concepto: limpiarConcepto(concepto), pago };
+}
+
+// Con la categoría que le diste la última vez a ese concepto; si es nuevo, la que
+// sale por el nombre.
+function gastoDeBarra(leido, { id, cuando, tasa, comision, pago, usados = [] }) {
+  if (!leido || !(tasa > 0)) return null;
+  const elegido = leido.pago ?? leerPago(pago);
+  const pct = comisionDelPago(elegido, comision);
+  const clave = normalizar(leido.concepto);
+  const usado = clave ? usados.find((u) => normalizar(u.concepto) === clave) : null;
+  return crearGasto({
+    id, cuando, from: leido.from, to: leido.to, cantidad: leido.cantidad,
+    valor: conComision(leido.cantidad * tasa, pct),
+    concepto: usado?.concepto ?? leido.concepto,
+    categoria: usado?.categoria ?? adivinarCategoria(leido.concepto) ?? CATEGORIA_POR_DEFECTO,
+    pago: elegido,
+    comision: pct,
+  });
+}
+
 // Lo que pinta Chrome en la sugerencia es XML: un "&" suelto la deja en blanco.
 function escaparXml(texto) {
   return String(texto).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
@@ -2112,7 +2154,7 @@ if (typeof module !== "undefined") {
     normalizar, filtrarDivisas, buildPaths, startDateFor, errorMessageFor,
     RECIENTES_MAX, FIJOS_MAX, apuntarReciente, fijarReciente, leerRecientes, recientesVisibles,
     RANGOS, RANGO_POR_DEFECTO, leerRango, coordenadas, alturaEn, MOMENTO_UMBRAL, momento, textoMomento, indiceCercano, extremos, fechaCorta, largoEnPantalla,
-    leerNumero, divisaDe, leerSeleccion, destinoPara, leerPegado, buscarPrecios, precioEntero, leerOmnibox, escaparXml,
+    leerNumero, divisaDe, leerSeleccion, destinoPara, leerPegado, buscarPrecios, precioEntero, leerOmnibox, leerGastoBarra, gastoDeBarra, escaparXml,
     divisaDeIdioma, parPorIdioma, banderaDe, banderaDivisa,
     HISTORIAL_MAX, leerHistorial, apuntarConversion, quitarConversion, haceCuanto, textoParaCopiar, fraseParaCopiar,
     celdaCsv, csvHistorial, csvGastos,
