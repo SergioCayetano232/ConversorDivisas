@@ -102,6 +102,7 @@ const el = {
   cajeroForm: document.getElementById("cajero-form"),
   cajeroCantidad: document.getElementById("cajero-cantidad"),
   cajeroDivisa: document.getElementById("cajero-divisa"),
+  cajeroSugerencia: document.getElementById("cajero-sugerencia"),
   cajeroLista: document.getElementById("cajero-lista"),
   viajesLista: document.getElementById("viajes-lista"),
   viajesNuevo: document.getElementById("viajes-nuevo"),
@@ -2463,6 +2464,30 @@ function pintarCajero() {
     return fila;
   }));
   retiradaNueva = null;
+  pintarSugerencia();
+}
+
+// La tasa de arriba solo vale si va a la divisa del presupuesto.
+function pintarSugerencia() {
+  const boton = el.cajeroSugerencia;
+  const tasa = presupuesto && el.to.value === presupuesto.to ? rate : null;
+  const s = presupuesto ? cuantoSacar(presupuesto, gastos, cajero, el.from.value, tasa) : null;
+  const habia = boton.textContent;
+  boton.hidden = !s;
+  if (!s) return;
+  boton.disabled = s.sacar === 0;
+  boton.dataset.sacar = s.sacar;
+  boton.textContent = s.sacar === 0 ? tr("cajero.llega")
+    : tr(s.dias === 1 ? "cajero.sacaHoy" : "cajero.saca", { importe: cifraEfectivo(s.sacar, s.divisa), dias: s.dias });
+  const pct = numeros({ style: "percent", maximumFractionDigits: 0 }).format(s.parte);
+  boton.title = s.sacar === 0 ? "" : s.parte < 1 ? tr("cajero.sacaParte", { pct }) : tr("cajero.sacaTodo");
+  if (habia !== boton.textContent) restartAnimation(boton, "is-nueva");
+}
+
+function onSugerencia() {
+  el.cajeroCantidad.value = nfEntero.format(Number(el.cajeroSugerencia.dataset.sacar));
+  restartAnimation(el.cajeroCantidad, "is-cambiado");
+  el.cajeroCantidad.focus();
 }
 
 function abrirCajero() {
@@ -4526,7 +4551,8 @@ function bindEvents() {
   el.gastosEfectivo.addEventListener("click", () => (el.cajero.hidden ? abrirCajero() : cerrarCajero()));
   el.gastosEfectivo.addEventListener("animationend", () => el.gastosEfectivo.classList.remove("is-tic"));
   el.cajeroForm.addEventListener("submit", onSacar);
-  el.cajeroCantidad.addEventListener("animationend", () => el.cajeroCantidad.classList.remove("is-mal"));
+  el.cajeroCantidad.addEventListener("animationend", () => el.cajeroCantidad.classList.remove("is-mal", "is-cambiado"));
+  el.cajeroSugerencia.addEventListener("click", onSugerencia);
   el.viaje.addEventListener("animationend", () => el.viaje.classList.remove("is-estreno"));
   el.gastosTitulo.addEventListener("animationend", () => el.gastosTitulo.classList.remove("is-cambiado"));
   el.viajesNuevo.addEventListener("submit", onCrearViaje);

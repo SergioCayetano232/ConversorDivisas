@@ -2676,6 +2676,75 @@ body::after {
   animation: shake 400ms var(--ease);
 }
 
+.cajero__nuevo .gastos__concepto.is-cambiado {
+  animation: destello 900ms var(--ease-out);
+}
+
+/* Lo que te toca sacar: a rayas mientras es una propuesta, se rellena al
+   pasar por encima. Cuando ya te llega, en verde y sin botón. */
+.cajero__sugerencia {
+  --tono: var(--brass);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+  margin-top: 6px;
+  padding: 5px 8px;
+  font: inherit;
+  font-size: 10px;
+  font-variant-numeric: tabular-nums;
+  text-align: left;
+  color: var(--tono);
+  background: color-mix(in srgb, var(--tono) 8%, transparent);
+  border: 1px dashed color-mix(in srgb, var(--tono) 55%, transparent);
+  border-radius: var(--r-sm);
+  cursor: pointer;
+  transition: background var(--fast) var(--ease), border-color var(--fast) var(--ease), transform var(--fast) var(--ease-spring);
+}
+
+.cajero__sugerencia::before {
+  content: "↧";
+  flex-shrink: 0;
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.cajero__sugerencia:hover:not(:disabled),
+.cajero__sugerencia:focus-visible {
+  background: color-mix(in srgb, var(--tono) 18%, transparent);
+  border-style: solid;
+  transform: translateY(-1px);
+}
+
+.cajero__sugerencia:hover:not(:disabled)::before {
+  animation: sacar-baja 700ms var(--ease-spring) infinite alternate;
+}
+
+.cajero__sugerencia:disabled {
+  --tono: var(--jade);
+  border-style: solid;
+  cursor: default;
+}
+
+.cajero__sugerencia:disabled::before {
+  content: "✓";
+}
+
+.cajero__sugerencia.is-nueva {
+  animation: pop var(--mid) var(--ease-spring);
+}
+
+.cajero__sugerencia[hidden] {
+  display: none;
+}
+
+@keyframes sacar-baja {
+  to {
+    transform: translateY(2px);
+  }
+}
+
 .cajero__divisa {
   flex-shrink: 0;
   font-family: var(--font-mono);

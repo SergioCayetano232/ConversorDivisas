@@ -1562,6 +1562,30 @@ const EFECTIVO_POCO = 0.2;
 
 const tonoEfectivo = (cuenta) => (cuenta.queda < 0 ? "falta" : cuenta.fraccion < EFECTIVO_POCO ? "poco" : "bien");
 
+// A la cifra redonda de arriba que saca un cajero: 11.234 yenes son 12.000.
+// Menos de diez no da ninguno.
+function redondoDeCajero(n) {
+  const paso = Math.max(10, 10 ** (Math.floor(Math.log10(n)) - 1));
+  return Math.ceil(n / paso - 1e-9) * paso;
+}
+
+// Cuánto sacar para lo que queda de viaje, a lo que te toca al día. Cuenta solo
+// la parte que sueles pagar en efectivo; sin gastos aún, todo, que es lo seguro.
+// La tasa es de la divisa del cajero a la del presupuesto.
+function cuantoSacar(presupuesto, gastos, retiradas, divisa, tasa, hoyIso = hoy()) {
+  const estado = estadoPresupuesto(presupuesto, gastos, hoyIso);
+  if (!estado?.porDia || !(tasa > 0) || divisa === presupuesto.to) return null;
+  const contados = gastos.filter((g) => g.to === presupuesto.to);
+  const enEfectivo = contados.filter((g) => g.pago === "efectivo").reduce((suma, g) => suma + g.valor, 0);
+  const parte = contados.length ? enEfectivo / estado.gastado : 1;
+  if (!(parte > 0)) return null;
+  const hace = (estado.porDia * estado.dias * parte) / tasa;
+  const cuenta = efectivoQueda(retiradas, gastos).find((c) => c.divisa === divisa);
+  const tienes = Math.max(cuenta?.queda ?? 0, 0);
+  const falta = hace - tienes;
+  return { sacar: falta > 0 ? redondoDeCajero(falta) : 0, divisa, dias: estado.dias, parte, tienes };
+}
+
 function mediaPorDia(gastos) {
   const principal = sumarPorDivisa(gastos)[0];
   if (!principal) return null;
@@ -2093,7 +2117,7 @@ if (typeof module !== "undefined") {
     HISTORIAL_MAX, leerHistorial, apuntarConversion, quitarConversion, haceCuanto, textoParaCopiar, fraseParaCopiar,
     celdaCsv, csvHistorial, csvGastos,
     GASTOS_MAX, CONCEPTO_MAX, crearGasto, leerGastos, apuntarGasto, quitarGasto, cambiarConcepto, cambiarDia, buscarGastos, trozosResaltados, repetirGasto, devolverGasto, devolverTodos, sumarPorDivisa, gastosPorDia, pesoDeLosDias, ordenarPorImporte, pesoDeLosGastos, mediaPorDia, comisionesPagadas, pagadoEnEfectivo,
-    RETIRADAS_MAX, leerRetiradas, crearRetirada, apuntarRetirada, quitarRetirada, efectivoQueda, EFECTIVO_POCO, tonoEfectivo, gastadoHoy, nombreDia,
+    RETIRADAS_MAX, leerRetiradas, crearRetirada, apuntarRetirada, quitarRetirada, efectivoQueda, EFECTIVO_POCO, tonoEfectivo, redondoDeCajero, cuantoSacar, gastadoHoy, nombreDia,
     CATEGORIAS, CATEGORIA_POR_DEFECTO, adivinarCategoria, PAGOS, PAGO_POR_DEFECTO, leerPago, comisionDelPago, desglose, conceptosUsados, completarConcepto,
     EMOJI_CATEGORIA, destacados, resumenParaCompartir,
     COPIA_APP, COPIA_VERSION, CLAVES_COPIA, limpiarCopia, crearCopia, leerCopia, resumenCopia,
