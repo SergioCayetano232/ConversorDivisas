@@ -1372,7 +1372,28 @@ const NOMBRE_VIAJE_MAX = 24;
 
 const limpiarNombreViaje = (nombre) => String(nombre ?? "").replace(/\s+/g, " ").trim().slice(0, NOMBRE_VIAJE_MAX);
 
-const viajeVacio = (id, nombre = "") => ({ id, nombre: limpiarNombreViaje(nombre), gastos: [], presupuesto: null, cajero: [], personas: 1 });
+const viajeVacio = (id, nombre = "", color = COLOR_POR_DEFECTO) => ({ id, nombre: limpiarNombreViaje(nombre), gastos: [], presupuesto: null, cajero: [], personas: 1, color });
+
+// El color de cada viaje, para saber de un vistazo en cuál estás apuntando. Los
+// de antes, en el dorado de siempre.
+const COLORES_VIAJE = ["oro", "azul", "coral", "jade", "lila", "rosa"];
+const COLOR_POR_DEFECTO = "oro";
+const leerColorViaje = (c) => (COLORES_VIAJE.includes(c) ? c : COLOR_POR_DEFECTO);
+
+// Al nuevo, el primero que no tenga nadie. Con los seis cogidos, vuelta a empezar.
+function colorLibre(lista) {
+  const usados = new Set(lista.map((v) => v.color));
+  return COLORES_VIAJE.find((c) => !usados.has(c)) ?? COLORES_VIAJE[lista.length % COLORES_VIAJE.length];
+}
+
+function siguienteColor(viajes, id) {
+  return {
+    ...viajes,
+    lista: viajes.lista.map((v) => (v.id === id
+      ? { ...v, color: COLORES_VIAJE[(COLORES_VIAJE.indexOf(leerColorViaje(v.color)) + 1) % COLORES_VIAJE.length] }
+      : v)),
+  };
+}
 
 // Los viajes de antes no dicen cuántos ibais: uno, que es como se veían.
 const leerPersonas = (n) => (Number.isInteger(n) && n >= 1 && n <= PERSONAS_MAX ? n : 1);
@@ -1393,7 +1414,7 @@ function leerViajes(guardado, gastosSueltos, presupuestoSuelto) {
     .slice(0, VIAJES_MAX)
     .map((v) => ({
       id: v.id, nombre: limpiarNombreViaje(v.nombre), gastos: leerGastos(v.gastos), presupuesto: leerPresupuesto(v.presupuesto),
-      cajero: leerRetiradas(v.cajero), personas: leerPersonas(v.personas),
+      cajero: leerRetiradas(v.cajero), personas: leerPersonas(v.personas), color: leerColorViaje(v.color),
     }));
   if (lista.length === 0) {
     lista.push({ ...viajeVacio("primero"), gastos: leerGastos(gastosSueltos), presupuesto: leerPresupuesto(presupuestoSuelto) });
@@ -1408,7 +1429,7 @@ const viajeActivo = (viajes) => viajes.lista.find((v) => v.id === viajes.activo)
 function crearViaje(viajes, id, nombre) {
   const limpio = limpiarNombreViaje(nombre);
   if (!limpio || viajes.lista.length >= VIAJES_MAX || viajes.lista.some((v) => v.id === id)) return viajes;
-  return { activo: id, lista: [...viajes.lista, viajeVacio(id, limpio)] };
+  return { activo: id, lista: [...viajes.lista, viajeVacio(id, limpio, colorLibre(viajes.lista))] };
 }
 
 function renombrarViaje(viajes, id, nombre) {
@@ -2229,7 +2250,7 @@ if (typeof module !== "undefined") {
     CATEGORIAS, CATEGORIA_POR_DEFECTO, adivinarCategoria, PAGOS, PAGO_POR_DEFECTO, leerPago, comisionDelPago, desglose, conceptosUsados, completarConcepto,
     EMOJI_CATEGORIA, destacados, resumenParaCompartir,
     COPIA_APP, COPIA_VERSION, CLAVES_COPIA, limpiarCopia, crearCopia, leerCopia, resumenCopia,
-    VIAJES_MAX, NOMBRE_VIAJE_MAX, leerViajes, leerPersonas, porPersona, compararViajes, viajeActivo, crearViaje, renombrarViaje, elegirViaje, borrarViaje, cambiarViaje, resumenViaje, archivoGastos,
+    VIAJES_MAX, NOMBRE_VIAJE_MAX, leerViajes, leerPersonas, porPersona, compararViajes, COLORES_VIAJE, leerColorViaje, colorLibre, siguienteColor, viajeActivo, crearViaje, renombrarViaje, elegirViaje, borrarViaje, cambiarViaje, resumenViaje, archivoGastos,
     diasHasta, leerPresupuesto, PRESUPUESTO_JUSTO, estadoPresupuesto, inicioDelViaje, diaDelViaje, hastaCuandoLlega, loQueSeLleva, redondearDias,
     EXTRAS_MAX, EXTRAS_POR_DEFECTO, leerExtras, anadirExtra, quitarExtra,
     extrasVisibles, disponiblesParaAnadir, convertirExtras, semanaDe, trazoMini, CHULETA, escalaChuleta, chuleta, chuletaParaCompartir,

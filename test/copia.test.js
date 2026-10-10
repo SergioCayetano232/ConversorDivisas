@@ -6,8 +6,8 @@ const gasto = (id) => ({ id, from: "USD", to: "EUR", cantidad: 12, valor: 10, co
 const viajes = {
   activo: "j",
   lista: [
-    { id: "j", nombre: "Japón", gastos: [gasto("1"), gasto("2")], presupuesto: null, cajero: [{ id: "r1", cantidad: 20000, divisa: "JPY", cuando: 1 }], personas: 3 },
-    { id: "l", nombre: "Lisboa", gastos: [gasto("3")], presupuesto: { importe: 300, to: "EUR", hasta: "2026-11-01" }, cajero: [], personas: 1 },
+    { id: "j", nombre: "Japón", gastos: [gasto("1"), gasto("2")], presupuesto: null, cajero: [{ id: "r1", cantidad: 20000, divisa: "JPY", cuando: 1 }], personas: 3, color: "coral" },
+    { id: "l", nombre: "Lisboa", gastos: [gasto("3")], presupuesto: { importe: 300, to: "EUR", hasta: "2026-11-01" }, cajero: [], personas: 1, color: "oro" },
   ],
 };
 const aviso = { id: "a", from: "EUR", to: "USD", sentido: "sube", umbral: 1.2 };

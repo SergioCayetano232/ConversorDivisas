@@ -1,4 +1,11 @@
 :root {
+  --viaje-oro: #E8B75C;
+  --viaje-azul: #5AA9E6;
+  --viaje-coral: #F0806A;
+  --viaje-jade: #3FB8AF;
+  --viaje-lila: #A78BFA;
+  --viaje-rosa: #E879A6;
+
   --graphite: #0B0E13;
   --slate: rgba(255, 255, 255, 0.04);
   --mist: #E6EDF3;
@@ -48,6 +55,13 @@
 
 @media (prefers-color-scheme: light) {
   :root {
+    --viaje-oro: #9A6B14;
+    --viaje-azul: #1F6FB2;
+    --viaje-coral: #C2502F;
+    --viaje-jade: #1E8A80;
+    --viaje-lila: #6D4FD1;
+    --viaje-rosa: #B83E77;
+
     --graphite: #F4F1EA;
     --slate: rgba(0, 0, 0, 0.03);
     --mist: #1A1D23;
@@ -1686,6 +1700,86 @@ body::after {
   transform-origin: top center;
 }
 
+/* Cada viaje con su color: dentro del panel, el dorado pasa a ser el suyo. El
+   oro se queda con los tonos de siempre, que en claro y oscuro no son una mezcla. */
+.gastos[data-color="azul"] { --acento: var(--viaje-azul); }
+.gastos[data-color="coral"] { --acento: var(--viaje-coral); }
+.gastos[data-color="jade"] { --acento: var(--viaje-jade); }
+.gastos[data-color="lila"] { --acento: var(--viaje-lila); }
+.gastos[data-color="rosa"] { --acento: var(--viaje-rosa); }
+
+.gastos[data-color]:not([data-color="oro"]) {
+  --brass: var(--acento);
+  --brass-dim: color-mix(in srgb, var(--acento) 45%, transparent);
+  --brass-ghost: color-mix(in srgb, var(--acento) 12%, transparent);
+  --brass-glow: color-mix(in srgb, var(--acento) 28%, transparent);
+}
+
+/* Al cambiar de color, un destello del nuevo por el borde. */
+.gastos.is-tinte {
+  animation: tinte 700ms var(--ease-out);
+}
+
+@keyframes tinte {
+  0% {
+    box-shadow: 0 0 0 2px var(--brass), 0 0 32px -4px var(--brass-glow);
+  }
+}
+
+/* El punto de delante del nombre es el botón del color: así no quita sitio. */
+.viajes__color {
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  align-self: stretch;
+  width: 18px;
+  min-height: 28px;
+  margin-right: -2px;
+  padding: 0;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: border-color var(--fast) var(--ease), transform var(--fast) var(--ease-spring);
+}
+
+.viajes__color::before {
+  content: "";
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--acento-fila);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--acento-fila) 25%, transparent), 0 0 8px color-mix(in srgb, var(--acento-fila) 50%, transparent);
+  transition: transform var(--mid) var(--ease-spring);
+}
+
+.viajes__color:hover {
+  border-color: color-mix(in srgb, var(--acento-fila) 55%, transparent);
+}
+
+.viajes__color:hover::before {
+  transform: scale(1.25);
+}
+
+.viajes__color:active {
+  transform: scale(0.88);
+}
+
+.viajes__color:focus-visible {
+  outline: 2px solid var(--acento-fila);
+  outline-offset: 1px;
+}
+
+.viajes__color.is-nuevo::before {
+  animation: color-gira 420ms var(--ease-spring);
+}
+
+@keyframes color-gira {
+  0% {
+    transform: scale(0.3) rotate(-90deg);
+  }
+}
+
 .gastos__arriba {
   display: flex;
   align-items: center;
@@ -2314,6 +2408,14 @@ body::after {
   box-shadow: 0 0 6px var(--brass-glow);
 }
 
+.viajes__fila .viajes__elegir {
+  padding-left: var(--s-2);
+}
+
+.viajes__fila .viajes__elegir::before {
+  display: none;
+}
+
 .viajes__nombre {
   flex: 1;
   min-width: 0;
@@ -2374,10 +2476,14 @@ body::after {
 }
 
 .viajes__media {
+  flex-shrink: 0;
+  white-space: nowrap;
   color: var(--mist);
 }
 
 .viajes__extremo {
+  flex-shrink: 0;
+  white-space: nowrap;
   padding: 0 5px;
   border-radius: 999px;
   font-family: var(--font-ui);

@@ -3050,6 +3050,20 @@ const nombreViaje = (viaje) => viaje.nombre || tr("viajes.sinNombre");
 function pintarTituloViaje() {
   const viaje = viajeActivo(viajes);
   el.gastosTitulo.textContent = viaje.nombre || tr(viajes.lista.length > 1 ? "viajes.sinNombre" : "gastos");
+  el.gastos.dataset.color = viaje.color;
+}
+
+function onColorViaje(viaje) {
+  viajes = siguienteColor(viajes, viaje.id);
+  guardarViajes();
+  pintarViajes();
+  const boton = el.viajesLista.querySelector(`[data-id="${viaje.id}"] .viajes__color`);
+  restartAnimation(boton, "is-nuevo");
+  boton.focus();
+  if (viaje.id === viajes.activo) {
+    pintarTituloViaje();
+    restartAnimation(el.gastos, "is-tinte");
+  }
 }
 
 let borrarViajeId = null;
@@ -3059,6 +3073,7 @@ function crearFilaViaje(viaje, i) {
   fila.className = "viajes__fila";
   fila.dataset.id = viaje.id;
   fila.style.setProperty("--i", i);
+  fila.style.setProperty("--acento-fila", `var(--viaje-${viaje.color})`);
   const activo = viaje.id === viajes.activo;
   fila.classList.toggle("is-activo", activo);
 
@@ -3088,7 +3103,14 @@ function crearFilaViaje(viaje, i) {
   renombrar.title = renombrar.getAttribute("aria-label");
   renombrar.addEventListener("click", () => empezarRenombrar(fila, viaje));
 
-  fila.append(elegir, renombrar);
+  const color = document.createElement("button");
+  color.type = "button";
+  color.className = "viajes__color";
+  color.setAttribute("aria-label", tr("viajes.color", { nombre: nombreViaje(viaje), color: tr(`color.${viaje.color}`) }));
+  color.title = color.getAttribute("aria-label");
+  color.addEventListener("click", () => onColorViaje(viaje));
+
+  fila.append(color, elegir, renombrar);
   if (viajes.lista.length > 1) {
     const borrar = document.createElement("button");
     borrar.type = "button";
