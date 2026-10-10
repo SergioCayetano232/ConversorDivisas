@@ -664,6 +664,30 @@ function chuletaParaCompartir(filas, from, to, comision = 0) {
   return texto.join("\n");
 }
 
+// La chuleta para imprimir va por la URL de su pestaña: así no depende de que el
+// popup siga abierto, que se cierra en cuanto sale el diálogo de imprimir.
+function urlImpresion({ from, to, rate, comision = 0, fecha = null }) {
+  const p = new URLSearchParams({ from, to, rate: String(rate), comision: String(comision) });
+  if (fecha) p.set("fecha", fecha);
+  return `imprimir.html?${p}`;
+}
+
+function leerImpresion(busqueda) {
+  const p = new URLSearchParams(busqueda);
+  const from = p.get("from");
+  const to = p.get("to");
+  const rate = Number(p.get("rate"));
+  if (!isValidCode(from) || !isValidCode(to) || from === to || !(rate > 0) || !Number.isFinite(rate)) return null;
+  const fecha = p.get("fecha");
+  return { from, to, rate, comision: leerComision(Number(p.get("comision"))), fecha: esIso(fecha) ? fecha : null };
+}
+
+// Por las dos caras: la de los precios de allí y la de cuánto te dan por lo tuyo.
+// La vuelta va sin comisión, que es lo que recibes y no lo que pagas.
+function chuletaParaImprimir({ rate, comision }) {
+  return { ida: chuleta(rate, comision), vuelta: chuleta(1 / rate) };
+}
+
 // Las tarjetas normales cobran entre un 1 y un 3 %. Más de un 10 % seguro que
 // es un error al teclear.
 const COMISION_MAX = 10;
@@ -2209,6 +2233,7 @@ if (typeof module !== "undefined") {
     diasHasta, leerPresupuesto, PRESUPUESTO_JUSTO, estadoPresupuesto, inicioDelViaje, diaDelViaje, hastaCuandoLlega, loQueSeLleva, redondearDias,
     EXTRAS_MAX, EXTRAS_POR_DEFECTO, leerExtras, anadirExtra, quitarExtra,
     extrasVisibles, disponiblesParaAnadir, convertirExtras, semanaDe, trazoMini, CHULETA, escalaChuleta, chuleta, chuletaParaCompartir,
+    urlImpresion, leerImpresion, chuletaParaImprimir,
     COMISION_MAX, COMISIONES_RAPIDAS, leerComision, leerPorcentaje, conComision,
     IMPUESTO_MAX, IMPUESTOS_RAPIDOS, leerImpuesto, leerImpuestoEscrito, loQuePagas,
     COMPARAR_IGUAL, compararPrecios, inclinacion,

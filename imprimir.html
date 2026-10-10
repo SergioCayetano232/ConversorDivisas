@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>ConversorDivisas · Chuleta para imprimir</title>
+  <link rel="icon" href="icons/icon48.png">
+  <link rel="stylesheet" href="copia.css">
+  <link rel="stylesheet" href="imprimir.css">
+</head>
+<body>
+  <main class="pagina pagina--ancha">
+    <header class="cabeza">
+      <img class="cabeza__logo" src="icons/icon128.png" alt="" width="44" height="44">
+      <div>
+        <p class="cabeza__app">ConversorDivisas</p>
+        <h1 class="cabeza__titulo" data-t="imprimir.titulo">Chuleta para la cartera</h1>
+      </div>
+    </header>
+    <p class="intro" data-t="imprimir.intro">Imprímela, recórtala por fuera y dóblala por la mitad: por un lado los precios de allí y por el otro lo que te dan por lo tuyo. Cabe donde las tarjetas.</p>
+
+    <section class="hoja" aria-labelledby="hoja-titulo">
+      <h2 class="tarjeta__titulo" id="hoja-titulo" data-t="imprimir.vista">Así sale</h2>
+      <div class="cartera" id="cartera"></div>
+      <p class="error" id="error" role="alert" hidden></p>
+      <button class="boton boton--dorado" type="button" id="imprimir">
+        <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4.5 6V2.5h7V6"/><rect x="2" y="6" width="12" height="5.5" rx="1.2"/><path d="M4.5 9.5h7v4h-7z"/></svg>
+        <span data-t="imprimir.boton">Imprimir</span>
+      </button>
+    </section>
+
+    <footer class="pie">
+      <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M2 5.5h12M2 10.5h12" stroke-dasharray="2 2"/></svg>
+      <span data-t="imprimir.pie">Mide lo que una tarjeta de crédito. Imprime al 100 %, sin ajustar a la página.</span>
+    </footer>
+  </main>
+
+  <script src="textos.js"></script>
+  <script src="logica.js"></script>
+  <script src="imprimir.js"></script>
+</body>
+</html>

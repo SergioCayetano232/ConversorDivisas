@@ -175,6 +175,7 @@ const el = {
   comisionCampo: document.getElementById("comision-campo"),
   chuletaTabla: document.getElementById("chuleta-tabla"),
   chuletaCompartir: document.getElementById("chuleta-compartir"),
+  chuletaImprimir: document.getElementById("chuleta-imprimir"),
   campana: document.getElementById("vista-avisos"),
   abrirAyuda: document.getElementById("abrir-ayuda"),
   abrirCopia: document.getElementById("abrir-copia"),
@@ -1435,6 +1436,7 @@ function pintarChuleta() {
   const to = el.to.value;
   const filas = chuleta(rate, comision);
   el.chuletaCompartir.disabled = filas[0].valor === null;
+  el.chuletaImprimir.disabled = filas[0].valor === null;
   const tuya = cantidadOrigen();
   if (el.chuletaTabla.children.length !== filas.length) {
     el.chuletaTabla.replaceChildren(...filas.map(crearFilaChuleta));
@@ -1480,6 +1482,11 @@ async function onCompartirChuleta() {
     setTimeout(() => el.chuletaTabla.classList.remove("is-copiada"), 1000);
   }
   mostrarFlash([tr(bien ? "chuleta.copiada" : "compartir.fallo")], 2200);
+}
+
+function onImprimirChuleta() {
+  if (rate === null) return;
+  chrome.tabs.create({ url: urlImpresion({ from: el.from.value, to: el.to.value, rate, comision, fecha: rateDate }) });
 }
 
 function onElegirChuleta(cantidad) {
@@ -4589,6 +4596,7 @@ function bindEvents() {
   el.historialCsv.addEventListener("click", () => descargarCsv(csvHistorial(historial), tr("csv.archivoHistorial"), el.historialCsv));
   el.gastosCompartir.addEventListener("click", onCompartir);
   el.chuletaCompartir.addEventListener("click", onCompartirChuleta);
+  el.chuletaImprimir.addEventListener("click", onImprimirChuleta);
   el.gastosCsv.addEventListener("click", () => descargarCsv(csvGastos(gastos), archivoGastos(viajeActivo(viajes).nombre), el.gastosCsv));
   el.abrirGastos.addEventListener("click", () => (el.gastos.hidden ? abrirGastos() : cerrarGastos()));
   el.abrirGastos.addEventListener("animationend", () => el.abrirGastos.classList.remove("is-apuntado"));

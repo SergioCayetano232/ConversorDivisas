@@ -5077,7 +5077,27 @@ body::after {
 .chuleta__pie {
   display: flex;
   justify-content: flex-end;
+  gap: 4px;
   margin-top: 5px;
+}
+
+/* La impresora: al pasar por encima asoma el papel. */
+.imprimir__icono {
+  grid-area: 1 / 1;
+  width: 11px;
+  height: 11px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.2;
+  stroke-linejoin: round;
+}
+
+.imprimir__papel {
+  transition: transform var(--mid) var(--ease-spring);
+}
+
+.chuleta__imprimir:hover:not(:disabled) .imprimir__papel {
+  transform: translateY(1.2px);
 }
 
 /* El bocadillo de compartir de los gastos, con su nombre al lado. */

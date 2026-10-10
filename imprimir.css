@@ -1,0 +1,195 @@
+/* La chuleta de la cartera. Lo de fondo, colores y botones viene de copia.css;
+   aquí solo la tarjeta, que en pantalla es de cristal y en papel, tinta. */
+.pagina--ancha {
+  max-width: 760px;
+}
+
+.hoja {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 16px;
+}
+
+/* Dos caras del tamaño de una tarjeta de crédito, pegadas por el doblez. */
+.cartera {
+  --ancho: 85.6mm;
+  --alto: 54mm;
+  display: flex;
+  flex-wrap: wrap;
+  border: 1px dashed var(--dorado-tenue);
+  border-radius: 4mm;
+  animation: entrar var(--lento) var(--muelle) backwards;
+}
+
+.cara {
+  display: flex;
+  flex-direction: column;
+  width: var(--ancho);
+  height: var(--alto);
+  padding: 3mm 4mm 2.5mm;
+  background: var(--cristal);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  box-shadow: inset 0 1px 0 var(--brillo);
+}
+
+.cara:first-child {
+  border-radius: 4mm 0 0 4mm;
+}
+
+.cara:last-child {
+  border-left: 1px dashed var(--dorado-tenue);
+  border-radius: 0 4mm 4mm 0;
+}
+
+.cara__cabeza {
+  padding-bottom: 1.5mm;
+  border-bottom: 1px solid var(--borde-fuerte);
+}
+
+.cara__par {
+  display: flex;
+  align-items: center;
+  gap: 2mm;
+  font-family: var(--mono);
+  font-size: 10pt;
+}
+
+.cara__par i {
+  font-style: normal;
+  color: var(--dorado);
+}
+
+.cara__filas {
+  flex: 1;
+  display: grid;
+  align-content: space-evenly;
+  list-style: none;
+  font-family: var(--mono);
+  font-size: 9.5pt;
+  font-variant-numeric: tabular-nums;
+}
+
+.cara__filas li {
+  display: flex;
+  justify-content: space-between;
+  gap: 4mm;
+  padding: 0.3mm 0;
+  border-bottom: 1px dotted var(--borde);
+}
+
+.cara__filas li:last-child {
+  border-bottom: none;
+}
+
+.cara__filas li span:last-child {
+  font-weight: 700;
+  color: var(--dorado);
+}
+
+.cara__filas li {
+  animation: entrar var(--medio) var(--suave) backwards;
+}
+
+.cara__filas li:nth-child(2) { animation-delay: 40ms; }
+.cara__filas li:nth-child(3) { animation-delay: 80ms; }
+.cara__filas li:nth-child(4) { animation-delay: 120ms; }
+.cara__filas li:nth-child(5) { animation-delay: 160ms; }
+.cara__filas li:nth-child(6) { animation-delay: 200ms; }
+
+.cara__pie {
+  font-size: 6.5pt;
+  color: var(--tenue);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.boton:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+/* Sin sitio para las dos, una encima de otra y el doblez en medio. */
+@media screen and (max-width: 720px) {
+  .cartera {
+    flex-direction: column;
+  }
+
+  .cara:first-child {
+    border-radius: 4mm 4mm 0 0;
+  }
+
+  .cara:last-child {
+    border-left: none;
+    border-top: 1px dashed var(--dorado-tenue);
+    border-radius: 0 0 4mm 4mm;
+  }
+}
+
+/* En papel solo la tarjeta, en tinta negra y a tamaño real. */
+@page {
+  margin: 15mm;
+}
+
+@media print {
+  html,
+  body {
+    background: #fff !important;
+    color: #000;
+  }
+
+  body::before,
+  .cabeza,
+  .intro,
+  .tarjeta__titulo,
+  .boton,
+  .pie,
+  .error {
+    display: none !important;
+  }
+
+  .pagina {
+    padding: 0;
+  }
+
+  .pagina > *,
+  .cartera,
+  .cara__filas li {
+    animation: none !important;
+  }
+
+  .cartera {
+    flex-wrap: nowrap;
+    border-color: #999;
+  }
+
+  .cara {
+    background: #fff;
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+    box-shadow: none;
+  }
+
+  .cara:last-child {
+    border-left-color: #999;
+  }
+
+  .cara__cabeza {
+    border-bottom-color: #000;
+  }
+
+  .cara__par i,
+  .cara__filas li span:last-child {
+    color: #000;
+  }
+
+  .cara__filas li {
+    border-bottom-color: #ccc;
+  }
+
+  .cara__pie {
+    color: #555;
+  }
+}
