@@ -2539,6 +2539,89 @@ body::after {
   --tono: var(--cinnabar);
 }
 
+/* Cuántos sois: solo, una invitación apagada; con gente, lo de cada uno en
+   dorado como el total. El − no sale hasta que hay a quién quitar. */
+.gastos__personas {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  min-width: 0;
+  margin-left: -4px;
+  font-size: 10px;
+  font-variant-numeric: tabular-nums;
+  color: var(--muted);
+}
+
+.gastos__personas[hidden] {
+  display: none;
+}
+
+.gastos__paso {
+  display: grid;
+  place-items: center;
+  width: 18px;
+  height: 16px;
+  padding: 0;
+  background: transparent;
+  border: none;
+  border-radius: 5px;
+  color: inherit;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  line-height: 1;
+  cursor: pointer;
+  transition: color var(--fast) var(--ease), background-color var(--fast) var(--ease), transform var(--fast) var(--ease-spring),
+    opacity var(--fast) var(--ease);
+}
+
+.gastos__paso:hover:not(:disabled) {
+  color: var(--brass);
+  background: var(--brass-ghost);
+}
+
+.gastos__paso:active:not(:disabled) {
+  transform: scale(0.8);
+}
+
+.gastos__paso:disabled {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.gastos__paso:focus-visible {
+  outline: 2px solid var(--brass);
+  outline-offset: 1px;
+}
+
+.gastos__gente {
+  min-width: 26px;
+  font-family: var(--font-mono);
+  text-align: center;
+  white-space: nowrap;
+}
+
+.gastos__cabeza {
+  overflow: hidden;
+  margin-left: 4px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.gastos__personas[data-varios="true"] .gastos__gente {
+  color: var(--mist);
+}
+
+.gastos__personas[data-varios="true"] .gastos__cabeza {
+  font-family: var(--font-mono);
+  font-weight: 600;
+  color: var(--brass);
+}
+
+.gastos__gente.is-tic,
+.gastos__cabeza.is-tic {
+  animation: beat var(--mid) var(--ease-spring);
+}
+
 /* Sin nada sacado ni pagado, es una invitación: más discreta. */
 .gastos__efectivo.is-vacio {
   color: var(--muted);

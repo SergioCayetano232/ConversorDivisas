@@ -103,6 +103,11 @@ const el = {
   cajeroCantidad: document.getElementById("cajero-cantidad"),
   cajeroDivisa: document.getElementById("cajero-divisa"),
   cajeroSugerencia: document.getElementById("cajero-sugerencia"),
+  gastosPersonas: document.getElementById("gastos-personas"),
+  personasMenos: document.getElementById("personas-menos"),
+  personasN: document.getElementById("personas-n"),
+  personasMas: document.getElementById("personas-mas"),
+  personasCabeza: document.getElementById("personas-cabeza"),
   cajeroLista: document.getElementById("cajero-lista"),
   viajesLista: document.getElementById("viajes-lista"),
   viajesNuevo: document.getElementById("viajes-nuevo"),
@@ -2467,6 +2472,29 @@ function pintarCajero() {
   pintarSugerencia();
 }
 
+function pintarPersonas(conSalto = false) {
+  const { personas } = viajeActivo(viajes);
+  el.gastosPersonas.hidden = gastos.length === 0;
+  el.gastosPersonas.dataset.varios = personas > 1;
+  el.personasN.textContent = `${personas > 1 ? "👥" : "👤"} ${personas}`;
+  el.personasN.title = personas > 1 ? tr("personas.titulo", { n: personas }) : tr("personas.solo");
+  el.personasMenos.disabled = personas <= 1;
+  el.personasMas.disabled = personas >= PERSONAS_MAX;
+  const cabeza = porPersona(gastos, personas);
+  // Sin la divisa, como la media: al lado de los botones no cabe y ya está en el total.
+  el.personasCabeza.textContent = cabeza ? tr("personas.cada", { valor: nf.format(cabeza.total) }) : tr("personas.cuantos");
+  el.personasCabeza.title = cabeza ? tr("personas.cada", { valor: `${nf.format(cabeza.total)} ${cabeza.to}` }) : "";
+  if (conSalto) restartAnimation(cabeza ? el.personasCabeza : el.personasN, "is-tic");
+}
+
+function onPersonas(paso) {
+  const personas = leerPersonas(viajeActivo(viajes).personas + paso);
+  if (personas === viajeActivo(viajes).personas) return;
+  viajes = cambiarViaje(viajes, viajes.activo, { personas });
+  guardarViajes();
+  pintarPersonas(true);
+}
+
 // La tasa de arriba solo vale si va a la divisa del presupuesto.
 function pintarSugerencia() {
   const boton = el.cajeroSugerencia;
@@ -2561,6 +2589,7 @@ function pintarGastos() {
   }
   pintarComisiones();
   pintarEfectivo();
+  pintarPersonas();
 
   pintarDesglose();
   // Buscando, las categorías se esconden: busco en todos.
@@ -4553,6 +4582,8 @@ function bindEvents() {
   el.cajeroForm.addEventListener("submit", onSacar);
   el.cajeroCantidad.addEventListener("animationend", () => el.cajeroCantidad.classList.remove("is-mal", "is-cambiado"));
   el.cajeroSugerencia.addEventListener("click", onSugerencia);
+  el.personasMenos.addEventListener("click", () => onPersonas(-1));
+  el.personasMas.addEventListener("click", () => onPersonas(1));
   el.viaje.addEventListener("animationend", () => el.viaje.classList.remove("is-estreno"));
   el.gastosTitulo.addEventListener("animationend", () => el.gastosTitulo.classList.remove("is-cambiado"));
   el.viajesNuevo.addEventListener("submit", onCrearViaje);

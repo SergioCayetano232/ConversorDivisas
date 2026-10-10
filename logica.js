@@ -1348,7 +1348,17 @@ const NOMBRE_VIAJE_MAX = 24;
 
 const limpiarNombreViaje = (nombre) => String(nombre ?? "").replace(/\s+/g, " ").trim().slice(0, NOMBRE_VIAJE_MAX);
 
-const viajeVacio = (id, nombre = "") => ({ id, nombre: limpiarNombreViaje(nombre), gastos: [], presupuesto: null, cajero: [] });
+const viajeVacio = (id, nombre = "") => ({ id, nombre: limpiarNombreViaje(nombre), gastos: [], presupuesto: null, cajero: [], personas: 1 });
+
+// Los viajes de antes no dicen cuántos ibais: uno, que es como se veían.
+const leerPersonas = (n) => (Number.isInteger(n) && n >= 1 && n <= PERSONAS_MAX ? n : 1);
+
+// Lo que sale por cabeza en la divisa principal, que es la del total de arriba.
+function porPersona(gastos, personas) {
+  const principal = sumarPorDivisa(gastos)[0];
+  if (!principal || leerPersonas(personas) < 2) return null;
+  return { total: principal.total / personas, to: principal.to, personas };
+}
 
 // Antes de los viajes había una sola lista y un presupuesto sueltos: pasan a
 // ser el primer viaje, sin nombre, para que nadie pierda lo que tenía.
@@ -1359,7 +1369,7 @@ function leerViajes(guardado, gastosSueltos, presupuestoSuelto) {
     .slice(0, VIAJES_MAX)
     .map((v) => ({
       id: v.id, nombre: limpiarNombreViaje(v.nombre), gastos: leerGastos(v.gastos), presupuesto: leerPresupuesto(v.presupuesto),
-      cajero: leerRetiradas(v.cajero),
+      cajero: leerRetiradas(v.cajero), personas: leerPersonas(v.personas),
     }));
   if (lista.length === 0) {
     lista.push({ ...viajeVacio("primero"), gastos: leerGastos(gastosSueltos), presupuesto: leerPresupuesto(presupuestoSuelto) });
@@ -1431,7 +1441,7 @@ function destacados(gastos) {
 // Para pegarlo en WhatsApp: lo de entre asteriscos sale en negrita, y en
 // cualquier otro sitio se lee igual de bien. Los días van del primero al último,
 // que es como se cuenta un viaje.
-function resumenParaCompartir({ nombre, gastos, presupuesto }, hoyIso = hoy()) {
+function resumenParaCompartir({ nombre, gastos, presupuesto, personas }, hoyIso = hoy()) {
   if (gastos.length === 0) return "";
   const dinero = (n, to) => `${numeros({ minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(n)} ${to}`;
   const sumas = (totales) => totales.map(({ total, to }) => dinero(total, to)).join(" + ");
@@ -1441,6 +1451,8 @@ function resumenParaCompartir({ nombre, gastos, presupuesto }, hoyIso = hoy()) {
     `*🧳 ${nombre}*`,
     tr("compartir.total", { total: `*${sumas(sumarPorDivisa(gastos))}*`, n: n === 1 ? tr("gastos.uno") : tr("gastos.n", { n }) }),
   ];
+  const cabeza = porPersona(gastos, personas);
+  if (cabeza) lineas.push(tr("compartir.porPersona", { personas: cabeza.personas, valor: dinero(cabeza.total, cabeza.to) }));
 
   const { caro, dia } = destacados(gastos);
   if (caro) {
@@ -2163,7 +2175,7 @@ if (typeof module !== "undefined") {
     CATEGORIAS, CATEGORIA_POR_DEFECTO, adivinarCategoria, PAGOS, PAGO_POR_DEFECTO, leerPago, comisionDelPago, desglose, conceptosUsados, completarConcepto,
     EMOJI_CATEGORIA, destacados, resumenParaCompartir,
     COPIA_APP, COPIA_VERSION, CLAVES_COPIA, limpiarCopia, crearCopia, leerCopia, resumenCopia,
-    VIAJES_MAX, NOMBRE_VIAJE_MAX, leerViajes, viajeActivo, crearViaje, renombrarViaje, elegirViaje, borrarViaje, cambiarViaje, resumenViaje, archivoGastos,
+    VIAJES_MAX, NOMBRE_VIAJE_MAX, leerViajes, leerPersonas, porPersona, viajeActivo, crearViaje, renombrarViaje, elegirViaje, borrarViaje, cambiarViaje, resumenViaje, archivoGastos,
     diasHasta, leerPresupuesto, PRESUPUESTO_JUSTO, estadoPresupuesto, inicioDelViaje, diaDelViaje, hastaCuandoLlega, loQueSeLleva, redondearDias,
     EXTRAS_MAX, EXTRAS_POR_DEFECTO, leerExtras, anadirExtra, quitarExtra,
     extrasVisibles, disponiblesParaAnadir, convertirExtras, semanaDe, trazoMini, CHULETA, escalaChuleta, chuleta, chuletaParaCompartir,
