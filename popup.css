@@ -6351,6 +6351,77 @@ body::after {
   animation-delay: 700ms;
 }
 
+/* Qué día de la semana sale mejor: cinco barritas con su inicial debajo y la
+   del mejor en dorado. */
+.trend__semana {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 8px;
+  padding-top: 7px;
+  border-top: 1px solid var(--hairline);
+  font-size: 10px;
+  color: var(--muted);
+  animation: fade 600ms var(--ease-out) backwards;
+  animation-delay: 850ms;
+}
+
+.trend__semana[hidden] {
+  display: none;
+}
+
+.semana__barras {
+  display: flex;
+  align-items: flex-end;
+  gap: 2px;
+  flex-shrink: 0;
+  height: 22px;
+  padding-bottom: 9px;
+}
+
+.semana__barra {
+  position: relative;
+  width: 5px;
+  height: calc(var(--alto, 0.5) * 13px);
+  border-radius: 2px 2px 1px 1px;
+  background: var(--hairline-strong);
+  transform-origin: bottom;
+  animation: semana-crece 500ms var(--ease-spring) backwards;
+  animation-delay: calc(900ms + var(--i, 0) * 50ms);
+}
+
+.semana__barra::after {
+  content: attr(data-dia);
+  position: absolute;
+  top: calc(100% + 2px);
+  left: 50%;
+  font-family: var(--font-mono);
+  font-size: 7px;
+  line-height: 1;
+  transform: translateX(-50%);
+}
+
+.semana__barra.is-mejor {
+  background: var(--brass);
+  box-shadow: 0 0 6px var(--brass-glow);
+}
+
+.semana__barra.is-mejor::after {
+  color: var(--brass);
+  font-weight: 700;
+}
+
+@keyframes semana-crece {
+  from {
+    transform: scaleY(0);
+  }
+}
+
+.semana__texto {
+  min-width: 0;
+  line-height: 1.35;
+}
+
 .trend__extremo::before {
   margin-right: 4px;
   font-size: 8px;
@@ -6740,6 +6811,7 @@ kbd {
   .categorias__opcion,
   .desglose__trozo,
   .viajes__peso::after,
+  .semana__barra,
   .aviso.is-nueva,
   .burbuja__rapida,
   .ayuda__fila,

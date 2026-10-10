@@ -176,6 +176,9 @@ const el = {
   chuletaTabla: document.getElementById("chuleta-tabla"),
   chuletaCompartir: document.getElementById("chuleta-compartir"),
   chuletaImprimir: document.getElementById("chuleta-imprimir"),
+  semana: document.getElementById("trend-semana"),
+  semanaBarras: document.getElementById("semana-barras"),
+  semanaTexto: document.getElementById("semana-texto"),
   campana: document.getElementById("vista-avisos"),
   abrirAyuda: document.getElementById("abrir-ayuda"),
   abrirCopia: document.getElementById("abrir-copia"),
@@ -866,6 +869,7 @@ function hideTrend() {
   el.trendChange.textContent = "";
   el.trendChange.classList.remove("is-up", "is-down");
   pintarMomento(null);
+  pintarDiaSemana(null);
   parDeLaSerie = "";
   pintarCambioDia();
 }
@@ -998,6 +1002,7 @@ function renderTrend(puntos) {
   hayGrafico = true;
   pintarVista();
   pintarMomento(values);
+  pintarDiaSemana(puntos);
   parDeLaSerie = `${el.from.value}-${el.to.value}`;
   pintarCambioDia(true);
   if (!el.trend.hidden) dibujarLinea();
@@ -1030,6 +1035,32 @@ function pintarMomento(values) {
   el.textoMedia.style.top = `${(y / 28) * 100}%`;
   restartAnimation(el.lineaMedia);
   restartAnimation(el.textoMedia);
+}
+
+// De lunes a viernes, cada barra lo que ese día se aparta de su semana. Con 7
+// días o un mes no hay semanas bastantes y no sale.
+function pintarDiaSemana(puntos) {
+  const r = puntos ? mejorDiaSemana(puntos) : null;
+  el.semana.hidden = !r;
+  if (!r) return;
+  const medias = r.porDia.map((d) => d.media);
+  const max = Math.max(...medias);
+  const min = Math.min(...medias);
+  // La inicial corta del idioma: en español el miércoles es la X, que con la
+  // primera letra martes y miércoles salían iguales.
+  const inicial = (dia) => fechas({ weekday: "narrow" }).format(new Date(2026, 0, 4 + dia));
+  el.semanaBarras.replaceChildren(...r.porDia.map(({ dia, media }, i) => {
+    const barra = document.createElement("span");
+    barra.className = "semana__barra";
+    barra.style.setProperty("--alto", max === min ? 0.5 : 0.25 + (0.75 * (media - min)) / (max - min));
+    barra.style.setProperty("--i", i);
+    barra.dataset.dia = inicial(dia);
+    if (!r.igual && dia === r.mejor) barra.classList.add("is-mejor");
+    return barra;
+  }));
+  el.semanaTexto.textContent = textoDiaSemana(r);
+  el.semana.title = tr("semana.titulo", { semanas: r.semanas });
+  el.semana.dataset.igual = r.igual;
 }
 
 // Se mide ya visible: con el gráfico oculto el SVG tiene ancho cero. El +1 es
@@ -2476,7 +2507,7 @@ function pintarCajero() {
     return fila;
   }));
   retiradaNueva = null;
-  pintarSugerencia();
+  pintarSugerenciaCajero();
 }
 
 function pintarPersonas(conSalto = false) {
@@ -2503,7 +2534,7 @@ function onPersonas(paso) {
 }
 
 // La tasa de arriba solo vale si va a la divisa del presupuesto.
-function pintarSugerencia() {
+function pintarSugerenciaCajero() {
   const boton = el.cajeroSugerencia;
   const tasa = presupuesto && el.to.value === presupuesto.to ? rate : null;
   const s = presupuesto ? cuantoSacar(presupuesto, gastos, cajero, el.from.value, tasa) : null;

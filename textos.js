@@ -100,6 +100,9 @@ const TEXTOS = {
     "grafico.maximo": "Máximo {valor}",
     "media": "media",
 
+    "semana.mejor": "Los {dia} suele darte un {pct} más que los {peor}",
+    "semana.igual": "En estas {semanas} semanas, da igual el día que cambies",
+    "semana.titulo": "Cada día comparado con la media de su semana, en {semanas} semanas",
     "momento.bueno": "Buen momento",
     "momento.normal": "Momento normal",
     "momento.malo": "Mal momento",
@@ -579,6 +582,9 @@ const TEXTOS = {
     "grafico.maximo": "High {valor}",
     "media": "avg",
 
+    "semana.mejor": "{dia}s tend to get you {pct} more than {peor}s",
+    "semana.igual": "Over these {semanas} weeks, the day you change makes no difference",
+    "semana.titulo": "Each day compared with its week's average, over {semanas} weeks",
     "momento.bueno": "Good time",
     "momento.normal": "Normal time",
     "momento.malo": "Bad time",

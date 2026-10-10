@@ -367,6 +367,52 @@ function momento(values) {
   return { media, diferencia: media ? (hoyV - media) / media : 0, posicion, veredicto };
 }
 
+// Qué día de la semana suele salir mejor. Cada día se compara con la media de
+// su semana: si no, en un año que el dólar sube, ganaría el viernes por llegar
+// el último. Con un mes salía un 0,7 % que era pura casualidad: dos meses mínimo.
+const SEMANAS_MINIMAS = 8;
+// Por debajo de un 0,05 % entre el mejor y el peor, da igual el día.
+const DIA_IGUAL = 0.0005;
+
+function mejorDiaSemana(serie) {
+  if (!Array.isArray(serie)) return null;
+  const semanas = new Map();
+  for (const { fecha, valor } of serie) {
+    if (!esIso(fecha) || !(valor > 0)) continue;
+    const [a, m, d] = fecha.split("-").map(Number);
+    const dia = new Date(a, m - 1, d).getDay();
+    if (dia === 0 || dia === 6) continue;
+    const lunes = isoLocal(new Date(a, m - 1, d - dia + 1));
+    if (!semanas.has(lunes)) semanas.set(lunes, []);
+    semanas.get(lunes).push({ dia, valor });
+  }
+  const llenas = [...semanas.values()].filter((s) => s.length >= 3);
+  if (llenas.length < SEMANAS_MINIMAS) return null;
+  const suma = [0, 0, 0, 0, 0, 0];
+  const veces = [0, 0, 0, 0, 0, 0];
+  for (const semana of llenas) {
+    const media = semana.reduce((t, p) => t + p.valor, 0) / semana.length;
+    for (const { dia, valor } of semana) {
+      suma[dia] += (valor - media) / media;
+      veces[dia] += 1;
+    }
+  }
+  const porDia = [1, 2, 3, 4, 5].filter((d) => veces[d] > 0).map((dia) => ({ dia, media: suma[dia] / veces[dia] }));
+  const mejor = porDia.reduce((a, b) => (b.media > a.media ? b : a));
+  const peor = porDia.reduce((a, b) => (b.media < a.media ? b : a));
+  const ventaja = mejor.media - peor.media;
+  return { mejor: mejor.dia, peor: peor.dia, ventaja, igual: ventaja < DIA_IGUAL, semanas: llenas.length, porDia };
+}
+
+// Lunes es el 1, como getDay(). El 5 de enero de 2026 fue lunes.
+const nombreDiaSemana = (dia) => fechas({ weekday: "long" }).format(new Date(2026, 0, 4 + dia));
+
+function textoDiaSemana(r) {
+  if (r.igual) return tr("semana.igual", { semanas: r.semanas });
+  const pct = porCiento(numeros({ maximumFractionDigits: 2 }).format(r.ventaja * 100));
+  return tr("semana.mejor", { dia: nombreDiaSemana(r.mejor), peor: nombreDiaSemana(r.peor), pct });
+}
+
 const porCiento = (n) => tr("pct", { n });
 
 function textoMomento(m, dias, from, to) {
@@ -2240,7 +2286,8 @@ if (typeof module !== "undefined") {
     evaluar, completar, leerImporte, esOperacion, pasoCantidad, leerCantidad,
     normalizar, filtrarDivisas, buildPaths, startDateFor, errorMessageFor,
     RECIENTES_MAX, FIJOS_MAX, apuntarReciente, fijarReciente, leerRecientes, recientesVisibles,
-    RANGOS, RANGO_POR_DEFECTO, leerRango, coordenadas, alturaEn, MOMENTO_UMBRAL, momento, textoMomento, indiceCercano, extremos, fechaCorta, largoEnPantalla,
+    RANGOS, RANGO_POR_DEFECTO, leerRango, coordenadas, alturaEn, MOMENTO_UMBRAL, momento, textoMomento,
+    SEMANAS_MINIMAS, mejorDiaSemana, nombreDiaSemana, textoDiaSemana, indiceCercano, extremos, fechaCorta, largoEnPantalla,
     leerNumero, divisaDe, leerSeleccion, destinoPara, leerPegado, buscarPrecios, precioEntero, leerOmnibox, leerGastoBarra, gastoDeBarra, escaparXml,
     divisaDeIdioma, parPorIdioma, banderaDe, banderaDivisa,
     HISTORIAL_MAX, leerHistorial, apuntarConversion, quitarConversion, haceCuanto, textoParaCopiar, fraseParaCopiar,
