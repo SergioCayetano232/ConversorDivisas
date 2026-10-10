@@ -4783,6 +4783,19 @@ async function init() {
 
   el.amount.focus();
   el.amount.select();
+  if (await tomarAbrirGastos()) abrirGastos();
+}
+
+// Viene de pulsar el recordatorio de la noche.
+async function tomarAbrirGastos() {
+  try {
+    const { abrirGastos: abrir } = await chrome.storage.session.get("abrirGastos");
+    if (abrir) await chrome.storage.session.remove("abrirGastos");
+    return Boolean(abrir);
+  } catch (error) {
+    console.warn("No se pudo leer si abrir los gastos", error);
+    return false;
+  }
 }
 
 init();

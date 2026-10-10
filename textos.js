@@ -415,6 +415,10 @@ const TEXTOS = {
     "insignia.fecha": "Tasa del BCE del {fecha}",
     "menu.convertir": "Convertir «%s»",
     "menu.insignia": "Mostrar la tasa en el icono",
+    "menu.recordatorio": "Recordarme apuntar los gastos",
+    "recordatorio.titulo": "¿Hoy no has gastado nada?",
+    "recordatorio.cuerpo": "No has apuntado ningún gasto hoy. Si se te ha olvidado la cena, aún estás a tiempo.",
+    "recordatorio.cuerpoEn": "No has apuntado nada hoy en {viaje}. Si se te ha olvidado la cena, aún estás a tiempo.",
 
     "tarjeta": "Conversión de divisa",
     "tarjeta.cita": "«{texto}»",
@@ -851,6 +855,10 @@ const TEXTOS = {
     "insignia.fecha": "ECB rate from {fecha}",
     "menu.convertir": "Convert “%s”",
     "menu.insignia": "Show the rate on the icon",
+    "menu.recordatorio": "Remind me to log expenses",
+    "recordatorio.titulo": "Nothing spent today?",
+    "recordatorio.cuerpo": "You haven't logged any expenses today. If you forgot dinner, there's still time.",
+    "recordatorio.cuerpoEn": "You haven't logged anything today in {viaje}. If you forgot dinner, there's still time.",
 
     "tarjeta": "Currency conversion",
     "tarjeta.cita": "“{texto}”",

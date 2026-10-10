@@ -1942,6 +1942,32 @@ function mensajePresupuesto({ viaje, nivel, estado }) {
   return { titulo: viaje.nombre ? `${viaje.nombre} · ${titulo}` : titulo, cuerpo };
 }
 
+// A las nueve: antes puedes estar todavía cenando.
+const RECORDATORIO_HORA = 21;
+
+// Sin presupuesto no sé si estás de viaje. Y con solo la fecha de vuelta, hasta
+// que no apuntas el primer gasto tampoco: igual aún no has salido.
+function viajesSinApuntar(viajes, hoyIso = hoy()) {
+  return (viajes?.lista ?? [])
+    .filter((v) => (v.presupuesto?.desde || v.gastos.length > 0) && diaDelViaje(v.presupuesto, v.gastos, hoyIso))
+    .filter((v) => !v.gastos.some((g) => isoLocal(new Date(g.cuando)) === hoyIso))
+    .sort((a, b) => (b.id === viajes.activo) - (a.id === viajes.activo));
+}
+
+// Uno al día como mucho, aunque estés en dos viajes a la vez.
+function tocaRecordar(viajes, avisadoEl, ahora = new Date()) {
+  const hoyIso = isoLocal(ahora);
+  if (ahora.getHours() < RECORDATORIO_HORA || avisadoEl === hoyIso) return null;
+  return viajesSinApuntar(viajes, hoyIso)[0] ?? null;
+}
+
+function mensajeRecordatorio(viaje) {
+  return {
+    titulo: tr("recordatorio.titulo"),
+    cuerpo: viaje.nombre ? tr("recordatorio.cuerpoEn", { viaje: viaje.nombre }) : tr("recordatorio.cuerpo"),
+  };
+}
+
 // Por event.code y no por event.key: en Mac, Opción+S escribe "ß", y en otros
 // teclados la tecla de la S puede traer otra letra.
 const ATAJOS = {
@@ -2013,6 +2039,7 @@ function limpiarCopia(crudo) {
   if (d.pagoGasto !== undefined) datos.pagoGasto = leerPago(d.pagoGasto);
   if (d.cuentaReparto !== undefined) datos.cuentaReparto = leerCuenta(d.cuentaReparto);
   if (typeof d.insigniaActiva === "boolean") datos.insigniaActiva = d.insigniaActiva;
+  if (typeof d.recordatorioActivo === "boolean") datos.recordatorioActivo = d.recordatorioActivo;
   if (typeof d.tasaAlReves === "boolean") datos.tasaAlReves = d.tasaAlReves;
   if (d.idioma === "auto" || TEXTOS[d.idioma]) datos.idioma = d.idioma;
   return datos;
@@ -2023,6 +2050,7 @@ function limpiarCopia(crudo) {
 const CLAVES_COPIA = [
   "viajes", "gastosViaje", "presupuestoViaje", "lastPair", "paresRecientes", "divisasExtra", "avisos",
   "historialConversiones", "rangoGrafico", "comisionBanco", "impuestoVenta", "pagoGasto", "cuentaReparto", "insigniaActiva", "tasaAlReves", "idioma",
+  "recordatorioActivo",
 ];
 
 function crearCopia(crudo, ahora = new Date()) {
@@ -2083,6 +2111,7 @@ if (typeof module !== "undefined") {
     textoInsignia, cambioDiario, sentidoDe, cambioDelDia, textoCambioDia, tituloInsignia, lineaTasa,
     AVISOS_MAX, sentidoAviso, crearAviso, leerAvisos, avisoCumplido, repartirAvisos, mensajeAviso, faltaParaAviso, cercaniaAviso, textoFalta,
     nivelPresupuesto, avisosPresupuesto, mensajePresupuesto,
+    RECORDATORIO_HORA, viajesSinApuntar, tocaRecordar, mensajeRecordatorio,
     ATAJOS, atajoPara, textoAtajo,
   };
 }

@@ -58,6 +58,14 @@ async function hacerMenus() {
     checked: insigniaActiva,
     contexts: ["action"],
   });
+  const { recordatorioActivo = true } = await chrome.storage.local.get("recordatorioActivo");
+  chrome.contextMenus.create({
+    id: "recordatorio",
+    title: tr("menu.recordatorio"),
+    type: "checkbox",
+    checked: recordatorioActivo,
+    contexts: ["action"],
+  });
   chrome.contextMenus.create({ id: "idioma", title: tr("menu.idioma"), contexts: ["action"] });
   const opciones = [["auto", tr("menu.idioma.auto")], ...Object.entries(NOMBRES_IDIOMA)];
   for (const [valor, titulo] of opciones) {
@@ -85,12 +93,16 @@ chrome.runtime.onInstalled.addListener(async () => {
 chrome.runtime.onStartup.addListener(() => {
   actualizarInsignia();
   revisarAvisos();
+  recordarGastos();
 });
 
+// Con la de cada hora basta: salta entre las nueve y las diez, y si a esa hora
+// tenías Chrome cerrado, al abrirlo.
 chrome.alarms.onAlarm.addListener((alarma) => {
   if (alarma.name !== "cada-hora") return;
   actualizarInsignia();
   revisarAvisos();
+  recordarGastos();
 });
 
 // El popup guarda el par al cambiarlo; con esto el icono cambia a la vez.
@@ -527,8 +539,37 @@ async function avisarPresupuesto(antes, despues) {
   }));
 }
 
+async function recordarGastos() {
+  try {
+    await idiomaListo;
+    const { recordatorioActivo = true, recordatorioAvisado, viajes } = await chrome.storage.local.get(["recordatorioActivo", "recordatorioAvisado", "viajes"]);
+    if (!recordatorioActivo || !viajes) return;
+    const viaje = tocaRecordar(leerViajes(viajes), recordatorioAvisado);
+    if (!viaje) return;
+    await chrome.storage.local.set({ recordatorioAvisado: hoy() });
+    const { titulo, cuerpo } = mensajeRecordatorio(viaje);
+    await chrome.notifications.create(`recordatorio:${viaje.id}`, {
+      type: "basic",
+      iconUrl: "icons/icon128.png",
+      title: titulo,
+      message: cuerpo,
+      priority: 1,
+    });
+  } catch (error) {
+    console.warn("No se pudo mirar si faltan gastos", error);
+  }
+}
+
+// Te lleva a ese viaje con los gastos ya abiertos, que es a lo que vienes.
+async function irAGastos(viajeId) {
+  const { viajes } = await chrome.storage.local.get("viajes");
+  if (viajes?.lista?.some((v) => v.id === viajeId)) await chrome.storage.local.set({ viajes: { ...viajes, activo: viajeId } });
+  await chrome.storage.session.set({ abrirGastos: true });
+}
+
 chrome.notifications.onClicked.addListener(async (id) => {
   chrome.notifications.clear(id);
+  if (id.startsWith("recordatorio:")) await irAGastos(id.slice(13));
   const [, from, to] = id.split(":");
   if (isValidCode(from) && isValidCode(to)) await chrome.storage.local.set({ lastPair: { from, to } });
   try {
@@ -542,6 +583,7 @@ chrome.contextMenus.onClicked.addListener((info, tab) => {
   if (info.menuItemId === "convertir") convertirSeleccion(info, tab);
   if (info.menuItemId === "precios") convertirPagina(tab);
   if (info.menuItemId === "insignia") chrome.storage.local.set({ insigniaActiva: info.checked });
+  if (info.menuItemId === "recordatorio") chrome.storage.local.set({ recordatorioActivo: info.checked });
   // El aviso es para el popup: la próxima vez que lo abras te dice en qué idioma está.
   if (String(info.menuItemId).startsWith("idioma:")) {
     chrome.storage.local.set({ [IDIOMA_KEY]: info.menuItemId.slice(7), avisarIdioma: true });
