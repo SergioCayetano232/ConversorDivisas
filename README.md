@@ -50,6 +50,16 @@ que necesitaba una conversión rápida. Ahora es un clic en la barra del navegad
   cada uno y empiezas otro ("Japón", "Lisboa"). Se les cambia el nombre con el
   lápiz, y para borrar uno hay que darle dos veces. Hasta ocho. Lo que tenías
   apuntado antes de esto pasa al primero, sin perder nada
+- Comparar los viajes: en esa misma lista, debajo de cada uno, lo que gastaste
+  de media al día y en qué se fue más ("110,00/día · 🏨 80 %"), con una barrita
+  medida contra el que más gasta al día. El más caro y el más barato llevan su
+  marca. Va por días y no por el total, que una semana en Japón siempre suma
+  más que un finde en Lisboa
+- Cada viaje con su color (dorado, azul, coral, turquesa, lila o rosa): el panel
+  de los gastos se tiñe del suyo, así sabes de un vistazo en cuál apuntas. Se
+  cambia pulsando el puntito de delante del nombre, y el nuevo coge uno libre
+- Cuántos sois: debajo del total, con el − y el +, y te dice lo que sale por
+  cabeza. Va también en el resumen para WhatsApp ("Entre 3: 40,00 EUR cada uno")
 - El resumen del viaje para mandarlo: el bocadillo que hay al lado de **CSV**
   copia el total, lo más caro, el día que más, lo que se ha llevado el banco, en
   qué se ha ido, lo de cada día y cómo va el presupuesto,
@@ -62,7 +72,10 @@ que necesitaba una conversión rápida. Ahora es un clic en la barra del navegad
   cajero ("20k" son veinte mil) y los gastos en efectivo lo van descontando, en
   yenes y no en euros, que es lo que llevas en la cartera. Arriba pone "Quedan
   3.000 JPY", en dorado si te queda menos de una quinta parte y en rojo si has
-  pagado más de lo sacado. Cada viaje con el suyo
+  pagado más de lo sacado. Cada viaje con el suyo. Con presupuesto, te dice
+  también cuánto sacar para lo que queda ("Saca 24.000 JPY para los 3 días que
+  quedan"): lo que te toca al día, por la parte que sueles pagar en efectivo,
+  menos lo que llevas, y redondeado a lo que da un cajero. Pulsándolo se pone
 - Cada gasto con su categoría (comida, transporte, alojamiento, ocio, compras
   u otros), que sale sola por el concepto ("taxi", "cena", "hotel") y se cambia
   con un clic. Arriba, en qué se te va el dinero en porcentajes; pulsando una
@@ -76,6 +89,9 @@ que necesitaba una conversión rápida. Ahora es un clic en la barra del navegad
   gastado hoy yendo parejo: si la pasas, vas rápido. Cuando un gasto te lleva
   al 80 % o te pasas, te salta una notificación, y la barra da un latido con
   un brillo dorado
+- Si estás de viaje y a las nueve de la noche no has apuntado nada, te lo
+  recuerda con una notificación, una vez al día. Pulsándola se abren los gastos
+  de ese viaje. Si no lo quieres, clic derecho en el icono y lo quitas
 - Las conversiones y los gastos se bajan en CSV con el botón **CSV** de cada
   panel, listos para abrir en Excel o en Google Sheets: en español van con
   punto y coma y "12,50", en inglés con coma y "12.50", y las tildes no se rompen.
@@ -121,6 +137,11 @@ que necesitaba una conversión rápida. Ahora es un clic en la barra del navegad
   "Momento normal" o "Mal momento", según si la tasa de hoy es mejor que la de
   tres de cada cuatro días del periodo del gráfico, y cuánto se aparta de la
   media. En el gráfico, la media es la línea de puntos
+- Qué día de la semana suele salir mejor, debajo del gráfico de 3 meses o de un
+  año: "Los lunes suele darte un 0,09 % más que los jueves", con una barrita por
+  día. Cada día se compara con la media de su semana, para que no gane el
+  viernes solo porque la divisa vaya subiendo. Ya te digo que la diferencia es
+  poca; con menos de dos meses de datos no lo enseña
 - En la pestaña de al lado, la misma cantidad en otras divisas a la vez (hasta
   cinco, las eliges tú). Pulsando una la pones como destino. Detrás de cada una
   va un minigráfico de su última semana, verde si ahora te dan más que hace
@@ -130,7 +151,10 @@ que necesitaba una conversión rápida. Ahora es un clic en la barra del navegad
   divisas, para mirar precios de un vistazo. Si la divisa es muy pequeña (yenes,
   rupias…) empieza en 100 o en 10.000, que si no la tabla no sirve. Pulsando una
   fila la pones como cantidad. Con el botón de **WhatsApp** la copias en
-  columna, lista para pegar en el grupo del viaje
+  columna, lista para pegar en el grupo del viaje, y con **Imprimir** te la
+  llevas en papel: sale del tamaño de una tarjeta de crédito, por un lado los
+  precios de allí y por el otro lo que te dan por lo tuyo, para recortarla,
+  doblarla y meterla en la cartera
 - La tasa de un día concreto: eliges la fecha (o "hace 1 mes, 6 meses, 1 año")
   y te dice cuánto era tu cantidad entonces y cuánto ha cambiado hasta hoy. Si
   ese día fue fin de semana o festivo, te avisa y usa la del último día con tasa
@@ -159,7 +183,9 @@ que necesitaba una conversión rápida. Ahora es un clic en la barra del navegad
 - Desde la barra de direcciones, sin abrir nada: escribes `cd`, espacio, y
   luego `20 usd`, `50 eur a gbp` o `100-15% jpy`. El resultado sale en las
   sugerencias de Chrome, con tus otras divisas debajo, y con Enter se abre el
-  popup con esa conversión puesta
+  popup con esa conversión puesta. Con un `+` delante apuntas un gasto en el
+  viaje abierto: `cd + 20 cena` o `cd + 1500 jpy taxi efectivo`. Usa tu
+  comisión y cómo sueles pagar, salvo que pongas "efectivo" o "tarjeta"
 - Atajos dentro del popup: `S` da la vuelta al par, `C` copia, `D` y `A` abren
   los desplegables, `G` los gastos, `P` dividir la cuenta, `B` la balanza, `R` las últimas conversiones, `Z` (o `Cmd+Z`, `Ctrl+Z`) deshace lo último que
   has quitado de los gastos y del `1` al `6` cambian de pestaña. Si estás escribiendo en
@@ -179,7 +205,8 @@ que necesitaba una conversión rápida. Ahora es un clic en la barra del navegad
 
 Pide lo justo: guardar tus preferencias, hablar con la API de las tasas, una
 alarma para refrescar el icono y mirar los avisos cada hora, mandar las
-notificaciones de esos avisos y de los del presupuesto y, para lo del clic derecho, el menú y poner la
+notificaciones de esos avisos, de los del presupuesto, del recordatorio de la
+noche y de los gastos apuntados desde la barra y, para lo del clic derecho, el menú y poner la
 tarjeta en la pestaña en la que estás.
 Esto último solo pasa cuando pulsas **Convertir**, **Convertir los precios de
 la página** o el atajo; no lee ninguna web por su cuenta, y por eso Chrome no avisa de nada al instalarla. No hay analítica ni
@@ -218,6 +245,7 @@ textos.js        todos los textos, en español y en inglés
 logica.js        las cuentas y los formatos, sin tocar la pantalla
 popup.js         lo que reacciona a los clics
 copia.*          la página de la copia de seguridad (las opciones)
+imprimir.*       la chuleta en tamaño tarjeta, para imprimir
 background.js    el menú del clic derecho y la tasa para la tarjeta
 tarjeta.js       la tarjeta que sale en la web, en un shadow DOM
 precios.js       las pastillas con los precios de toda la página
