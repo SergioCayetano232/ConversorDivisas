@@ -20,7 +20,9 @@ que necesitaba una conversión rápida. Ahora es un clic en la barra del navegad
 - Un botón para dar la vuelta al par sin tocar los dos desplegables
 - Un botón para copiar el resultado. Con Shift (clic o `Shift+C`) copia la
   frase entera, "38,90 EUR = 42,79 USD", para mandársela a alguien. También
-  se copia con doble clic en la cifra
+  se copia con doble clic en la cifra. Con Alt, con su símbolo: "42,79 $" o,
+  en inglés, "$42.79". Si el símbolo lo comparten varias divisas, va el que no
+  deja dudas (MX$, CA$, CN¥)
 - Pulsando la tasa de arriba la ves al revés (`1 JPY = 0,005650 EUR`), que en
   la tienda muchas veces se piensa así. Se queda como la dejes. Debajo, cuánto ha
   subido o bajado desde el día anterior, en verde o en rojo
@@ -60,6 +62,11 @@ que necesitaba una conversión rápida. Ahora es un clic en la barra del navegad
   cambia pulsando el puntito de delante del nombre, y el nuevo coge uno libre
 - Cuántos sois: debajo del total, con el − y el +, y te dice lo que sale por
   cabeza. Va también en el resumen para WhatsApp ("Entre 3: 40,00 EUR cada uno")
+- Si un gasto es cinco veces lo normal de su categoría, te avisa antes de
+  apuntarlo ("11 veces lo normal en comida"), que un cero de más se cuela
+  fácil. Para apuntarlo igual, le das otra vez
+- El más caro de cada día lleva una corona 👑, y cuando otro le quita el
+  puesto, cae y rebota
 - El resumen del viaje para mandarlo: el bocadillo que hay al lado de **CSV**
   copia el total, lo más caro, el día que más, lo que se ha llevado el banco, en
   qué se ha ido, lo de cada día y cómo va el presupuesto,
@@ -75,7 +82,9 @@ que necesitaba una conversión rápida. Ahora es un clic en la barra del navegad
   pagado más de lo sacado. Cada viaje con el suyo. Con presupuesto, te dice
   también cuánto sacar para lo que queda ("Saca 24.000 JPY para los 3 días que
   quedan"): lo que te toca al día, por la parte que sueles pagar en efectivo,
-  menos lo que llevas, y redondeado a lo que da un cajero. Pulsándolo se pone
+  menos lo que llevas, y redondeado a lo que da un cajero. Pulsándolo se pone.
+  El último día y a la vuelta te dice lo que te sobra y lo que vale en tu
+  divisa ("Te sobran 3.000 JPY ≈ 16,92"), para gastarlo o cambiarlo
 - Cada gasto con su categoría (comida, transporte, alojamiento, ocio, compras
   u otros), que sale sola por el concepto ("taxi", "cena", "hotel") y se cambia
   con un clic. Arriba, en qué se te va el dinero en porcentajes; pulsando una
@@ -88,7 +97,8 @@ que necesitaba una conversión rápida. Ahora es un clic en la barra del navegad
   día del viaje vas ("Día 3/7"), y una marca en la barra con lo que llevarías
   gastado hoy yendo parejo: si la pasas, vas rápido. Cuando un gasto te lleva
   al 80 % o te pasas, te salta una notificación, y la barra da un latido con
-  un brillo dorado
+  un brillo dorado. Arriba, una llamita con los días seguidos que llevas
+  gastando lo que toca o menos ("🔥 3")
 - Si estás de viaje y a las nueve de la noche no has apuntado nada, te lo
   recuerda con una notificación, una vez al día. Pulsándola se abren los gastos
   de ese viaje. Si no lo quieres, clic derecho en el icono y lo quitas
@@ -101,7 +111,8 @@ que necesitaba una conversión rápida. Ahora es un clic en la barra del navegad
   y entre cuántos sois, y te dice lo que paga cada uno, en esa divisa y en la
   tuya. Se redondea hacia arriba al céntimo, para que en la mesa no falte nada.
   Puedes cambiar la cantidad con el panel abierto, y la propina y la gente se
-  quedan guardadas
+  quedan guardadas. Debajo de la propina sale la que se suele dejar allí
+  ("🇺🇸 Allí se suele dejar un 18 %"), y pulsándola se pone
 - La comisión de tu banco: pones el % que te cobra la tarjeta (0, 1, 2, 3 o el
   que quieras) y al lado del resultado sale lo que pagarías de verdad. También
   va sumada en la chuleta y en las otras divisas. Se queda guardada para la
@@ -110,6 +121,8 @@ que necesitaba una conversión rápida. Ahora es un clic en la barra del navegad
   y Canadá la etiqueta va sin él, así que pones el tuyo (5, 8, 10 % o el 8,875
   de Nueva York) y la pastilla te da lo que pasa por caja, con la comisión
   encima
+- Cuántos cafés son: en esa misma burbuja pones lo que te cuesta un café en
+  casa, y al lado de la cifra sale "☕ ≈ 30". Para hacerse a la idea
 - Dónde sale más barato, en la balanza que hay al lado del tique: con el precio
   de allí puesto arriba, escribes lo que cuesta aquí y te dice dónde te ahorras
   y cuánto ("Allí te ahorras 255,20 EUR, un 22 %"). La balanza baja hacia el
@@ -172,7 +185,8 @@ que necesitaba una conversión rápida. Ahora es un clic en la barra del navegad
   la que tiene es de hace días (llevas tiempo sin conexión y el BCE ha
   publicado otras), al lado de la tasa sale "del lunes" en ámbar, y pulsándolo
   lo vuelve a intentar. Sabe que el BCE no publica los fines de semana ni en
-  los festivos de TARGET, Semana Santa incluida
+  los festivos de TARGET, Semana Santa incluida. Abajo pone de cuándo es
+  ("BCE hoy 16:00", a tu hora) y, pasando el ratón, cuándo sale la siguiente
 - La tasa de tu par en el propio icono de la barra, en verde si ha subido desde
   el día anterior, en rojo si ha bajado. Se actualiza cada hora; si no la
   quieres, clic derecho en el icono y la quitas
