@@ -1888,6 +1888,36 @@ function diaDelViaje(presupuesto, gastos, hoyIso = hoy()) {
   return { dia, total };
 }
 
+// Días seguidos gastando lo que toca o menos, del de ayer hacia atrás: hoy aún
+// no ha acabado. Lo que toca es fijo, el presupuesto entre los días del viaje,
+// que con lo que queda al día la vara se movería cada vez que gastas.
+const RACHA_MINIMA = 2;
+
+function rachaPresupuesto(presupuesto, gastos, hoyIso = hoy()) {
+  if (!presupuesto) return null;
+  const inicio = inicioDelViaje(presupuesto, gastos, hoyIso);
+  const total = diasHasta(presupuesto.hasta, inicio);
+  if (total < 1) return null;
+  const toca = presupuesto.importe / total;
+  const porDia = new Map();
+  for (const g of gastos) {
+    if (g.to !== presupuesto.to) continue;
+    const dia = isoLocal(new Date(g.cuando));
+    porDia.set(dia, (porDia.get(dia) ?? 0) + g.valor);
+  }
+  const [a, m, d] = hoyIso.split("-").map(Number);
+  let dias = 0;
+  for (let atras = 1; ; atras += 1) {
+    const dia = isoLocal(new Date(a, m - 1, d - atras));
+    if (dia < inicio) break;
+    if (dia > presupuesto.hasta) continue;
+    // El céntimo de margen es por los decimales: justo lo que toca también vale.
+    if ((porDia.get(dia) ?? 0) > toca + 0.005) break;
+    dias += 1;
+  }
+  return dias >= RACHA_MINIMA ? { dias, toca, to: presupuesto.to } : null;
+}
+
 // Al ritmo que llevas, hasta qué día te llega lo que queda. Solo si no llega al
 // final: si llega, ya lo dice la barra. El primer día no, que el hotel pagado
 // por adelantado haría pensar que te arruinas.
@@ -2351,7 +2381,7 @@ if (typeof module !== "undefined") {
     EMOJI_CATEGORIA, destacados, resumenParaCompartir,
     COPIA_APP, COPIA_VERSION, CLAVES_COPIA, limpiarCopia, crearCopia, leerCopia, resumenCopia,
     VIAJES_MAX, NOMBRE_VIAJE_MAX, leerViajes, leerPersonas, porPersona, compararViajes, COLORES_VIAJE, leerColorViaje, colorLibre, siguienteColor, viajeActivo, crearViaje, renombrarViaje, elegirViaje, borrarViaje, cambiarViaje, resumenViaje, archivoGastos,
-    diasHasta, leerPresupuesto, PRESUPUESTO_JUSTO, estadoPresupuesto, inicioDelViaje, diaDelViaje, hastaCuandoLlega, loQueSeLleva, redondearDias,
+    diasHasta, leerPresupuesto, PRESUPUESTO_JUSTO, estadoPresupuesto, inicioDelViaje, diaDelViaje, RACHA_MINIMA, rachaPresupuesto, hastaCuandoLlega, loQueSeLleva, redondearDias,
     EXTRAS_MAX, EXTRAS_POR_DEFECTO, leerExtras, anadirExtra, quitarExtra,
     extrasVisibles, disponiblesParaAnadir, convertirExtras, semanaDe, trazoMini, CHULETA, escalaChuleta, chuleta, chuletaParaCompartir,
     urlImpresion, leerImpresion, chuletaParaImprimir,

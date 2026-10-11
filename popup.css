@@ -3875,6 +3875,41 @@ body::after {
   min-width: 0;
 }
 
+/* La racha va arriba, al lado del número de gastos: abajo, con el día, no
+   cabía. La llama tiembla un poco, como una de verdad, y se aviva al sumar. */
+.presupuesto__racha {
+  display: inline-flex;
+  flex-shrink: 0;
+  margin-right: var(--s-1);
+  font-size: 10px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: var(--brass);
+  text-shadow: 0 0 8px var(--brass-glow);
+  transform-origin: 50% 90%;
+  animation: racha-llama 2.4s var(--ease) infinite;
+}
+
+.presupuesto__racha[hidden] {
+  display: none;
+}
+
+.presupuesto__racha.is-sube {
+  animation: racha-aviva 700ms var(--ease-spring), racha-llama 2.4s var(--ease) 700ms infinite;
+}
+
+@keyframes racha-llama {
+  0%, 100% { transform: none; }
+  30% { transform: scale(1.06) rotate(-3deg); }
+  60% { transform: scale(0.97) rotate(2deg); }
+}
+
+@keyframes racha-aviva {
+  0% { transform: scale(0.4); opacity: 0; }
+  50% { transform: scale(1.5) translateY(-2px); opacity: 1; text-shadow: 0 0 14px var(--brass); }
+  100% { transform: none; }
+}
+
 .presupuesto__esto-texto {
   flex-shrink: 0;
   font-size: 9px;

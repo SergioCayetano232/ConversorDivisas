@@ -146,6 +146,7 @@ const el = {
   presupuestoLleno: document.getElementById("presupuesto-lleno"),
   presupuestoHoy: document.getElementById("presupuesto-hoy"),
   presupuestoDia: document.getElementById("presupuesto-dia"),
+  presupuestoRacha: document.getElementById("presupuesto-racha"),
   presupuestoTexto: document.getElementById("presupuesto-texto"),
   presupuestoForm: document.getElementById("presupuesto-form"),
   presupuestoImporte: document.getElementById("presupuesto-importe"),
@@ -2802,6 +2803,8 @@ function pintarPresupuesto() {
     el.presupuestoHoy.classList.toggle("is-adelantado", estado.fraccion > dia.dia / dia.total);
     el.presupuestoVer.title += `\n${tr("presupuesto.marca", dia)}`;
   }
+  const racha = pintarRacha();
+  if (racha) el.presupuestoVer.title += `\n${racha}`;
   const leido = dia ? `${el.presupuestoDia.textContent}. ${el.presupuestoTexto.textContent}` : el.presupuestoTexto.textContent;
   el.presupuestoVer.setAttribute("aria-label", `${leido}. ${el.presupuestoVer.title}`);
   el.presupuestoLleno.style.width = `${Math.min(estado.fraccion, 1) * 100}%`;
@@ -2811,6 +2814,20 @@ function pintarPresupuesto() {
   if (antes && antes !== "pasado" && estado.tono === "pasado") restartAnimation(el.presupuestoVer, "is-alarma");
   if (antes === "bien" && estado.tono === "justo") restartAnimation(el.presupuestoVer, "is-justo");
   pintarLoQueSeLleva();
+}
+
+// La llama se aviva al aparecer y cuando cambia, no cada vez que se repinta.
+function pintarRacha() {
+  const racha = rachaPresupuesto(presupuesto, gastos);
+  const nodo = el.presupuestoRacha;
+  const antes = nodo.dataset.dias;
+  nodo.hidden = !racha;
+  nodo.dataset.dias = `${viajes.activo}:${racha?.dias ?? 0}`;
+  if (!racha) return "";
+  nodo.textContent = `🔥 ${racha.dias}`;
+  nodo.title = tr("presupuesto.racha", { dias: racha.dias, toca: `${nf.format(racha.toca)} ${racha.to}` });
+  if (antes !== nodo.dataset.dias) restartAnimation(nodo, "is-sube");
+  return nodo.title;
 }
 
 function editarPresupuesto() {
