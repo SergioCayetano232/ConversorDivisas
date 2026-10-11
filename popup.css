@@ -2057,6 +2057,84 @@ body::after {
   margin-top: var(--s-2);
 }
 
+/* La propina de allí va a rayas mientras es solo una idea; puesta, se rellena
+   de dorado con su tic. */
+.cuenta__habitual {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  max-width: 100%;
+  margin-top: 6px;
+  padding: 3px 9px 3px 6px;
+  border: 1px dashed var(--brass-dim);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--muted);
+  font-family: inherit;
+  font-size: 10px;
+  font-variant-numeric: tabular-nums;
+  cursor: pointer;
+  transition: color var(--fast) var(--ease), background var(--fast) var(--ease),
+    border-color var(--fast) var(--ease), transform var(--fast) var(--ease-spring);
+}
+
+.cuenta__habitual[hidden] {
+  display: none;
+}
+
+.cuenta__habitual:hover:not(.is-puesta) {
+  color: var(--brass);
+  background: var(--brass-ghost);
+  transform: translateY(-1px);
+}
+
+.cuenta__habitual:active:not(.is-puesta) {
+  transform: scale(0.95);
+}
+
+.cuenta__habitual:focus-visible {
+  outline: 2px solid var(--brass);
+  outline-offset: 2px;
+}
+
+.cuenta__habitual-bandera {
+  font-size: 12px;
+  line-height: 1;
+}
+
+.cuenta__habitual.is-puesta {
+  border-style: solid;
+  border-color: var(--brass-dim);
+  background: var(--brass-ghost);
+  color: var(--brass);
+  cursor: default;
+}
+
+.cuenta__habitual.is-puesta::after {
+  content: "✓";
+  font-weight: 700;
+  animation: pop var(--mid) var(--ease-spring);
+}
+
+.cuenta__habitual.is-entra {
+  animation: habitual-entra var(--slow) var(--ease-out);
+}
+
+.cuenta__habitual.is-salto {
+  animation: beat var(--mid) var(--ease-spring);
+}
+
+@keyframes habitual-entra {
+  from {
+    opacity: 0;
+    transform: translateX(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
 /* Con "10 %" en español los botones no caben con el relleno de la burbuja de
    la comisión: aquí van más apretados. */
 .cuenta .burbuja__rapida {

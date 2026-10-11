@@ -807,6 +807,16 @@ const PROPINA_MAX = 30;
 const PERSONAS_MAX = 20;
 const CUENTA_POR_DEFECTO = { propina: 10, personas: 2 };
 
+// Lo que se suele dejar en un restaurante, por la divisa de la cuenta. Es a ojo:
+// en el euro cambia de un país a otro, y en Japón o Corea dejarla queda raro.
+const PROPINA_HABITUAL = {
+  USD: 18, CAD: 15, MXN: 10, BRL: 10, GBP: 10, EUR: 5, CHF: 5, JPY: 0, KRW: 0, CNY: 0,
+  HKD: 10, SGD: 0, AUD: 5, NZD: 5, THB: 5, IDR: 5, INR: 10, PHP: 10, MYR: 0, ZAR: 10,
+  ILS: 12, TRY: 10, PLN: 10, CZK: 10, HUF: 10, RON: 10, SEK: 5, NOK: 5, DKK: 5, ISK: 0,
+};
+
+const propinaHabitual = (code) => PROPINA_HABITUAL[code] ?? null;
+
 function leerCuenta(guardado) {
   const { propina, personas } = guardado ?? {};
   return {
@@ -2332,7 +2342,7 @@ if (typeof module !== "undefined") {
     COMISION_MAX, COMISIONES_RAPIDAS, leerComision, leerPorcentaje, conComision,
     IMPUESTO_MAX, IMPUESTOS_RAPIDOS, leerImpuesto, leerImpuestoEscrito, loQuePagas,
     COMPARAR_IGUAL, compararPrecios, inclinacion,
-    PROPINAS_RAPIDAS, PROPINA_MAX, PERSONAS_MAX, CUENTA_POR_DEFECTO, leerCuenta, repartirCuenta, cuentaParaCompartir,
+    PROPINAS_RAPIDAS, PROPINA_HABITUAL, propinaHabitual, PROPINA_MAX, PERSONAS_MAX, CUENTA_POR_DEFECTO, leerCuenta, repartirCuenta, cuentaParaCompartir,
     MARGENES, tasaOfrecida, analizarCambio,
     domingoDePascua, hayTasaEl, tasaVieja, textoTasaVieja,
     FECHA_MINIMA, fechaLarga, fechaValida, diaDelGrafico, mesesAtras, FECHAS_RAPIDAS, leerFecha, cambioDesde, notaDiaHabil,

@@ -88,6 +88,7 @@ const el = {
   cuentaTuyo: document.getElementById("cuenta-tuyo"),
   cuentaPropinas: document.getElementById("cuenta-propinas"),
   cuentaCampo: document.getElementById("cuenta-campo"),
+  cuentaHabitual: document.getElementById("cuenta-habitual"),
   cuentaMenos: document.getElementById("cuenta-menos"),
   cuentaMas: document.getElementById("cuenta-mas"),
   cuentaN: document.getElementById("cuenta-n"),
@@ -2911,6 +2912,7 @@ function pintarCuenta() {
   el.cuentaTuyo.textContent = r?.cadaUnoTuyo != null ? `≈ ${nf.format(r.cadaUnoTuyo)} ${to}` : "";
   el.cuentaTuyo.title = comision > 0 ? tr("gastos.comision", { pct: tr("pct", { n: nfComision.format(comision) }) }) : "";
 
+  pintarPropinaHabitual(from);
   el.cuentaN.textContent = reparto.personas;
   el.cuentaN.setAttribute("aria-label", solo ? tr("cuenta.una") : tr("cuenta.personas", { n: reparto.personas }));
   el.cuentaMenos.disabled = reparto.personas <= 1;
@@ -2956,6 +2958,41 @@ function guardarReparto() {
   } catch (error) {
     console.warn("No se pudo guardar la propina", error);
   }
+}
+
+// La de la divisa de la cuenta, que es la del sitio. Solo la sugiero: la que
+// tengas guardada no la toco.
+function pintarPropinaHabitual(from) {
+  const pct = propinaHabitual(from);
+  const boton = el.cuentaHabitual;
+  boton.hidden = pct === null;
+  if (pct === null) return;
+  const texto = pct === 0 ? tr("cuenta.habitualNada") : tr("cuenta.habitual", { pct: tr("pct", { n: pct }) });
+  const puesta = reparto.propina === pct;
+  boton.classList.toggle("is-puesta", puesta);
+  boton.title = puesta ? tr("cuenta.habitualPuesta")
+    : pct === 0 ? tr("cuenta.habitualQuitar")
+    : tr("cuenta.habitualPoner", { pct: tr("pct", { n: pct }) });
+  boton.setAttribute("aria-label", `${texto}. ${boton.title}`);
+  if (boton.dataset.code === from && boton.dataset.texto === texto) return;
+  boton.dataset.code = from;
+  boton.dataset.texto = texto;
+  const bandera = document.createElement("span");
+  bandera.className = "cuenta__habitual-bandera";
+  bandera.textContent = banderaDivisa(from);
+  const frase = document.createElement("span");
+  frase.textContent = texto;
+  boton.replaceChildren(bandera, frase);
+  restartAnimation(boton, "is-entra");
+}
+
+function onPropinaHabitual() {
+  const pct = propinaHabitual(el.from.value);
+  if (pct === null || pct === reparto.propina) return;
+  el.cuentaCampo.value = PROPINAS_RAPIDAS.includes(pct) ? "" : nfComision.format(pct);
+  el.cuentaCampo.removeAttribute("aria-invalid");
+  ponerPropina(pct);
+  restartAnimation(el.cuentaHabitual, "is-salto");
 }
 
 function marcarPropina() {
@@ -4743,6 +4780,7 @@ function bindEvents() {
   el.compararVeredicto.addEventListener("animationend", () => el.compararVeredicto.classList.remove("is-nuevo"));
   el.cuentaCompartir.addEventListener("click", onCompartirCuenta);
   el.cuentaCampo.addEventListener("input", onCampoPropina);
+  el.cuentaHabitual.addEventListener("click", onPropinaHabitual);
   el.cuentaCampo.addEventListener("keydown", onTeclaCampoPropina);
   el.cuentaCampo.addEventListener("animationend", () => el.cuentaCampo.classList.remove("is-mal"));
   el.cuentaMenos.addEventListener("click", () => cambiarPersonas(-1));
