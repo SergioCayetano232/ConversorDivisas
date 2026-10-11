@@ -2472,7 +2472,17 @@ function pintarEfectivo() {
   const pagado = pagadoEnEfectivo(gastos);
   const habia = el.gastosEfectivo.textContent;
   let texto = "";
-  if (cuenta) {
+  const sobra = cuenta && presupuesto
+    ? loQueSobra(presupuesto, gastos, cajero, tasaDeHoy(cuenta.divisa, presupuesto.to))
+    : null;
+  if (sobra) {
+    const dice = tr(sobra.cuando === "ultimo" ? "cajero.sobraUltimo" : "cajero.sobra", { importe: cifraEfectivo(sobra.queda, sobra.divisa) });
+    // Sin la divisa, como lo de cada uno: al lado del número de gastos no cabe.
+    texto = sobra.valor === null ? dice : tr("cajero.sobraValor", { texto: dice, valor: nf.format(sobra.valor) });
+    el.gastosEfectivo.dataset.tono = "sobra";
+    el.gastosEfectivo.title = (sobra.valor === null ? "" : tr("cajero.sobraCambio", { valor: `${nf.format(sobra.valor)} ${sobra.to}` }))
+      + tr(sobra.cuando === "ultimo" ? "cajero.sobraUltimoTitulo" : "cajero.sobraTitulo");
+  } else if (cuenta) {
     texto = cuenta.queda < 0
       ? tr("cajero.faltan", { importe: cifraEfectivo(-cuenta.queda, cuenta.divisa) })
       : tr("cajero.quedan", { importe: cifraEfectivo(cuenta.queda, cuenta.divisa) });

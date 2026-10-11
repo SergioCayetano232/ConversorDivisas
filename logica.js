@@ -1798,6 +1798,22 @@ function cuantoSacar(presupuesto, gastos, retiradas, divisa, tasa, hoyIso = hoy(
   return { sacar: falta > 0 ? redondoDeCajero(falta) : 0, divisa, dias: estado.dias, parte, tienes };
 }
 
+// El último día y a la vuelta, lo que queda en la cartera ya no es para el
+// viaje: te digo cuánto vale en tu divisa, para gastarlo o cambiarlo. Sin fecha
+// de vuelta no sé cuándo acaba, y no digo nada.
+function loQueSobra(presupuesto, gastos, retiradas, tasa, hoyIso = hoy()) {
+  if (!presupuesto?.hasta || hoyIso < presupuesto.hasta) return null;
+  const [cuenta] = efectivoQueda(retiradas, gastos);
+  if (!cuenta || cuenta.queda <= 0) return null;
+  const valor = cuenta.divisa === presupuesto.to ? cuenta.queda
+    : Number.isFinite(tasa) && tasa > 0 ? cuenta.queda * tasa
+    : null;
+  return {
+    queda: cuenta.queda, divisa: cuenta.divisa, valor, to: presupuesto.to,
+    cuando: hoyIso === presupuesto.hasta ? "ultimo" : "acabado",
+  };
+}
+
 function mediaPorDia(gastos) {
   const principal = sumarPorDivisa(gastos)[0];
   if (!principal) return null;
@@ -2330,7 +2346,7 @@ if (typeof module !== "undefined") {
     HISTORIAL_MAX, leerHistorial, apuntarConversion, quitarConversion, haceCuanto, textoParaCopiar, fraseParaCopiar,
     celdaCsv, csvHistorial, csvGastos,
     GASTOS_MAX, CONCEPTO_MAX, crearGasto, leerGastos, apuntarGasto, quitarGasto, cambiarConcepto, cambiarDia, buscarGastos, trozosResaltados, repetirGasto, devolverGasto, devolverTodos, sumarPorDivisa, gastosPorDia, pesoDeLosDias, ordenarPorImporte, pesoDeLosGastos, RARO_VECES, mediana, gastoRaro, mediaPorDia, comisionesPagadas, pagadoEnEfectivo,
-    RETIRADAS_MAX, leerRetiradas, crearRetirada, apuntarRetirada, quitarRetirada, efectivoQueda, EFECTIVO_POCO, tonoEfectivo, redondoDeCajero, cuantoSacar, gastadoHoy, nombreDia,
+    RETIRADAS_MAX, leerRetiradas, crearRetirada, apuntarRetirada, quitarRetirada, efectivoQueda, EFECTIVO_POCO, tonoEfectivo, redondoDeCajero, cuantoSacar, loQueSobra, gastadoHoy, nombreDia,
     CATEGORIAS, CATEGORIA_POR_DEFECTO, adivinarCategoria, PAGOS, PAGO_POR_DEFECTO, leerPago, comisionDelPago, desglose, conceptosUsados, completarConcepto,
     EMOJI_CATEGORIA, destacados, resumenParaCompartir,
     COPIA_APP, COPIA_VERSION, CLAVES_COPIA, limpiarCopia, crearCopia, leerCopia, resumenCopia,

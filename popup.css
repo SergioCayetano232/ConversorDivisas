@@ -2806,6 +2806,28 @@ body::after {
   --tono: var(--cinnabar);
 }
 
+/* Lo que sobra al final ya no es del viaje: en dorado, con un brillo que lo
+   cruza de vez en cuando, como una moneda. */
+.gastos__efectivo[data-tono="sobra"] {
+  --tono: var(--brass);
+  background: linear-gradient(100deg, transparent 30%, var(--brass-glow) 50%, transparent 70%) no-repeat;
+  background-size: 250% 100%;
+  background-position: 150% 0;
+  border-radius: 3px;
+  animation: sobra-brilla 3.2s var(--ease) 600ms infinite;
+}
+
+.gastos__efectivo[data-tono="sobra"]::before {
+  width: 7px;
+  height: 7px;
+  background: radial-gradient(circle at 35% 35%, var(--mist), var(--brass) 60%);
+}
+
+@keyframes sobra-brilla {
+  0% { background-position: 150% 0; }
+  45%, 100% { background-position: -50% 0; }
+}
+
 /* Cuántos sois: solo, una invitación apagada; con gente, lo de cada uno en
    dorado como el total. El − no sale hasta que hay a quién quitar. */
 .gastos__personas {
