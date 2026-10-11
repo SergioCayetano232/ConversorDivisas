@@ -801,6 +801,32 @@ function inclinacion(comparacion, maximo = 14) {
   return comparacion.donde === "alli" ? grados : -grados;
 }
 
+// Lo que te cuesta un café en casa, para hacerte a la idea de lo que vale algo.
+// Va con su divisa: 1,50 en euros no es lo mismo que 1,50 en libras.
+function leerCafe(guardado) {
+  const { precio, divisa } = guardado ?? {};
+  if (!Number.isFinite(precio) || precio <= 0 || !isValidCode(divisa)) return null;
+  return { precio: Math.round(precio * 100) / 100, divisa };
+}
+
+// Cuántos cafés son, con la cantidad de cualquiera de los dos lados que vaya en
+// la divisa del café. Menos de medio no lo digo, que no ayuda.
+function enCafes(cafe, cantidades) {
+  if (!cafe) return null;
+  const suya = cantidades.find((c) => c.divisa === cafe.divisa && Number.isFinite(c.valor));
+  if (!suya) return null;
+  const n = suya.valor / cafe.precio;
+  if (n < 0.5) return null;
+  return n < 0.75 ? 0.5 : Math.round(n);
+}
+
+function textoCafes(n) {
+  if (n === null) return "";
+  if (n === 0.5) return tr("cafe.medio");
+  if (n === 1) return tr("cafe.uno");
+  return tr("cafe.varios", { n: numeros({ maximumFractionDigits: 0 }).format(n) });
+}
+
 // Las propinas de siempre: en Europa poco o nada, en Estados Unidos del 15 al 20.
 const PROPINAS_RAPIDAS = [0, 10, 15, 20];
 const PROPINA_MAX = 30;
@@ -2318,6 +2344,7 @@ function limpiarCopia(crudo) {
   if (d.rangoGrafico !== undefined) datos.rangoGrafico = leerRango(d.rangoGrafico);
   if (d.comisionBanco !== undefined) datos.comisionBanco = leerComision(d.comisionBanco);
   if (d.impuestoVenta !== undefined) datos.impuestoVenta = leerImpuesto(d.impuestoVenta);
+  if (leerCafe(d.precioCafe)) datos.precioCafe = leerCafe(d.precioCafe);
   if (d.pagoGasto !== undefined) datos.pagoGasto = leerPago(d.pagoGasto);
   if (d.cuentaReparto !== undefined) datos.cuentaReparto = leerCuenta(d.cuentaReparto);
   if (typeof d.insigniaActiva === "boolean") datos.insigniaActiva = d.insigniaActiva;
@@ -2332,7 +2359,7 @@ function limpiarCopia(crudo) {
 const CLAVES_COPIA = [
   "viajes", "gastosViaje", "presupuestoViaje", "lastPair", "paresRecientes", "divisasExtra", "avisos",
   "historialConversiones", "rangoGrafico", "comisionBanco", "impuestoVenta", "pagoGasto", "cuentaReparto", "insigniaActiva", "tasaAlReves", "idioma",
-  "recordatorioActivo",
+  "recordatorioActivo", "precioCafe",
 ];
 
 function crearCopia(crudo, ahora = new Date()) {
@@ -2387,7 +2414,7 @@ if (typeof module !== "undefined") {
     urlImpresion, leerImpresion, chuletaParaImprimir,
     COMISION_MAX, COMISIONES_RAPIDAS, leerComision, leerPorcentaje, conComision,
     IMPUESTO_MAX, IMPUESTOS_RAPIDOS, leerImpuesto, leerImpuestoEscrito, loQuePagas,
-    COMPARAR_IGUAL, compararPrecios, inclinacion,
+    COMPARAR_IGUAL, compararPrecios, inclinacion, leerCafe, enCafes, textoCafes,
     PROPINAS_RAPIDAS, PROPINA_HABITUAL, propinaHabitual, PROPINA_MAX, PERSONAS_MAX, CUENTA_POR_DEFECTO, leerCuenta, repartirCuenta, cuentaParaCompartir,
     MARGENES, tasaOfrecida, analizarCambio,
     domingoDePascua, hayTasaEl, tasaVieja, textoTasaVieja,

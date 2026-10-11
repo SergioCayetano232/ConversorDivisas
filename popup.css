@@ -4686,7 +4686,10 @@ body::after {
   margin-top: var(--s-2);
 }
 
+/* Con los cafés al lado, la cifra no cede: si falta sitio, se cortan ellos. */
 .result__meta {
+  flex-shrink: 0;
+  max-width: 50%;
   min-width: 0;
   min-height: 14px;
   overflow: hidden;
@@ -4696,6 +4699,78 @@ body::after {
   font-size: 11px;
   color: var(--muted);
   font-variant-numeric: tabular-nums;
+}
+
+/* Los cafés van pegados a la cifra pequeña, discretos: es una pista, no una
+   cuenta. Al salir, la taza echa un hilo de vapor. */
+.result__cafes {
+  position: relative;
+  min-width: 0;
+  margin-right: auto;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  padding: 1px 7px;
+  background: var(--brass-ghost);
+  border: 1px solid transparent;
+  border-radius: 999px;
+  color: color-mix(in srgb, var(--brass) 80%, var(--muted));
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: border-color var(--fast) var(--ease), color var(--fast) var(--ease);
+}
+
+.result__cafes[hidden] {
+  display: none;
+}
+
+.result__cafes:hover {
+  border-color: var(--brass-dim);
+  color: var(--brass);
+}
+
+.result__cafes:focus-visible {
+  outline: 2px solid var(--brass);
+  outline-offset: 1px;
+}
+
+.result__cafes::before {
+  content: "☕";
+  margin-right: 3px;
+}
+
+/* El vapor sale de dentro de la pastilla, que corta lo que sobresale. */
+.result__cafes::after {
+  content: "";
+  position: absolute;
+  left: 12px;
+  top: 0;
+  width: 1.5px;
+  height: 6px;
+  border-radius: 2px;
+  background: linear-gradient(var(--muted), transparent);
+  opacity: 0;
+  pointer-events: none;
+}
+
+.result__cafes.is-entra {
+  animation: pop var(--mid) var(--ease-spring);
+}
+
+.result__cafes.is-entra::after {
+  animation: cafe-vapor 1.4s var(--ease-out) 150ms;
+}
+
+.result__cafes.is-tic {
+  animation: tic 260ms var(--ease-out);
+}
+
+@keyframes cafe-vapor {
+  0% { opacity: 0; transform: translateY(5px) scaleY(0.4); }
+  35% { opacity: 0.8; }
+  100% { opacity: 0; transform: translate(2px, -3px) scaleY(1.1) skewX(-14deg); }
 }
 
 /* Sin comisión es una pastilla discreta con borde de puntos; con ella se
@@ -4932,6 +5007,18 @@ body::after {
 
 .burbuja__campo.is-mal {
   animation: shake 400ms var(--ease);
+}
+
+/* El café no tiene botones rápidos: depende de dónde vivas. El campo se
+   alinea con los de arriba y el código ocupa el sitio del %. */
+.burbuja__cafe {
+  flex: 0 1 112px;
+  margin-left: auto;
+}
+
+.burbuja__cafe .burbuja__campo {
+  flex: 1;
+  width: auto;
 }
 
 .burbuja__nota {

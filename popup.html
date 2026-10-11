@@ -201,6 +201,7 @@
         </div>
         <div class="result__pie">
           <p class="result__meta" id="result-meta"></p>
+          <button class="result__cafes" type="button" id="result-cafes" hidden></button>
           <button
             class="comision"
             type="button"
@@ -247,6 +248,20 @@
                   data-t-placeholder="impuesto.otro"
                   data-t-aria-label="impuesto.otroAria">
                 <span aria-hidden="true">%</span>
+              </label>
+            </div>
+            <div class="burbuja__fila">
+              <span class="burbuja__nombre" title="Lo que te cuesta un café en casa, para ver cuántos son" data-t="cafe.nombre" data-t-title="cafe.titulo">Café</span>
+              <label class="burbuja__otra burbuja__cafe">
+                <input
+                  class="burbuja__campo"
+                  type="text"
+                  id="cafe-campo"
+                  inputmode="decimal"
+                  autocomplete="off"
+                  spellcheck="false"
+                  placeholder="1,50">
+                <span id="cafe-divisa" aria-hidden="true"></span>
               </label>
             </div>
             <p class="burbuja__nota" data-t="comision.nota">Las tarjetas cobran del 1 al 3 %. El impuesto, si la etiqueta va sin él, como en EE. UU. o Canadá.</p>
