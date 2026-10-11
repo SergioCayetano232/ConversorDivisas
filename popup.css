@@ -1207,6 +1207,30 @@ body::after {
   border-style: dashed;
 }
 
+/* Con Alt, el símbolo: borde dorado de puntos, y el texto cae como una moneda. */
+.copiar.is-simbolo {
+  color: var(--brass);
+  border-color: var(--brass-dim);
+  border-style: dotted;
+  box-shadow: 0 0 12px -4px var(--brass-glow);
+}
+
+.is-simbolo-entra {
+  display: inline-block;
+  animation: simbolo-cae var(--mid) var(--ease-spring);
+}
+
+@keyframes simbolo-cae {
+  from {
+    opacity: 0;
+    transform: translateY(-6px) rotateX(70deg);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
 /* La frase copiada, en un globito que cae del botón. Por arriba lo cortaría la
    tarjeta, que no deja salir nada. */
 .copiar__frase {

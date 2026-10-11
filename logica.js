@@ -2086,6 +2086,33 @@ function textoParaCopiar(valor) {
   return valor.toFixed(2).replace(".", separadorDecimal());
 }
 
+// Con su símbolo, para pegarlo en un mensaje o en un formulario: "42,79 $" o
+// "$42.79", según el idioma. Si el símbolo lo comparten varias divisas ("$" el
+// dólar, el peso, el canadiense…), va el que no deja dudas: MX$, CA$, CN¥.
+const simboloCorto = (code) => new Intl.NumberFormat("en-US", { style: "currency", currency: code, currencyDisplay: "narrowSymbol" })
+  .formatToParts(1).find((p) => p.type === "currency").value;
+
+let simbolosRepetidos = null;
+
+function simboloDe(code) {
+  if (!simbolosRepetidos) {
+    const vistos = CURRENCIES.map((c) => simboloCorto(c.code));
+    simbolosRepetidos = new Set(vistos.filter((s, i) => vistos.indexOf(s) !== i));
+  }
+  const corto = simboloCorto(code);
+  if (!simbolosRepetidos.has(corto)) return corto;
+  return new Intl.NumberFormat("en-US", { style: "currency", currency: code, currencyDisplay: "symbol" })
+    .formatToParts(1).find((p) => p.type === "currency").value;
+}
+
+function textoConSimbolo(valor, code) {
+  if (!Number.isFinite(valor) || !isValidCode(code)) return "";
+  const partes = numeros({ style: "currency", currency: code, currencyDisplay: "narrowSymbol" }).formatToParts(valor);
+  const texto = partes.map((p) => (p.type === "currency" ? simboloDe(code) : p.value)).join("");
+  // En inglés el símbolo va pegado, y "SGD1,234.50" no se lee: con letras, espacio.
+  return texto.replace(/^([A-Za-z]+)(\d)/, "$1\u00a0$2");
+}
+
 function destinoPara(divisa, par) {
   if (!divisa) return { from: par.from, to: par.to };
   return { from: divisa, to: divisa === par.to ? par.from : par.to };
@@ -2445,7 +2472,7 @@ if (typeof module !== "undefined") {
     SEMANAS_MINIMAS, mejorDiaSemana, nombreDiaSemana, textoDiaSemana, indiceCercano, extremos, fechaCorta, largoEnPantalla,
     leerNumero, divisaDe, leerSeleccion, destinoPara, leerPegado, buscarPrecios, precioEntero, leerOmnibox, leerGastoBarra, gastoDeBarra, escaparXml,
     divisaDeIdioma, parPorIdioma, banderaDe, banderaDivisa,
-    HISTORIAL_MAX, leerHistorial, apuntarConversion, quitarConversion, haceCuanto, textoParaCopiar, fraseParaCopiar,
+    HISTORIAL_MAX, leerHistorial, apuntarConversion, quitarConversion, haceCuanto, textoParaCopiar, fraseParaCopiar, simboloDe, textoConSimbolo,
     celdaCsv, csvHistorial, csvGastos,
     GASTOS_MAX, CONCEPTO_MAX, crearGasto, leerGastos, apuntarGasto, quitarGasto, cambiarConcepto, cambiarDia, buscarGastos, trozosResaltados, repetirGasto, devolverGasto, devolverTodos, sumarPorDivisa, gastosPorDia, pesoDeLosDias, ordenarPorImporte, pesoDeLosGastos, RARO_VECES, mediana, gastoRaro, mediaPorDia, comisionesPagadas, pagadoEnEfectivo,
     RETIRADAS_MAX, leerRetiradas, crearRetirada, apuntarRetirada, quitarRetirada, efectivoQueda, EFECTIVO_POCO, tonoEfectivo, redondoDeCajero, cuantoSacar, loQueSobra, gastadoHoy, nombreDia,

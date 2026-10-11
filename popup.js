@@ -4524,7 +4524,9 @@ function onResultInput() {
 
 let avisoCopiado = null;
 
-async function onCopiar(entera = false) {
+// Con Shift la frase entera; con Alt, la cifra con su símbolo ("42,79 $"), que
+// es como se escribe en un mensaje. Si van los dos, gana la frase.
+async function onCopiar(entera = false, conSimbolo = false) {
   const valor = leerImporte(el.result.value);
   if (valor === null || rate === null) return;
   // Si lo copias es que era esa: la apunto ya, sin esperar.
@@ -4532,9 +4534,10 @@ async function onCopiar(entera = false) {
   apuntarAhora();
   const frase = entera ? fraseParaCopiar({ cantidad: leerImporte(el.amount.value), from: el.from.value, valor, to: el.to.value }) : "";
   if (entera && !frase) return;
-  const bien = await copiar(frase || textoParaCopiar(valor));
+  const simbolo = !entera && conSimbolo ? textoConSimbolo(valor, el.to.value) : "";
+  const bien = await copiar(frase || simbolo || textoParaCopiar(valor));
   avisar(tr(!bien ? "copiar.fallo" : frase ? "copiado.frase" : "copiado"));
-  if (bien && frase) soltarFrase(frase);
+  if (bien && (frase || simbolo)) soltarFrase(frase || simbolo);
 }
 
 // Un clic es para escribir en él; con doble clic lo copias sin ir al botón. El
@@ -4543,7 +4546,7 @@ async function onCopiarCifra(event) {
   if (leerImporte(el.result.value) === null || rate === null) return;
   el.result.select();
   restartAnimation(el.result, "is-copiada");
-  await onCopiar(event.shiftKey);
+  await onCopiar(event.shiftKey, event.altKey);
 }
 
 // La frase sube desde el botón para que veas qué se ha llevado el portapapeles.
@@ -4557,16 +4560,27 @@ function soltarFrase(frase) {
   globo.addEventListener("animationend", () => globo.remove());
 }
 
-// Con Shift pulsado el botón ya dice lo que va a copiar, antes de hacer clic.
+// Con Shift o Alt pulsado el botón ya dice lo que va a copiar, antes de hacer clic.
 let conShift = false;
-const etiquetaCopiar = () => tr(conShift ? "copiar.frase" : "copiar");
+let conAlt = false;
+const etiquetaCopiar = () => (conShift ? tr("copiar.frase")
+  : conAlt && isValidCode(el.to.value) ? tr("copiar.simbolo", { simbolo: simboloDe(el.to.value) })
+  : tr("copiar"));
 
 function onShift(event) {
-  const ahora = event.type === "blur" ? false : event.shiftKey;
-  if (ahora === conShift) return;
-  conShift = ahora;
+  const shift = event.type === "blur" ? false : event.shiftKey;
+  // Alt solo con el ratón encima: escribiendo, Alt es la tecla de los atajos y
+  // Alt+C copia la cifra a secas.
+  const alt = event.type === "blur" || event.type === "mouseleave" ? false : event.altKey && el.copiar.matches(":hover");
+  if (shift === conShift && alt === conAlt) return;
+  const antes = etiquetaCopiar();
+  conShift = shift;
+  conAlt = alt;
   el.copiar.classList.toggle("is-frase", conShift);
-  if (!el.copiar.classList.contains("is-hecho")) el.copiarTexto.textContent = etiquetaCopiar();
+  el.copiar.classList.toggle("is-simbolo", conAlt && !conShift);
+  if (el.copiar.classList.contains("is-hecho") || antes === etiquetaCopiar()) return;
+  el.copiarTexto.textContent = etiquetaCopiar();
+  if (conAlt && !conShift) restartAnimation(el.copiarTexto, "is-simbolo-entra");
 }
 
 async function copiar(texto) {
@@ -4788,7 +4802,7 @@ function bindEvents() {
   el.calculo.addEventListener("animationend", () => el.calculo.classList.remove("is-resuelto"));
   el.swap.addEventListener("click", onSwap);
   el.retry.addEventListener("click", refresh);
-  el.copiar.addEventListener("click", (event) => onCopiar(event.shiftKey));
+  el.copiar.addEventListener("click", (event) => onCopiar(event.shiftKey, event.altKey));
   el.result.addEventListener("dblclick", onCopiarCifra);
   el.result.addEventListener("animationend", (event) => {
     if (event.animationName === "copiada") el.result.classList.remove("is-copiada");
@@ -4796,6 +4810,8 @@ function bindEvents() {
   document.addEventListener("keydown", onShift);
   document.addEventListener("keyup", onShift);
   window.addEventListener("blur", onShift);
+  el.copiar.addEventListener("mouseenter", onShift);
+  el.copiar.addEventListener("mouseleave", onShift);
   for (const boton of el.rangos) boton.addEventListener("click", onRango);
   el.lienzo.addEventListener("pointermove", onPunteroGrafico);
   el.lienzo.addEventListener("pointerdown", onPunteroGrafico);
