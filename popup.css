@@ -4048,6 +4048,83 @@ body::after {
   animation: pop var(--mid) var(--ease-spring);
 }
 
+/* El cero de más: una línea dorada bajo el concepto, con un punto que respira
+   para que se vea sin gritar. */
+.gastos__raro {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: calc(var(--s-1) * -1) 0 var(--s-2);
+  padding: 4px 8px;
+  border: 1px solid var(--brass-dim);
+  border-radius: 6px;
+  background: var(--brass-ghost);
+  color: var(--brass);
+  font-size: 10px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  cursor: help;
+}
+
+.gastos__raro[hidden] {
+  display: none;
+}
+
+.gastos__raro::before {
+  content: "";
+  flex-shrink: 0;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--brass);
+  box-shadow: 0 0 6px var(--brass-glow);
+  animation: raro-respira 1.6s var(--ease) infinite;
+}
+
+.gastos__raro.is-entra {
+  animation: raro-entra var(--mid) var(--ease-spring);
+}
+
+/* Si le das igual, tiembla y se pone roja: la segunda vez ya lo apunto. */
+.gastos__raro.is-insiste {
+  border-color: color-mix(in srgb, var(--cinnabar) 45%, transparent);
+  background: color-mix(in srgb, var(--cinnabar) 10%, transparent);
+  color: var(--cinnabar);
+  animation: shake 400ms var(--ease);
+}
+
+.gastos__raro.is-insiste::before {
+  background: var(--cinnabar);
+  box-shadow: 0 0 6px var(--cinnabar-glow);
+}
+
+.gastos__apuntar.is-raro {
+  box-shadow: 0 0 0 1.5px var(--brass-dim), 0 0 14px -2px var(--brass-glow);
+}
+
+.gastos__apuntar.is-seguro {
+  background: var(--cinnabar);
+  color: var(--graphite);
+  box-shadow: 0 0 14px -3px var(--cinnabar-glow);
+  animation: beat var(--mid) var(--ease-spring);
+}
+
+@keyframes raro-entra {
+  from {
+    opacity: 0;
+    transform: translateY(-6px) scaleY(0.7);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes raro-respira {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.45; transform: scale(0.7); }
+}
+
 .gastos__pago svg,
 .gastos__categoria svg,
 .categorias__opcion svg,

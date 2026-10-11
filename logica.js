@@ -1640,6 +1640,33 @@ function ordenarPorImporte(gastos) {
   });
 }
 
+// Un cero de más se cuela fácil, y luego descuadra el viaje entero. Comparo con
+// lo normal de su categoría, que un hotel al lado de los cafés siempre parece caro.
+const RARO_VECES = 5;
+
+function mediana(valores) {
+  const orden = [...valores].sort((a, b) => a - b);
+  const mitad = Math.floor(orden.length / 2);
+  return orden.length % 2 ? orden[mitad] : (orden[mitad - 1] + orden[mitad]) / 2;
+}
+
+function gastoRaro(gastos, gasto) {
+  if (!gasto) return null;
+  const suyos = gastos.filter((g) => g.to === gasto.to);
+  const deSuCategoria = suyos.filter((g) => g.categoria === gasto.categoria);
+  // Con pocos de su categoría tiro de todo el viaje, menos el alojamiento: el
+  // primer hotel siempre sería "raro" al lado de los cafés.
+  const base = deSuCategoria.length >= 3 ? deSuCategoria
+    : suyos.length >= 5 && gasto.categoria !== "alojamiento" ? suyos
+    : null;
+  if (!base) return null;
+  const normal = mediana(base.map((g) => g.valor));
+  if (!(normal > 0)) return null;
+  const veces = gasto.valor / normal;
+  if (veces < RARO_VECES) return null;
+  return { veces: Math.round(veces), normal, to: gasto.to, categoria: base === deSuCategoria ? gasto.categoria : null };
+}
+
 // Lo que pesa cada gasto al lado del más caro de su divisa, para la barra de
 // fondo. Cada divisa con su máximo, por lo mismo de arriba.
 function pesoDeLosGastos(gastos) {
@@ -2292,7 +2319,7 @@ if (typeof module !== "undefined") {
     divisaDeIdioma, parPorIdioma, banderaDe, banderaDivisa,
     HISTORIAL_MAX, leerHistorial, apuntarConversion, quitarConversion, haceCuanto, textoParaCopiar, fraseParaCopiar,
     celdaCsv, csvHistorial, csvGastos,
-    GASTOS_MAX, CONCEPTO_MAX, crearGasto, leerGastos, apuntarGasto, quitarGasto, cambiarConcepto, cambiarDia, buscarGastos, trozosResaltados, repetirGasto, devolverGasto, devolverTodos, sumarPorDivisa, gastosPorDia, pesoDeLosDias, ordenarPorImporte, pesoDeLosGastos, mediaPorDia, comisionesPagadas, pagadoEnEfectivo,
+    GASTOS_MAX, CONCEPTO_MAX, crearGasto, leerGastos, apuntarGasto, quitarGasto, cambiarConcepto, cambiarDia, buscarGastos, trozosResaltados, repetirGasto, devolverGasto, devolverTodos, sumarPorDivisa, gastosPorDia, pesoDeLosDias, ordenarPorImporte, pesoDeLosGastos, RARO_VECES, mediana, gastoRaro, mediaPorDia, comisionesPagadas, pagadoEnEfectivo,
     RETIRADAS_MAX, leerRetiradas, crearRetirada, apuntarRetirada, quitarRetirada, efectivoQueda, EFECTIVO_POCO, tonoEfectivo, redondoDeCajero, cuantoSacar, gastadoHoy, nombreDia,
     CATEGORIAS, CATEGORIA_POR_DEFECTO, adivinarCategoria, PAGOS, PAGO_POR_DEFECTO, leerPago, comisionDelPago, desglose, conceptosUsados, completarConcepto,
     EMOJI_CATEGORIA, destacados, resumenParaCompartir,

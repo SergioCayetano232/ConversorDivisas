@@ -127,6 +127,7 @@ const el = {
   presupuestoEstoTexto: document.getElementById("presupuesto-esto-texto"),
   gastosSugerencia: document.getElementById("gastos-sugerencia"),
   gastosApuntar: document.getElementById("gastos-apuntar"),
+  gastosRaro: document.getElementById("gastos-raro"),
   gastosLista: document.getElementById("gastos-lista"),
   gastosVacio: document.getElementById("gastos-vacio"),
   gastosCerrar: document.getElementById("gastos-cerrar"),
@@ -259,6 +260,9 @@ let quedanSueltos = false;
 let gastos = [];
 // El que acabas de apuntar entra con su salto; los demás se quedan quietos.
 let gastoNuevo = null;
+// El gasto raro que ya te he avisado: el segundo clic lo apunta. Cambiar la
+// cantidad o la categoría vuelve a preguntar.
+let raroAvisado = null;
 let cascadaGastos = false;
 let vaciarId = null;
 // Lo último que has quitado, mientras se puede deshacer: un gasto y dónde
@@ -2201,6 +2205,7 @@ function onConceptoGasto() {
   if (nueva === categoriaNueva) return;
   categoriaNueva = nueva;
   pintarCategoriaNueva(true);
+  pintarBotonGasto();
 }
 
 function abrirCategorias() {
@@ -2218,6 +2223,7 @@ function abrirCategorias() {
       categoriaNueva = categoria;
       categoriaAMano = true;
       pintarCategoriaNueva(true);
+      pintarBotonGasto();
       cerrarCategorias();
       el.gastosConcepto.focus();
     });
@@ -2291,18 +2297,42 @@ function pintarLoQueSeLleva(gasto = gastoDePantalla()) {
   if (texto) restartAnimation(el.presupuestoEstoTexto, "is-tic");
 }
 
+const claveRaro = (g) => `${g.valor} ${g.to} ${g.categoria}`;
+
+// Mientras escribes ya ves que es raro; al apuntar, el primer clic pregunta.
+function pintarGastoRaro(gasto) {
+  const raro = gasto ? gastoRaro(gastos, gasto) : null;
+  if (!raro || raroAvisado !== claveRaro(gasto)) raroAvisado = null;
+  if (!raroAvisado) el.gastosRaro.classList.remove("is-insiste");
+  const texto = !raro ? ""
+    : raro.categoria ? tr("gastos.raro", { veces: raro.veces, categoria: tr(`cat.${raro.categoria}`).toLowerCase() })
+    : tr("gastos.raroTodo", { veces: raro.veces });
+  if (el.gastosRaro.textContent !== texto) {
+    el.gastosRaro.textContent = texto;
+    el.gastosRaro.hidden = !texto;
+    if (texto) restartAnimation(el.gastosRaro, "is-entra");
+  }
+  el.gastosRaro.title = raro ? tr("gastos.raroTitulo", { normal: `${nf.format(raro.normal)} ${raro.to}` }) : "";
+  return Boolean(raro);
+}
+
 function pintarBotonGasto() {
   const gasto = gastoDePantalla();
   pintarLoQueSeLleva(gasto);
   el.gastosApuntar.disabled = !gasto;
   if (!gasto) {
+    pintarGastoRaro(null);
+    el.gastosApuntar.classList.remove("is-raro", "is-seguro");
     el.gastosApuntar.textContent = "+";
     el.gastosApuntar.title = tr("gastos.nada");
     el.gastosApuntar.setAttribute("aria-label", tr("gastos.nada"));
     return;
   }
   const valor = `${nf.format(gasto.valor)} ${gasto.to}`;
-  el.gastosApuntar.textContent = tr("gastos.apuntar", { valor });
+  const raro = pintarGastoRaro(gasto);
+  el.gastosApuntar.classList.toggle("is-raro", raro);
+  if (!raroAvisado) el.gastosApuntar.classList.remove("is-seguro");
+  el.gastosApuntar.textContent = tr(raro && raroAvisado === claveRaro(gasto) ? "gastos.raroSeguro" : "gastos.apuntar", { valor });
   el.gastosApuntar.title = comision === 0 ? ""
     : pagoNuevo === "efectivo" ? tr("pago.efectivoNota")
     : tr("gastos.comision", { pct: tr("pct", { n: nfComision.format(comision) }) });
@@ -3387,6 +3417,14 @@ function onApuntarGasto(event) {
     restartAnimation(el.gastosApuntar, "is-mal");
     return;
   }
+  if (gastoRaro(gastos, gasto) && raroAvisado !== claveRaro(gasto)) {
+    raroAvisado = claveRaro(gasto);
+    pintarBotonGasto();
+    restartAnimation(el.gastosRaro, "is-insiste");
+    restartAnimation(el.gastosApuntar, "is-seguro");
+    return;
+  }
+  raroAvisado = null;
   gastos = apuntarGasto(gastos, gasto);
   gastoNuevo = gasto.id;
   el.gastosConcepto.value = "";
