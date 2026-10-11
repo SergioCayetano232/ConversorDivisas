@@ -4203,6 +4203,45 @@ body::after {
   box-shadow: 0 0 0 1.5px var(--graphite), 0 0 6px var(--jade-glow);
 }
 
+/* El más caro del día lleva corona en la esquina de arriba (el efectivo va
+   abajo) y su cifra en dorado. Al cambiar de rey, la corona cae y rebota. */
+.gastos__icono.is-rey {
+  position: relative;
+  color: var(--brass);
+}
+
+.gastos__icono.is-rey::before {
+  content: "👑";
+  position: absolute;
+  left: -7px;
+  top: -8px;
+  font-size: 10px;
+  line-height: 1;
+  transform: rotate(-18deg);
+  filter: drop-shadow(0 0 3px var(--brass-glow));
+  pointer-events: none;
+}
+
+.gastos__icono.is-coronado::before {
+  animation: corona-cae 620ms var(--ease-spring) 180ms backwards;
+}
+
+.gastos__fila.is-rey .gastos__texto {
+  border-color: var(--brass-dim);
+  background: linear-gradient(90deg, var(--brass-ghost), var(--slate) 70%);
+}
+
+.gastos__fila.is-rey .gastos__valor {
+  font-weight: 700;
+  text-shadow: 0 0 8px var(--brass-glow);
+}
+
+@keyframes corona-cae {
+  0% { opacity: 0; transform: translateY(-8px) rotate(-60deg) scale(0.4); }
+  60% { opacity: 1; transform: translateY(1px) rotate(-10deg) scale(1.15); }
+  100% { transform: rotate(-18deg); }
+}
+
 .gastos__apuntar.is-tic {
   animation: pop var(--mid) var(--ease-spring);
 }

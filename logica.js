@@ -1710,6 +1710,19 @@ function gastosPorDia(gastos) {
   return [...dias].map(([dia, lista]) => ({ dia, gastos: lista, totales: sumarPorDivisa(lista) }));
 }
 
+// El más caro de cada día, en la divisa que más suma en el viaje. Con uno solo
+// no hay con qué compararlo, y si empatan los dos primeros no marco ninguno:
+// dos cafés iguales no tienen rey.
+function masCarosDelDia(gastos) {
+  const principal = sumarPorDivisa(gastos)[0]?.to;
+  const ids = new Set();
+  for (const { gastos: delDia } of gastosPorDia(gastos)) {
+    const suyos = delDia.filter((g) => g.to === principal).sort((a, b) => b.valor - a.valor);
+    if (suyos.length >= 2 && suyos[0].valor > suyos[1].valor) ids.add(suyos[0].id);
+  }
+  return ids;
+}
+
 // Los más caros primero. Los de otra divisa van detrás: 50 USD y 50 EUR no son
 // lo mismo y no tengo con qué compararlos. A igual importe, el más reciente.
 function ordenarPorImporte(gastos) {
@@ -2474,7 +2487,7 @@ if (typeof module !== "undefined") {
     divisaDeIdioma, parPorIdioma, banderaDe, banderaDivisa,
     HISTORIAL_MAX, leerHistorial, apuntarConversion, quitarConversion, haceCuanto, textoParaCopiar, fraseParaCopiar, simboloDe, textoConSimbolo,
     celdaCsv, csvHistorial, csvGastos,
-    GASTOS_MAX, CONCEPTO_MAX, crearGasto, leerGastos, apuntarGasto, quitarGasto, cambiarConcepto, cambiarDia, buscarGastos, trozosResaltados, repetirGasto, devolverGasto, devolverTodos, sumarPorDivisa, gastosPorDia, pesoDeLosDias, ordenarPorImporte, pesoDeLosGastos, RARO_VECES, mediana, gastoRaro, mediaPorDia, comisionesPagadas, pagadoEnEfectivo,
+    GASTOS_MAX, CONCEPTO_MAX, crearGasto, leerGastos, apuntarGasto, quitarGasto, cambiarConcepto, cambiarDia, buscarGastos, trozosResaltados, repetirGasto, devolverGasto, devolverTodos, sumarPorDivisa, gastosPorDia, pesoDeLosDias, ordenarPorImporte, masCarosDelDia, pesoDeLosGastos, RARO_VECES, mediana, gastoRaro, mediaPorDia, comisionesPagadas, pagadoEnEfectivo,
     RETIRADAS_MAX, leerRetiradas, crearRetirada, apuntarRetirada, quitarRetirada, efectivoQueda, EFECTIVO_POCO, tonoEfectivo, redondoDeCajero, cuantoSacar, loQueSobra, gastadoHoy, nombreDia,
     CATEGORIAS, CATEGORIA_POR_DEFECTO, adivinarCategoria, PAGOS, PAGO_POR_DEFECTO, leerPago, comisionDelPago, desglose, conceptosUsados, completarConcepto,
     EMOJI_CATEGORIA, destacados, resumenParaCompartir,

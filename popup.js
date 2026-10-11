@@ -266,6 +266,8 @@ let quedanSueltos = false;
 let gastos = [];
 // El que acabas de apuntar entra con su salto; los demás se quedan quietos.
 let gastoNuevo = null;
+// Las coronas de la vez anterior: la que cambia de gasto cae con su animación.
+let reyesAntes = new Set();
 // El gasto raro que ya te he avisado: el segundo clic lo apunta. Cambiar la
 // cantidad o la categoría vuelve a preguntar.
 let raroAvisado = null;
@@ -2448,7 +2450,7 @@ function crearDiaGastos({ dia, gastos: suyos, totales }, peso, d) {
   return fila;
 }
 
-function crearFilaGasto(gasto, i, peso) {
+function crearFilaGasto(gasto, i, peso, rey = false) {
   const fila = document.createElement("li");
   fila.className = "gastos__fila";
   // Ordenados por importe, una barra de fondo con lo que pesa al lado del más caro.
@@ -2506,6 +2508,13 @@ function crearFilaGasto(gasto, i, peso) {
   if (gasto.pago === "efectivo") {
     icono.classList.add("is-efectivo");
     icono.title = `${tr(`cat.${gasto.categoria}`)} · ${tr("pago.efectivo")}`;
+  }
+  if (rey) {
+    fila.classList.add("is-rey");
+    icono.classList.add("is-rey");
+    icono.title += ` · ${tr("gastos.rey")}`;
+    texto.setAttribute("aria-label", `${texto.getAttribute("aria-label")}. ${tr("gastos.rey")}`);
+    if (cascadaGastos || !reyesAntes.has(gasto.id)) icono.classList.add("is-coronado");
   }
   texto.append(icono, que, de, cuanto);
 
@@ -2775,10 +2784,14 @@ function pintarGastos() {
     let i = 0;
     const dias = gastosPorDia(visibles);
     const pesos = pesoDeLosDias(dias);
+    // Con todos los del día, no solo los que se ven: filtrando por comida, la
+    // cena sigue sin ser lo más caro si ese día estuvo el hotel.
+    const reyes = masCarosDelDia(gastos);
     el.gastosLista.replaceChildren(...dias.flatMap((dia, d) => [
       crearDiaGastos(dia, pesos[d], d),
-      ...dia.gastos.map((gasto) => crearFilaGasto(gasto, i++)),
+      ...dia.gastos.map((gasto) => crearFilaGasto(gasto, i++, undefined, reyes.has(gasto.id))),
     ]));
+    reyesAntes = reyes;
   }
   cascadaGastos = false;
   gastoNuevo = null;
