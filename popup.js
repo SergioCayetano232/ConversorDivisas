@@ -4170,7 +4170,12 @@ function onDarLaVueltaATasa() {
 }
 
 function renderUpdated() {
-  el.updated.textContent = rateDate ? tr("actualizado", { fecha: rateDate }) : "";
+  el.updated.textContent = textoActualizado(rateDate);
+  // La de hoy lleva su puntito verde; la vieja ya sale en ámbar.
+  el.updated.classList.toggle("is-hoy", rateDate === hoy());
+  el.updated.title = rateDate
+    ? [tr("bce.titulo", { fecha: fechaLarga(rateDate), hora: horaCorta(horaBce(rateDate)) }), textoProximaTasa(proximaTasa(rateDate))].filter(Boolean).join(". ")
+    : "";
   pintarTasaVieja();
 }
 

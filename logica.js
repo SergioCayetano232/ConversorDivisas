@@ -502,6 +502,51 @@ function tasaVieja(fecha, hoyIso = hoy()) {
   return dias > 0 ? { fecha, dias } : null;
 }
 
+// El BCE las publica sobre las cuatro de la tarde de Fráncfort. Lo paso a tu
+// hora: desde México, "16:00" sería mentira. Miro qué hora es allí a mediodía
+// UTC y así me sale si están en horario de verano o no.
+function horaBce(fechaIso) {
+  const [a, m, d] = fechaIso.split("-").map(Number);
+  const mediodia = Date.UTC(a, m - 1, d, 12);
+  const alli = Number(new Intl.DateTimeFormat("en-GB", { timeZone: "Europe/Berlin", hour: "numeric", hourCycle: "h23" }).format(mediodia));
+  return new Date(mediodia + (16 - alli) * 3600000);
+}
+
+const horaCorta = (instante) => fechas({ hour: "numeric", minute: "2-digit" }).format(instante);
+
+// "BCE hoy 16:00" en vez de la fecha en ISO, que nadie lee así.
+function textoActualizado(fechaIso, ahora = Date.now()) {
+  if (!esIso(fechaIso)) return "";
+  const instante = horaBce(fechaIso);
+  const dia = nombreDia(isoLocal(instante), isoLocal(new Date(ahora))).toLocaleLowerCase();
+  return tr("actualizado", { cuando: `${dia} ${horaCorta(instante)}` });
+}
+
+// La siguiente que publicará: el primer día con tasa después de la que tengo
+// cuya hora aún no ha pasado. Con diez días sobra hasta para la Semana Santa.
+function proximaTasa(fechaIso, ahora = Date.now()) {
+  if (!esIso(fechaIso)) return null;
+  const [a, m, d] = fechaIso.split("-").map(Number);
+  for (let mas = 1; mas <= 10; mas += 1) {
+    const dia = new Date(a, m - 1, d + mas);
+    if (!hayTasaEl(dia)) continue;
+    const instante = horaBce(isoLocal(dia));
+    if (instante.getTime() > ahora) return instante;
+  }
+  return null;
+}
+
+function textoProximaTasa(instante, ahora = Date.now()) {
+  if (!instante) return "";
+  const hora = horaCorta(instante);
+  const dia = isoLocal(instante);
+  const hoyIso = isoLocal(new Date(ahora));
+  const [a, m, d] = hoyIso.split("-").map(Number);
+  if (dia === hoyIso) return tr("bce.proximaHoy", { hora });
+  if (dia === isoLocal(new Date(a, m - 1, d + 1))) return tr("bce.proximaManana", { hora });
+  return tr("bce.proximaDia", { hora, dia: fechas({ weekday: "long" }).format(instante) });
+}
+
 // "del lunes" si es de esta semana, que se entiende mejor; si no, la fecha.
 function textoTasaVieja(fecha, hoyIso = hoy()) {
   const [a, m, d] = fecha.split("-").map(Number);
@@ -2417,7 +2462,7 @@ if (typeof module !== "undefined") {
     COMPARAR_IGUAL, compararPrecios, inclinacion, leerCafe, enCafes, textoCafes,
     PROPINAS_RAPIDAS, PROPINA_HABITUAL, propinaHabitual, PROPINA_MAX, PERSONAS_MAX, CUENTA_POR_DEFECTO, leerCuenta, repartirCuenta, cuentaParaCompartir,
     MARGENES, tasaOfrecida, analizarCambio,
-    domingoDePascua, hayTasaEl, tasaVieja, textoTasaVieja,
+    domingoDePascua, hayTasaEl, tasaVieja, textoTasaVieja, horaBce, textoActualizado, proximaTasa, textoProximaTasa,
     FECHA_MINIMA, fechaLarga, fechaValida, diaDelGrafico, mesesAtras, FECHAS_RAPIDAS, leerFecha, cambioDesde, notaDiaHabil,
     textoInsignia, cambioDiario, sentidoDe, cambioDelDia, textoCambioDia, tituloInsignia, lineaTasa,
     AVISOS_MAX, sentidoAviso, crearAviso, leerAvisos, avisoCumplido, repartirAvisos, mensajeAviso, faltaParaAviso, cercaniaAviso, textoFalta,

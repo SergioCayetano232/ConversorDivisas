@@ -7081,8 +7081,29 @@ kbd {
 }
 
 .footer__updated {
+  display: flex;
+  align-items: center;
+  gap: 5px;
   font-family: var(--font-mono);
   font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  cursor: help;
+}
+
+/* Con la tasa de hoy, un puntito verde que respira: está al día. */
+.footer__updated.is-hoy::before {
+  content: "";
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--jade);
+  box-shadow: 0 0 0 0 var(--jade-glow);
+  animation: bce-al-dia 2.4s var(--ease-out) infinite;
+}
+
+@keyframes bce-al-dia {
+  0% { box-shadow: 0 0 0 0 var(--jade-glow); }
+  70%, 100% { box-shadow: 0 0 0 5px transparent; }
 }
 
 @media (prefers-reduced-motion: reduce) {
