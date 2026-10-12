@@ -4766,10 +4766,45 @@ body::after {
 
 /* Los cafés van pegados a la cifra pequeña, discretos: es una pista, no una
    cuenta. Al salir, la taza echa un hilo de vapor. */
+/* Cafés y horas comparten hueco: una encima de la otra en la misma celda. */
+.result__pistas {
+  display: grid;
+  min-width: 0;
+  margin-right: auto;
+}
+
+.result__pistas > .result__cafes {
+  grid-area: 1 / 1;
+  justify-self: start;
+  max-width: 100%;
+}
+
+.result__pistas.is-turnos > .result__cafes {
+  transition:
+    opacity var(--mid) var(--ease),
+    translate var(--mid) var(--ease-spring),
+    border-color var(--fast) var(--ease),
+    color var(--fast) var(--ease);
+}
+
+/* La que no toca rueda hacia arriba o hacia abajo y se apaga. */
+.result__pistas.is-turnos:not(.is-horas) > .result__horas,
+.result__pistas.is-turnos.is-horas > .result__cafes:not(.result__horas) {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.result__pistas.is-turnos:not(.is-horas) > .result__horas {
+  translate: 0 8px;
+}
+
+.result__pistas.is-turnos.is-horas > .result__cafes:not(.result__horas) {
+  translate: 0 -8px;
+}
+
 .result__cafes {
   position: relative;
   min-width: 0;
-  margin-right: auto;
   overflow: hidden;
   text-overflow: ellipsis;
   padding: 1px 7px;
@@ -4828,6 +4863,26 @@ body::after {
 
 .result__cafes.is-tic {
   animation: tic 260ms var(--ease-out);
+}
+
+/* Las horas, con la misma pastilla que los cafés. Al salir, el reloj de arena
+   se da la vuelta, que es cuando empieza a contar. */
+.result__horas::before {
+  content: "⏳";
+  display: inline-block;
+}
+
+.result__horas::after {
+  content: none;
+}
+
+.result__horas.is-entra::before {
+  animation: reloj-vuelta 700ms var(--ease-spring) 80ms;
+}
+
+@keyframes reloj-vuelta {
+  0% { transform: rotate(0); }
+  100% { transform: rotate(180deg); }
 }
 
 @keyframes cafe-vapor {

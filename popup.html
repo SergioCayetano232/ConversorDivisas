@@ -201,7 +201,10 @@
         </div>
         <div class="result__pie">
           <p class="result__meta" id="result-meta"></p>
-          <button class="result__cafes" type="button" id="result-cafes" hidden></button>
+          <span class="result__pistas" id="result-pistas">
+            <button class="result__cafes" type="button" id="result-cafes" hidden></button>
+            <button class="result__cafes result__horas" type="button" id="result-horas" hidden></button>
+          </span>
           <button
             class="comision"
             type="button"
@@ -262,6 +265,20 @@
                   spellcheck="false"
                   placeholder="1,50">
                 <span id="cafe-divisa" aria-hidden="true"></span>
+              </label>
+            </div>
+            <div class="burbuja__fila">
+              <span class="burbuja__nombre" title="Lo que ganas a la hora, para ver cuánto trabajo es" data-t="horas.nombre" data-t-title="horas.titulo">Hora</span>
+              <label class="burbuja__otra burbuja__cafe">
+                <input
+                  class="burbuja__campo"
+                  type="text"
+                  id="sueldo-campo"
+                  inputmode="decimal"
+                  autocomplete="off"
+                  spellcheck="false"
+                  placeholder="15">
+                <span id="sueldo-divisa" aria-hidden="true"></span>
               </label>
             </div>
             <p class="burbuja__nota" data-t="comision.nota">Las tarjetas cobran del 1 al 3 %. El impuesto, si la etiqueta va sin él, como en EE. UU. o Canadá.</p>

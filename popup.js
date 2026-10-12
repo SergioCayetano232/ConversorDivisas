@@ -176,6 +176,10 @@ const el = {
   cafeCampo: document.getElementById("cafe-campo"),
   cafeDivisa: document.getElementById("cafe-divisa"),
   resultCafes: document.getElementById("result-cafes"),
+  sueldoCampo: document.getElementById("sueldo-campo"),
+  sueldoDivisa: document.getElementById("sueldo-divisa"),
+  resultHoras: document.getElementById("result-horas"),
+  resultPistas: document.getElementById("result-pistas"),
   burbuja: document.getElementById("comision-burbuja"),
   comisionRapidas: document.getElementById("comision-rapidas"),
   comisionCampo: document.getElementById("comision-campo"),
@@ -246,6 +250,7 @@ let parDelUmbral = null;
 let comision = 0;
 let impuesto = 0;
 let cafe = null;
+let sueldo = null;
 let tasaAlReves = false;
 let historial = [];
 // Abrir el popup y verlo con su 1 de siempre no es convertir nada: solo apunto
@@ -336,6 +341,7 @@ const AVISOS_KEY = "avisos";
 const COMISION_KEY = "comisionBanco";
 const IMPUESTO_KEY = "impuestoVenta";
 const CAFE_KEY = "precioCafe";
+const SUELDO_KEY = "sueldoHora";
 const PAGO_KEY = "pagoGasto";
 const FECHA_KEY = "fechaConsulta";
 const HISTORIAL_KEY = "historialConversiones";
@@ -417,6 +423,17 @@ async function cargarAvisos() {
   } catch (error) {
     console.warn("No se pudieron leer los avisos", error);
     return [];
+  }
+}
+
+// El sueldo se guarda con la misma forma que el café: precio y divisa.
+async function cargarSueldo() {
+  try {
+    const guardado = await chrome.storage.local.get(SUELDO_KEY);
+    return leerCafe(guardado[SUELDO_KEY]);
+  } catch (error) {
+    console.warn("No se pudo leer el sueldo", error);
+    return null;
   }
 }
 
@@ -1760,6 +1777,81 @@ function pintarCafes() {
   if (habia !== corto) restartAnimation(nodo, habia ? "is-tic" : "is-entra");
 }
 
+// Al lado de los cafés, el rato que tendrías que trabajar para pagarlo.
+function pintarHoras() {
+  const min = enHoras(sueldo, [
+    { valor: leerImporte(el.amount.value), divisa: el.from.value },
+    { valor: leerImporte(el.result.value), divisa: el.to.value },
+  ]);
+  const nodo = el.resultHoras;
+  const habia = nodo.textContent;
+  const corto = textoHoras(min, true);
+  nodo.hidden = !corto;
+  nodo.textContent = corto;
+  if (!corto) return;
+  nodo.title = `${textoHoras(min)}. ${tr("horas.cuenta", { precio: `${nf.format(sueldo.precio)} ${sueldo.divisa}` })}`;
+  nodo.setAttribute("aria-label", nodo.title);
+  if (habia !== corto) restartAnimation(nodo, habia ? "is-tic" : "is-entra");
+}
+
+// Cafés y horas juntos no caben al lado de la comisión, así que se turnan en
+// el mismo sitio. Con el ratón encima se queda quieto, para poder leerlo.
+const TURNO_PISTAS = 4000;
+
+function pintarPistas() {
+  const ambas = !el.resultCafes.hidden && !el.resultHoras.hidden;
+  el.resultPistas.classList.toggle("is-turnos", ambas);
+  if (!ambas) el.resultPistas.classList.remove("is-horas");
+  const horas = el.resultPistas.classList.contains("is-horas");
+  el.resultCafes.inert = ambas && horas;
+  el.resultHoras.inert = ambas && !horas;
+}
+
+function turnarPistas() {
+  const pistas = el.resultPistas;
+  if (!pistas.classList.contains("is-turnos") || pistas.matches(":hover, :focus-within")) return;
+  const horas = pistas.classList.toggle("is-horas");
+  pintarPistas();
+  restartAnimation(horas ? el.resultHoras : el.resultCafes, "is-entra");
+}
+
+function onCampoSueldo() {
+  const texto = el.sueldoCampo.value.trim();
+  el.sueldoCampo.removeAttribute("aria-invalid");
+  const divisa = sueldo?.divisa ?? el.to.value;
+  const nuevo = texto === "" ? null : leerCafe({ precio: leerImporte(texto), divisa });
+  if (texto !== "" && !nuevo) return;
+  sueldo = nuevo;
+  pintarHoras();
+  pintarPistas();
+  try {
+    if (sueldo) chrome.storage.local.set({ [SUELDO_KEY]: sueldo });
+    else chrome.storage.local.remove(SUELDO_KEY);
+  } catch (error) {
+    console.warn("No se pudo guardar el sueldo", error);
+  }
+}
+
+function onTeclaCampoSueldo(event) {
+  if (event.key !== "Enter") return;
+  event.preventDefault();
+  const texto = el.sueldoCampo.value.trim();
+  if (texto !== "" && !leerCafe({ precio: leerImporte(texto), divisa: "EUR" })) {
+    el.sueldoCampo.setAttribute("aria-invalid", "true");
+    restartAnimation(el.sueldoCampo, "is-mal");
+    return;
+  }
+  cerrarBurbuja()?.focus();
+}
+
+function pintarCampoSueldo() {
+  const divisa = sueldo?.divisa ?? el.to.value;
+  el.sueldoCampo.value = sueldo ? nf.format(sueldo.precio) : "";
+  el.sueldoCampo.removeAttribute("aria-invalid");
+  el.sueldoDivisa.textContent = divisa;
+  el.sueldoCampo.setAttribute("aria-label", tr("horas.campo", { divisa }));
+}
+
 // La divisa es la que tenga ya el café; si no hay, la de destino, que suele ser
 // la tuya. Vacío lo quita.
 function onCampoCafe() {
@@ -1770,6 +1862,7 @@ function onCampoCafe() {
   if (texto !== "" && !nuevo) return;
   cafe = nuevo;
   pintarCafes();
+  pintarPistas();
   try {
     if (cafe) chrome.storage.local.set({ [CAFE_KEY]: cafe });
     else chrome.storage.local.remove(CAFE_KEY);
@@ -1942,6 +2035,7 @@ function abrirBurbuja() {
   el.comisionCampo.value = rapida ? "" : nfComision.format(comision);
   el.comisionCampo.removeAttribute("aria-invalid");
   pintarCampoCafe();
+  pintarCampoSueldo();
   el.burbuja.hidden = false;
   el.comision.setAttribute("aria-expanded", "true");
   (rapida ? el.comisionRapidas.querySelector('[aria-pressed="true"]') : el.comisionCampo).focus();
@@ -4264,6 +4358,8 @@ function renderResult() {
     el.resultMeta.textContent = "";
     pintarComision();
     pintarCafes();
+    pintarHoras();
+    pintarPistas();
     pintarComparar();
     return;
   }
@@ -4271,6 +4367,8 @@ function renderResult() {
   if (rate === null) {
     pintarComision();
     pintarCafes();
+    pintarHoras();
+    pintarPistas();
     pintarComparar();
     return;
   }
@@ -4283,6 +4381,8 @@ function renderResult() {
   el.resultMeta.textContent = `${nf.format(enviados)} ${from}`;
   pintarComision();
   pintarCafes();
+  pintarHoras();
+  pintarPistas();
   pintarComparar();
   pintarBotonGasto();
 
@@ -4380,6 +4480,8 @@ async function refresh() {
     pintarComparar();
     pintarComision();
     pintarCafes();
+    pintarHoras();
+    pintarPistas();
     hideTrend();
     showError(errorMessageFor(error));
   } finally {
@@ -4968,6 +5070,11 @@ function bindEvents() {
   el.cafeCampo.addEventListener("keydown", onTeclaCampoCafe);
   el.cafeCampo.addEventListener("animationend", () => el.cafeCampo.classList.remove("is-mal"));
   el.resultCafes.addEventListener("click", () => (el.burbuja.hidden ? abrirBurbuja() : cerrarBurbuja()));
+  el.sueldoCampo.addEventListener("input", onCampoSueldo);
+  el.sueldoCampo.addEventListener("keydown", onTeclaCampoSueldo);
+  el.sueldoCampo.addEventListener("animationend", () => el.sueldoCampo.classList.remove("is-mal"));
+  el.resultHoras.addEventListener("click", () => (el.burbuja.hidden ? abrirBurbuja() : cerrarBurbuja()));
+  setInterval(turnarPistas, TURNO_PISTAS);
   el.buscarAbrir.addEventListener("click", () => {
     if (el.buscar.hidden) return abrirBusqueda();
     cerrarBusqueda();
@@ -5101,10 +5208,10 @@ async function init() {
   const idiomaCambiado = await cargarIdioma();
   traducirPagina();
   if (idiomaCambiado) saludarIdioma();
-  const [pair, rango, guardados, pendiente, guardadas, vistaGuardada, avisosGuardados, comisionGuardada, fechaGuardada, historialGuardado, viajesGuardados, repartoGuardado, alRevesGuardado, pagoGuardado, cantidadGuardada, impuestoGuardado, cafeGuardado] = await Promise.all([
+  const [pair, rango, guardados, pendiente, guardadas, vistaGuardada, avisosGuardados, comisionGuardada, fechaGuardada, historialGuardado, viajesGuardados, repartoGuardado, alRevesGuardado, pagoGuardado, cantidadGuardada, impuestoGuardado, cafeGuardado, sueldoGuardado] = await Promise.all([
     loadPair(), cargarRango(), cargarRecientes(), tomarPendiente(), cargarExtras(), cargarVista(), cargarAvisos(),
     cargarComision(), cargarFecha(), cargarHistorial(), cargarViajes(), cargarReparto(), cargarTasaAlReves(), cargarPago(),
-    cargarCantidad(), cargarImpuesto(), cargarCafe(),
+    cargarCantidad(), cargarImpuesto(), cargarCafe(), cargarSueldo(),
   ]);
   pagoNuevo = pagoGuardado;
   pintarPago();
@@ -5119,6 +5226,7 @@ async function init() {
   comision = comisionGuardada;
   impuesto = impuestoGuardado;
   cafe = cafeGuardado;
+  sueldo = sueldoGuardado;
   fecha = fechaGuardada;
   crearFechasRapidas();
   dias = rango;
