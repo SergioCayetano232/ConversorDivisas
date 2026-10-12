@@ -183,6 +183,8 @@ const el = {
   sueldoDivisa: document.getElementById("sueldo-divisa"),
   resultHoras: document.getElementById("result-horas"),
   resultPistas: document.getElementById("result-pistas"),
+  alli: document.getElementById("alli"),
+  alliHora: document.getElementById("alli-hora"),
   burbuja: document.getElementById("comision-burbuja"),
   comisionRapidas: document.getElementById("comision-rapidas"),
   comisionCampo: document.getElementById("comision-campo"),
@@ -1797,6 +1799,29 @@ function pintarHoras() {
   nodo.title = `${textoHoras(min)}. ${tr("horas.cuenta", { precio: `${nf.format(sueldo.precio)} ${sueldo.divisa}` })}`;
   nodo.setAttribute("aria-label", nodo.title);
   if (habia !== corto) restartAnimation(nodo, habia ? "is-tic" : "is-entra");
+}
+
+// La hora de la divisa de origen, que es la de allí. Las agujas giran hasta su
+// sitio cuando cambias de divisa; con el paso de los minutos solo se mueven.
+function pintarHoraAlli() {
+  const code = el.from.value;
+  const h = horaAlli(code);
+  const nodo = el.alli;
+  nodo.hidden = !h;
+  if (!h) {
+    delete nodo.dataset.code;
+    return;
+  }
+  nodo.style.setProperty("--h", `${(h.horas % 12) * 30 + h.minutos / 2}deg`);
+  nodo.style.setProperty("--m", `${h.minutos * 6}deg`);
+  nodo.classList.toggle("is-noche", esNoche(h.horas));
+  el.alliHora.textContent = relojDe(h);
+  nodo.title = tituloHoraAlli(h);
+  nodo.setAttribute("aria-label", nodo.title);
+  if (nodo.dataset.code !== code) {
+    nodo.dataset.code = code;
+    restartAnimation(nodo, "is-entra");
+  }
 }
 
 // Cafés y horas juntos no caben al lado de la comisión, así que se turnan en
@@ -4440,6 +4465,7 @@ function renderResult() {
 async function refresh() {
   const from = el.from.value;
   const to = el.to.value;
+  pintarHoraAlli();
   // Sube también con la misma divisa en los dos lados: si no, la petición que
   // estuviera en vuelo llegaba después y me pisaba el 1 con la tasa vieja.
   const currentRequest = ++requestId;
@@ -5122,6 +5148,7 @@ function bindEvents() {
   el.sueldoCampo.addEventListener("animationend", () => el.sueldoCampo.classList.remove("is-mal"));
   el.resultHoras.addEventListener("click", () => (el.burbuja.hidden ? abrirBurbuja() : cerrarBurbuja()));
   setInterval(turnarPistas, TURNO_PISTAS);
+  setInterval(pintarHoraAlli, 30000);
   el.buscarAbrir.addEventListener("click", () => {
     if (el.buscar.hidden) return abrirBusqueda();
     cerrarBusqueda();

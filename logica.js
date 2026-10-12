@@ -512,6 +512,75 @@ function horaBce(fechaIso) {
   return new Date(mediodia + (16 - alli) * 3600000);
 }
 
+// La hora de allí va por una ciudad de cada divisa. En Indonesia pongo Bali y
+// no Yakarta: es adonde va casi todo el mundo, y lleva una hora más.
+const ZONAS = {
+  EUR: ["Europe/Paris", "París", "Paris"], USD: ["America/New_York", "Nueva York", "New York"],
+  GBP: ["Europe/London", "Londres", "London"], JPY: ["Asia/Tokyo", "Tokio", "Tokyo"],
+  CHF: ["Europe/Zurich", "Zúrich", "Zurich"], CAD: ["America/Toronto", "Toronto", "Toronto"],
+  AUD: ["Australia/Sydney", "Sídney", "Sydney"], CNY: ["Asia/Shanghai", "Pekín", "Beijing"],
+  MXN: ["America/Mexico_City", "Ciudad de México", "Mexico City"], BRL: ["America/Sao_Paulo", "São Paulo", "São Paulo"],
+  SEK: ["Europe/Stockholm", "Estocolmo", "Stockholm"], NOK: ["Europe/Oslo", "Oslo", "Oslo"],
+  DKK: ["Europe/Copenhagen", "Copenhague", "Copenhagen"], PLN: ["Europe/Warsaw", "Varsovia", "Warsaw"],
+  TRY: ["Europe/Istanbul", "Estambul", "Istanbul"], CZK: ["Europe/Prague", "Praga", "Prague"],
+  HKD: ["Asia/Hong_Kong", "Hong Kong", "Hong Kong"], HUF: ["Europe/Budapest", "Budapest", "Budapest"],
+  IDR: ["Asia/Makassar", "Bali", "Bali"], ILS: ["Asia/Jerusalem", "Tel Aviv", "Tel Aviv"],
+  INR: ["Asia/Kolkata", "Nueva Delhi", "New Delhi"], ISK: ["Atlantic/Reykjavik", "Reikiavik", "Reykjavik"],
+  KRW: ["Asia/Seoul", "Seúl", "Seoul"], MYR: ["Asia/Kuala_Lumpur", "Kuala Lumpur", "Kuala Lumpur"],
+  NZD: ["Pacific/Auckland", "Auckland", "Auckland"], PHP: ["Asia/Manila", "Manila", "Manila"],
+  RON: ["Europe/Bucharest", "Bucarest", "Bucharest"], SGD: ["Asia/Singapore", "Singapur", "Singapore"],
+  THB: ["Asia/Bangkok", "Bangkok", "Bangkok"], ZAR: ["Africa/Johannesburg", "Johannesburgo", "Johannesburg"],
+};
+
+// Los minutos que va la zona por delante de UTC en ese momento, con su horario
+// de verano si lo tiene.
+function desfase(zona, ahora) {
+  const partes = Object.fromEntries(new Intl.DateTimeFormat("en-US", {
+    timeZone: zona, hourCycle: "h23", year: "numeric", month: "numeric", day: "numeric", hour: "numeric", minute: "numeric",
+  }).formatToParts(ahora).map((p) => [p.type, Number(p.value)]));
+  const comoUtc = Date.UTC(partes.year, partes.month - 1, partes.day, partes.hour, partes.minute);
+  return Math.round((comoUtc - Math.floor(ahora / 60000) * 60000) / 60000);
+}
+
+// De noche (de diez a siete) allí estará casi todo cerrado.
+const esNoche = (h) => h >= 22 || h < 7;
+
+// Si allí es la misma hora que aquí no digo nada. El día va como -1, 0 o 1
+// respecto al tuyo.
+function horaAlli(code, ahora = new Date(), local = -new Date(ahora).getTimezoneOffset()) {
+  const zona = ZONAS[code];
+  if (!zona) return null;
+  const suyo = desfase(zona[0], ahora);
+  if (suyo === local) return null;
+  const alli = new Date(Number(ahora) + suyo * 60000);
+  const aqui = new Date(Number(ahora) + local * 60000);
+  const dia = Math.sign(Date.UTC(alli.getUTCFullYear(), alli.getUTCMonth(), alli.getUTCDate())
+    - Date.UTC(aqui.getUTCFullYear(), aqui.getUTCMonth(), aqui.getUTCDate()));
+  return {
+    ciudad: idiomaActual() === "en" ? zona[2] : zona[1],
+    horas: alli.getUTCHours(),
+    minutos: alli.getUTCMinutes(),
+    diferencia: suyo - local,
+    dia,
+  };
+}
+
+// "+7 h", "−6 h", "+5 h 30". El menos es el de verdad, no un guion.
+function textoDiferencia(min) {
+  const signo = min < 0 ? "−" : "+";
+  const h = Math.floor(Math.abs(min) / 60);
+  const m = Math.abs(min) % 60;
+  if (h === 0) return `${signo}${m} min`;
+  return m ? `${signo}${h} h ${m}` : `${signo}${h} h`;
+}
+
+const relojDe = ({ horas, minutos }) => `${String(horas).padStart(2, "0")}:${String(minutos).padStart(2, "0")}`;
+
+function tituloHoraAlli(h) {
+  const dia = h.dia > 0 ? tr("alli.manana") : h.dia < 0 ? tr("alli.ayer") : "";
+  return tr("alli.titulo", { ciudad: h.ciudad, hora: relojDe(h), dia, dif: textoDiferencia(h.diferencia) });
+}
+
 const horaCorta = (instante) => fechas({ hour: "numeric", minute: "2-digit" }).format(instante);
 
 // "BCE hoy 16:00" en vez de la fecha en ISO, que nadie lee así.
@@ -2555,7 +2624,7 @@ if (typeof module !== "undefined") {
     urlImpresion, leerImpresion, chuletaParaImprimir,
     COMISION_MAX, COMISIONES_RAPIDAS, leerComision, leerPorcentaje, conComision,
     IMPUESTO_MAX, IMPUESTOS_RAPIDOS, leerImpuesto, leerImpuestoEscrito, loQuePagas,
-    COMPARAR_IGUAL, compararPrecios, inclinacion, leerCafe, enCafes, textoCafes, HORAS_JORNADA, enHoras, textoHoras,
+    COMPARAR_IGUAL, compararPrecios, inclinacion, ZONAS, desfase, esNoche, horaAlli, textoDiferencia, relojDe, tituloHoraAlli, leerCafe, enCafes, textoCafes, HORAS_JORNADA, enHoras, textoHoras,
     PROPINAS_RAPIDAS, PROPINA_HABITUAL, propinaHabitual, PROPINA_MAX, PERSONAS_MAX, CUENTA_POR_DEFECTO, leerCuenta, repartirCuenta, cuentaParaCompartir, BILLETES, PAGOS_MAX, pagosPosibles, vuelta,
     MARGENES, tasaOfrecida, analizarCambio,
     domingoDePascua, hayTasaEl, tasaVieja, textoTasaVieja, horaBce, textoActualizado, proximaTasa, textoProximaTasa,

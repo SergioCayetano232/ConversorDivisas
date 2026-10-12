@@ -757,6 +757,100 @@ body::after {
 
 /* El panel es angosto y los nombres largos; que se desborde hacia el centro
    antes que cortarse. */
+/* La hora de allí, en la esquina de la etiqueta "De". De noche la esfera se
+   apaga y sale la luna, que allí estará casi todo cerrado. */
+.pair .field:first-child {
+  position: relative;
+}
+
+.alli {
+  position: absolute;
+  top: 1px;
+  right: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-variant-numeric: tabular-nums;
+  color: var(--muted);
+  cursor: default;
+  user-select: none;
+}
+
+.alli[hidden] {
+  display: none;
+}
+
+.alli__reloj {
+  width: 12px;
+  height: 12px;
+  overflow: visible;
+}
+
+.alli__esfera {
+  fill: var(--brass-ghost);
+  stroke: var(--brass-dim);
+  stroke-width: 1;
+  transition: fill var(--slow) var(--ease), stroke var(--slow) var(--ease);
+}
+
+.alli__aguja {
+  stroke: var(--brass);
+  stroke-width: 1.2;
+  stroke-linecap: round;
+  transform-box: view-box;
+  transform-origin: 6px 6px;
+  transition: transform var(--slow) var(--ease-spring);
+}
+
+.alli__aguja--h {
+  transform: rotate(var(--h, 0deg));
+}
+
+.alli__aguja--m {
+  stroke-width: 0.9;
+  transform: rotate(var(--m, 0deg));
+}
+
+.alli.is-noche .alli__esfera {
+  fill: color-mix(in srgb, var(--muted) 30%, transparent);
+  stroke: var(--muted);
+}
+
+.alli.is-noche .alli__aguja {
+  stroke: var(--mist);
+}
+
+.alli.is-noche::after {
+  content: "☾";
+  font-size: 10px;
+  color: var(--mist);
+}
+
+.alli.is-entra {
+  animation: habitual-entra var(--slow) var(--ease-out);
+}
+
+/* Al llegar, las agujas dan una vuelta entera antes de pararse en su hora. */
+.alli.is-entra .alli__aguja--h {
+  animation: aguja-h 900ms var(--ease-spring);
+}
+
+.alli.is-entra .alli__aguja--m {
+  animation: aguja-m 900ms var(--ease-spring);
+}
+
+@keyframes aguja-h {
+  from { transform: rotate(calc(var(--h, 0deg) - 360deg)); }
+  to { transform: rotate(var(--h, 0deg)); }
+}
+
+@keyframes aguja-m {
+  from { transform: rotate(calc(var(--m, 0deg) - 720deg)); }
+  to { transform: rotate(var(--m, 0deg)); }
+}
+
 .pair .field:first-child .buscador__panel {
   right: -68px;
 }
