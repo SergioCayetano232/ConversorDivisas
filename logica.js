@@ -1010,6 +1010,22 @@ function pagosPosibles(cantidad, code) {
   return [...new Set(pagos)].sort((a, b) => a - b).slice(0, PAGOS_MAX);
 }
 
+// Para pagarlo justo: de mayor a menor, cada billete las veces que quepa, y lo
+// que no llega al más pequeño va en monedas. Con estos billetes tomar siempre
+// el más grande que cabe ya da los menos posibles.
+function pagoJusto(cantidad, code) {
+  const billetes = BILLETES[code];
+  if (!billetes || !Number.isFinite(cantidad) || cantidad <= 0) return null;
+  let resto = Math.round(cantidad * 100);
+  const montones = [];
+  for (const b of [...billetes].reverse()) {
+    const n = Math.floor(resto / (b * 100));
+    if (n > 0) montones.push({ valor: b, n });
+    resto -= n * b * 100;
+  }
+  return { billetes: montones, monedas: resto / 100 };
+}
+
 const vuelta = (cantidad, pago) => Math.round((pago - cantidad) * 100) / 100;
 
 function leerCuenta(guardado) {
@@ -2637,7 +2653,7 @@ if (typeof module !== "undefined") {
     COMISION_MAX, COMISIONES_RAPIDAS, leerComision, leerPorcentaje, conComision,
     IMPUESTO_MAX, IMPUESTOS_RAPIDOS, leerImpuesto, leerImpuestoEscrito, loQuePagas,
     COMPARAR_IGUAL, compararPrecios, inclinacion, ZONAS, desfase, esNoche, horaAlli, textoDiferencia, relojDe, tituloHoraAlli, leerCafe, enCafes, textoCafes, HORAS_JORNADA, enHoras, textoHoras,
-    PROPINAS_RAPIDAS, PROPINA_HABITUAL, propinaHabitual, PROPINA_MAX, PERSONAS_MAX, CUENTA_POR_DEFECTO, leerCuenta, repartirCuenta, cuentaParaCompartir, BILLETES, PAGOS_MAX, pagosPosibles, vuelta,
+    PROPINAS_RAPIDAS, PROPINA_HABITUAL, propinaHabitual, PROPINA_MAX, PERSONAS_MAX, CUENTA_POR_DEFECTO, leerCuenta, repartirCuenta, cuentaParaCompartir, BILLETES, PAGOS_MAX, pagosPosibles, vuelta, pagoJusto,
     MARGENES, tasaOfrecida, analizarCambio,
     domingoDePascua, hayTasaEl, tasaVieja, textoTasaVieja, horaBce, textoActualizado, proximaTasa, textoProximaTasa,
     FECHA_MINIMA, fechaLarga, fechaValida, diaDelGrafico, mesesAtras, FECHAS_RAPIDAS, leerFecha, cambioDesde, notaDiaHabil,

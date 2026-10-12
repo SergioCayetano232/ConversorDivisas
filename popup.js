@@ -94,6 +94,8 @@ const el = {
   cuentaN: document.getElementById("cuenta-n"),
   cuentaGente: document.getElementById("cuenta-gente"),
   cuentaPie: document.getElementById("cuenta-pie"),
+  cuentaJusto: document.getElementById("cuenta-justo"),
+  cuentaJustoBilletes: document.getElementById("cuenta-justo-billetes"),
   cuentaPago: document.getElementById("cuenta-pago"),
   cuentaBilletes: document.getElementById("cuenta-billetes"),
   cuentaVuelta: document.getElementById("cuenta-vuelta"),
@@ -3168,6 +3170,7 @@ function pintarCuenta() {
   el.cuentaMenos.disabled = reparto.personas <= 1;
   el.cuentaMas.disabled = reparto.personas >= PERSONAS_MAX;
   pintarGente();
+  pintarPagoJusto(r?.cadaUno ?? null, from);
   pintarPagoCon(r?.cadaUno ?? null, from);
   el.cuentaCompartir.disabled = !r;
 
@@ -3186,6 +3189,47 @@ function pintarCuenta() {
   tuyo.className = "cuenta__pie-tuyo";
   if (r.totalTuyo !== null) tuyo.textContent = `${nf.format(r.totalTuyo)} ${to}`;
   el.cuentaPie.replaceChildren(texto, tuyo);
+}
+
+// Si solo son monedas no lo enseño: para eso no hace falta ayuda.
+function pintarPagoJusto(cantidad, from) {
+  const justo = cantidad === null ? null : pagoJusto(cantidad, from);
+  const caja = el.cuentaJustoBilletes;
+  el.cuentaJusto.hidden = !justo?.billetes.length;
+  if (el.cuentaJusto.hidden) {
+    delete caja.dataset.clave;
+    return;
+  }
+  const clave = `${from} ${justo.billetes.map((b) => `${b.valor}x${b.n}`).join(" ")} ${justo.monedas}`;
+  if (caja.dataset.clave === clave) return;
+  caja.dataset.clave = clave;
+  const piezas = justo.billetes.map((b, i) => {
+    const billete = document.createElement("span");
+    billete.className = "billete";
+    billete.style.setProperty("--i", i);
+    billete.textContent = nfEntero.format(b.valor);
+    if (b.n > 1) {
+      const veces = document.createElement("span");
+      veces.className = "billete__n";
+      veces.textContent = `×${b.n}`;
+      billete.append(veces);
+    }
+    return billete;
+  });
+  const lista = justo.billetes.map((b) => `${b.n} × ${nfEntero.format(b.valor)}`);
+  if (justo.monedas > 0) {
+    // En yenes las monedas son de 500 y de 100: "800", no "800,00".
+    const importe = (Number.isInteger(justo.monedas) ? nfEntero : nf).format(justo.monedas);
+    const monedas = document.createElement("span");
+    monedas.className = "cuenta__monedas";
+    monedas.style.setProperty("--i", piezas.length);
+    monedas.textContent = `+ ${importe}`;
+    monedas.title = tr("cuenta.monedas", { importe: `${importe} ${from}` });
+    piezas.push(monedas);
+    lista.push(tr("cuenta.monedas", { importe }));
+  }
+  caja.replaceChildren(...piezas);
+  caja.setAttribute("aria-label", `${tr("cuenta.justoAria", { lista: lista.join(", ") })} (${from})`);
 }
 
 // Los billetes se rehacen solo si cambian, que si no la entrada de las

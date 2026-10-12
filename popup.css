@@ -2397,6 +2397,68 @@ body::after {
   color: var(--brass);
 }
 
+/* Los billetes para pagar justo, como si los fueras dejando en la mesa: caen
+   uno detrás de otro, cada uno un poco torcido. */
+.cuenta__billetes {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px;
+  min-width: 0;
+}
+
+.billete {
+  position: relative;
+  display: inline-flex;
+  align-items: baseline;
+  gap: 2px;
+  height: 20px;
+  padding: 0 7px;
+  line-height: 18px;
+  background: linear-gradient(135deg, var(--brass-ghost), transparent 70%), var(--slate);
+  border: 1px solid var(--brass-dim);
+  border-radius: 3px;
+  box-shadow: inset 0 0 0 2px var(--slate), inset 0 0 0 3px var(--brass-ghost);
+  color: var(--brass);
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  animation: billete-cae var(--slow) var(--ease-spring) backwards;
+  animation-delay: calc(var(--i, 0) * 70ms + 40ms);
+}
+
+.billete:nth-child(even) {
+  rotate: 1.5deg;
+}
+
+.billete:nth-child(odd) {
+  rotate: -1deg;
+}
+
+.billete__n {
+  font-size: 9px;
+  font-weight: 500;
+  color: var(--muted);
+}
+
+.cuenta__monedas {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-variant-numeric: tabular-nums;
+  color: var(--muted);
+  white-space: nowrap;
+  cursor: default;
+  animation: pop var(--mid) var(--ease-spring) backwards;
+  animation-delay: calc(var(--i, 0) * 70ms + 40ms);
+}
+
+@keyframes billete-cae {
+  from { opacity: 0; transform: translateY(-10px) rotate(-8deg) scale(0.9); }
+  to { opacity: 1; transform: none; }
+}
+
 /* La vuelta cae como una moneda en la mano: entra desde arriba, se pasa un
    poco y rebota. */
 .cuenta__vuelta {
@@ -7416,6 +7478,8 @@ kbd {
   .semana__barra,
   .aviso.is-nueva,
   .burbuja__rapida,
+  .billete,
+  .cuenta__monedas,
   .ayuda__fila,
   .bandeja__opcion,
   .trend__marca,
