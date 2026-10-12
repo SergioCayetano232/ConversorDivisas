@@ -2096,6 +2096,18 @@ function diaDelViaje(presupuesto, gastos, hoyIso = hoy()) {
   return { dia, total };
 }
 
+// Cuántos días faltan para salir. Solo con el día de salida puesto: sin él no
+// sé cuándo empieza, y el mismo día ya es "Día 1".
+function cuentaAtras(presupuesto, hoyIso = hoy()) {
+  if (!presupuesto?.desde || presupuesto.desde <= hoyIso) return null;
+  return diasHasta(presupuesto.desde, hoyIso) - 1;
+}
+
+function textoCuentaAtras(n) {
+  if (n === null) return "";
+  return n === 1 ? tr("presupuesto.manana") : tr("presupuesto.faltan", { n });
+}
+
 // Días seguidos gastando lo que toca o menos, del de ayer hacia atrás: hoy aún
 // no ha acabado. Lo que toca es fijo, el presupuesto entre los días del viaje,
 // que con lo que queda al día la vara se movería cada vez que gastas.
@@ -2618,7 +2630,7 @@ if (typeof module !== "undefined") {
     EMOJI_CATEGORIA, destacados, resumenParaCompartir,
     COPIA_APP, COPIA_VERSION, CLAVES_COPIA, limpiarCopia, crearCopia, leerCopia, resumenCopia,
     VIAJES_MAX, NOMBRE_VIAJE_MAX, leerViajes, leerPersonas, porPersona, compararViajes, COLORES_VIAJE, leerColorViaje, colorLibre, siguienteColor, viajeActivo, crearViaje, renombrarViaje, elegirViaje, borrarViaje, cambiarViaje, resumenViaje, archivoGastos,
-    diasHasta, leerPresupuesto, PRESUPUESTO_JUSTO, estadoPresupuesto, inicioDelViaje, diaDelViaje, RACHA_MINIMA, rachaPresupuesto, hastaCuandoLlega, loQueSeLleva, redondearDias,
+    diasHasta, leerPresupuesto, PRESUPUESTO_JUSTO, estadoPresupuesto, inicioDelViaje, diaDelViaje, cuentaAtras, textoCuentaAtras, RACHA_MINIMA, rachaPresupuesto, hastaCuandoLlega, loQueSeLleva, redondearDias,
     EXTRAS_MAX, EXTRAS_POR_DEFECTO, leerExtras, anadirExtra, quitarExtra,
     extrasVisibles, disponiblesParaAnadir, convertirExtras, semanaDe, trazoMini, CHULETA, escalaChuleta, chuleta, chuletaParaCompartir,
     urlImpresion, leerImpresion, chuletaParaImprimir,

@@ -3002,12 +3002,21 @@ function pintarPresupuesto() {
   if (llega) partes.push(tr("presupuesto.llega", { fecha: fechaCorta(llega) }));
   else if (estado.porDia !== null) partes.push(tr("presupuesto.alDia", { porDia: nf.format(estado.porDia) }));
   el.presupuestoTexto.textContent = partes.join(" · ");
-  el.presupuestoDia.hidden = !dia;
+  // Antes de salir, el hueco del "Día 3/7" es para la cuenta atrás.
+  const falta = dia ? null : cuentaAtras(presupuesto);
+  el.presupuestoDia.hidden = !dia && falta === null;
+  el.presupuestoDia.classList.toggle("is-cuenta", falta !== null);
   if (dia) el.presupuestoDia.textContent = tr("presupuesto.dia", dia);
+  if (falta !== null) {
+    const texto = textoCuentaAtras(falta);
+    if (el.presupuestoDia.textContent !== texto) restartAnimation(el.presupuestoDia, "is-despega");
+    el.presupuestoDia.textContent = texto;
+  }
   el.presupuestoVer.title = tr("presupuesto.titulo", {
     gastado: nf.format(estado.gastado), importe: dinero(presupuesto.importe), fecha: fechaLarga(presupuesto.hasta),
   });
   if (llega) el.presupuestoVer.title += `\n${tr("presupuesto.llegaTitulo", { fecha: fechaLarga(llega), porDia: dinero(estado.porDia) })}`;
+  if (falta !== null) el.presupuestoVer.title += `\n${tr(falta === 1 ? "presupuesto.saleManana" : "presupuesto.saleEl", { fecha: fechaLarga(presupuesto.desde), n: falta })}`;
   // La marca es hasta dónde deberías llevar gastado al acabar hoy, si fueras
   // parejo. El último día no la pongo: estaría pegada al final y no dice nada.
   const marca = dia && dia.dia < dia.total;
@@ -3019,7 +3028,7 @@ function pintarPresupuesto() {
   }
   const racha = pintarRacha();
   if (racha) el.presupuestoVer.title += `\n${racha}`;
-  const leido = dia ? `${el.presupuestoDia.textContent}. ${el.presupuestoTexto.textContent}` : el.presupuestoTexto.textContent;
+  const leido = !el.presupuestoDia.hidden ? `${el.presupuestoDia.textContent}. ${el.presupuestoTexto.textContent}` : el.presupuestoTexto.textContent;
   el.presupuestoVer.setAttribute("aria-label", `${leido}. ${el.presupuestoVer.title}`);
   el.presupuestoLleno.style.width = `${Math.min(estado.fraccion, 1) * 100}%`;
   // El temblor solo al pasarte, no cada vez que abres el panel ya pasado.

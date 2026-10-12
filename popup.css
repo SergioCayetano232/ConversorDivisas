@@ -4097,6 +4097,28 @@ body::after {
   display: none;
 }
 
+/* La cuenta atrás va en dorado, con el avión despegando cuando cambia. */
+.presupuesto__dia.is-cuenta {
+  color: var(--brass);
+  font-weight: 600;
+}
+
+.presupuesto__dia.is-cuenta::before {
+  content: "✈";
+  display: inline-block;
+  margin-right: 3px;
+}
+
+.presupuesto__dia.is-despega::before {
+  animation: despega 800ms var(--ease-spring);
+}
+
+@keyframes despega {
+  0% { opacity: 0; transform: translate(-8px, 4px) rotate(12deg); }
+  60% { opacity: 1; transform: translate(1px, -2px) rotate(-8deg); }
+  100% { transform: none; }
+}
+
 .presupuesto__esto-texto.is-pasa {
   color: var(--cinnabar);
 }
