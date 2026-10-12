@@ -913,6 +913,36 @@ const PROPINA_HABITUAL = {
 
 const propinaHabitual = (code) => PROPINA_HABITUAL[code] ?? null;
 
+// Los billetes que de verdad se ven por la calle. Los de 500 € o 2.000 yenes
+// existen, pero nadie paga con ellos.
+const BILLETES = {
+  EUR: [5, 10, 20, 50, 100, 200], USD: [1, 5, 10, 20, 50, 100], GBP: [5, 10, 20, 50],
+  JPY: [1000, 5000, 10000], CHF: [10, 20, 50, 100, 200], CAD: [5, 10, 20, 50, 100],
+  AUD: [5, 10, 20, 50, 100], CNY: [1, 5, 10, 20, 50, 100], MXN: [20, 50, 100, 200, 500, 1000],
+  BRL: [2, 5, 10, 20, 50, 100, 200], SEK: [20, 50, 100, 200, 500], NOK: [50, 100, 200, 500, 1000],
+  DKK: [50, 100, 200, 500, 1000], PLN: [10, 20, 50, 100, 200, 500], TRY: [5, 10, 20, 50, 100, 200],
+  CZK: [100, 200, 500, 1000, 2000, 5000], HKD: [10, 20, 50, 100, 500, 1000],
+  HUF: [500, 1000, 2000, 5000, 10000, 20000], IDR: [1000, 2000, 5000, 10000, 20000, 50000, 100000],
+  ILS: [20, 50, 100, 200], INR: [10, 20, 50, 100, 200, 500], ISK: [500, 1000, 5000, 10000],
+  KRW: [1000, 5000, 10000, 50000], MYR: [1, 5, 10, 20, 50, 100], NZD: [5, 10, 20, 50, 100],
+  PHP: [20, 50, 100, 200, 500, 1000], RON: [1, 5, 10, 50, 100, 200], SGD: [2, 5, 10, 50, 100],
+  THB: [20, 50, 100, 500, 1000], ZAR: [10, 20, 50, 100, 200],
+};
+
+const PAGOS_MAX = 3;
+
+// Con qué puedes pagar: lo justo hacia arriba con cada billete (37,20 € son
+// 40 con billetes de 5, 10 o 20; 50 con uno de 50…). Lo exacto no sale, que
+// ahí no hay vuelta.
+function pagosPosibles(cantidad, code) {
+  const billetes = BILLETES[code];
+  if (!billetes || !Number.isFinite(cantidad) || cantidad <= 0) return [];
+  const pagos = billetes.map((b) => Math.ceil(cantidad / b - 1e-9) * b).filter((p) => p > cantidad + 1e-9);
+  return [...new Set(pagos)].sort((a, b) => a - b).slice(0, PAGOS_MAX);
+}
+
+const vuelta = (cantidad, pago) => Math.round((pago - cantidad) * 100) / 100;
+
 function leerCuenta(guardado) {
   const { propina, personas } = guardado ?? {};
   return {
@@ -2526,7 +2556,7 @@ if (typeof module !== "undefined") {
     COMISION_MAX, COMISIONES_RAPIDAS, leerComision, leerPorcentaje, conComision,
     IMPUESTO_MAX, IMPUESTOS_RAPIDOS, leerImpuesto, leerImpuestoEscrito, loQuePagas,
     COMPARAR_IGUAL, compararPrecios, inclinacion, leerCafe, enCafes, textoCafes, HORAS_JORNADA, enHoras, textoHoras,
-    PROPINAS_RAPIDAS, PROPINA_HABITUAL, propinaHabitual, PROPINA_MAX, PERSONAS_MAX, CUENTA_POR_DEFECTO, leerCuenta, repartirCuenta, cuentaParaCompartir,
+    PROPINAS_RAPIDAS, PROPINA_HABITUAL, propinaHabitual, PROPINA_MAX, PERSONAS_MAX, CUENTA_POR_DEFECTO, leerCuenta, repartirCuenta, cuentaParaCompartir, BILLETES, PAGOS_MAX, pagosPosibles, vuelta,
     MARGENES, tasaOfrecida, analizarCambio,
     domingoDePascua, hayTasaEl, tasaVieja, textoTasaVieja, horaBce, textoActualizado, proximaTasa, textoProximaTasa,
     FECHA_MINIMA, fechaLarga, fechaValida, diaDelGrafico, mesesAtras, FECHAS_RAPIDAS, leerFecha, cambioDesde, notaDiaHabil,

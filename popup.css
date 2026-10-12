@@ -2303,6 +2303,54 @@ body::after {
   color: var(--brass);
 }
 
+/* La vuelta cae como una moneda en la mano: entra desde arriba, se pasa un
+   poco y rebota. */
+.cuenta__vuelta {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 6px;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  color: var(--brass);
+}
+
+.cuenta__vuelta[hidden] {
+  display: none;
+}
+
+.cuenta__vuelta::before {
+  content: "🪙";
+  display: inline-block;
+  font-size: 13px;
+}
+
+.cuenta__vuelta.is-entra {
+  animation: vuelta-entra var(--slow) var(--ease-out);
+}
+
+.cuenta__vuelta.is-entra::before {
+  animation: moneda-cae 650ms var(--ease-spring);
+}
+
+.cuenta__vuelta.is-tic {
+  animation: tic 260ms var(--ease-out);
+}
+
+@keyframes vuelta-entra {
+  from { opacity: 0; transform: translateX(-6px); }
+  to { opacity: 1; transform: none; }
+}
+
+@keyframes moneda-cae {
+  0% { transform: translateY(-14px) rotateY(0); opacity: 0; }
+  40% { opacity: 1; }
+  70% { transform: translateY(2px) rotateY(360deg); }
+  100% { transform: none; }
+}
+
 .cuenta__pie {
   display: flex;
   flex-wrap: wrap;

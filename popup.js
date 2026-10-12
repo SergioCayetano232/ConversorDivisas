@@ -94,6 +94,9 @@ const el = {
   cuentaN: document.getElementById("cuenta-n"),
   cuentaGente: document.getElementById("cuenta-gente"),
   cuentaPie: document.getElementById("cuenta-pie"),
+  cuentaPago: document.getElementById("cuenta-pago"),
+  cuentaBilletes: document.getElementById("cuenta-billetes"),
+  cuentaVuelta: document.getElementById("cuenta-vuelta"),
   gastosCuenta: document.getElementById("gastos-cuenta"),
   gastosTitulo: document.getElementById("gastos-titulo"),
   viaje: document.getElementById("viaje"),
@@ -251,6 +254,8 @@ let comision = 0;
 let impuesto = 0;
 let cafe = null;
 let sueldo = null;
+// El billete con el que pagas en el tique. No lo guardo: es de esa cuenta.
+let pagoCon = null;
 let tasaAlReves = false;
 let historial = [];
 // Abrir el popup y verlo con su 1 de siempre no es convertir nada: solo apunto
@@ -3129,6 +3134,7 @@ function pintarCuenta() {
   el.cuentaMenos.disabled = reparto.personas <= 1;
   el.cuentaMas.disabled = reparto.personas >= PERSONAS_MAX;
   pintarGente();
+  pintarPagoCon(r?.cadaUno ?? null, from);
   el.cuentaCompartir.disabled = !r;
 
   if (!r) {
@@ -3146,6 +3152,47 @@ function pintarCuenta() {
   tuyo.className = "cuenta__pie-tuyo";
   if (r.totalTuyo !== null) tuyo.textContent = `${nf.format(r.totalTuyo)} ${to}`;
   el.cuentaPie.replaceChildren(texto, tuyo);
+}
+
+// Los billetes se rehacen solo si cambian, que si no la entrada de las
+// pastillas saltaría con cada tecla.
+function pintarPagoCon(cantidad, from) {
+  const pagos = cantidad === null ? [] : pagosPosibles(cantidad, from);
+  if (!pagos.includes(pagoCon)) pagoCon = null;
+  el.cuentaPago.hidden = pagos.length === 0;
+  const clave = `${from} ${pagos.join(" ")}`;
+  if (el.cuentaBilletes.dataset.clave !== clave) {
+    el.cuentaBilletes.dataset.clave = clave;
+    el.cuentaBilletes.replaceChildren(...pagos.map((pago, i) => {
+      const boton = document.createElement("button");
+      boton.type = "button";
+      boton.className = "burbuja__rapida";
+      boton.style.setProperty("--i", i);
+      boton.dataset.pago = pago;
+      boton.textContent = nfEntero.format(pago);
+      boton.setAttribute("aria-label", tr("cuenta.pagasConAria", { importe: `${nfEntero.format(pago)} ${from}` }));
+      boton.addEventListener("click", () => {
+        pagoCon = pagoCon === pago ? null : pago;
+        pintarCuenta();
+      });
+      return boton;
+    }));
+  }
+  for (const boton of el.cuentaBilletes.children) {
+    boton.setAttribute("aria-pressed", String(Number(boton.dataset.pago) === pagoCon));
+  }
+  pintarVuelta(cantidad, from);
+}
+
+function pintarVuelta(cantidad, from) {
+  const nodo = el.cuentaVuelta;
+  const habia = nodo.hidden ? "" : nodo.textContent;
+  nodo.hidden = pagoCon === null;
+  if (pagoCon === null) return;
+  const texto = tr("cuenta.vuelta", { importe: `${nf.format(vuelta(cantidad, pagoCon))} ${from}` });
+  if (texto === habia) return;
+  nodo.textContent = texto;
+  restartAnimation(nodo, habia ? "is-tic" : "is-entra");
 }
 
 async function onCompartirCuenta() {
