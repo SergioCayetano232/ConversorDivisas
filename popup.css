@@ -4105,6 +4105,69 @@ body::after {
 
 /* La racha va arriba, al lado del número de gastos: abajo, con el día, no
    cabía. La llama tiembla un poco, como una de verdad, y se aviva al sumar. */
+/* Lo de hoy, en un aro que se va cerrando: verde, dorado pasado el 80 % y rojo
+   si te pasas, como la barra del presupuesto. */
+.hoy {
+  display: inline-flex;
+  flex-shrink: 0;
+  align-items: center;
+  margin-right: var(--s-1);
+  cursor: default;
+  --tono: var(--jade);
+}
+
+.hoy[hidden] {
+  display: none;
+}
+
+.hoy[data-tono="justo"] {
+  --tono: var(--brass);
+}
+
+.hoy[data-tono="pasado"] {
+  --tono: var(--cinnabar);
+}
+
+.hoy__aro {
+  width: 15px;
+  height: 15px;
+  rotate: -90deg;
+}
+
+.hoy__fondo,
+.hoy__lleno {
+  fill: none;
+  stroke-width: 2.4;
+}
+
+.hoy__fondo {
+  stroke: var(--hairline-strong);
+}
+
+.hoy__lleno {
+  stroke: var(--tono);
+  stroke-linecap: round;
+  stroke-dasharray: 0 100;
+  transition: stroke-dasharray var(--slow) var(--ease-out), stroke var(--mid) var(--ease);
+  animation: hoy-llena 900ms var(--ease-out);
+}
+
+@keyframes hoy-llena {
+  from { stroke-dasharray: 0 100; }
+}
+
+.hoy.is-pasa {
+  animation: shake 400ms var(--ease);
+}
+
+.hoy.is-pasa .hoy__aro {
+  animation: hoy-late 600ms var(--ease-spring);
+}
+
+@keyframes hoy-late {
+  50% { transform: scale(1.35); filter: drop-shadow(0 0 4px var(--cinnabar-glow)); }
+}
+
 .presupuesto__racha {
   display: inline-flex;
   flex-shrink: 0;

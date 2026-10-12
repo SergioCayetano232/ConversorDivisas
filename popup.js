@@ -152,6 +152,8 @@ const el = {
   presupuestoHoy: document.getElementById("presupuesto-hoy"),
   presupuestoDia: document.getElementById("presupuesto-dia"),
   presupuestoRacha: document.getElementById("presupuesto-racha"),
+  hoy: document.getElementById("hoy"),
+  hoyLleno: document.getElementById("hoy-lleno"),
   presupuestoTexto: document.getElementById("presupuesto-texto"),
   presupuestoForm: document.getElementById("presupuesto-form"),
   presupuestoImporte: document.getElementById("presupuesto-importe"),
@@ -3028,6 +3030,7 @@ function pintarPresupuesto() {
     el.presupuestoHoy.classList.toggle("is-adelantado", estado.fraccion > dia.dia / dia.total);
     el.presupuestoVer.title += `\n${tr("presupuesto.marca", dia)}`;
   }
+  pintarLoDeHoy();
   const racha = pintarRacha();
   if (racha) el.presupuestoVer.title += `\n${racha}`;
   const leido = !el.presupuestoDia.hidden ? `${el.presupuestoDia.textContent}. ${el.presupuestoTexto.textContent}` : el.presupuestoTexto.textContent;
@@ -3042,6 +3045,28 @@ function pintarPresupuesto() {
 }
 
 // La llama se aviva al aparecer y cuando cambia, no cada vez que se repinta.
+// Solo el aro: la cifra ya sale en "Hoy", debajo del total. El respingo, al
+// pasarte, no cada vez que lo pinto.
+function pintarLoDeHoy() {
+  const r = loDeHoy(presupuesto, gastos);
+  const nodo = el.hoy;
+  const antes = nodo.dataset.tono;
+  nodo.hidden = !r;
+  if (!r) {
+    delete nodo.dataset.tono;
+    return;
+  }
+  const lleno = Math.min(r.fraccion, 1) * 100;
+  el.hoyLleno.style.strokeDasharray = `${lleno} 100`;
+  const dinero = (n) => `${nf.format(n)} ${presupuesto.to}`;
+  nodo.title = r.toca === 0 ? tr("presupuesto.hoyNada")
+    : r.tono === "pasado" ? tr("presupuesto.hoyPasado", { pasado: dinero(r.gastado - r.toca), toca: dinero(r.toca) })
+    : tr("presupuesto.hoyLlevas", { gastado: nf.format(r.gastado), toca: dinero(r.toca) });
+  nodo.setAttribute("aria-label", nodo.title);
+  nodo.dataset.tono = r.tono;
+  if (antes && antes !== "pasado" && r.tono === "pasado") restartAnimation(nodo, "is-pasa");
+}
+
 function pintarRacha() {
   const racha = rachaPresupuesto(presupuesto, gastos);
   const nodo = el.presupuestoRacha;

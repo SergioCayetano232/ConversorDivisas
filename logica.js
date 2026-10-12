@@ -2112,6 +2112,28 @@ function diaDelViaje(presupuesto, gastos, hoyIso = hoy()) {
   return { dia, total };
 }
 
+// Lo de hoy contra lo que te toca hoy. Lo que toca sale de lo que quedaba al
+// empezar el día entre los días que faltan: si contara lo de hoy, la meta
+// bajaría con cada gasto que apuntas.
+function loDeHoy(presupuesto, gastos, hoyIso = hoy()) {
+  if (!diaDelViaje(presupuesto, gastos, hoyIso)) return null;
+  let deHoy = 0;
+  let antes = 0;
+  for (const g of gastos) {
+    if (g.to !== presupuesto.to) continue;
+    if (isoLocal(new Date(g.cuando)) === hoyIso) deHoy += g.valor;
+    else antes += g.valor;
+  }
+  const toca = Math.max(presupuesto.importe - antes, 0) / diasHasta(presupuesto.hasta, hoyIso);
+  const fraccion = toca > 0 ? deHoy / toca : deHoy > 0 ? Infinity : 0;
+  return {
+    gastado: deHoy,
+    toca,
+    fraccion,
+    tono: fraccion > 1 ? "pasado" : fraccion >= PRESUPUESTO_JUSTO ? "justo" : "bien",
+  };
+}
+
 // Cuántos días faltan para salir. Solo con el día de salida puesto: sin él no
 // sé cuándo empieza, y el mismo día ya es "Día 1".
 function cuentaAtras(presupuesto, hoyIso = hoy()) {
@@ -2646,7 +2668,7 @@ if (typeof module !== "undefined") {
     EMOJI_CATEGORIA, destacados, resumenParaCompartir,
     COPIA_APP, COPIA_VERSION, CLAVES_COPIA, limpiarCopia, crearCopia, leerCopia, resumenCopia,
     VIAJES_MAX, NOMBRE_VIAJE_MAX, leerViajes, leerPersonas, porPersona, compararViajes, COLORES_VIAJE, leerColorViaje, colorLibre, siguienteColor, viajeActivo, crearViaje, renombrarViaje, elegirViaje, borrarViaje, cambiarViaje, resumenViaje, archivoGastos,
-    diasHasta, leerPresupuesto, PRESUPUESTO_JUSTO, estadoPresupuesto, inicioDelViaje, diaDelViaje, cuentaAtras, textoCuentaAtras, RACHA_MINIMA, rachaPresupuesto, hastaCuandoLlega, loQueSeLleva, redondearDias,
+    diasHasta, leerPresupuesto, PRESUPUESTO_JUSTO, estadoPresupuesto, inicioDelViaje, diaDelViaje, cuentaAtras, textoCuentaAtras, loDeHoy, RACHA_MINIMA, rachaPresupuesto, hastaCuandoLlega, loQueSeLleva, redondearDias,
     EXTRAS_MAX, EXTRAS_POR_DEFECTO, leerExtras, anadirExtra, quitarExtra,
     extrasVisibles, disponiblesParaAnadir, convertirExtras, semanaDe, trazoMini, CHULETA, escalaChuleta, chuleta, chuletaParaCompartir,
     urlImpresion, leerImpresion, chuletaParaImprimir,

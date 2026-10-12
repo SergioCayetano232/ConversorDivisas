@@ -675,6 +675,12 @@
         </div>
         <div class="gastos__lado">
           <span class="gastos__arriba">
+            <span class="hoy" id="hoy" role="img" hidden>
+              <svg class="hoy__aro" viewBox="0 0 16 16" aria-hidden="true">
+                <circle class="hoy__fondo" cx="8" cy="8" r="6"/>
+                <circle class="hoy__lleno" id="hoy-lleno" cx="8" cy="8" r="6" pathLength="100"/>
+              </svg>
+            </span>
             <span class="presupuesto__racha" id="presupuesto-racha" hidden></span>
             <span class="gastos__n" id="gastos-n"></span>
             <button class="gastos__cerrar" type="button" id="gastos-cerrar" aria-label="Cerrar" data-t-aria-label="cerrar">✕</button>
