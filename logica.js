@@ -2134,6 +2134,33 @@ function loDeHoy(presupuesto, gastos, hoyIso = hoy()) {
   };
 }
 
+// Los viajes que ya celebré, para que el confeti salga una vez y no cada vez
+// que abres los gastos. Con cincuenta sobra: luego se van los más viejos.
+const CELEBRADOS_MAX = 50;
+
+function leerCelebrados(guardado) {
+  if (!Array.isArray(guardado)) return [];
+  return [...new Set(guardado.filter((id) => typeof id === "string" && id))].slice(-CELEBRADOS_MAX);
+}
+
+const anadirCelebrado = (celebrados, id) => leerCelebrados([...celebrados.filter((c) => c !== id), id]);
+
+// Acabado el viaje y sin pasarte, toca fiesta. Sin ningún gasto no: eso no es
+// ahorrar, es no haber apuntado.
+function viajeParaCelebrar(viaje, celebrados, hoyIso = hoy()) {
+  const { presupuesto, gastos } = viaje ?? {};
+  if (!presupuesto || celebrados.includes(viaje.id) || hoyIso <= presupuesto.hasta) return null;
+  if (!gastos.some((g) => g.to === presupuesto.to)) return null;
+  const estado = estadoPresupuesto(presupuesto, gastos, hoyIso);
+  if (estado.queda < 0) return null;
+  return { sobra: estado.queda, to: presupuesto.to };
+}
+
+// Por debajo de un céntimo es que lo has clavado.
+const textoCelebrar = ({ sobra, to }) => (sobra < 0.01
+  ? tr("fin.clavado")
+  : tr("fin.sobra", { importe: `${numeros({ minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(sobra)} ${to}` }));
+
 // Cuántos días faltan para salir. Solo con el día de salida puesto: sin él no
 // sé cuándo empieza, y el mismo día ya es "Día 1".
 function cuentaAtras(presupuesto, hoyIso = hoy()) {
@@ -2668,7 +2695,7 @@ if (typeof module !== "undefined") {
     EMOJI_CATEGORIA, destacados, resumenParaCompartir,
     COPIA_APP, COPIA_VERSION, CLAVES_COPIA, limpiarCopia, crearCopia, leerCopia, resumenCopia,
     VIAJES_MAX, NOMBRE_VIAJE_MAX, leerViajes, leerPersonas, porPersona, compararViajes, COLORES_VIAJE, leerColorViaje, colorLibre, siguienteColor, viajeActivo, crearViaje, renombrarViaje, elegirViaje, borrarViaje, cambiarViaje, resumenViaje, archivoGastos,
-    diasHasta, leerPresupuesto, PRESUPUESTO_JUSTO, estadoPresupuesto, inicioDelViaje, diaDelViaje, cuentaAtras, textoCuentaAtras, loDeHoy, RACHA_MINIMA, rachaPresupuesto, hastaCuandoLlega, loQueSeLleva, redondearDias,
+    diasHasta, leerPresupuesto, PRESUPUESTO_JUSTO, estadoPresupuesto, inicioDelViaje, diaDelViaje, cuentaAtras, textoCuentaAtras, loDeHoy, CELEBRADOS_MAX, leerCelebrados, anadirCelebrado, viajeParaCelebrar, textoCelebrar, RACHA_MINIMA, rachaPresupuesto, hastaCuandoLlega, loQueSeLleva, redondearDias,
     EXTRAS_MAX, EXTRAS_POR_DEFECTO, leerExtras, anadirExtra, quitarExtra,
     extrasVisibles, disponiblesParaAnadir, convertirExtras, semanaDe, trazoMini, CHULETA, escalaChuleta, chuleta, chuletaParaCompartir,
     urlImpresion, leerImpresion, chuletaParaImprimir,

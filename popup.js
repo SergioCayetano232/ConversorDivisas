@@ -360,6 +360,7 @@ const HISTORIAL_KEY = "historialConversiones";
 const GASTOS_KEY = "gastosViaje";
 const PRESUPUESTO_KEY = "presupuestoViaje";
 const VIAJES_KEY = "viajes";
+const CELEBRADOS_KEY = "viajesCelebrados";
 const CUENTA_KEY = "cuentaReparto";
 const AL_REVES_KEY = "tasaAlReves";
 const CANTIDAD_KEY = "ultimaCantidad";
@@ -3667,6 +3668,7 @@ function ponerViaje(nuevos) {
   pintarGastos();
   restartAnimation(el.gastosTitulo, "is-cambiado");
   guardarViajes();
+  celebrarViaje();
 }
 
 function onElegirViaje(id) {
@@ -3791,6 +3793,59 @@ function abrirGastos() {
   el.gastosSuma.textContent = "";
   pintarGastos();
   el.gastosConcepto.focus();
+  celebrarViaje();
+}
+
+// Los leo la primera vez que hacen falta y los tengo en memoria: si abres y
+// cambias de viaje rápido, dos lecturas a la vez darían confeti doble.
+let celebrados = null;
+
+async function celebrarViaje() {
+  if (celebrados === null) {
+    try {
+      celebrados = leerCelebrados((await chrome.storage.local.get(CELEBRADOS_KEY))[CELEBRADOS_KEY]);
+    } catch (error) {
+      console.warn("No se pudieron leer los viajes celebrados", error);
+      celebrados = [];
+    }
+  }
+  const viaje = viajeActivo(viajes);
+  const fiesta = el.gastos.hidden ? null : viajeParaCelebrar(viaje, celebrados);
+  if (!fiesta) return;
+  celebrados = anadirCelebrado(celebrados, viaje.id);
+  try {
+    chrome.storage.local.set({ [CELEBRADOS_KEY]: celebrados });
+  } catch (error) {
+    console.warn("No se pudo guardar el viaje celebrado", error);
+  }
+  mostrarFlash([`🎉 ${textoCelebrar(fiesta)}`], 3600);
+  if (!sinMovimiento.matches) lanzarConfeti(viaje.color);
+}
+
+// Sale del presupuesto hacia arriba y cae por el panel, con el color del viaje
+// mezclado con el dorado y el verde.
+const CONFETI = 42;
+
+function lanzarConfeti(color) {
+  const caja = document.createElement("div");
+  caja.className = "confeti";
+  caja.setAttribute("aria-hidden", "true");
+  const colores = [`var(--viaje-${color})`, "var(--brass)", "var(--jade)", `var(--viaje-${color})`, `var(--viaje-${color === "rosa" ? "azul" : "rosa"})`];
+  for (let i = 0; i < CONFETI; i += 1) {
+    const trozo = document.createElement("span");
+    trozo.className = "confeti__trozo";
+    trozo.style.setProperty("--x", `${(Math.random() * 2 - 1) * 140}px`);
+    trozo.style.setProperty("--alto", `${-25 - Math.random() * 45}px`);
+    trozo.style.setProperty("--giro", `${(Math.random() * 2 - 1) * 720}deg`);
+    trozo.style.setProperty("--espera", `${Math.random() * 180}ms`);
+    trozo.style.setProperty("--dura", `${1100 + Math.random() * 700}ms`);
+    trozo.style.background = colores[i % colores.length];
+    if (i % 3 === 0) trozo.classList.add("is-tira");
+    caja.append(trozo);
+  }
+  caja.style.setProperty("--origen", `${el.presupuesto.offsetTop + 8}px`);
+  el.gastos.append(caja);
+  setTimeout(() => caja.remove(), 2200);
 }
 
 function cerrarGastos() {

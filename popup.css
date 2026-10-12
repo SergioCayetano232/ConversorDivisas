@@ -4105,6 +4105,39 @@ body::after {
 
 /* La racha va arriba, al lado del número de gastos: abajo, con el día, no
    cabía. La llama tiembla un poco, como una de verdad, y se aviva al sumar. */
+/* El confeti del fin de viaje: sale disparado desde la barra del presupuesto,
+   se frena arriba y cae girando. Por encima de todo y sin estorbar. */
+.confeti {
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  overflow: hidden;
+  border-radius: inherit;
+  pointer-events: none;
+}
+
+.confeti__trozo {
+  position: absolute;
+  top: var(--origen, 40%);
+  left: 50%;
+  width: 6px;
+  height: 6px;
+  border-radius: 1px;
+  opacity: 0;
+  animation: confeti var(--dura, 1.4s) cubic-bezier(0.2, 0.6, 0.4, 1) var(--espera, 0ms) forwards;
+}
+
+.confeti__trozo.is-tira {
+  width: 3px;
+  height: 9px;
+}
+
+@keyframes confeti {
+  0% { opacity: 1; transform: translate(0, 0) rotate(0) scale(0.4); }
+  35% { opacity: 1; transform: translate(calc(var(--x) * 0.7), var(--alto)) rotate(calc(var(--giro) * 0.4)) scale(1); }
+  100% { opacity: 0; transform: translate(var(--x), 220px) rotate(var(--giro)) scale(0.9); }
+}
+
 /* Lo de hoy, en un aro que se va cerrando: verde, dorado pasado el 80 % y rojo
    si te pasas, como la barra del presupuesto. */
 .hoy {
