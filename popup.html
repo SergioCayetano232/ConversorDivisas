@@ -805,6 +805,14 @@
         </span>
         <button class="gastos__apuntar" type="submit" id="gastos-apuntar"></button>
       </form>
+      <div class="noches" id="noches" title="Lo reparto en un gasto por noche, desde hoy" data-t-title="noches.titulo" hidden>
+        <span class="noches__nombre" data-t="noches.nombre">Noches</span>
+        <button class="gastos__paso" type="button" id="noches-menos" aria-label="Una noche menos" data-t-aria-label="noches.menos">−</button>
+        <span class="noches__n" id="noches-n" aria-live="polite">1</span>
+        <button class="gastos__paso" type="button" id="noches-mas" aria-label="Una noche más" data-t-aria-label="noches.mas">+</button>
+        <span class="noches__lunas" id="noches-lunas" aria-hidden="true"></span>
+        <span class="noches__cada" id="noches-cada"></span>
+      </div>
       <p class="gastos__raro" id="gastos-raro" role="status" hidden></p>
       <ul class="historial__lista gastos__lista" id="gastos-lista"></ul>
       <p class="historial__vacio" id="gastos-vacio" data-t="gastos.vacio">Apunta lo que vas gastando y te sumo el total en tu divisa, con la tasa de cada día.</p>

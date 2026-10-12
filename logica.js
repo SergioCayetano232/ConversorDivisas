@@ -1550,6 +1550,45 @@ function apuntarGasto(lista, gasto) {
   return [gasto, ...lista].slice(0, GASTOS_MAX);
 }
 
+// El hotel de cinco noches, uno por noche desde el día que lo pagas. Si no,
+// ese día parecería carísimo y la media y la corona se volverían locas.
+const NOCHES_MAX = 30;
+
+// Los céntimos que no se reparten justos van a la primera noche: así la suma
+// es exacta y no aparece ni se pierde un céntimo.
+function repartirCentimos(total, n) {
+  const centimos = Math.round(total * 100);
+  const base = Math.floor(centimos / n);
+  return Array.from({ length: n }, (_, i) => (base + (i < centimos - base * n ? 1 : 0)) / 100);
+}
+
+function repartirNoches(gasto, noches) {
+  if (!esGastoBueno(gasto) || !Number.isInteger(noches) || noches < 2 || noches > NOCHES_MAX) return [gasto];
+  const cantidades = repartirCentimos(gasto.cantidad, noches);
+  const valores = repartirCentimos(gasto.valor, noches);
+  const antes = new Date(gasto.cuando);
+  return cantidades.map((cantidad, i) => {
+    // La noche delante: el concepto se corta por la derecha en la lista.
+    const marca = `${i + 1}/${noches}`;
+    return {
+      ...gasto,
+      id: `${gasto.id}-${i + 1}`,
+      cantidad,
+      valor: valores[i],
+      concepto: gasto.concepto ? `${marca} · ${gasto.concepto}`.slice(0, CONCEPTO_MAX) : marca,
+      // Con la fecha local y no sumando milisegundos: el día del cambio de hora tiene 23 horas.
+      cuando: new Date(antes.getFullYear(), antes.getMonth(), antes.getDate() + i,
+        antes.getHours(), antes.getMinutes(), antes.getSeconds(), antes.getMilliseconds()).getTime(),
+    };
+  });
+}
+
+function apuntarNoches(lista, noches) {
+  const buenas = noches.filter(esGastoBueno);
+  if (buenas.length === 0) return lista;
+  return [...buenas, ...lista].sort((x, y) => y.cuando - x.cuando).slice(0, GASTOS_MAX);
+}
+
 function quitarGasto(lista, id) {
   return lista.filter((g) => g.id !== id);
 }
@@ -2689,7 +2728,7 @@ if (typeof module !== "undefined") {
     divisaDeIdioma, parPorIdioma, banderaDe, banderaDivisa,
     HISTORIAL_MAX, leerHistorial, apuntarConversion, quitarConversion, haceCuanto, textoParaCopiar, fraseParaCopiar, simboloDe, textoConSimbolo,
     celdaCsv, csvHistorial, csvGastos,
-    GASTOS_MAX, CONCEPTO_MAX, crearGasto, leerGastos, apuntarGasto, quitarGasto, cambiarConcepto, cambiarDia, buscarGastos, trozosResaltados, repetirGasto, devolverGasto, devolverTodos, sumarPorDivisa, gastosPorDia, pesoDeLosDias, ordenarPorImporte, masCarosDelDia, pesoDeLosGastos, RARO_VECES, mediana, gastoRaro, mediaPorDia, comisionesPagadas, pagadoEnEfectivo,
+    GASTOS_MAX, CONCEPTO_MAX, crearGasto, leerGastos, apuntarGasto, NOCHES_MAX, repartirCentimos, repartirNoches, apuntarNoches, quitarGasto, cambiarConcepto, cambiarDia, buscarGastos, trozosResaltados, repetirGasto, devolverGasto, devolverTodos, sumarPorDivisa, gastosPorDia, pesoDeLosDias, ordenarPorImporte, masCarosDelDia, pesoDeLosGastos, RARO_VECES, mediana, gastoRaro, mediaPorDia, comisionesPagadas, pagadoEnEfectivo,
     RETIRADAS_MAX, leerRetiradas, crearRetirada, apuntarRetirada, quitarRetirada, efectivoQueda, EFECTIVO_POCO, tonoEfectivo, redondoDeCajero, cuantoSacar, loQueSobra, gastadoHoy, nombreDia,
     CATEGORIAS, CATEGORIA_POR_DEFECTO, adivinarCategoria, PAGOS, PAGO_POR_DEFECTO, leerPago, comisionDelPago, desglose, conceptosUsados, completarConcepto,
     EMOJI_CATEGORIA, destacados, resumenParaCompartir,

@@ -4570,6 +4570,79 @@ body::after {
 
 /* El cero de más: una línea dorada bajo el concepto, con un punto que respira
    para que se vea sin gritar. */
+/* Las noches del alojamiento: baja como la tira de los días y cada noche que
+   sumas sale una luna más. */
+.noches {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin: calc(var(--s-1) * -1) 0 var(--s-2);
+  padding: 3px 8px;
+  border: 1px solid color-mix(in srgb, var(--brass) 30%, transparent);
+  border-radius: 6px;
+  background: var(--brass-ghost);
+  color: var(--muted);
+  font-size: 10px;
+  font-variant-numeric: tabular-nums;
+  transform-origin: top;
+}
+
+.noches[hidden] {
+  display: none;
+}
+
+.noches.is-entra {
+  animation: dias-baja 260ms var(--ease-out);
+}
+
+.noches__nombre {
+  margin-right: 2px;
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.noches__n {
+  min-width: 14px;
+  font-family: var(--font-mono);
+  font-weight: 700;
+  text-align: center;
+  color: var(--brass);
+}
+
+.noches__n.is-sube {
+  animation: numero-sube var(--mid) var(--ease-spring);
+}
+
+.noches__n.is-baja {
+  animation: numero-baja var(--mid) var(--ease-spring);
+}
+
+.noches__lunas {
+  display: inline-flex;
+  margin-left: 2px;
+  color: var(--brass);
+  letter-spacing: -1px;
+}
+
+.noches__luna {
+  display: inline-block;
+  animation: luna-sale 500ms var(--ease-spring) backwards;
+  animation-delay: calc(var(--i, 0) * 40ms);
+}
+
+@keyframes luna-sale {
+  from { opacity: 0; transform: translateY(5px) rotate(-40deg) scale(0.5); }
+}
+
+.noches__cada {
+  margin-left: auto;
+  font-family: var(--font-mono);
+  color: var(--brass);
+  white-space: nowrap;
+}
+
 .gastos__raro {
   display: flex;
   align-items: center;
@@ -7576,6 +7649,7 @@ kbd {
   .burbuja__rapida,
   .billete,
   .cuenta__monedas,
+  .noches__luna,
   .ayuda__fila,
   .bandeja__opcion,
   .trend__marca,

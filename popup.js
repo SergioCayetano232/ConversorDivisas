@@ -153,6 +153,12 @@ const el = {
   presupuestoDia: document.getElementById("presupuesto-dia"),
   presupuestoRacha: document.getElementById("presupuesto-racha"),
   hoy: document.getElementById("hoy"),
+  noches: document.getElementById("noches"),
+  nochesMenos: document.getElementById("noches-menos"),
+  nochesMas: document.getElementById("noches-mas"),
+  nochesN: document.getElementById("noches-n"),
+  nochesLunas: document.getElementById("noches-lunas"),
+  nochesCada: document.getElementById("noches-cada"),
   hoyLleno: document.getElementById("hoy-lleno"),
   presupuestoTexto: document.getElementById("presupuesto-texto"),
   presupuestoForm: document.getElementById("presupuesto-form"),
@@ -297,6 +303,8 @@ let reparto = { ...CUENTA_POR_DEFECTO };
 // La categoría del gasto que vas a apuntar. Mientras no la elijas tú, la saco
 // del concepto; si la eliges, ya no te la cambio por mucho que escribas.
 let categoriaNueva = CATEGORIA_POR_DEFECTO;
+// Entre cuántas noches va el alojamiento que vas a apuntar. Uno es sin repartir.
+let nochesNuevas = 1;
 let categoriaAMano = false;
 let pagoNuevo = PAGO_POR_DEFECTO;
 let filtroCategoria = null;
@@ -2336,6 +2344,46 @@ function pintarCategoriaNueva(conSalto = false) {
   el.gastosCategoria.title = nombre;
   el.gastosCategoria.setAttribute("aria-label", tr("cat.elegir", { nombre }));
   if (conSalto) restartAnimation(el.gastosCategoria, "is-cambiada");
+  pintarNoches();
+}
+
+// Las noches solo tienen sentido en el alojamiento. Al cambiar de categoría
+// vuelve a una, que si no un taxi se repartiría sin querer.
+function pintarNoches() {
+  const toca = categoriaNueva === "alojamiento";
+  if (!toca) nochesNuevas = 1;
+  const estaba = !el.noches.hidden;
+  el.noches.hidden = !toca;
+  if (!toca) return;
+  if (!estaba) restartAnimation(el.noches, "is-entra");
+  el.nochesN.textContent = nochesNuevas;
+  el.nochesMenos.disabled = nochesNuevas <= 1;
+  el.nochesMas.disabled = nochesNuevas >= NOCHES_MAX;
+  // Una luna por noche hasta siete; más ya no caben y no se cuentan.
+  const lunas = Math.min(nochesNuevas, 7);
+  if (el.nochesLunas.childElementCount !== lunas) {
+    el.nochesLunas.replaceChildren(...Array.from({ length: lunas }, (_, i) => {
+      const luna = document.createElement("span");
+      luna.className = "noches__luna";
+      luna.textContent = "☾";
+      luna.style.setProperty("--i", i);
+      return luna;
+    }));
+  }
+  const gasto = gastoDePantalla();
+  el.nochesCada.textContent = gasto && nochesNuevas > 1
+    ? tr("noches.porNoche", { valor: `${nf.format(repartirNoches(gasto, nochesNuevas)[0].valor)} ${gasto.to}` })
+    : "";
+}
+
+function cambiarNoches(paso) {
+  const n = Math.min(Math.max(nochesNuevas + paso, 1), NOCHES_MAX);
+  if (n === nochesNuevas) return;
+  nochesNuevas = n;
+  raroAvisado = null;
+  pintarNoches();
+  pintarBotonGasto();
+  restartAnimation(el.nochesN, paso > 0 ? "is-sube" : "is-baja");
 }
 
 // Lo de todos los viajes: el café de Lisboa también me vale en Japón.
@@ -2528,6 +2576,7 @@ function pintarGastoRaro(gasto) {
 
 function pintarBotonGasto() {
   const gasto = gastoDePantalla();
+  if (!el.noches.hidden) pintarNoches();
   pintarLoQueSeLleva(gasto);
   el.gastosApuntar.disabled = !gasto;
   if (!gasto) {
@@ -2539,10 +2588,11 @@ function pintarBotonGasto() {
     return;
   }
   const valor = `${nf.format(gasto.valor)} ${gasto.to}`;
-  const raro = pintarGastoRaro(gasto);
+  const unaNoche = repartirNoches(gasto, nochesNuevas)[0];
+  const raro = pintarGastoRaro(unaNoche);
   el.gastosApuntar.classList.toggle("is-raro", raro);
   if (!raroAvisado) el.gastosApuntar.classList.remove("is-seguro");
-  el.gastosApuntar.textContent = tr(raro && raroAvisado === claveRaro(gasto) ? "gastos.raroSeguro" : "gastos.apuntar", { valor });
+  el.gastosApuntar.textContent = tr(raro && raroAvisado === claveRaro(unaNoche) ? "gastos.raroSeguro" : "gastos.apuntar", { valor });
   el.gastosApuntar.title = comision === 0 ? ""
     : pagoNuevo === "efectivo" ? tr("pago.efectivoNota")
     : tr("gastos.comision", { pct: tr("pct", { n: nfComision.format(comision) }) });
@@ -3870,16 +3920,18 @@ function onApuntarGasto(event) {
     restartAnimation(el.gastosApuntar, "is-mal");
     return;
   }
-  if (gastoRaro(gastos, gasto) && raroAvisado !== claveRaro(gasto)) {
-    raroAvisado = claveRaro(gasto);
+  const noches = repartirNoches(gasto, nochesNuevas);
+  if (gastoRaro(gastos, noches[0]) && raroAvisado !== claveRaro(noches[0])) {
+    raroAvisado = claveRaro(noches[0]);
     pintarBotonGasto();
     restartAnimation(el.gastosRaro, "is-insiste");
     restartAnimation(el.gastosApuntar, "is-seguro");
     return;
   }
   raroAvisado = null;
-  gastos = apuntarGasto(gastos, gasto);
-  gastoNuevo = gasto.id;
+  gastos = noches.length > 1 ? apuntarNoches(gastos, noches) : apuntarGasto(gastos, gasto);
+  gastoNuevo = noches[0].id;
+  nochesNuevas = 1;
   el.gastosConcepto.value = "";
   pintarSugerencia(null);
   categoriaNueva = CATEGORIA_POR_DEFECTO;
@@ -5280,6 +5332,8 @@ function bindEvents() {
   el.sueldoCampo.addEventListener("keydown", onTeclaCampoSueldo);
   el.sueldoCampo.addEventListener("animationend", () => el.sueldoCampo.classList.remove("is-mal"));
   el.resultHoras.addEventListener("click", () => (el.burbuja.hidden ? abrirBurbuja() : cerrarBurbuja()));
+  el.nochesMenos.addEventListener("click", () => cambiarNoches(-1));
+  el.nochesMas.addEventListener("click", () => cambiarNoches(1));
   setInterval(turnarPistas, TURNO_PISTAS);
   setInterval(pintarHoraAlli, 30000);
   el.buscarAbrir.addEventListener("click", () => {
