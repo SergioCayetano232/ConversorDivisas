@@ -98,7 +98,14 @@ que necesitaba una conversión rápida. Ahora es un clic en la barra del navegad
   gastado hoy yendo parejo: si la pasas, vas rápido. Cuando un gasto te lleva
   al 80 % o te pasas, te salta una notificación, y la barra da un latido con
   un brillo dorado. Arriba, una llamita con los días seguidos que llevas
-  gastando lo que toca o menos ("🔥 3")
+  gastando lo que toca o menos ("🔥 3"), y un aro que se va cerrando con lo que
+  llevas hoy contra lo que te toca hoy. Antes de salir, en vez del día del
+  viaje, cuántos faltan ("✈ 12 días")
+- El hotel por noches: si apuntas algo de alojamiento sale una fila con las
+  noches, y con 5 se apunta un gasto por noche desde ese día ("1/5 · Hotel"),
+  para que el día que pagas no parezca el más caro del viaje
+- Al acabar un viaje sin pasarte del presupuesto, la primera vez que abres sus
+  gastos sale confeti y lo que te ha sobrado
 - Si estás de viaje y a las nueve de la noche no has apuntado nada, te lo
   recuerda con una notificación, una vez al día. Pulsándola se abren los gastos
   de ese viaje. Si no lo quieres, clic derecho en el icono y lo quitas
@@ -112,7 +119,10 @@ que necesitaba una conversión rápida. Ahora es un clic en la barra del navegad
   tuya. Se redondea hacia arriba al céntimo, para que en la mesa no falte nada.
   Puedes cambiar la cantidad con el panel abierto, y la propina y la gente se
   quedan guardadas. Debajo de la propina sale la que se suele dejar allí
-  ("🇺🇸 Allí se suele dejar un 18 %"), y pulsándola se pone
+  ("🇺🇸 Allí se suele dejar un 18 %"), y pulsándola se pone. Más abajo, con
+  qué billetes lo pagas justo ("20 + 10 + 5 + 2,20") y, si no llevas suelto,
+  con qué puedes pagar y cuánto te devuelven ("Pagas con 50: te devuelven
+  12,80")
 - La comisión de tu banco: pones el % que te cobra la tarjeta (0, 1, 2, 3 o el
   que quieras) y al lado del resultado sale lo que pagarías de verdad. También
   va sumada en la chuleta y en las otras divisas. Se queda guardada para la
@@ -123,6 +133,9 @@ que necesitaba una conversión rápida. Ahora es un clic en la barra del navegad
   encima
 - Cuántos cafés son: en esa misma burbuja pones lo que te cuesta un café en
   casa, y al lado de la cifra sale "☕ ≈ 30". Para hacerse a la idea
+- Y cuánto trabajo es: pones lo que ganas a la hora y sale "⏳ 7 h", en
+  minutos si es poco y en días de 8 horas si es mucho. Con los cafés puestos
+  también, se turnan en el mismo sitio
 - Dónde sale más barato, en la balanza que hay al lado del tique: con el precio
   de allí puesto arriba, escribes lo que cuesta aquí y te dice dónde te ahorras
   y cuánto ("Allí te ahorras 255,20 EUR, un 22 %"). La balanza baja hacia el
@@ -177,6 +190,9 @@ que necesitaba una conversión rápida. Ahora es un clic en la barra del navegad
   que la escribas al derecho o al revés (`1 EUR = 1,10 USD` o `1 USD = 0,91
   EUR`), la entiende igual. Si tienes puesta la comisión de tu tarjeta, te dice
   qué te sale mejor
+- La hora que es allí, al lado de la divisa de origen, con un relojito que la
+  marca de verdad: si es de noche sale una luna, que estará todo cerrado.
+  Pasando el ratón, la ciudad y cuántas horas te lleva
 - La primera vez elige el par según el idioma del navegador: con `es-MX` empieza
   en MXN → USD, con `en-GB` en GBP → EUR. Si no lo tiene claro, EUR → USD
 - Recuerda la última pareja de divisas, la cantidad, el periodo del gráfico,
