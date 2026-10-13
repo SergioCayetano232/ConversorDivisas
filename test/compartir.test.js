@@ -95,3 +95,27 @@ test("con comisiones, dice lo que se ha llevado el banco", () => {
   const lineas = resumenParaCompartir({ nombre: "Japón", gastos: conComision, presupuesto: null }, HOY).split("\n");
   assert.equal(lineas[4], "💳 Comisiones del banco: 0,40 EUR");
 });
+
+test("con tarjeta y efectivo, dice cuánto de cada", () => {
+  ponerIdioma("es");
+  const mezcla = [{ ...gastos[0], pago: "efectivo" }, ...gastos.slice(1)];
+  const lineas = resumenParaCompartir({ nombre: "Japón", gastos: mezcla, presupuesto: null }, HOY).split("\n");
+  assert.equal(lineas[4], "💳 80 % con tarjeta · 💵 20 % en efectivo");
+  ponerIdioma("en");
+  const ingles = resumenParaCompartir({ nombre: "Japan", gastos: mezcla, presupuesto: null }, HOY);
+  assert.ok(ingles.includes("💳 80% by card · 💵 20% in cash"));
+});
+
+test("si todo fue de una manera, no lo dice", () => {
+  ponerIdioma("es");
+  const todoEfectivo = gastos.map((g) => ({ ...g, pago: "efectivo" }));
+  for (const lista of [gastos, todoEfectivo]) {
+    assert.ok(!resumenParaCompartir({ nombre: "Japón", gastos: lista, presupuesto: null }, HOY).includes("en efectivo"));
+  }
+});
+
+test("un poco de efectivo que redondea a 0 % no sale", () => {
+  ponerIdioma("es");
+  const casiNada = [gasto("4", "2026-10-03", 0.2, "comida"), ...gastos].map((g, i) => ({ ...g, pago: i === 0 ? "efectivo" : "tarjeta" }));
+  assert.ok(!resumenParaCompartir({ nombre: "Japón", gastos: casiNada, presupuesto: null }, HOY).includes("en efectivo"));
+});

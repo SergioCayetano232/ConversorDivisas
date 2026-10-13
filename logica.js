@@ -1843,6 +1843,12 @@ function resumenParaCompartir({ nombre, gastos, presupuesto, personas }, hoyIso 
   if (dia) lineas.push(tr("compartir.diaMas", { dia: nombreDia(dia.dia, hoyIso), valor: dinero(dia.total, dia.to) }));
   const pagadas = comisionesPagadas(gastos);
   if (pagadas) lineas.push(tr("compartir.comisiones", { valor: dinero(pagadas.total, pagadas.to) }));
+  // Solo si hay de las dos: "100 % con tarjeta" no le dice nada a nadie.
+  const efectivo = pagadoEnEfectivo(gastos);
+  const pctEfectivo = efectivo ? Math.round((efectivo.total / sumarPorDivisa(gastos)[0].total) * 100) : 0;
+  if (pctEfectivo > 0 && pctEfectivo < 100) {
+    lineas.push(tr("compartir.pago", { tarjeta: tr("pct", { n: 100 - pctEfectivo }), efectivo: tr("pct", { n: pctEfectivo }) }));
+  }
 
   const trozos = desglose(gastos);
   if (trozos.length > 1) {
