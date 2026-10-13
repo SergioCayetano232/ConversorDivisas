@@ -2619,6 +2619,14 @@ function crearDiaGastos({ dia, gastos: suyos, totales }, peso, d) {
   const suma = document.createElement("span");
   suma.className = "gastos__dia-suma";
   suma.textContent = textoTotales(totales);
+  const manda = categoriaDelDia(suyos);
+  if (manda) {
+    const emoji = document.createElement("span");
+    emoji.className = "gastos__dia-cat";
+    emoji.textContent = EMOJI_CATEGORIA[manda.categoria];
+    emoji.title = tr("gastos.diaCategoria", { cat: tr(`cat.${manda.categoria}`).toLocaleLowerCase(), pct: tr("pct", { n: Math.round(manda.fraccion * 100) }) });
+    suma.prepend(emoji);
+  }
   fila.append(nombre, suma);
 
   if (peso > 0) {

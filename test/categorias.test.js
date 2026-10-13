@@ -1,6 +1,6 @@
 const { test } = require("node:test");
 const assert = require("node:assert");
-const { CATEGORIAS, adivinarCategoria, desglose } = require("../logica.js");
+const { CATEGORIAS, adivinarCategoria, desglose, categoriaDelDia } = require("../logica.js");
 
 test("adivina por el concepto, con tildes o sin ellas", () => {
   assert.equal(adivinarCategoria("Cena en el puerto"), "comida");
@@ -48,4 +48,14 @@ test("solo cuenta la divisa que más suma", () => {
 
 test("sin gastos no hay desglose", () => {
   assert.deepEqual(desglose([]), []);
+});
+
+test("la categoría que manda en el día", () => {
+  const g = (valor, categoria, to = "EUR") => ({ id: String(Math.random()), from: "JPY", to, cantidad: valor * 160, valor, concepto: "", cuando: 1, categoria });
+  assert.equal(categoriaDelDia([g(40, "comida"), g(10, "transporte"), g(15, "comida")]).categoria, "comida");
+  assert.equal(categoriaDelDia([g(40, "comida"), g(15, "comida")]).fraccion, 1);
+  assert.equal(categoriaDelDia([g(40, "comida")]), null, "con uno ya lo dice su icono");
+  assert.equal(categoriaDelDia([g(20, "comida"), g(20, "ocio")]), null, "empate, ninguna");
+  // Los dólares no cuentan: la del día es la de la divisa que más suma.
+  assert.equal(categoriaDelDia([g(50, "ocio", "USD"), g(30, "comida"), g(80, "transporte")]).categoria, "transporte");
 });

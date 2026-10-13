@@ -1899,6 +1899,15 @@ function resumenParaCompartir({ nombre, gastos, presupuesto, personas }, hoyIso 
   return lineas.join("\n");
 }
 
+// En qué se fue cada día. Con un gasto ya lo dice su icono, y si empatan dos
+// no elijo ninguna.
+function categoriaDelDia(delDia) {
+  if (delDia.length < 2) return null;
+  const [primera, segunda] = desglose(delDia);
+  if (!primera || (segunda && segunda.total === primera.total)) return null;
+  return primera;
+}
+
 // Si a mitad de viaje cambias de divisa no las mezclo: un total por cada una,
 // la que más suma primero.
 function sumarPorDivisa(gastos) {
@@ -2768,7 +2777,7 @@ if (typeof module !== "undefined") {
     divisaDeIdioma, parPorIdioma, banderaDe, banderaDivisa,
     HISTORIAL_MAX, leerHistorial, apuntarConversion, quitarConversion, haceCuanto, ultimoDeHoy, textoParaCopiar, fraseParaCopiar, simboloDe, textoConSimbolo,
     celdaCsv, csvHistorial, csvGastos,
-    GASTOS_MAX, CONCEPTO_MAX, crearGasto, leerGastos, apuntarGasto, NOCHES_MAX, repartirCentimos, repartirNoches, apuntarNoches, quitarGasto, cambiarConcepto, cambiarDia, buscarGastos, trozosResaltados, repetirGasto, devolverGasto, devolverTodos, sumarPorDivisa, gastosPorDia, pesoDeLosDias, ordenarPorImporte, masCarosDelDia, pesoDeLosGastos, RARO_VECES, mediana, gastoRaro, mediaPorDia, mediaPorGasto, comisionesPagadas, pagadoEnEfectivo,
+    GASTOS_MAX, CONCEPTO_MAX, crearGasto, leerGastos, apuntarGasto, NOCHES_MAX, repartirCentimos, repartirNoches, apuntarNoches, quitarGasto, cambiarConcepto, cambiarDia, buscarGastos, trozosResaltados, repetirGasto, devolverGasto, devolverTodos, sumarPorDivisa, gastosPorDia, categoriaDelDia, pesoDeLosDias, ordenarPorImporte, masCarosDelDia, pesoDeLosGastos, RARO_VECES, mediana, gastoRaro, mediaPorDia, mediaPorGasto, comisionesPagadas, pagadoEnEfectivo,
     RETIRADAS_MAX, leerRetiradas, crearRetirada, apuntarRetirada, quitarRetirada, efectivoQueda, EFECTIVO_POCO, tonoEfectivo, redondoDeCajero, cuantoSacar, loQueSobra, gastadoHoy, nombreDia,
     CATEGORIAS, CATEGORIA_POR_DEFECTO, adivinarCategoria, PAGOS, PAGO_POR_DEFECTO, leerPago, comisionDelPago, desglose, conceptosUsados, completarConcepto,
     EMOJI_CATEGORIA, destacados, resumenParaCompartir,

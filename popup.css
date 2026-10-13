@@ -3614,6 +3614,12 @@ body::after {
   }
 }
 
+.gastos__dia-cat {
+  margin-right: 4px;
+  font-size: 10px;
+  cursor: default;
+}
+
 .gastos__ultimo {
   font-weight: 400;
   letter-spacing: 0;
