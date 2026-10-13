@@ -86,6 +86,7 @@ const el = {
   cuentaEtiqueta: document.getElementById("cuenta-etiqueta"),
   cuentaCifra: document.getElementById("cuenta-cifra"),
   cuentaTuyo: document.getElementById("cuenta-tuyo"),
+  cuentaRedondear: document.getElementById("cuenta-redondear"),
   cuentaPropinas: document.getElementById("cuenta-propinas"),
   cuentaCampo: document.getElementById("cuenta-campo"),
   cuentaHabitual: document.getElementById("cuenta-habitual"),
@@ -3261,6 +3262,10 @@ function pintarCuenta() {
   el.cuentaCifra.title = r && !solo ? tr("cuenta.redondeo") : "";
   el.cuentaTuyo.textContent = r?.cadaUnoTuyo != null ? `≈ ${nf.format(r.cadaUnoTuyo)} ${to}` : "";
   el.cuentaTuyo.title = comision > 0 ? tr("gastos.comision", { pct: tr("pct", { n: nfComision.format(comision) }) }) : "";
+  el.cuentaRedondear.setAttribute("aria-pressed", String(reparto.redondear));
+  el.cuentaRedondear.textContent = reparto.redondear && r?.sobra >= 0.005
+    ? tr("cuenta.redondeado", { sobra: nf.format(r.sobra) })
+    : tr(reparto.redondear ? "cuenta.redondeadoYa" : "cuenta.redondear");
 
   pintarPropinaHabitual(from);
   el.cuentaN.textContent = reparto.personas;
@@ -3438,6 +3443,12 @@ function marcarPropina() {
 function ponerPropina(pct) {
   reparto = { ...reparto, propina: pct };
   marcarPropina();
+  pintarCuenta();
+  guardarReparto();
+}
+
+function onRedondear() {
+  reparto = { ...reparto, redondear: !reparto.redondear };
   pintarCuenta();
   guardarReparto();
 }
@@ -5308,6 +5319,7 @@ function bindEvents() {
   el.cuentaCampo.addEventListener("keydown", onTeclaCampoPropina);
   el.cuentaCampo.addEventListener("animationend", () => el.cuentaCampo.classList.remove("is-mal"));
   el.cuentaMenos.addEventListener("click", () => cambiarPersonas(-1));
+  el.cuentaRedondear.addEventListener("click", onRedondear);
   el.cuentaMas.addEventListener("click", () => cambiarPersonas(1));
   el.cuentaCifra.addEventListener("animationend", () => el.cuentaCifra.classList.remove("is-tic"));
   el.cuentaN.addEventListener("animationend", () => el.cuentaN.classList.remove("is-sube", "is-baja"));

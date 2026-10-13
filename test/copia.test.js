@@ -32,7 +32,7 @@ test("la copia lleva lo tuyo, con su marca y su fecha", () => {
   assert.deepEqual(copia.datos.lastPair, { from: "JPY", to: "EUR" });
   assert.deepEqual(copia.datos.avisos, [aviso]);
   assert.equal(copia.datos.comisionBanco, 2);
-  assert.deepEqual(copia.datos.cuentaReparto, { propina: 15, personas: 3 });
+  assert.deepEqual(copia.datos.cuentaReparto, { propina: 15, personas: 3, redondear: false });
   assert.equal(copia.datos.idioma, "en");
   assert.equal(copia.datos.insigniaActiva, false);
 });

@@ -2168,6 +2168,19 @@ body::after {
   opacity: 0.8;
 }
 
+/* A la derecha de la cifra, que se lea como un ajuste de ella. */
+.cuenta__redondear {
+  margin-left: auto;
+  align-self: center;
+  animation: none;
+}
+
+.cuenta__redondear[aria-pressed="true"] {
+  color: var(--graphite);
+  background: var(--brass);
+  border-color: var(--brass);
+}
+
 .cuenta__fila {
   display: flex;
   align-items: center;

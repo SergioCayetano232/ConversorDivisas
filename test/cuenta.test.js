@@ -1,26 +1,26 @@
 const { test } = require("node:test");
 const assert = require("node:assert");
 const {
-  PROPINA_MAX, PERSONAS_MAX, CUENTA_POR_DEFECTO, leerCuenta, repartirCuenta, cuentaParaCompartir, leerPorcentaje,
+  PROPINA_MAX, PERSONAS_MAX, CUENTA_POR_DEFECTO, leerCuenta, redondoHaciaArriba, repartirCuenta, cuentaParaCompartir, leerPorcentaje,
 } = require("../logica.js");
 
 test("sin nada guardado, un 10 % entre dos", () => {
   assert.deepEqual(leerCuenta(undefined), CUENTA_POR_DEFECTO);
   assert.deepEqual(leerCuenta("hola"), CUENTA_POR_DEFECTO);
-  assert.deepEqual(CUENTA_POR_DEFECTO, { propina: 10, personas: 2 });
+  assert.deepEqual(CUENTA_POR_DEFECTO, { propina: 10, personas: 2, redondear: false });
 });
 
 test("lo guardado se respeta si tiene sentido", () => {
-  assert.deepEqual(leerCuenta({ propina: 18, personas: 4 }), { propina: 18, personas: 4 });
-  assert.deepEqual(leerCuenta({ propina: 0, personas: 1 }), { propina: 0, personas: 1 });
+  assert.deepEqual(leerCuenta({ propina: 18, personas: 4 }), { propina: 18, personas: 4, redondear: false });
+  assert.deepEqual(leerCuenta({ propina: 0, personas: 1 }), { propina: 0, personas: 1, redondear: false });
 });
 
 test("lo que no tiene sentido vuelve a lo de siempre, cada cosa por su lado", () => {
-  assert.deepEqual(leerCuenta({ propina: -5, personas: 3 }), { propina: 10, personas: 3 });
-  assert.deepEqual(leerCuenta({ propina: PROPINA_MAX + 1, personas: 3 }), { propina: 10, personas: 3 });
-  assert.deepEqual(leerCuenta({ propina: 15, personas: 0 }), { propina: 15, personas: 2 });
-  assert.deepEqual(leerCuenta({ propina: 15, personas: 2.5 }), { propina: 15, personas: 2 });
-  assert.deepEqual(leerCuenta({ propina: 15, personas: PERSONAS_MAX + 1 }), { propina: 15, personas: 2 });
+  assert.deepEqual(leerCuenta({ propina: -5, personas: 3 }), { propina: 10, personas: 3, redondear: false });
+  assert.deepEqual(leerCuenta({ propina: PROPINA_MAX + 1, personas: 3 }), { propina: 10, personas: 3, redondear: false });
+  assert.deepEqual(leerCuenta({ propina: 15, personas: 0 }), { propina: 15, personas: 2, redondear: false });
+  assert.deepEqual(leerCuenta({ propina: 15, personas: 2.5 }), { propina: 15, personas: 2, redondear: false });
+  assert.deepEqual(leerCuenta({ propina: 15, personas: PERSONAS_MAX + 1 }), { propina: 15, personas: 2, redondear: false });
 });
 
 test("la propina se escribe como la comisión, pero llega más alto", () => {
@@ -97,4 +97,29 @@ test("en inglés el reparto también se entiende", () => {
   } finally {
     ponerIdioma("es");
   }
+});
+
+test("redondear lo de cada uno, a la unidad o a lo que tenga sentido", () => {
+  assert.equal(redondoHaciaArriba(23.47), 24);
+  assert.equal(redondoHaciaArriba(24), 24, "lo que ya es redondo no sube");
+  assert.equal(redondoHaciaArriba(0.4), 1);
+  assert.equal(redondoHaciaArriba(234.1), 235);
+  assert.equal(redondoHaciaArriba(2347), 2350);
+  assert.equal(redondoHaciaArriba(23471), 23500);
+});
+
+test("con el redondeo, cada uno paga redondo y lo de más se dice", () => {
+  // 61 + 15 % = 70,15 entre 3 = 23,38 → 24, y sobran 1,85.
+  const r = repartirCuenta(61, 0.9, { propina: 15, personas: 3, redondear: true });
+  assert.equal(r.cadaUno, 24);
+  assert.ok(Math.abs(r.sobra - 1.85) < 1e-9);
+  assert.equal(r.cadaUnoTuyo, 21.6, "en tu divisa, lo que pagas de verdad: los 24");
+  assert.equal(repartirCuenta(61, 0.9, { propina: 15, personas: 3 }).sobra, 0);
+  assert.equal(repartirCuenta(61, 0.9, { propina: 15, personas: 3 }).cadaUno, 23.39);
+  assert.equal(repartirCuenta(61, null, { propina: 15, personas: 3, redondear: true }).cadaUnoTuyo, null);
+});
+
+test("lo guardado con el redondeo puesto se queda puesto", () => {
+  assert.equal(leerCuenta({ propina: 10, personas: 2, redondear: true }).redondear, true);
+  assert.equal(leerCuenta({ propina: 10, personas: 2, redondear: "sí" }).redondear, false);
 });

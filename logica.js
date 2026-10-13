@@ -970,7 +970,7 @@ function textoHoras(min, corto = false) {
 const PROPINAS_RAPIDAS = [0, 10, 15, 20];
 const PROPINA_MAX = 30;
 const PERSONAS_MAX = 20;
-const CUENTA_POR_DEFECTO = { propina: 10, personas: 2 };
+const CUENTA_POR_DEFECTO = { propina: 10, personas: 2, redondear: false };
 
 // Lo que se suele dejar en un restaurante, por la divisa de la cuenta. Es a ojo:
 // en el euro cambia de un país a otro, y en Japón o Corea dejarla queda raro.
@@ -1035,6 +1035,8 @@ function leerCuenta(guardado) {
       ? redondearComision(propina) : CUENTA_POR_DEFECTO.propina,
     personas: Number.isInteger(personas) && personas >= 1 && personas <= PERSONAS_MAX
       ? personas : CUENTA_POR_DEFECTO.personas,
+    // Los guardados de antes no lo traen: sin redondear, como estaban.
+    redondear: guardado?.redondear === true,
   };
 }
 
@@ -1042,16 +1044,37 @@ function leerCuenta(guardado) {
 // es para que 10,00 no se vaya a 10,01 por los decimales del ordenador.
 const alCentimo = (n) => Math.ceil(n * 100 - 1e-6) / 100;
 
+// A la unidad hasta 999; con divisas pequeñas, a la decena o la centena, que
+// redondear 2.347 yenes a 2.348 no le ahorra nada a nadie.
+function redondoHaciaArriba(n) {
+  const paso = 10 ** Math.max(0, Math.floor(Math.log10(n)) - 2);
+  return Math.ceil(n / paso - 1e-9) * paso;
+}
+
 // La propina va sobre la cuenta tal cual, y la comisión sobre lo que te cobran
 // después en tu divisa, igual que en el resto del popup.
-function repartirCuenta(cantidad, rate, { propina, personas }, comision = 0) {
+function repartirCuenta(cantidad, rate, { propina, personas, redondear = false }, comision = 0) {
   if (!Number.isFinite(cantidad) || cantidad <= 0) return null;
   const total = cantidad * (1 + propina / 100);
-  const tuyo = Number.isFinite(rate) && rate > 0 ? conComision(total * rate, comision) : null;
+  const conTasa = Number.isFinite(rate) && rate > 0;
+  const tuyo = conTasa ? conComision(total * rate, comision) : null;
+  if (redondear) {
+    const cadaUno = redondoHaciaArriba(total / personas);
+    return {
+      propina: total - cantidad,
+      total,
+      cadaUno,
+      // Lo que se deja de más al redondear, que acaba siendo propina.
+      sobra: cadaUno * personas - total,
+      totalTuyo: tuyo,
+      cadaUnoTuyo: conTasa ? alCentimo(conComision(cadaUno * rate, comision)) : null,
+    };
+  }
   return {
     propina: total - cantidad,
     total,
     cadaUno: alCentimo(total / personas),
+    sobra: 0,
     totalTuyo: tuyo,
     cadaUnoTuyo: tuyo === null ? null : alCentimo(tuyo / personas),
   };
@@ -2790,7 +2813,7 @@ if (typeof module !== "undefined") {
     COMISION_MAX, COMISIONES_RAPIDAS, leerComision, leerPorcentaje, conComision,
     IMPUESTO_MAX, IMPUESTOS_RAPIDOS, leerImpuesto, leerImpuestoEscrito, loQuePagas,
     COMPARAR_IGUAL, compararPrecios, inclinacion, ZONAS, desfase, esNoche, horaAlli, textoDiferencia, relojDe, tituloHoraAlli, leerCafe, enCafes, textoCafes, HORAS_JORNADA, enHoras, textoHoras,
-    PROPINAS_RAPIDAS, PROPINA_HABITUAL, propinaHabitual, PROPINA_MAX, PERSONAS_MAX, CUENTA_POR_DEFECTO, leerCuenta, repartirCuenta, cuentaParaCompartir, BILLETES, PAGOS_MAX, pagosPosibles, vuelta, pagoJusto,
+    PROPINAS_RAPIDAS, PROPINA_HABITUAL, propinaHabitual, PROPINA_MAX, PERSONAS_MAX, CUENTA_POR_DEFECTO, leerCuenta, redondoHaciaArriba, repartirCuenta, cuentaParaCompartir, BILLETES, PAGOS_MAX, pagosPosibles, vuelta, pagoJusto,
     MARGENES, tasaOfrecida, analizarCambio,
     domingoDePascua, hayTasaEl, tasaVieja, textoTasaVieja, horaBce, textoActualizado, proximaTasa, textoProximaTasa,
     FECHA_MINIMA, fechaLarga, fechaValida, diaDelGrafico, mesesAtras, FECHAS_RAPIDAS, leerFecha, cambioDesde, notaDiaHabil,
