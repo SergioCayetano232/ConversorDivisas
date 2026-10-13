@@ -76,7 +76,7 @@ test("lo más caro va con su concepto si lo tiene", () => {
 });
 
 test("con un gasto no hay destacados, y con dos días tampoco el día", () => {
-  assert.deepEqual(destacados([gasto("1", HOY, 10, "comida")]), { caro: null, dia: null });
+  assert.deepEqual(destacados([gasto("1", HOY, 10, "comida")]), { caro: null, dia: null, barato: null });
   const dos = destacados([gasto("2", HOY, 10, "comida"), gasto("1", "2026-10-02", 30, "comida")]);
   assert.equal(dos.caro.id, "1");
   assert.equal(dos.dia, null);
@@ -118,4 +118,21 @@ test("un poco de efectivo que redondea a 0 % no sale", () => {
   ponerIdioma("es");
   const casiNada = [gasto("4", "2026-10-03", 0.2, "comida"), ...gastos].map((g, i) => ({ ...g, pago: i === 0 ? "efectivo" : "tarjeta" }));
   assert.ok(!resumenParaCompartir({ nombre: "Japón", gastos: casiNada, presupuesto: null }, HOY).includes("en efectivo"));
+});
+
+test("el día que menos, sin contar hoy, que aún no ha acabado", () => {
+  ponerIdioma("es");
+  const cuatro = [...gastos, gasto("0", "2026-09-30", 40, "comida")];
+  const lineas = resumenParaCompartir({ nombre: "Japón", gastos: cuatro, presupuesto: null }, HOY).split("\n");
+  assert.equal(lineas[3], "📅 El día que más: 1 oct, 50,00 EUR");
+  assert.equal(lineas[4], "🪶 El día que menos: Ayer, 30,00 EUR");
+  ponerIdioma("en");
+  assert.ok(resumenParaCompartir({ nombre: "Japan", gastos: cuatro, presupuesto: null }, HOY).includes("🪶 Quietest day: Yesterday, 30.00 EUR"));
+  ponerIdioma("es");
+});
+
+test("con dos días acabados, o si todos gastan igual, no hay día barato", () => {
+  assert.equal(destacados(gastos, HOY).barato, null);
+  const iguales = [gasto("3", "2026-10-03", 30, "comida"), gasto("2", "2026-10-02", 30, "comida"), gasto("1", "2026-10-01", 30, "comida")];
+  assert.equal(destacados(iguales, "2026-10-05").barato, null);
 });

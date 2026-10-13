@@ -1809,14 +1809,18 @@ const EMOJI_CATEGORIA = {
 
 // Lo que se comenta en el grupo. Con un gasto, el más caro es el total; y con
 // dos días, el que más se ve a simple vista en la lista de días.
-function destacados(gastos) {
+function destacados(gastos, hoyIso = hoy()) {
   const [principal] = sumarPorDivisa(gastos);
-  if (!principal || gastos.length < 2) return { caro: null, dia: null };
+  if (!principal || gastos.length < 2) return { caro: null, dia: null, barato: null };
   const suyos = gastos.filter((g) => g.to === principal.to);
   const caro = suyos.reduce((max, g) => (g.valor > max.valor ? g : max));
   const dias = gastosPorDia(suyos).map(({ dia, totales }) => ({ dia, total: totales[0].total, to: principal.to }));
   const dia = dias.length >= 3 ? dias.reduce((max, d) => (d.total > max.total ? d : max)) : null;
-  return { caro, dia };
+  // Hoy no cuenta para el barato: a mediodía siempre ganaría, y aún no ha acabado.
+  const cerrados = dias.filter((d) => d.dia !== hoyIso);
+  const menor = cerrados.length >= 3 ? cerrados.reduce((min, d) => (d.total < min.total ? d : min)) : null;
+  const barato = dia && menor && menor.total < dia.total ? menor : null;
+  return { caro, dia, barato };
 }
 
 // Para pegarlo en WhatsApp: lo de entre asteriscos sale en negrita, y en
@@ -1835,12 +1839,13 @@ function resumenParaCompartir({ nombre, gastos, presupuesto, personas }, hoyIso 
   const cabeza = porPersona(gastos, personas);
   if (cabeza) lineas.push(tr("compartir.porPersona", { personas: cabeza.personas, valor: dinero(cabeza.total, cabeza.to) }));
 
-  const { caro, dia } = destacados(gastos);
+  const { caro, dia, barato } = destacados(gastos, hoyIso);
   if (caro) {
     const que = caro.concepto || tr(`cat.${caro.categoria}`);
     lineas.push(tr("compartir.caro", { que, valor: dinero(caro.valor, caro.to), dia: nombreDia(isoLocal(new Date(caro.cuando)), hoyIso) }));
   }
   if (dia) lineas.push(tr("compartir.diaMas", { dia: nombreDia(dia.dia, hoyIso), valor: dinero(dia.total, dia.to) }));
+  if (barato) lineas.push(tr("compartir.diaMenos", { dia: nombreDia(barato.dia, hoyIso), valor: dinero(barato.total, barato.to) }));
   const pagadas = comisionesPagadas(gastos);
   if (pagadas) lineas.push(tr("compartir.comisiones", { valor: dinero(pagadas.total, pagadas.to) }));
   // Solo si hay de las dos: "100 % con tarjeta" no le dice nada a nadie.
