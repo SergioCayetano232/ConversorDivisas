@@ -26,6 +26,11 @@ test("los de otra divisa van detrás, ordenados entre ellos", () => {
   assert.deepEqual(ids(ordenarPorImporte(lista)), ["b", "a", "usd1", "usd2"]);
 });
 
+test("al revés, del más barato al más caro, y los de otra divisa siguen detrás", () => {
+  const lista = [gasto("a", 10, 1), gasto("usd1", 50, 1, "USD"), gasto("b", 80), gasto("usd2", 20, 1, "USD"), gasto("c", 10, 4)];
+  assert.deepEqual(ids(ordenarPorImporte(lista, true)), ["c", "a", "b", "usd2", "usd1"]);
+});
+
 test("sin gastos, nada", () => {
   assert.deepEqual(ordenarPorImporte([]), []);
 });

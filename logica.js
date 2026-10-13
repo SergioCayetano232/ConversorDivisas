@@ -1934,12 +1934,14 @@ function masCarosDelDia(gastos) {
 
 // Los más caros primero. Los de otra divisa van detrás: 50 USD y 50 EUR no son
 // lo mismo y no tengo con qué compararlos. A igual importe, el más reciente.
-function ordenarPorImporte(gastos) {
+// Al revés, los de otra divisa siguen detrás: lo que se da la vuelta es el orden.
+function ordenarPorImporte(gastos, alReves = false) {
   const principal = sumarPorDivisa(gastos)[0]?.to;
+  const signo = alReves ? -1 : 1;
   return [...gastos].sort((a, b) => {
     const suyaA = a.to === principal;
     if (suyaA !== (b.to === principal)) return suyaA ? -1 : 1;
-    return b.valor - a.valor || b.cuando - a.cuando;
+    return signo * (b.valor - a.valor) || b.cuando - a.cuando;
   });
 }
 

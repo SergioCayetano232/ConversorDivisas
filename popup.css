@@ -4796,6 +4796,12 @@ body::after {
 /* Las tres barras se recolocan al pasar por encima, como si se ordenaran. */
 .ordenar svg {
   stroke-width: 1.5;
+  transition: transform var(--mid) var(--ease-spring);
+}
+
+/* Del más barato: las barras se dan la vuelta, la corta arriba. */
+.ordenar[data-orden="barato"] svg {
+  transform: scaleY(-1);
 }
 
 .ordenar__barra {

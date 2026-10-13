@@ -309,6 +309,7 @@ let categoriaAMano = false;
 let pagoNuevo = PAGO_POR_DEFECTO;
 let filtroCategoria = null;
 let busqueda = "";
+// false, "caro" o "barato": el botón va pasando por los tres.
 let ordenado = false;
 let cajero = [];
 // El precio de aquí va en la divisa de destino: si cambia, el de antes ya no vale.
@@ -2956,16 +2957,17 @@ function pintarGastos() {
   pintarBusqueda(visibles);
   if (n < 3) ordenado = false;
   el.gastosOrdenar.hidden = n < 3;
-  el.gastosOrdenar.setAttribute("aria-pressed", String(ordenado));
-  el.gastosOrdenar.title = tr(ordenado ? "ordenar.dias" : "ordenar");
+  el.gastosOrdenar.setAttribute("aria-pressed", String(Boolean(ordenado)));
+  el.gastosOrdenar.dataset.orden = ordenado || "";
+  el.gastosOrdenar.title = tr(ordenado === "caro" ? "ordenar.barato" : ordenado ? "ordenar.dias" : "ordenar");
   el.gastosOrdenar.setAttribute("aria-label", el.gastosOrdenar.title);
   if (ordenado && visibles.length > 0) {
-    const lista = ordenarPorImporte(visibles);
+    const lista = ordenarPorImporte(visibles, ordenado === "barato");
     const pesos = pesoDeLosGastos(lista);
     const cabeza = document.createElement("li");
     cabeza.className = "gastos__dia gastos__dia--orden";
     const nombre = document.createElement("span");
-    nombre.textContent = tr("ordenar.cabeza");
+    nombre.textContent = tr(ordenado === "barato" ? "ordenar.cabezaBarato" : "ordenar.cabeza");
     const suma = document.createElement("span");
     suma.className = "gastos__dia-suma";
     suma.textContent = textoTotales(sumarPorDivisa(lista));
@@ -5360,7 +5362,7 @@ function bindEvents() {
   el.buscarCampo.addEventListener("keydown", onTeclaBuscar);
   // Las filas vuelven a entrar en cascada: así se ve que se han recolocado.
   el.gastosOrdenar.addEventListener("click", () => {
-    ordenado = !ordenado;
+    ordenado = ordenado === "caro" ? "barato" : ordenado ? false : "caro";
     cascadaGastos = true;
     pintarGastos();
     el.gastosLista.scrollTop = 0;
