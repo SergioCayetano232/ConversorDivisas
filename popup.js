@@ -2845,7 +2845,10 @@ function pintarPersonas(conSalto = false) {
   el.personasMas.disabled = personas >= PERSONAS_MAX;
   const cabeza = porPersona(gastos, personas);
   // Sin la divisa, como la media: al lado de los botones no cabe y ya está en el total.
-  el.personasCabeza.textContent = cabeza ? tr("personas.cada", { valor: nf.format(cabeza.total) }) : tr("personas.cuantos");
+  // Corto: al lado de los botones "cada uno" no cabía y salía "cada un…". Por
+  // encima de mil, sin céntimos, que tampoco cabían. Entero, en el title.
+  const corto = cabeza && (cabeza.total >= 1000 ? numeros({ maximumFractionDigits: 0 }) : nf).format(cabeza.total);
+  el.personasCabeza.textContent = cabeza ? tr("personas.cadaCorto", { valor: corto }) : tr("personas.cuantos");
   el.personasCabeza.title = !cabeza ? ""
     : cabeza.alDia ? tr("personas.cadaAlDia", { valor: `${nf.format(cabeza.total)} ${cabeza.to}`, dia: `${nf.format(cabeza.alDia)} ${cabeza.to}` })
     : tr("personas.cada", { valor: `${nf.format(cabeza.total)} ${cabeza.to}` });
