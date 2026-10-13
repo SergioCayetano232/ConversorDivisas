@@ -1837,6 +1837,8 @@ function resumenParaCompartir({ nombre, gastos, presupuesto, personas }, hoyIso 
     `*🧳 ${nombre}*`,
     tr("compartir.total", { total: `*${sumas(sumarPorDivisa(gastos))}*`, n: n === 1 ? tr("gastos.uno") : tr("gastos.n", { n }) }),
   ];
+  const porGasto = mediaPorGasto(gastos);
+  if (porGasto) lineas[1] += ` ${tr("compartir.porGasto", { valor: dinero(porGasto.media, porGasto.to) })}`;
   const cabeza = porPersona(gastos, personas);
   if (cabeza) {
     const datos = { personas: cabeza.personas, valor: dinero(cabeza.total, cabeza.to) };
@@ -2092,6 +2094,14 @@ function loQueSobra(presupuesto, gastos, retiradas, tasa, hoyIso = hoy()) {
     queda: cuenta.queda, divisa: cuenta.divisa, valor, to: presupuesto.to,
     cuando: hoyIso === presupuesto.hasta ? "ultimo" : "acabado",
   };
+}
+
+// Por gasto y no por día: dice si vas de muchos cafés o de pocas cenas.
+function mediaPorGasto(gastos) {
+  const principal = sumarPorDivisa(gastos)[0];
+  const suyos = gastos.filter((g) => g.to === principal?.to);
+  if (suyos.length < 2) return null;
+  return { media: principal.total / suyos.length, to: principal.to };
 }
 
 function mediaPorDia(gastos) {
@@ -2745,7 +2755,7 @@ if (typeof module !== "undefined") {
     divisaDeIdioma, parPorIdioma, banderaDe, banderaDivisa,
     HISTORIAL_MAX, leerHistorial, apuntarConversion, quitarConversion, haceCuanto, textoParaCopiar, fraseParaCopiar, simboloDe, textoConSimbolo,
     celdaCsv, csvHistorial, csvGastos,
-    GASTOS_MAX, CONCEPTO_MAX, crearGasto, leerGastos, apuntarGasto, NOCHES_MAX, repartirCentimos, repartirNoches, apuntarNoches, quitarGasto, cambiarConcepto, cambiarDia, buscarGastos, trozosResaltados, repetirGasto, devolverGasto, devolverTodos, sumarPorDivisa, gastosPorDia, pesoDeLosDias, ordenarPorImporte, masCarosDelDia, pesoDeLosGastos, RARO_VECES, mediana, gastoRaro, mediaPorDia, comisionesPagadas, pagadoEnEfectivo,
+    GASTOS_MAX, CONCEPTO_MAX, crearGasto, leerGastos, apuntarGasto, NOCHES_MAX, repartirCentimos, repartirNoches, apuntarNoches, quitarGasto, cambiarConcepto, cambiarDia, buscarGastos, trozosResaltados, repetirGasto, devolverGasto, devolverTodos, sumarPorDivisa, gastosPorDia, pesoDeLosDias, ordenarPorImporte, masCarosDelDia, pesoDeLosGastos, RARO_VECES, mediana, gastoRaro, mediaPorDia, mediaPorGasto, comisionesPagadas, pagadoEnEfectivo,
     RETIRADAS_MAX, leerRetiradas, crearRetirada, apuntarRetirada, quitarRetirada, efectivoQueda, EFECTIVO_POCO, tonoEfectivo, redondoDeCajero, cuantoSacar, loQueSobra, gastadoHoy, nombreDia,
     CATEGORIAS, CATEGORIA_POR_DEFECTO, adivinarCategoria, PAGOS, PAGO_POR_DEFECTO, leerPago, comisionDelPago, desglose, conceptosUsados, completarConcepto,
     EMOJI_CATEGORIA, destacados, resumenParaCompartir,

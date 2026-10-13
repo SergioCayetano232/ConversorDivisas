@@ -2923,6 +2923,8 @@ function pintarGastos() {
     if (habia) restartAnimation(el.gastosSuma, "is-tic");
   }
   el.gastosN.textContent = n === 0 ? "" : n === 1 ? tr("gastos.uno") : tr("gastos.n", { n });
+  const porGasto = mediaPorGasto(gastos);
+  el.gastosN.title = porGasto ? tr("gastos.porGasto", { valor: `${nf.format(porGasto.media)} ${porGasto.to}` }) : "";
   const media = mediaPorDia(gastos);
   el.gastosMedia.hidden = !media;
   if (media) {

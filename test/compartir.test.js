@@ -1,6 +1,6 @@
 const { test } = require("node:test");
 const assert = require("node:assert");
-const { resumenParaCompartir, destacados } = require("../logica.js");
+const { resumenParaCompartir, destacados, mediaPorGasto } = require("../logica.js");
 const { ponerIdioma } = require("../textos.js");
 
 const hora = (dia, h = 12) => new Date(...dia.split("-").map((n, i) => (i === 1 ? n - 1 : Number(n))), h).getTime();
@@ -25,7 +25,7 @@ test("el resumen entero, con categorías, días y presupuesto", () => {
   const presupuesto = { importe: 300, to: "EUR", hasta: "2026-10-10" };
   assert.equal(resumenParaCompartir({ nombre: "Japón", gastos, presupuesto }, HOY), [
     "*🧳 Japón*",
-    "Total: *100,00 EUR* en 3 gastos",
+    "Total: *100,00 EUR* en 3 gastos (33,33 EUR de media)",
     "🏆 Lo más caro: Comida, 50,00 EUR (1 oct)",
     "📅 El día que más: 1 oct, 50,00 EUR",
     "",
@@ -135,4 +135,15 @@ test("con dos días acabados, o si todos gastan igual, no hay día barato", () =
   assert.equal(destacados(gastos, HOY).barato, null);
   const iguales = [gasto("3", "2026-10-03", 30, "comida"), gasto("2", "2026-10-02", 30, "comida"), gasto("1", "2026-10-01", 30, "comida")];
   assert.equal(destacados(iguales, "2026-10-05").barato, null);
+});
+
+test("la media por gasto, solo en la divisa que más suma", () => {
+  assert.deepEqual(mediaPorGasto(gastos), { media: 100 / 3, to: "EUR" });
+  // El de dólares no entra ni en la suma ni en la cuenta de gastos.
+  assert.deepEqual(mediaPorGasto([gasto("9", HOY, 5, "comida", "USD"), ...gastos]), { media: 100 / 3, to: "EUR" });
+  assert.equal(mediaPorGasto([gasto("1", HOY, 10, "comida")]), null, "con uno, la media es él");
+  assert.equal(mediaPorGasto([]), null);
+  ponerIdioma("en");
+  assert.match(resumenParaCompartir({ nombre: "Japan", gastos, presupuesto: null }, HOY), /across 3 expenses \(33\.33 EUR on average\)/);
+  ponerIdioma("es");
 });
