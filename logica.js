@@ -1708,7 +1708,8 @@ const leerPersonas = (n) => (Number.isInteger(n) && n >= 1 && n <= PERSONAS_MAX 
 function porPersona(gastos, personas) {
   const principal = sumarPorDivisa(gastos)[0];
   if (!principal || leerPersonas(personas) < 2) return null;
-  return { total: principal.total / personas, to: principal.to, personas };
+  const media = mediaPorDia(gastos);
+  return { total: principal.total / personas, to: principal.to, personas, alDia: media ? media.media / personas : null };
 }
 
 // Antes de los viajes había una sola lista y un presupuesto sueltos: pasan a
@@ -1837,7 +1838,12 @@ function resumenParaCompartir({ nombre, gastos, presupuesto, personas }, hoyIso 
     tr("compartir.total", { total: `*${sumas(sumarPorDivisa(gastos))}*`, n: n === 1 ? tr("gastos.uno") : tr("gastos.n", { n }) }),
   ];
   const cabeza = porPersona(gastos, personas);
-  if (cabeza) lineas.push(tr("compartir.porPersona", { personas: cabeza.personas, valor: dinero(cabeza.total, cabeza.to) }));
+  if (cabeza) {
+    const datos = { personas: cabeza.personas, valor: dinero(cabeza.total, cabeza.to) };
+    lineas.push(cabeza.alDia
+      ? tr("compartir.porPersonaDia", { ...datos, dia: dinero(cabeza.alDia, cabeza.to) })
+      : tr("compartir.porPersona", datos));
+  }
 
   const { caro, dia, barato } = destacados(gastos, hoyIso);
   if (caro) {

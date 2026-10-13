@@ -2828,7 +2828,9 @@ function pintarPersonas(conSalto = false) {
   const cabeza = porPersona(gastos, personas);
   // Sin la divisa, como la media: al lado de los botones no cabe y ya está en el total.
   el.personasCabeza.textContent = cabeza ? tr("personas.cada", { valor: nf.format(cabeza.total) }) : tr("personas.cuantos");
-  el.personasCabeza.title = cabeza ? tr("personas.cada", { valor: `${nf.format(cabeza.total)} ${cabeza.to}` }) : "";
+  el.personasCabeza.title = !cabeza ? ""
+    : cabeza.alDia ? tr("personas.cadaAlDia", { valor: `${nf.format(cabeza.total)} ${cabeza.to}`, dia: `${nf.format(cabeza.alDia)} ${cabeza.to}` })
+    : tr("personas.cada", { valor: `${nf.format(cabeza.total)} ${cabeza.to}` });
   if (conSalto) restartAnimation(cabeza ? el.personasCabeza : el.personasN, "is-tic");
 }
 
