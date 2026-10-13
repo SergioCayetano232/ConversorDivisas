@@ -3614,6 +3614,12 @@ body::after {
   }
 }
 
+.gastos__ultimo {
+  font-weight: 400;
+  letter-spacing: 0;
+  text-transform: none;
+}
+
 .gastos__dia-suma {
   font-family: var(--font-mono);
   font-variant-numeric: tabular-nums;

@@ -1433,6 +1433,17 @@ function haceCuanto(cuando, ahora = Date.now()) {
   return fechaCorta(isoLocal(new Date(cuando)), new Date(ahora).getFullYear());
 }
 
+// Para darte cuenta de que se te ha pasado apuntar algo. Antes de una hora no
+// lo digo: acabas de apuntar y no hay nada que recordar.
+function ultimoDeHoy(gastos, ahora = Date.now()) {
+  const hoyIso = isoLocal(new Date(ahora));
+  // Las noches de hotel van a días que aún no han llegado: esas no cuentan.
+  const deHoy = gastos.filter((g) => g.cuando <= ahora && isoLocal(new Date(g.cuando)) === hoyIso);
+  if (deHoy.length === 0) return null;
+  const ultimo = Math.max(...deHoy.map((g) => g.cuando));
+  return ahora - ultimo >= 3600000 ? ultimo : null;
+}
+
 // Doscientos dan para un viaje largo comiendo fuera todos los días; más y el
 // almacenamiento se llena de cafés de hace un año.
 const GASTOS_MAX = 200;
@@ -2753,7 +2764,7 @@ if (typeof module !== "undefined") {
     SEMANAS_MINIMAS, mejorDiaSemana, nombreDiaSemana, textoDiaSemana, indiceCercano, extremos, fechaCorta, largoEnPantalla,
     leerNumero, divisaDe, leerSeleccion, destinoPara, leerPegado, buscarPrecios, precioEntero, leerOmnibox, leerGastoBarra, gastoDeBarra, escaparXml,
     divisaDeIdioma, parPorIdioma, banderaDe, banderaDivisa,
-    HISTORIAL_MAX, leerHistorial, apuntarConversion, quitarConversion, haceCuanto, textoParaCopiar, fraseParaCopiar, simboloDe, textoConSimbolo,
+    HISTORIAL_MAX, leerHistorial, apuntarConversion, quitarConversion, haceCuanto, ultimoDeHoy, textoParaCopiar, fraseParaCopiar, simboloDe, textoConSimbolo,
     celdaCsv, csvHistorial, csvGastos,
     GASTOS_MAX, CONCEPTO_MAX, crearGasto, leerGastos, apuntarGasto, NOCHES_MAX, repartirCentimos, repartirNoches, apuntarNoches, quitarGasto, cambiarConcepto, cambiarDia, buscarGastos, trozosResaltados, repetirGasto, devolverGasto, devolverTodos, sumarPorDivisa, gastosPorDia, pesoDeLosDias, ordenarPorImporte, masCarosDelDia, pesoDeLosGastos, RARO_VECES, mediana, gastoRaro, mediaPorDia, mediaPorGasto, comisionesPagadas, pagadoEnEfectivo,
     RETIRADAS_MAX, leerRetiradas, crearRetirada, apuntarRetirada, quitarRetirada, efectivoQueda, EFECTIVO_POCO, tonoEfectivo, redondoDeCajero, cuantoSacar, loQueSobra, gastadoHoy, nombreDia,

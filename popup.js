@@ -2607,6 +2607,14 @@ function crearDiaGastos({ dia, gastos: suyos, totales }, peso, d) {
   fila.className = "gastos__dia";
   const nombre = document.createElement("span");
   nombre.textContent = nombreDia(dia);
+  const ultimo = dia === hoy() ? ultimoDeHoy(suyos) : null;
+  if (ultimo) {
+    const hace = document.createElement("span");
+    hace.className = "gastos__ultimo";
+    hace.textContent = ` · ${tr("gastos.ultimo", { hace: haceCuanto(ultimo) })}`;
+    hace.title = tr("gastos.ultimoTitulo");
+    nombre.append(hace);
+  }
   const suma = document.createElement("span");
   suma.className = "gastos__dia-suma";
   suma.textContent = textoTotales(totales);

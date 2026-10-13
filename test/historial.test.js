@@ -1,6 +1,6 @@
 const { test } = require("node:test");
 const assert = require("node:assert");
-const { HISTORIAL_MAX, leerHistorial, apuntarConversion, quitarConversion, haceCuanto, textoParaCopiar } = require("../logica.js");
+const { HISTORIAL_MAX, leerHistorial, apuntarConversion, quitarConversion, haceCuanto, ultimoDeHoy, textoParaCopiar } = require("../logica.js");
 
 const conv = (cantidad, extra) => ({ from: "EUR", to: "USD", cantidad, resultado: cantidad * 1.1, cuando: 1000, ...extra });
 
@@ -77,4 +77,14 @@ test("quitar una conversión deja las demás como estaban", () => {
   const quedan = quitarConversion(lista, conv(20));
   assert.deepEqual(quedan.map((e) => `${e.cantidad} ${e.to}`), ["30 USD", "10 USD", "20 GBP"]);
   assert.deepEqual(quitarConversion(lista, conv(99)), lista);
+});
+
+test("lo último apuntado hoy, a partir de una hora", () => {
+  const ahora = new Date(2026, 9, 13, 18, 0).getTime();
+  const a = (h, d = 13) => ({ cuando: new Date(2026, 9, d, h, 0).getTime() });
+  assert.equal(ultimoDeHoy([a(15), a(10)], ahora), a(15).cuando);
+  assert.equal(ultimoDeHoy([{ cuando: ahora - 20 * 60000 }, a(10)], ahora), null, "hace nada, no hace falta");
+  assert.equal(ultimoDeHoy([a(20, 12)], ahora), null, "lo de ayer no es de hoy");
+  assert.equal(ultimoDeHoy([a(12, 14), a(9)], ahora), a(9).cuando, "la noche de hotel de mañana no cuenta");
+  assert.equal(ultimoDeHoy([], ahora), null);
 });
