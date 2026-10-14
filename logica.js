@@ -1889,6 +1889,25 @@ function findeContraSemana(gastos, hoyIso = hoy()) {
   return { gana: finde > semana ? "finde" : "semana", mas: mayor / menor - 1, finde, semana, to: principal.to };
 }
 
+// Lo que más se repite: "☕ Café: 12 veces". Con menos de tres no es costumbre.
+// "café" y "Cafe" son el mismo, y se escribe como la última vez.
+const ESTRELLA_MINIMO = 3;
+
+function conceptoEstrella(gastos) {
+  const [principal] = sumarPorDivisa(gastos);
+  if (!principal) return null;
+  const grupos = new Map();
+  for (const g of [...gastos].sort((a, b) => a.cuando - b.cuando)) {
+    const clave = normalizar(g.concepto);
+    if (!clave || g.to !== principal.to) continue;
+    const grupo = grupos.get(clave) ?? { veces: 0, total: 0 };
+    grupos.set(clave, { veces: grupo.veces + 1, total: grupo.total + g.valor, concepto: g.concepto, categoria: g.categoria });
+  }
+  // A igual número de veces, el que más suma: es del que se habla.
+  const [mejor] = [...grupos.values()].sort((a, b) => b.veces - a.veces || b.total - a.total);
+  return mejor && mejor.veces >= ESTRELLA_MINIMO ? { ...mejor, to: principal.to } : null;
+}
+
 // Para pegarlo en WhatsApp: lo de entre asteriscos sale en negrita, y en
 // cualquier otro sitio se lee igual de bien. Los días van del primero al último,
 // que es como se cuenta un viaje.
@@ -1919,6 +1938,13 @@ function resumenParaCompartir({ nombre, gastos, presupuesto, personas }, hoyIso 
   }
   if (dia) lineas.push(tr("compartir.diaMas", { dia: nombreDia(dia.dia, hoyIso), valor: dinero(dia.total, dia.to) }));
   if (barato) lineas.push(tr("compartir.diaMenos", { dia: nombreDia(barato.dia, hoyIso), valor: dinero(barato.total, barato.to) }));
+  const estrella = conceptoEstrella(gastos);
+  if (estrella) {
+    lineas.push(tr("compartir.estrella", {
+      emoji: EMOJI_CATEGORIA[estrella.categoria] ?? EMOJI_CATEGORIA.otros,
+      que: estrella.concepto, veces: estrella.veces, valor: dinero(estrella.total, estrella.to),
+    }));
+  }
   const finde = findeContraSemana(gastos, hoyIso);
   if (finde) lineas.push(tr(`compartir.${finde.gana}`, { pct: tr("pct", { n: Math.round(finde.mas * 100) }) }));
   const pagadas = comisionesPagadas(gastos);
@@ -2881,7 +2907,7 @@ if (typeof module !== "undefined") {
     GASTOS_MAX, CONCEPTO_MAX, crearGasto, leerGastos, apuntarGasto, NOCHES_MAX, repartirCentimos, repartirNoches, apuntarNoches, quitarGasto, cambiarConcepto, cambiarDia, buscarGastos, trozosResaltados, repetirGasto, devolverGasto, devolverTodos, sumarPorDivisa, gastosPorDia, categoriaDelDia, pesoDeLosDias, ordenarPorImporte, masCarosDelDia, pesoDeLosGastos, RARO_VECES, mediana, gastoRaro, REPETIDO_MS, gastoRepetido, mediaPorDia, mediaPorGasto, comisionesPagadas, pagadoEnEfectivo, ahorroEnEfectivo,
     RETIRADAS_MAX, leerRetiradas, crearRetirada, apuntarRetirada, quitarRetirada, efectivoQueda, EFECTIVO_POCO, tonoEfectivo, redondoDeCajero, cuantoSacar, loQueSobra, gastadoHoy, nombreDia,
     CATEGORIAS, CATEGORIA_POR_DEFECTO, adivinarCategoria, PAGOS, PAGO_POR_DEFECTO, leerPago, comisionDelPago, desglose, conceptosUsados, completarConcepto,
-    EMOJI_CATEGORIA, destacados, resumenParaCompartir, FINDE_MINIMO, findeContraSemana,
+    EMOJI_CATEGORIA, destacados, resumenParaCompartir, FINDE_MINIMO, findeContraSemana, ESTRELLA_MINIMO, conceptoEstrella,
     COPIA_APP, COPIA_VERSION, CLAVES_COPIA, limpiarCopia, crearCopia, leerCopia, resumenCopia,
     VIAJES_MAX, NOMBRE_VIAJE_MAX, leerViajes, leerPersonas, porPersona, compararViajes, COLORES_VIAJE, leerColorViaje, colorLibre, siguienteColor, viajeActivo, crearViaje, renombrarViaje, elegirViaje, borrarViaje, cambiarViaje, resumenViaje, archivoGastos,
     diasHasta, leerPresupuesto, PRESUPUESTO_JUSTO, estadoPresupuesto, inicioDelViaje, diaDelViaje, cuentaAtras, textoCuentaAtras, loDeHoy, CELEBRADOS_MAX, leerCelebrados, anadirCelebrado, viajeParaCelebrar, textoCelebrar, RACHA_MINIMA, rachaPresupuesto, hastaCuandoLlega, loQueSeLleva, redondearDias,
