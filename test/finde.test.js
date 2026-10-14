@@ -50,3 +50,17 @@ test("va en el resumen para WhatsApp", () => {
   const texto = resumenParaCompartir({ nombre: "Lisboa", gastos, presupuesto: null, personas: 1 }, hoy);
   assert.match(texto, /El finde, un 50 % más al día que entre semana/);
 });
+
+test("a partir del doble lo dice en veces, que un 590 % no se entiende", () => {
+  // Viernes 100, sábado 10, domingo 10: 100 contra 10 al día.
+  const gastos = [g("2026-10-09", 100), g("2026-10-10", 10), g("2026-10-11", 10)];
+  assert.equal(findeContraSemana(gastos, hoy).veces, 10);
+  const texto = resumenParaCompartir({ nombre: "Lisboa", gastos, presupuesto: null, personas: 1 }, hoy);
+  assert.match(texto, /Entre semana, 10 veces lo del finde al día/);
+});
+
+test("por debajo del doble sigue en porcentaje", () => {
+  const r = findeContraSemana([g("2026-10-09", 100), g("2026-10-10", 199)], hoy);
+  assert.equal(r.veces, null);
+  assert.ok(r.mas > 0.98);
+});

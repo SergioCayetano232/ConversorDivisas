@@ -1886,7 +1886,9 @@ function findeContraSemana(gastos, hoyIso = hoy()) {
   const semana = lados.semana.total / lados.semana.dias;
   const [mayor, menor] = finde > semana ? [finde, semana] : [semana, finde];
   if (!(menor > 0) || mayor / menor - 1 < FINDE_MINIMO) return null;
-  return { gana: finde > semana ? "finde" : "semana", mas: mayor / menor - 1, finde, semana, to: principal.to };
+  // "Un 590 % más" no se entiende; a partir del doble lo digo en veces.
+  const veces = mayor / menor >= 2 ? Math.round(mayor / menor) : null;
+  return { gana: finde > semana ? "finde" : "semana", mas: mayor / menor - 1, veces, finde, semana, to: principal.to };
 }
 
 // Lo que más se repite: "☕ Café: 12 veces". Con menos de tres no es costumbre.
@@ -1946,7 +1948,11 @@ function resumenParaCompartir({ nombre, gastos, presupuesto, personas }, hoyIso 
     }));
   }
   const finde = findeContraSemana(gastos, hoyIso);
-  if (finde) lineas.push(tr(`compartir.${finde.gana}`, { pct: tr("pct", { n: Math.round(finde.mas * 100) }) }));
+  if (finde) {
+    lineas.push(finde.veces
+      ? tr(`compartir.${finde.gana}Veces`, { veces: finde.veces })
+      : tr(`compartir.${finde.gana}`, { pct: tr("pct", { n: Math.round(finde.mas * 100) }) }));
+  }
   const pagadas = comisionesPagadas(gastos);
   if (pagadas) lineas.push(tr("compartir.comisiones", { valor: dinero(pagadas.total, pagadas.to) }));
   // Solo si hay de las dos: "100 % con tarjeta" no le dice nada a nadie.
