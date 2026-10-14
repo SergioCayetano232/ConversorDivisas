@@ -2785,23 +2785,30 @@ function crearFilaGasto(gasto, i, peso, rey = false) {
   return fila;
 }
 
+// Estas tres líneas van sin la divisa, como la media: con los botones de al
+// lado no cabían y salía "en comisione". Con su divisa, en el title.
 function pintarComisiones() {
   const pagadas = comisionesPagadas(gastos);
-  const texto = pagadas ? tr("gastos.comisiones", { importe: `${nf.format(pagadas.total)} ${pagadas.to}` }) : "";
+  const texto = pagadas ? tr("gastos.comisiones", { importe: nf.format(pagadas.total) }) : "";
   const habia = el.gastosComisiones.textContent;
   el.gastosComisiones.hidden = !pagadas;
   el.gastosComisiones.textContent = texto;
+  el.gastosComisiones.title = pagadas
+    ? `${tr("gastos.comisiones", { importe: `${nf.format(pagadas.total)} ${pagadas.to}` })}. ${tr("gastos.comisionesTitulo")}`
+    : "";
   if (habia && texto && habia !== texto) restartAnimation(el.gastosComisiones, "is-tic");
   pintarAhorro();
 }
 
 function pintarAhorro() {
   const ahorro = ahorroEnEfectivo(gastos, comision);
-  const texto = ahorro ? tr("gastos.ahorro", { importe: `${nf.format(ahorro.total)} ${ahorro.to}` }) : "";
+  const texto = ahorro ? tr("gastos.ahorro", { importe: nf.format(ahorro.total) }) : "";
   const habia = el.gastosAhorro.textContent;
   el.gastosAhorro.hidden = !ahorro;
   el.gastosAhorro.textContent = texto;
-  el.gastosAhorro.title = ahorro ? tr("gastos.ahorroTitulo", { pct: tr("pct", { n: nfComision.format(comision) }) }) : "";
+  el.gastosAhorro.title = ahorro
+    ? `${tr("gastos.ahorro", { importe: `${nf.format(ahorro.total)} ${ahorro.to}` })}. ${tr("gastos.ahorroTitulo", { pct: tr("pct", { n: nfComision.format(comision) }) })}`
+    : "";
   if (habia && texto && habia !== texto) restartAnimation(el.gastosAhorro, "is-tic");
 }
 
@@ -2834,10 +2841,12 @@ function pintarEfectivo() {
       sacado: cifraEfectivo(cuenta.sacado, cuenta.divisa), gastado: cifraEfectivo(cuenta.gastado, cuenta.divisa),
     });
   } else {
-    texto = pagado ? tr("gastos.efectivo", { importe: `${nf.format(pagado.total)} ${pagado.to}` })
+    texto = pagado ? tr("gastos.efectivo", { importe: nf.format(pagado.total) })
       : pagoNuevo === "efectivo" ? tr("cajero.anadir") : "";
     delete el.gastosEfectivo.dataset.tono;
-    el.gastosEfectivo.title = tr("cajero.anadirTitulo");
+    el.gastosEfectivo.title = pagado
+      ? `${tr("gastos.efectivo", { importe: `${nf.format(pagado.total)} ${pagado.to}` })}. ${tr("cajero.anadirTitulo")}`
+      : tr("cajero.anadirTitulo");
   }
   el.gastosEfectivo.hidden = !texto;
   el.gastosEfectivo.textContent = texto;

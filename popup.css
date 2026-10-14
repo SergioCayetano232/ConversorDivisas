@@ -2980,10 +2980,9 @@ body::after {
 
 /* Lo del banco en rojo apagado: que escueza, pero sin gritar más que el total. */
 .gastos__comisiones {
-  display: flex;
-  align-items: center;
-  gap: 5px;
+  display: block;
   overflow: hidden;
+  text-overflow: ellipsis;
   white-space: nowrap;
   font-size: 10px;
   color: color-mix(in srgb, var(--cinnabar) 70%, var(--muted));
@@ -2993,7 +2992,9 @@ body::after {
 
 .gastos__comisiones::before {
   content: "";
-  flex-shrink: 0;
+  display: inline-block;
+  margin-right: 5px;
+  vertical-align: 1px;
   width: 5px;
   height: 5px;
   border-radius: 50%;
@@ -3007,10 +3008,9 @@ body::after {
 
 /* La otra cara de las comisiones: lo que no se ha llevado el banco. */
 .gastos__ahorro {
-  display: flex;
-  align-items: center;
-  gap: 5px;
+  display: block;
   overflow: hidden;
+  text-overflow: ellipsis;
   white-space: nowrap;
   font-size: 10px;
   color: color-mix(in srgb, var(--jade) 75%, var(--muted));
@@ -3020,7 +3020,9 @@ body::after {
 
 .gastos__ahorro::before {
   content: "";
-  flex-shrink: 0;
+  display: inline-block;
+  margin-right: 5px;
+  vertical-align: 1px;
   width: 5px;
   height: 5px;
   border-radius: 50%;
