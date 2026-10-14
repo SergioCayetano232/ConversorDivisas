@@ -44,6 +44,9 @@ que necesitaba una conversión rápida. Ahora es un clic en la barra del navegad
   el martes. Hasta 200, y para vaciarlo hay que darle dos veces. Si
   quitas uno o los vacías todos sin querer, tienes cinco segundos para
   deshacerlo
+- Modo discreto, con el ojo de arriba de los gastos: las cifras se difuminan
+  para enseñar la pantalla sin que se vea lo que llevas. Pasando el ratón por
+  una, se asoma. Se queda como lo dejes
 - Buscar en los gastos con la lupa: escribes "taxi" y salen solo esos, con lo
   que coincide marcado y cuántos son y cuánto suman al lado. Busca también por
   la categoría, así que "comida" encuentra la cena aunque no lo pusieras. Y con

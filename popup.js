@@ -145,6 +145,7 @@ const el = {
   buscar: document.getElementById("buscar"),
   buscarAbrir: document.getElementById("buscar-abrir"),
   gastosOrdenar: document.getElementById("gastos-ordenar"),
+  gastosDiscreto: document.getElementById("gastos-discreto"),
   buscarCampo: document.getElementById("buscar-campo"),
   buscarTotal: document.getElementById("buscar-total"),
   presupuesto: document.getElementById("presupuesto"),
@@ -377,6 +378,7 @@ const VIAJES_KEY = "viajes";
 const CELEBRADOS_KEY = "viajesCelebrados";
 const CUENTA_KEY = "cuentaReparto";
 const AL_REVES_KEY = "tasaAlReves";
+const DISCRETO_KEY = "gastosDiscretos";
 const CANTIDAD_KEY = "ultimaCantidad";
 // Lo que tardo en dar por buena una cantidad: mientras escribes "1", "12",
 // "125" no quiero tres entradas, solo la última.
@@ -526,6 +528,37 @@ async function guardarTasaAlReves() {
     await chrome.storage.local.set({ [AL_REVES_KEY]: tasaAlReves });
   } catch (error) {
     console.warn("No se pudo guardar cómo ver la tasa", error);
+  }
+}
+
+// Para enseñar la pantalla sin que se vea lo que llevas gastado. Se queda como
+// lo dejes: si lo quieres discreto, lo quieres también mañana en el metro.
+let discreto = false;
+
+async function cargarDiscreto() {
+  try {
+    const guardado = await chrome.storage.local.get(DISCRETO_KEY);
+    return guardado[DISCRETO_KEY] === true;
+  } catch (error) {
+    console.warn("No se pudo leer el modo discreto", error);
+    return false;
+  }
+}
+
+function pintarDiscreto() {
+  el.gastos.classList.toggle("is-discreto", discreto);
+  el.gastosDiscreto.setAttribute("aria-pressed", String(discreto));
+  el.gastosDiscreto.title = tr(discreto ? "discreto.ensenar" : "discreto.ocultar");
+  el.gastosDiscreto.setAttribute("aria-label", el.gastosDiscreto.title);
+}
+
+async function onDiscreto() {
+  discreto = !discreto;
+  pintarDiscreto();
+  try {
+    await chrome.storage.local.set({ [DISCRETO_KEY]: discreto });
+  } catch (error) {
+    console.warn("No se pudo guardar el modo discreto", error);
   }
 }
 
@@ -5444,6 +5477,7 @@ function bindEvents() {
   });
   el.buscarCampo.addEventListener("keydown", onTeclaBuscar);
   // Las filas vuelven a entrar en cascada: así se ve que se han recolocado.
+  el.gastosDiscreto.addEventListener("click", onDiscreto);
   el.gastosOrdenar.addEventListener("click", () => {
     ordenado = ordenado === "caro" ? "barato" : ordenado ? false : "caro";
     cascadaGastos = true;
@@ -5566,11 +5600,13 @@ async function init() {
   const idiomaCambiado = await cargarIdioma();
   traducirPagina();
   if (idiomaCambiado) saludarIdioma();
-  const [pair, rango, guardados, pendiente, guardadas, vistaGuardada, avisosGuardados, comisionGuardada, fechaGuardada, historialGuardado, viajesGuardados, repartoGuardado, alRevesGuardado, pagoGuardado, cantidadGuardada, impuestoGuardado, cafeGuardado, sueldoGuardado] = await Promise.all([
+  const [pair, rango, guardados, pendiente, guardadas, vistaGuardada, avisosGuardados, comisionGuardada, fechaGuardada, historialGuardado, viajesGuardados, repartoGuardado, alRevesGuardado, pagoGuardado, cantidadGuardada, impuestoGuardado, cafeGuardado, sueldoGuardado, discretoGuardado] = await Promise.all([
     loadPair(), cargarRango(), cargarRecientes(), tomarPendiente(), cargarExtras(), cargarVista(), cargarAvisos(),
     cargarComision(), cargarFecha(), cargarHistorial(), cargarViajes(), cargarReparto(), cargarTasaAlReves(), cargarPago(),
-    cargarCantidad(), cargarImpuesto(), cargarCafe(), cargarSueldo(),
+    cargarCantidad(), cargarImpuesto(), cargarCafe(), cargarSueldo(), cargarDiscreto(),
   ]);
+  discreto = discretoGuardado;
+  pintarDiscreto();
   pagoNuevo = pagoGuardado;
   pintarPago();
   tasaAlReves = alRevesGuardado;

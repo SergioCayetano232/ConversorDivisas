@@ -4883,6 +4883,47 @@ body::after {
   display: none;
 }
 
+.discreto svg {
+  stroke-width: 1.3;
+}
+
+.discreto__tachon {
+  stroke-dasharray: 12;
+  stroke-dashoffset: 12;
+  transition: stroke-dashoffset var(--mid) var(--ease-out);
+}
+
+.discreto[aria-pressed="true"] {
+  color: var(--graphite);
+  background: var(--brass);
+  border-color: var(--brass);
+}
+
+.discreto[aria-pressed="true"] .discreto__tachon {
+  stroke-dashoffset: 0;
+}
+
+/* Las cifras se difuminan pero no se van: se sigue viendo cuántos gastos hay
+   y en qué. Pasando el ratón por encima, se asoma esa. */
+.gastos :is(.gastos__suma, .gastos__media, .gastos__comisiones, .gastos__ahorro, .gastos__efectivo,
+  .gastos__cabeza, .presupuesto__texto, .presupuesto__dia, .buscar__total,
+  .gastos__dia-suma, .gastos__de, .gastos__valor) {
+  transition: filter var(--mid) var(--ease-out);
+}
+
+.gastos.is-discreto :is(.gastos__suma, .gastos__media, .gastos__comisiones, .gastos__ahorro, .gastos__efectivo,
+  .gastos__cabeza, .presupuesto__texto, .presupuesto__dia, .buscar__total,
+  .gastos__dia-suma, .gastos__de, .gastos__valor) {
+  filter: blur(5px);
+  user-select: none;
+}
+
+.gastos.is-discreto :is(.gastos__suma, .gastos__media, .gastos__comisiones, .gastos__ahorro, .gastos__efectivo,
+  .gastos__cabeza, .presupuesto__texto, .presupuesto__dia, .buscar__total,
+  .gastos__dia-suma, .gastos__de, .gastos__valor):hover {
+  filter: none;
+}
+
 /* Con la lupa y este, la cabecera ya no cabía y se comía la media del día. */
 .gastos .historial__botones {
   gap: 1px;
