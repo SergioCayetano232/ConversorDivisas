@@ -2549,6 +2549,7 @@ function pintarDesglose() {
     filtroCategoria = null;
     return;
   }
+  const alDia = categoriasAlDia(gastos);
   el.desglose.replaceChildren(...trozos.map(({ categoria, total, fraccion, to }, i) => {
     const boton = document.createElement("button");
     boton.type = "button";
@@ -2560,7 +2561,10 @@ function pintarDesglose() {
     boton.innerHTML = `${iconoCategoria(categoria)}<span class="desglose__pct"></span>`;
     boton.querySelector(".desglose__pct").textContent = pct;
     const nombre = tr(`cat.${categoria}`);
-    boton.title = tr("cat.filtrar", { nombre, total: `${nf.format(total)} ${to}`, pct });
+    const datos = { nombre, total: `${nf.format(total)} ${to}`, pct };
+    boton.title = alDia.has(categoria)
+      ? tr("cat.filtrarDia", { ...datos, dia: nf.format(alDia.get(categoria)) })
+      : tr("cat.filtrar", datos);
     boton.setAttribute("aria-label", boton.title);
     boton.setAttribute("aria-pressed", String(categoria === filtroCategoria));
     boton.addEventListener("click", () => {
