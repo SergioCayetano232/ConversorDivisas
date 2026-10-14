@@ -294,6 +294,9 @@ let reyesAntes = new Set();
 // El gasto raro que ya te he avisado: el segundo clic lo apunta. Cambiar la
 // cantidad o la categoría vuelve a preguntar.
 let raroAvisado = null;
+// Igual con el que ya apuntaste hace nada. Guardo los segundos del primer clic
+// para que el cartel no vaya contando mientras lo miras.
+let repetidoAvisado = null;
 let cascadaGastos = false;
 let vaciarId = null;
 // Lo último que has quitado, mientras se puede deshacer: un gasto y dónde
@@ -2558,13 +2561,17 @@ function pintarLoQueSeLleva(gasto = gastoDePantalla()) {
 }
 
 const claveRaro = (g) => `${g.valor} ${g.to} ${g.categoria}`;
+const claveRepetido = (g) => `${g.cantidad} ${g.from} ${g.concepto.toLowerCase()}`;
+const haceSegundos = (s) => (s < 60 ? `${s} s` : `${Math.floor(s / 60)} min`);
 
 // Mientras escribes ya ves que es raro; al apuntar, el primer clic pregunta.
-function pintarGastoRaro(gasto) {
+function pintarGastoRaro(gasto, entero = gasto) {
   const raro = gasto ? gastoRaro(gastos, gasto) : null;
   if (!raro || raroAvisado !== claveRaro(gasto)) raroAvisado = null;
-  if (!raroAvisado) el.gastosRaro.classList.remove("is-insiste");
-  const texto = !raro ? ""
+  if (!entero || repetidoAvisado?.clave !== claveRepetido(entero)) repetidoAvisado = null;
+  if (!raroAvisado && !repetidoAvisado) el.gastosRaro.classList.remove("is-insiste");
+  const texto = repetidoAvisado ? tr("gastos.repetido", { hace: haceSegundos(repetidoAvisado.segundos) })
+    : !raro ? ""
     : raro.categoria ? tr("gastos.raro", { veces: raro.veces, categoria: tr(`cat.${raro.categoria}`).toLowerCase() })
     : tr("gastos.raroTodo", { veces: raro.veces });
   if (el.gastosRaro.textContent !== texto) {
@@ -2572,8 +2579,8 @@ function pintarGastoRaro(gasto) {
     el.gastosRaro.hidden = !texto;
     if (texto) restartAnimation(el.gastosRaro, "is-entra");
   }
-  el.gastosRaro.title = raro ? tr("gastos.raroTitulo", { normal: `${nf.format(raro.normal)} ${raro.to}` }) : "";
-  return Boolean(raro);
+  el.gastosRaro.title = raro && !repetidoAvisado ? tr("gastos.raroTitulo", { normal: `${nf.format(raro.normal)} ${raro.to}` }) : "";
+  return Boolean(raro || repetidoAvisado);
 }
 
 function pintarBotonGasto() {
@@ -2591,10 +2598,11 @@ function pintarBotonGasto() {
   }
   const valor = `${nf.format(gasto.valor)} ${gasto.to}`;
   const unaNoche = repartirNoches(gasto, nochesNuevas)[0];
-  const raro = pintarGastoRaro(unaNoche);
+  const raro = pintarGastoRaro(unaNoche, gasto);
   el.gastosApuntar.classList.toggle("is-raro", raro);
-  if (!raroAvisado) el.gastosApuntar.classList.remove("is-seguro");
-  el.gastosApuntar.textContent = tr(raro && raroAvisado === claveRaro(unaNoche) ? "gastos.raroSeguro" : "gastos.apuntar", { valor });
+  if (!raroAvisado && !repetidoAvisado) el.gastosApuntar.classList.remove("is-seguro");
+  const avisado = repetidoAvisado || (raro && raroAvisado === claveRaro(unaNoche));
+  el.gastosApuntar.textContent = tr(avisado ? "gastos.raroSeguro" : "gastos.apuntar", { valor });
   el.gastosApuntar.title = comision === 0 ? ""
     : pagoNuevo === "efectivo" ? tr("pago.efectivoNota")
     : tr("gastos.comision", { pct: tr("pct", { n: nfComision.format(comision) }) });
@@ -3964,7 +3972,16 @@ function onApuntarGasto(event) {
     restartAnimation(el.gastosApuntar, "is-seguro");
     return;
   }
+  const repetido = gastoRepetido(gastos, gasto);
+  if (repetido && repetidoAvisado?.clave !== claveRepetido(gasto)) {
+    repetidoAvisado = { clave: claveRepetido(gasto), segundos: repetido.segundos };
+    pintarBotonGasto();
+    restartAnimation(el.gastosRaro, "is-insiste");
+    restartAnimation(el.gastosApuntar, "is-seguro");
+    return;
+  }
   raroAvisado = null;
+  repetidoAvisado = null;
   gastos = noches.length > 1 ? apuntarNoches(gastos, noches) : apuntarGasto(gastos, gasto);
   gastoNuevo = noches[0].id;
   nochesNuevas = 1;

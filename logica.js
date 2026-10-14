@@ -2004,6 +2004,20 @@ function gastoRaro(gastos, gasto) {
   return { veces: Math.round(veces), normal, to: gasto.to, categoria: base === deSuCategoria ? gasto.categoria : null };
 }
 
+// Un doble clic sin querer y el café cuenta dos veces. Solo miro los de hace
+// nada: el metro de ida y el de vuelta son el mismo gasto y los dos van.
+const REPETIDO_MS = 2 * 60 * 1000;
+
+function gastoRepetido(gastos, gasto, ahora = Date.now()) {
+  if (!gasto) return null;
+  const mismo = gastos.find((g) => g.from === gasto.from
+    && Math.abs(g.cantidad - gasto.cantidad) < 0.005
+    && g.concepto.toLowerCase() === gasto.concepto.toLowerCase()
+    // Las noches de hotel van a días que no han llegado: esas no.
+    && ahora - g.cuando >= 0 && ahora - g.cuando < REPETIDO_MS);
+  return mismo ? { segundos: Math.max(1, Math.round((ahora - mismo.cuando) / 1000)) } : null;
+}
+
 // Lo que pesa cada gasto al lado del más caro de su divisa, para la barra de
 // fondo. Cada divisa con su máximo, por lo mismo de arriba.
 function pesoDeLosGastos(gastos) {
@@ -2800,7 +2814,7 @@ if (typeof module !== "undefined") {
     divisaDeIdioma, parPorIdioma, banderaDe, banderaDivisa,
     HISTORIAL_MAX, leerHistorial, apuntarConversion, quitarConversion, haceCuanto, ultimoDeHoy, textoParaCopiar, fraseParaCopiar, simboloDe, textoConSimbolo,
     celdaCsv, csvHistorial, csvGastos,
-    GASTOS_MAX, CONCEPTO_MAX, crearGasto, leerGastos, apuntarGasto, NOCHES_MAX, repartirCentimos, repartirNoches, apuntarNoches, quitarGasto, cambiarConcepto, cambiarDia, buscarGastos, trozosResaltados, repetirGasto, devolverGasto, devolverTodos, sumarPorDivisa, gastosPorDia, categoriaDelDia, pesoDeLosDias, ordenarPorImporte, masCarosDelDia, pesoDeLosGastos, RARO_VECES, mediana, gastoRaro, mediaPorDia, mediaPorGasto, comisionesPagadas, pagadoEnEfectivo,
+    GASTOS_MAX, CONCEPTO_MAX, crearGasto, leerGastos, apuntarGasto, NOCHES_MAX, repartirCentimos, repartirNoches, apuntarNoches, quitarGasto, cambiarConcepto, cambiarDia, buscarGastos, trozosResaltados, repetirGasto, devolverGasto, devolverTodos, sumarPorDivisa, gastosPorDia, categoriaDelDia, pesoDeLosDias, ordenarPorImporte, masCarosDelDia, pesoDeLosGastos, RARO_VECES, mediana, gastoRaro, REPETIDO_MS, gastoRepetido, mediaPorDia, mediaPorGasto, comisionesPagadas, pagadoEnEfectivo,
     RETIRADAS_MAX, leerRetiradas, crearRetirada, apuntarRetirada, quitarRetirada, efectivoQueda, EFECTIVO_POCO, tonoEfectivo, redondoDeCajero, cuantoSacar, loQueSobra, gastadoHoy, nombreDia,
     CATEGORIAS, CATEGORIA_POR_DEFECTO, adivinarCategoria, PAGOS, PAGO_POR_DEFECTO, leerPago, comisionDelPago, desglose, conceptosUsados, completarConcepto,
     EMOJI_CATEGORIA, destacados, resumenParaCompartir,

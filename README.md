@@ -64,7 +64,9 @@ que necesitaba una conversión rápida. Ahora es un clic en la barra del navegad
   cabeza. Va también en el resumen para WhatsApp ("Entre 3: 40,00 EUR cada uno")
 - Si un gasto es cinco veces lo normal de su categoría, te avisa antes de
   apuntarlo ("11 veces lo normal en comida"), que un cero de más se cuela
-  fácil. Para apuntarlo igual, le das otra vez
+  fácil. Para apuntarlo igual, le das otra vez. Lo mismo si apuntas otra vez
+  lo que acabas de apuntar hace menos de dos minutos ("Este ya lo apuntaste
+  hace 20 s"), que un doble clic sin querer descuadra el viaje
 - El más caro de cada día lleva una corona 👑, y cuando otro le quita el
   puesto, cae y rebota
 - El resumen del viaje para mandarlo: el bocadillo que hay al lado de **CSV**
