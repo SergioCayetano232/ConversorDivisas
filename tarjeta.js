@@ -524,9 +524,11 @@
 
   // Igual que el botón del popup: el número a secas, que es lo que quieres al
   // pegarlo en una hoja de cálculo. Me llega hecho, con el decimal del idioma.
-  async function copiar() {
+  // Con Shift, la frase entera, como en el popup.
+  async function copiar(event) {
     if (!datos || datos.estado !== "ok") return;
-    const texto = datos.copia ?? datos.resultado.toFixed(2).replace(".", ",");
+    const numero = datos.copia ?? datos.resultado.toFixed(2).replace(".", ",");
+    const texto = event?.shiftKey && datos.frase ? datos.frase : numero;
     let hecho = false;
     try {
       await navigator.clipboard.writeText(texto);

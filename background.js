@@ -245,6 +245,7 @@ async function calcular(texto) {
       nota: leido.divisa ? "" : tr("tarjeta.sinDivisa", { from }),
       resultado,
       copia: textoParaCopiar(resultado),
+      frase: fraseParaCopiar({ cantidad: leido.cantidad, from, valor: resultado, to }),
       texto: nf.format(resultado),
       from,
       to,
