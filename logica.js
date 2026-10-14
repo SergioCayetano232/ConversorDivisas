@@ -2511,6 +2511,27 @@ function cambioDelDia(puntos, alReves = false) {
   return { cambio, sentido: sentidoDe(cambio), desde: puntos[puntos.length - 2].fecha };
 }
 
+// Lo que se ha movido desde la última vez que abriste el popup con este par. Si
+// fue el día de antes no digo nada, que eso ya lo pone la pastilla de al lado,
+// y por debajo de un 0,1 % tampoco: es ruido.
+const ULTIMA_VEZ_MINIMO = 0.001;
+
+function desdeLaUltimaVez(visto, puntos, par, alReves = false) {
+  if (!visto || visto.par !== par || !Array.isArray(puntos) || puntos.length < 2) return null;
+  const ultimo = puntos[puntos.length - 1];
+  if (!(visto.fecha < puntos[puntos.length - 2].fecha)) return null;
+  const [antes, ahora] = [visto.valor, ultimo.valor].map((v) => (alReves ? 1 / v : v));
+  if (!(antes > 0) || !(ahora > 0)) return null;
+  const cambio = (ahora - antes) / antes;
+  if (Math.abs(cambio) < ULTIMA_VEZ_MINIMO) return null;
+  return { cambio, sentido: sentidoDe(cambio), desde: visto.fecha };
+}
+
+const ultimoVisto = (puntos, par) => {
+  const ultimo = Array.isArray(puntos) ? puntos[puntos.length - 1] : null;
+  return ultimo && ultimo.valor > 0 ? { par, fecha: ultimo.fecha, valor: ultimo.valor } : null;
+};
+
 const FLECHA_SENTIDO = { sube: "▲", baja: "▼", igual: "=" };
 
 function textoCambioDia({ cambio, sentido }) {
@@ -2831,7 +2852,7 @@ if (typeof module !== "undefined") {
     MARGENES, tasaOfrecida, analizarCambio,
     domingoDePascua, hayTasaEl, tasaVieja, textoTasaVieja, horaBce, textoActualizado, proximaTasa, textoProximaTasa,
     FECHA_MINIMA, fechaLarga, fechaValida, diaDelGrafico, mesesAtras, FECHAS_RAPIDAS, leerFecha, cambioDesde, notaDiaHabil,
-    textoInsignia, cambioDiario, sentidoDe, cambioDelDia, textoCambioDia, tituloInsignia, lineaTasa,
+    textoInsignia, cambioDiario, sentidoDe, cambioDelDia, textoCambioDia, ULTIMA_VEZ_MINIMO, desdeLaUltimaVez, ultimoVisto, tituloInsignia, lineaTasa,
     AVISOS_MAX, sentidoAviso, crearAviso, leerAvisos, avisoCumplido, repartirAvisos, mensajeAviso, faltaParaAviso, cercaniaAviso, textoFalta,
     nivelPresupuesto, avisosPresupuesto, mensajePresupuesto,
     RECORDATORIO_HORA, viajesSinApuntar, tocaRecordar, mensajeRecordatorio,

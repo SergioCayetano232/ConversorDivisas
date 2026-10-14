@@ -25,7 +25,9 @@ que necesitaba una conversión rápida. Ahora es un clic en la barra del navegad
   deja dudas (MX$, CA$, CN¥)
 - Pulsando la tasa de arriba la ves al revés (`1 JPY = 0,005650 EUR`), que en
   la tienda muchas veces se piensa así. Se queda como la dejes. Debajo, cuánto ha
-  subido o bajado desde el día anterior, en verde o en rojo
+  subido o bajado desde el día anterior, en verde o en rojo. Si llevabas días
+  sin abrirlo, al entrar te dice cuánto se ha movido desde entonces ("▲ 1,01 %
+  desde el 1 oct, la última vez que miraste")
 - Las últimas diez conversiones, en el reloj que hay al lado de **Copiar**. Pulsando
   una copias su resultado; con la flecha de al lado la vuelves a poner. Se
   apunta sola cuando dejas de escribir, al darle a Enter o al copiar

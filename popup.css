@@ -7616,6 +7616,23 @@ kbd {
   color: var(--brass);
 }
 
+.tecla-flash__cambio {
+  padding: 1px 6px;
+  border-radius: 999px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.tecla-flash__cambio[data-sentido="sube"] {
+  color: var(--jade);
+  background: color-mix(in srgb, var(--jade) 14%, transparent);
+}
+
+.tecla-flash__cambio[data-sentido="baja"] {
+  color: var(--cinnabar);
+  background: color-mix(in srgb, var(--cinnabar) 14%, transparent);
+}
+
 @keyframes tecla {
   0% { opacity: 0; transform: translate(-50%, 8px) scale(0.9); }
   14% { opacity: 1; transform: translate(-50%, 0) scale(1.04); }

@@ -1070,6 +1070,7 @@ function renderTrend(puntos) {
   pintarDiaSemana(puntos);
   parDeLaSerie = `${el.from.value}-${el.to.value}`;
   pintarCambioDia(true);
+  mirarUltimaVez();
   if (!el.trend.hidden) dibujarLinea();
 }
 
@@ -4419,6 +4420,35 @@ function mostrarFlash(contenido, ms = 1300) {
   restartAnimation(el.teclaFlash, "is-visible");
   clearTimeout(teclaFlash);
   teclaFlash = setTimeout(() => el.teclaFlash.classList.remove("is-visible"), ms);
+}
+
+const ULTIMA_VEZ_KEY = "ultimaVezVista";
+// Solo te lo digo al abrir. Si luego cambias de par, apunto el nuevo y ya.
+let ultimaVezMirada = false;
+
+async function mirarUltimaVez() {
+  const par = parDeLaSerie;
+  const nuevo = ultimoVisto(serie, par);
+  if (!nuevo) return;
+  try {
+    if (!ultimaVezMirada) {
+      ultimaVezMirada = true;
+      const { [ULTIMA_VEZ_KEY]: visto } = await chrome.storage.local.get(ULTIMA_VEZ_KEY);
+      const c = desdeLaUltimaVez(visto, serie, par, tasaAlReves);
+      if (c) avisarUltimaVez(c);
+    }
+    await chrome.storage.local.set({ [ULTIMA_VEZ_KEY]: nuevo });
+  } catch (error) {
+    console.warn("No se pudo guardar la última tasa vista", error);
+  }
+}
+
+function avisarUltimaVez(c) {
+  const cifra = document.createElement("span");
+  cifra.className = "tecla-flash__cambio";
+  cifra.dataset.sentido = c.sentido;
+  cifra.textContent = textoCambioDia(c);
+  setTimeout(() => mostrarFlash([cifra, ` ${tr("ultimaVez.desde", { fecha: fechaCorta(c.desde) })}`], 3600), 550);
 }
 
 // Solo sale la primera vez, que es cuando el par lo he elegido yo y no tú: que
