@@ -386,6 +386,8 @@
     document.documentElement.appendChild(host);
     document.addEventListener("mousedown", fuera, true);
     document.addEventListener("keydown", tecla, true);
+    // Si estrechas la ventana con la tarjeta abierta, se quedaba cortada.
+    addEventListener("resize", colocar);
   }
 
   // Dónde está lo seleccionado, en coordenadas de la página para que la tarjeta
@@ -505,6 +507,7 @@
     cuenta++;
     document.removeEventListener("mousedown", fuera, true);
     document.removeEventListener("keydown", tecla, true);
+    removeEventListener("resize", colocar);
     const quitar = () => {
       host?.remove();
       host = null;
