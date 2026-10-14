@@ -214,7 +214,7 @@
       opacity: 0.7;
     }
 
-    .is-ok .cifra { animation: latido 420ms var(--muelle); }
+    .is-ok .cifra { animation: latido 420ms var(--muelle); cursor: copy; }
 
     @keyframes latido {
       from { opacity: 0; transform: translateY(6px) scale(0.96); }
@@ -382,6 +382,7 @@
     raiz.innerHTML = HTML;
     $(".cerrar").addEventListener("click", cerrar);
     $(".copiar").addEventListener("click", copiar);
+    $(".cifra").addEventListener("dblclick", copiar);
     document.documentElement.appendChild(host);
     document.addEventListener("mousedown", fuera, true);
     document.addEventListener("keydown", tecla, true);
