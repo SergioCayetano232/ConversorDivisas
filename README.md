@@ -75,7 +75,8 @@ que necesitaba una conversión rápida. Ahora es un clic en la barra del navegad
 - El más caro de cada día lleva una corona 👑, y cuando otro le quita el
   puesto, cae y rebota
 - El resumen del viaje para mandarlo: el bocadillo que hay al lado de **CSV**
-  copia el total, lo más caro, el día que más, lo que se ha llevado el banco, en
+  copia el total, lo más caro, el día que más, si el finde gastáis más que entre
+  semana ("un 50 % más al día"), lo que se ha llevado el banco, en
   qué se ha ido, lo de cada día y cómo va el presupuesto,
   con negritas y emojis para que en WhatsApp se lea bien
 - Cada gasto dice si fue con tarjeta o en efectivo, con el botón que hay al

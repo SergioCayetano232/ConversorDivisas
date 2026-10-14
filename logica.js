@@ -1858,6 +1858,37 @@ function destacados(gastos, hoyIso = hoy()) {
   return { caro, dia, barato };
 }
 
+// ¿El finde se gasta más? Media por día de cada lado, con los días sin nada
+// como cero, que en el viaje estabas igual. Hoy fuera, que aún no ha acabado.
+// Por debajo de un 10 % de diferencia no lo cuento: es lo mismo.
+const FINDE_MINIMO = 0.1;
+
+function findeContraSemana(gastos, hoyIso = hoy()) {
+  const [principal] = sumarPorDivisa(gastos);
+  if (!principal) return null;
+  const porDia = new Map();
+  for (const g of gastos) {
+    const dia = isoLocal(new Date(g.cuando));
+    if (g.to === principal.to && dia < hoyIso) porDia.set(dia, (porDia.get(dia) ?? 0) + g.valor);
+  }
+  const dias = [...porDia.keys()].sort();
+  if (dias.length === 0) return null;
+  const lados = { finde: { total: 0, dias: 0 }, semana: { total: 0, dias: 0 } };
+  const [a, m, d] = dias[0].split("-").map(Number);
+  for (let i = 0; i < diasHasta(dias[dias.length - 1], dias[0]); i += 1) {
+    const fecha = new Date(a, m - 1, d + i);
+    const lado = lados[fecha.getDay() % 6 === 0 ? "finde" : "semana"];
+    lado.total += porDia.get(isoLocal(fecha)) ?? 0;
+    lado.dias += 1;
+  }
+  if (lados.finde.dias === 0 || lados.semana.dias === 0) return null;
+  const finde = lados.finde.total / lados.finde.dias;
+  const semana = lados.semana.total / lados.semana.dias;
+  const [mayor, menor] = finde > semana ? [finde, semana] : [semana, finde];
+  if (!(menor > 0) || mayor / menor - 1 < FINDE_MINIMO) return null;
+  return { gana: finde > semana ? "finde" : "semana", mas: mayor / menor - 1, finde, semana, to: principal.to };
+}
+
 // Para pegarlo en WhatsApp: lo de entre asteriscos sale en negrita, y en
 // cualquier otro sitio se lee igual de bien. Los días van del primero al último,
 // que es como se cuenta un viaje.
@@ -1888,6 +1919,8 @@ function resumenParaCompartir({ nombre, gastos, presupuesto, personas }, hoyIso 
   }
   if (dia) lineas.push(tr("compartir.diaMas", { dia: nombreDia(dia.dia, hoyIso), valor: dinero(dia.total, dia.to) }));
   if (barato) lineas.push(tr("compartir.diaMenos", { dia: nombreDia(barato.dia, hoyIso), valor: dinero(barato.total, barato.to) }));
+  const finde = findeContraSemana(gastos, hoyIso);
+  if (finde) lineas.push(tr(`compartir.${finde.gana}`, { pct: tr("pct", { n: Math.round(finde.mas * 100) }) }));
   const pagadas = comisionesPagadas(gastos);
   if (pagadas) lineas.push(tr("compartir.comisiones", { valor: dinero(pagadas.total, pagadas.to) }));
   // Solo si hay de las dos: "100 % con tarjeta" no le dice nada a nadie.
@@ -2848,7 +2881,7 @@ if (typeof module !== "undefined") {
     GASTOS_MAX, CONCEPTO_MAX, crearGasto, leerGastos, apuntarGasto, NOCHES_MAX, repartirCentimos, repartirNoches, apuntarNoches, quitarGasto, cambiarConcepto, cambiarDia, buscarGastos, trozosResaltados, repetirGasto, devolverGasto, devolverTodos, sumarPorDivisa, gastosPorDia, categoriaDelDia, pesoDeLosDias, ordenarPorImporte, masCarosDelDia, pesoDeLosGastos, RARO_VECES, mediana, gastoRaro, REPETIDO_MS, gastoRepetido, mediaPorDia, mediaPorGasto, comisionesPagadas, pagadoEnEfectivo, ahorroEnEfectivo,
     RETIRADAS_MAX, leerRetiradas, crearRetirada, apuntarRetirada, quitarRetirada, efectivoQueda, EFECTIVO_POCO, tonoEfectivo, redondoDeCajero, cuantoSacar, loQueSobra, gastadoHoy, nombreDia,
     CATEGORIAS, CATEGORIA_POR_DEFECTO, adivinarCategoria, PAGOS, PAGO_POR_DEFECTO, leerPago, comisionDelPago, desglose, conceptosUsados, completarConcepto,
-    EMOJI_CATEGORIA, destacados, resumenParaCompartir,
+    EMOJI_CATEGORIA, destacados, resumenParaCompartir, FINDE_MINIMO, findeContraSemana,
     COPIA_APP, COPIA_VERSION, CLAVES_COPIA, limpiarCopia, crearCopia, leerCopia, resumenCopia,
     VIAJES_MAX, NOMBRE_VIAJE_MAX, leerViajes, leerPersonas, porPersona, compararViajes, COLORES_VIAJE, leerColorViaje, colorLibre, siguienteColor, viajeActivo, crearViaje, renombrarViaje, elegirViaje, borrarViaje, cambiarViaje, resumenViaje, archivoGastos,
     diasHasta, leerPresupuesto, PRESUPUESTO_JUSTO, estadoPresupuesto, inicioDelViaje, diaDelViaje, cuentaAtras, textoCuentaAtras, loDeHoy, CELEBRADOS_MAX, leerCelebrados, anadirCelebrado, viajeParaCelebrar, textoCelebrar, RACHA_MINIMA, rachaPresupuesto, hastaCuandoLlega, loQueSeLleva, redondearDias,
