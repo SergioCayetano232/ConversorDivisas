@@ -126,6 +126,7 @@ const el = {
   gastosN: document.getElementById("gastos-n"),
   gastosMedia: document.getElementById("gastos-media"),
   gastosComisiones: document.getElementById("gastos-comisiones"),
+  gastosAhorro: document.getElementById("gastos-ahorro"),
   gastosEfectivo: document.getElementById("gastos-efectivo"),
   gastosForm: document.getElementById("gastos-form"),
   gastosConcepto: document.getElementById("gastos-concepto"),
@@ -1996,6 +1997,7 @@ function ponerComision(pct) {
   pintarComparar();
   pintarBotonGasto();
   pintarAvisoComision();
+  pintarAhorro();
   for (const boton of el.comisionRapidas.children) {
     boton.setAttribute("aria-pressed", String(Number(boton.dataset.pct) === pct));
   }
@@ -2753,6 +2755,17 @@ function pintarComisiones() {
   el.gastosComisiones.hidden = !pagadas;
   el.gastosComisiones.textContent = texto;
   if (habia && texto && habia !== texto) restartAnimation(el.gastosComisiones, "is-tic");
+  pintarAhorro();
+}
+
+function pintarAhorro() {
+  const ahorro = ahorroEnEfectivo(gastos, comision);
+  const texto = ahorro ? tr("gastos.ahorro", { importe: `${nf.format(ahorro.total)} ${ahorro.to}` }) : "";
+  const habia = el.gastosAhorro.textContent;
+  el.gastosAhorro.hidden = !ahorro;
+  el.gastosAhorro.textContent = texto;
+  el.gastosAhorro.title = ahorro ? tr("gastos.ahorroTitulo", { pct: tr("pct", { n: nfComision.format(comision) }) }) : "";
+  if (habia && texto && habia !== texto) restartAnimation(el.gastosAhorro, "is-tic");
 }
 
 // Los yenes sin decimales, que "18.000,00 JPY" no lo dice nadie.

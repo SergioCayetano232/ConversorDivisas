@@ -3005,6 +3005,44 @@ body::after {
   display: none;
 }
 
+/* La otra cara de las comisiones: lo que no se ha llevado el banco. */
+.gastos__ahorro {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  overflow: hidden;
+  white-space: nowrap;
+  font-size: 10px;
+  color: color-mix(in srgb, var(--jade) 75%, var(--muted));
+  font-variant-numeric: tabular-nums;
+  cursor: default;
+}
+
+.gastos__ahorro::before {
+  content: "";
+  flex-shrink: 0;
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--jade);
+  box-shadow: 0 0 6px var(--jade);
+}
+
+.gastos__ahorro[hidden] {
+  display: none;
+}
+
+.gastos__ahorro.is-tic {
+  animation: ahorro-sube 600ms var(--ease-spring);
+}
+
+@keyframes ahorro-sube {
+  30% {
+    color: var(--jade);
+    transform: translateY(-2px);
+  }
+}
+
 .gastos__efectivo {
   --tono: var(--jade);
   display: flex;

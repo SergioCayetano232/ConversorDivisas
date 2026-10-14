@@ -78,7 +78,8 @@ que necesitaba una conversión rápida. Ahora es un clic en la barra del navegad
 - Cada gasto dice si fue con tarjeta o en efectivo, con el botón que hay al
   lado de la categoría. En efectivo no se le suma la comisión del banco, y en
   la lista lleva un puntito verde. Se queda como lo dejes. Arriba, con un
-  puntito rojo, lo que llevas pagado en comisiones en el viaje
+  puntito rojo, lo que llevas pagado en comisiones en el viaje, y con uno verde
+  lo que te has ahorrado pagando en efectivo, con la comisión que tengas puesta
 - El efectivo que te queda: pulsando la línea verde apuntas lo que sacas del
   cajero ("20k" son veinte mil) y los gastos en efectivo lo van descontando, en
   yenes y no en euros, que es lo que llevas en la cartera. Arriba pone "Quedan

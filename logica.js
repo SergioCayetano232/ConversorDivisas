@@ -2050,6 +2050,16 @@ function comisionesPagadas(gastos) {
   return total >= 0.005 ? { total, to: principal.to } : null;
 }
 
+// Lo que se habría quedado el banco si lo de efectivo hubiera ido con tarjeta.
+// Esos no guardan comisión, así que tiro de la que tienes puesta ahora.
+function ahorroEnEfectivo(gastos, comision) {
+  if (!(comision > 0)) return null;
+  const pagado = pagadoEnEfectivo(gastos);
+  if (!pagado) return null;
+  const total = pagado.total * comision / 100;
+  return total >= 0.005 ? { total, to: pagado.to } : null;
+}
+
 function gastadoHoy(gastos, hoyIso = hoy()) {
   const principal = sumarPorDivisa(gastos)[0];
   if (!principal) return null;
@@ -2835,7 +2845,7 @@ if (typeof module !== "undefined") {
     divisaDeIdioma, parPorIdioma, banderaDe, banderaDivisa,
     HISTORIAL_MAX, leerHistorial, apuntarConversion, quitarConversion, haceCuanto, ultimoDeHoy, textoParaCopiar, fraseParaCopiar, simboloDe, textoConSimbolo,
     celdaCsv, csvHistorial, csvGastos,
-    GASTOS_MAX, CONCEPTO_MAX, crearGasto, leerGastos, apuntarGasto, NOCHES_MAX, repartirCentimos, repartirNoches, apuntarNoches, quitarGasto, cambiarConcepto, cambiarDia, buscarGastos, trozosResaltados, repetirGasto, devolverGasto, devolverTodos, sumarPorDivisa, gastosPorDia, categoriaDelDia, pesoDeLosDias, ordenarPorImporte, masCarosDelDia, pesoDeLosGastos, RARO_VECES, mediana, gastoRaro, REPETIDO_MS, gastoRepetido, mediaPorDia, mediaPorGasto, comisionesPagadas, pagadoEnEfectivo,
+    GASTOS_MAX, CONCEPTO_MAX, crearGasto, leerGastos, apuntarGasto, NOCHES_MAX, repartirCentimos, repartirNoches, apuntarNoches, quitarGasto, cambiarConcepto, cambiarDia, buscarGastos, trozosResaltados, repetirGasto, devolverGasto, devolverTodos, sumarPorDivisa, gastosPorDia, categoriaDelDia, pesoDeLosDias, ordenarPorImporte, masCarosDelDia, pesoDeLosGastos, RARO_VECES, mediana, gastoRaro, REPETIDO_MS, gastoRepetido, mediaPorDia, mediaPorGasto, comisionesPagadas, pagadoEnEfectivo, ahorroEnEfectivo,
     RETIRADAS_MAX, leerRetiradas, crearRetirada, apuntarRetirada, quitarRetirada, efectivoQueda, EFECTIVO_POCO, tonoEfectivo, redondoDeCajero, cuantoSacar, loQueSobra, gastadoHoy, nombreDia,
     CATEGORIAS, CATEGORIA_POR_DEFECTO, adivinarCategoria, PAGOS, PAGO_POR_DEFECTO, leerPago, comisionDelPago, desglose, conceptosUsados, completarConcepto,
     EMOJI_CATEGORIA, destacados, resumenParaCompartir,
