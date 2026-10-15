@@ -2746,6 +2746,8 @@ function crearFilaGasto(gasto, i, peso, rey = false) {
   const cuanto = document.createElement("span");
   cuanto.className = "gastos__valor";
   cuanto.textContent = valor;
+  cuanto.title = tr("gastos.copiar");
+  cuanto.addEventListener("dblclick", () => onCopiarGasto(gasto, cuanto));
   const texto = document.createElement("span");
   texto.className = "gastos__texto";
   texto.setAttribute("aria-label", tr("gastos.fila", { concepto, cantidad: nf.format(gasto.cantidad), from: gasto.from, valor }));
@@ -2783,6 +2785,21 @@ function crearFilaGasto(gasto, i, peso, rey = false) {
     if (event.target === fila) fila.classList.remove("is-nueva");
   });
   return fila;
+}
+
+async function onCopiarGasto(gasto, cuanto) {
+  // El doble clic ya ha seleccionado media cifra; queda feo con el "Copiado".
+  getSelection()?.removeAllRanges();
+  const bien = await copiar(gastoParaCopiar(gasto));
+  const valor = cuanto.textContent;
+  cuanto.textContent = tr(bien ? "copiado" : "copiar.fallo");
+  cuanto.classList.remove("is-copiado", "is-fallo");
+  restartAnimation(cuanto, bien ? "is-copiado" : "is-fallo");
+  clearTimeout(cuanto.vuelta);
+  cuanto.vuelta = setTimeout(() => {
+    cuanto.textContent = valor;
+    cuanto.classList.remove("is-copiado", "is-fallo");
+  }, 1300);
 }
 
 // Estas tres líneas van sin la divisa, como la media: con los botones de al

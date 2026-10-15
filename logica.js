@@ -2504,6 +2504,16 @@ function fraseParaCopiar({ cantidad, from, valor, to }) {
   return `${dinero(cantidad, from)} = ${dinero(valor, to)}`;
 }
 
+// Para mandar un gasto suelto: "Cena · 38,90 EUR (4.500,00 JPY)". Sin concepto va
+// la categoría, que "· 38,90 EUR" solo no dice nada.
+function gastoParaCopiar(gasto) {
+  const dinero = (n, code) => `${numeros({ minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(n)} ${code}`;
+  const que = gasto.concepto || tr(`cat.${gasto.categoria}`);
+  const cuanto = gasto.from === gasto.to ? dinero(gasto.valor, gasto.to)
+    : `${dinero(gasto.valor, gasto.to)} (${dinero(gasto.cantidad, gasto.from)})`;
+  return `${que} · ${cuanto}`;
+}
+
 function textoParaCopiar(valor) {
   return valor.toFixed(2).replace(".", separadorDecimal());
 }
@@ -2920,7 +2930,7 @@ if (typeof module !== "undefined") {
     SEMANAS_MINIMAS, mejorDiaSemana, nombreDiaSemana, textoDiaSemana, indiceCercano, extremos, fechaCorta, largoEnPantalla,
     leerNumero, divisaDe, leerSeleccion, destinoPara, leerPegado, buscarPrecios, precioEntero, leerOmnibox, leerGastoBarra, gastoDeBarra, escaparXml,
     divisaDeIdioma, parPorIdioma, banderaDe, banderaDivisa,
-    HISTORIAL_MAX, leerHistorial, apuntarConversion, quitarConversion, haceCuanto, ultimoDeHoy, textoParaCopiar, fraseParaCopiar, simboloDe, textoConSimbolo,
+    HISTORIAL_MAX, leerHistorial, apuntarConversion, quitarConversion, haceCuanto, ultimoDeHoy, textoParaCopiar, fraseParaCopiar, gastoParaCopiar, simboloDe, textoConSimbolo,
     celdaCsv, csvHistorial, csvGastos,
     GASTOS_MAX, CONCEPTO_MAX, crearGasto, leerGastos, apuntarGasto, NOCHES_MAX, repartirCentimos, repartirNoches, apuntarNoches, quitarGasto, cambiarConcepto, cambiarDia, buscarGastos, trozosResaltados, repetirGasto, devolverGasto, devolverTodos, sumarPorDivisa, gastosPorDia, categoriaDelDia, pesoDeLosDias, ordenarPorImporte, masCarosDelDia, pesoDeLosGastos, RARO_VECES, mediana, gastoRaro, REPETIDO_MS, gastoRepetido, mediaPorDia, categoriasAlDia, mediaPorGasto, comisionesPagadas, pagadoEnEfectivo, ahorroEnEfectivo,
     RETIRADAS_MAX, leerRetiradas, crearRetirada, apuntarRetirada, quitarRetirada, efectivoQueda, EFECTIVO_POCO, tonoEfectivo, redondoDeCajero, cuantoSacar, loQueSobra, gastadoHoy, nombreDia,

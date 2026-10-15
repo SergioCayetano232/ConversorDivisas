@@ -34,7 +34,7 @@ que necesitaba una conversión rápida. Ahora es un clic en la barra del navegad
 - Los gastos del viaje, en la cartera que hay al lado del reloj: con una
   cantidad puesta, le das a **+ 38,90 EUR** (con un concepto si quieres, "Cena",
   "Taxi"…) y se apunta. El concepto se completa con los que ya has usado
-  (escribes "ca" y sale "Café", con su categoría), y lo aceptas con Tab o →. Si lo escribiste mal, pulsas el concepto y lo cambias.
+  (escribes "ca" y sale "Café", con su categoría), y lo aceptas con Tab o →. Si lo escribiste mal, pulsas el concepto y lo cambias. Con doble clic en la cifra copias el gasto, "Cena · 27,60 EUR (4.500,00 JPY)", para mandarlo suelto.
   Ahí mismo sale una tira con **Hoy**, **Ayer** y un calendario, para la cena
   que se te olvidó apuntar: el gasto se va a su día con lo que valía.
   Con las flechas de al lado lo vuelves a apuntar hoy, para el metro o el café

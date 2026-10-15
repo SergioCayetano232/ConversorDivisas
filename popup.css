@@ -3879,6 +3879,26 @@ body::after {
 .gastos__valor {
   font-weight: 600;
   color: var(--brass);
+  cursor: copy;
+  transition: color 200ms var(--ease-out);
+}
+
+/* Copiado con doble clic: late en verde, como el de arriba en dorado. */
+.gastos__valor.is-copiado {
+  color: var(--jade);
+  animation: gasto-copiado 520ms var(--ease-spring);
+}
+
+.gastos__valor.is-fallo {
+  color: var(--cinnabar);
+  animation: shake 360ms var(--ease-out);
+}
+
+@keyframes gasto-copiado {
+  40% {
+    transform: scale(1.08);
+    text-shadow: 0 0 14px color-mix(in srgb, var(--jade) 60%, transparent);
+  }
 }
 
 .gastos__quitar,
