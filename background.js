@@ -58,14 +58,21 @@ async function hacerMenus() {
     checked: insigniaActiva,
     contexts: ["action"],
   });
-  const { recordatorioActivo = true } = await chrome.storage.local.get("recordatorioActivo");
-  chrome.contextMenus.create({
-    id: "recordatorio",
-    title: tr("menu.recordatorio"),
-    type: "checkbox",
-    checked: recordatorioActivo,
-    contexts: ["action"],
-  });
+  // Antes era una casilla; el "No" de ahora es la casilla quitada.
+  const { recordatorioActivo = true, recordatorioHora } = await chrome.storage.local.get(["recordatorioActivo", "recordatorioHora"]);
+  const horaElegida = recordatorioActivo ? leerHoraRecordatorio(recordatorioHora) : "no";
+  chrome.contextMenus.create({ id: "recordatorio", title: tr("menu.recordatorio"), contexts: ["action"] });
+  const horas = RECORDATORIO_HORAS.map((h) => [h, tr("menu.recordatorio.hora", { hora: fechas({ hour: "numeric", minute: "2-digit" }).format(new Date(2000, 0, 1, h)) })]);
+  for (const [valor, titulo] of [...horas, ["no", tr("menu.recordatorio.no")]]) {
+    chrome.contextMenus.create({
+      id: `recordatorio:${valor}`,
+      parentId: "recordatorio",
+      title: titulo,
+      type: "radio",
+      checked: valor === horaElegida,
+      contexts: ["action"],
+    });
+  }
   chrome.contextMenus.create({ id: "idioma", title: tr("menu.idioma"), contexts: ["action"] });
   const opciones = [["auto", tr("menu.idioma.auto")], ...Object.entries(NOMBRES_IDIOMA)];
   for (const [valor, titulo] of opciones) {
@@ -96,8 +103,8 @@ chrome.runtime.onStartup.addListener(() => {
   recordarGastos();
 });
 
-// Con la de cada hora basta: salta entre las nueve y las diez, y si a esa hora
-// tenías Chrome cerrado, al abrirlo.
+// Con la de cada hora basta: salta en la hora que hayas elegido, y si a esa
+// hora tenías Chrome cerrado, al abrirlo.
 chrome.alarms.onAlarm.addListener((alarma) => {
   if (alarma.name !== "cada-hora") return;
   actualizarInsignia();
@@ -613,9 +620,9 @@ async function avisarPresupuesto(antes, despues) {
 async function recordarGastos() {
   try {
     await idiomaListo;
-    const { recordatorioActivo = true, recordatorioAvisado, viajes } = await chrome.storage.local.get(["recordatorioActivo", "recordatorioAvisado", "viajes"]);
+    const { recordatorioActivo = true, recordatorioHora, recordatorioAvisado, viajes } = await chrome.storage.local.get(["recordatorioActivo", "recordatorioHora", "recordatorioAvisado", "viajes"]);
     if (!recordatorioActivo || !viajes) return;
-    const viaje = tocaRecordar(leerViajes(viajes), recordatorioAvisado);
+    const viaje = tocaRecordar(leerViajes(viajes), recordatorioAvisado, new Date(), recordatorioHora);
     if (!viaje) return;
     await chrome.storage.local.set({ recordatorioAvisado: hoy() });
     const { titulo, cuerpo } = mensajeRecordatorio(viaje);
@@ -655,7 +662,10 @@ chrome.contextMenus.onClicked.addListener((info, tab) => {
   if (info.menuItemId === "convertir") convertirSeleccion(info, tab);
   if (info.menuItemId === "precios") convertirPagina(tab);
   if (info.menuItemId === "insignia") chrome.storage.local.set({ insigniaActiva: info.checked });
-  if (info.menuItemId === "recordatorio") chrome.storage.local.set({ recordatorioActivo: info.checked });
+  if (String(info.menuItemId).startsWith("recordatorio:")) {
+    const valor = info.menuItemId.slice(13);
+    chrome.storage.local.set(valor === "no" ? { recordatorioActivo: false } : { recordatorioActivo: true, recordatorioHora: Number(valor) });
+  }
   // El aviso es para el popup: la próxima vez que lo abras te dice en qué idioma está.
   if (String(info.menuItemId).startsWith("idioma:")) {
     chrome.storage.local.set({ [IDIOMA_KEY]: info.menuItemId.slice(7), avisarIdioma: true });

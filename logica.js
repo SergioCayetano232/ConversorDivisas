@@ -2765,8 +2765,11 @@ function mensajePresupuesto({ viaje, nivel, estado }) {
   return { titulo: viaje.nombre ? `${viaje.nombre} · ${titulo}` : titulo, cuerpo };
 }
 
-// A las nueve: antes puedes estar todavía cenando.
+// A las nueve: antes puedes estar todavía cenando. Quien cene tarde la pasa a las diez.
 const RECORDATORIO_HORA = 21;
+const RECORDATORIO_HORAS = [20, 21, 22];
+
+const leerHoraRecordatorio = (hora) => (RECORDATORIO_HORAS.includes(hora) ? hora : RECORDATORIO_HORA);
 
 // Sin presupuesto no sé si estás de viaje. Y con solo la fecha de vuelta, hasta
 // que no apuntas el primer gasto tampoco: igual aún no has salido.
@@ -2778,9 +2781,9 @@ function viajesSinApuntar(viajes, hoyIso = hoy()) {
 }
 
 // Uno al día como mucho, aunque estés en dos viajes a la vez.
-function tocaRecordar(viajes, avisadoEl, ahora = new Date()) {
+function tocaRecordar(viajes, avisadoEl, ahora = new Date(), hora = RECORDATORIO_HORA) {
   const hoyIso = isoLocal(ahora);
-  if (ahora.getHours() < RECORDATORIO_HORA || avisadoEl === hoyIso) return null;
+  if (ahora.getHours() < leerHoraRecordatorio(hora) || avisadoEl === hoyIso) return null;
   return viajesSinApuntar(viajes, hoyIso)[0] ?? null;
 }
 
@@ -2865,6 +2868,7 @@ function limpiarCopia(crudo) {
   if (d.cuentaReparto !== undefined) datos.cuentaReparto = leerCuenta(d.cuentaReparto);
   if (typeof d.insigniaActiva === "boolean") datos.insigniaActiva = d.insigniaActiva;
   if (typeof d.recordatorioActivo === "boolean") datos.recordatorioActivo = d.recordatorioActivo;
+  if (RECORDATORIO_HORAS.includes(d.recordatorioHora)) datos.recordatorioHora = d.recordatorioHora;
   if (typeof d.tasaAlReves === "boolean") datos.tasaAlReves = d.tasaAlReves;
   if (d.idioma === "auto" || TEXTOS[d.idioma]) datos.idioma = d.idioma;
   return datos;
@@ -2875,7 +2879,7 @@ function limpiarCopia(crudo) {
 const CLAVES_COPIA = [
   "viajes", "gastosViaje", "presupuestoViaje", "lastPair", "paresRecientes", "divisasExtra", "avisos",
   "historialConversiones", "rangoGrafico", "comisionBanco", "impuestoVenta", "pagoGasto", "cuentaReparto", "insigniaActiva", "tasaAlReves", "idioma",
-  "recordatorioActivo", "precioCafe", "sueldoHora",
+  "recordatorioActivo", "recordatorioHora", "precioCafe", "sueldoHora",
 ];
 
 function crearCopia(crudo, ahora = new Date()) {
@@ -2938,7 +2942,7 @@ if (typeof module !== "undefined") {
     textoInsignia, cambioDiario, sentidoDe, cambioDelDia, textoCambioDia, ULTIMA_VEZ_MINIMO, desdeLaUltimaVez, ultimoVisto, tituloInsignia, lineaTasa,
     AVISOS_MAX, sentidoAviso, crearAviso, leerAvisos, avisoCumplido, repartirAvisos, mensajeAviso, faltaParaAviso, cercaniaAviso, textoFalta,
     nivelPresupuesto, avisosPresupuesto, mensajePresupuesto,
-    RECORDATORIO_HORA, viajesSinApuntar, tocaRecordar, mensajeRecordatorio,
+    RECORDATORIO_HORA, RECORDATORIO_HORAS, leerHoraRecordatorio, viajesSinApuntar, tocaRecordar, mensajeRecordatorio,
     ATAJOS, atajoPara, textoAtajo,
   };
 }

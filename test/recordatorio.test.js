@@ -1,6 +1,6 @@
 const { test } = require("node:test");
 const assert = require("node:assert");
-const { viajesSinApuntar, tocaRecordar, mensajeRecordatorio, limpiarCopia, CLAVES_COPIA } = require("../logica.js");
+const { viajesSinApuntar, tocaRecordar, mensajeRecordatorio, limpiarCopia, CLAVES_COPIA, RECORDATORIO_HORA, leerHoraRecordatorio } = require("../logica.js");
 
 const HOY = "2026-10-08";
 const a = (dia, hora) => new Date(2026, 9, dia, hora, 30);
@@ -56,4 +56,20 @@ test("quitarlo va en la copia de seguridad", () => {
   assert.ok(CLAVES_COPIA.includes("recordatorioActivo"));
   assert.equal(limpiarCopia({ recordatorioActivo: false }).recordatorioActivo, false);
   assert.equal("recordatorioActivo" in limpiarCopia({ recordatorioActivo: "no" }), false);
+});
+
+test("a la hora que hayas elegido", () => {
+  const v = viajes(viaje("j"));
+  assert.equal(tocaRecordar(v, null, a(8, 20), 20).id, "j");
+  assert.equal(tocaRecordar(v, null, a(8, 21), 22), null);
+  assert.equal(tocaRecordar(v, null, a(8, 22), 22).id, "j");
+  assert.equal(tocaRecordar(v, null, a(8, 20), 3), null, "una hora rara vale lo de siempre");
+  assert.equal(leerHoraRecordatorio(undefined), RECORDATORIO_HORA);
+  assert.equal(leerHoraRecordatorio("20"), RECORDATORIO_HORA);
+});
+
+test("la hora va en la copia de seguridad", () => {
+  assert.ok(CLAVES_COPIA.includes("recordatorioHora"));
+  assert.equal(limpiarCopia({ recordatorioHora: 22 }).recordatorioHora, 22);
+  assert.equal("recordatorioHora" in limpiarCopia({ recordatorioHora: 7 }), false);
 });
