@@ -2968,6 +2968,7 @@ body::after {
   font-weight: 600;
   color: var(--brass);
   text-shadow: 0 0 18px var(--brass-glow);
+  cursor: copy;
 }
 
 .gastos__suma.is-tic {
@@ -3895,14 +3896,21 @@ body::after {
 }
 
 /* Copiado con doble clic: late en verde, como el de arriba en dorado. */
-.gastos__valor.is-copiado {
+.gastos__valor.is-copiado,
+.gastos__suma.is-copiado {
   color: var(--jade);
   animation: gasto-copiado 520ms var(--ease-spring);
 }
 
-.gastos__valor.is-fallo {
+.gastos__valor.is-fallo,
+.gastos__suma.is-fallo {
   color: var(--cinnabar);
   animation: shake 360ms var(--ease-out);
+}
+
+/* El total lleva brillo dorado; en verde, el brillo también. */
+.gastos__suma.is-copiado {
+  text-shadow: 0 0 18px color-mix(in srgb, var(--jade) 40%, transparent);
 }
 
 @keyframes gasto-copiado {

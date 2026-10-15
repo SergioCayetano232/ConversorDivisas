@@ -2790,19 +2790,27 @@ function crearFilaGasto(gasto, i, peso, rey = false) {
   return fila;
 }
 
-async function onCopiarGasto(gasto, cuanto) {
+// La cifra dice "Copiado" un momento en su sitio y vuelve.
+async function copiarEnSuSitio(cifra, texto) {
   // El doble clic ya ha seleccionado media cifra; queda feo con el "Copiado".
   getSelection()?.removeAllRanges();
-  const bien = await copiar(gastoParaCopiar(gasto));
-  const valor = cuanto.textContent;
-  cuanto.textContent = tr(bien ? "copiado" : "copiar.fallo");
-  cuanto.classList.remove("is-copiado", "is-fallo");
-  restartAnimation(cuanto, bien ? "is-copiado" : "is-fallo");
-  clearTimeout(cuanto.vuelta);
-  cuanto.vuelta = setTimeout(() => {
-    cuanto.textContent = valor;
-    cuanto.classList.remove("is-copiado", "is-fallo");
+  const bien = await copiar(texto);
+  if (!cifra.classList.contains("is-copiado") && !cifra.classList.contains("is-fallo")) cifra.dataset.antes = cifra.textContent;
+  cifra.textContent = tr(bien ? "copiado" : "copiar.fallo");
+  cifra.classList.remove("is-copiado", "is-fallo");
+  restartAnimation(cifra, bien ? "is-copiado" : "is-fallo");
+  clearTimeout(cifra.vuelta);
+  cifra.vuelta = setTimeout(() => {
+    cifra.textContent = cifra.dataset.antes;
+    cifra.classList.remove("is-copiado", "is-fallo");
   }, 1300);
+}
+
+const onCopiarGasto = (gasto, cuanto) => copiarEnSuSitio(cuanto, gastoParaCopiar(gasto));
+
+function onCopiarTotal() {
+  const texto = totalParaCopiar(viajeActivo(viajes));
+  if (texto) copiarEnSuSitio(el.gastosSuma, texto);
 }
 
 // Estas tres líneas van sin la divisa, como la media: con los botones de al
@@ -3026,7 +3034,10 @@ function pintarGastos() {
 
   pintarTituloViaje();
   const suma = n ? textoTotales(sumarPorDivisa(gastos)) : `${nf.format(0)} ${el.to.value}`;
-  if (el.gastosSuma.textContent !== suma) {
+  // Si está diciendo "Copiado", el total nuevo espera a que acabe.
+  if (el.gastosSuma.classList.contains("is-copiado") || el.gastosSuma.classList.contains("is-fallo")) {
+    el.gastosSuma.dataset.antes = suma;
+  } else if (el.gastosSuma.textContent !== suma) {
     const habia = el.gastosSuma.textContent !== "";
     el.gastosSuma.textContent = suma;
     if (habia) restartAnimation(el.gastosSuma, "is-tic");
@@ -5428,6 +5439,7 @@ function bindEvents() {
     }
   });
   el.gastosSuma.addEventListener("animationend", () => el.gastosSuma.classList.remove("is-tic"));
+  el.gastosSuma.addEventListener("dblclick", onCopiarTotal);
   el.gastosApuntar.addEventListener("animationend", () => el.gastosApuntar.classList.remove("is-mal"));
   el.gastosCerrar.addEventListener("click", () => cerrarGastos()?.focus());
   el.viaje.addEventListener("click", () => (el.viajes.hidden ? abrirViajes() : cerrarViajes()));

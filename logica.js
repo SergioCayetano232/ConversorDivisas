@@ -2524,6 +2524,20 @@ function gastoParaCopiar(gasto) {
   return `${que} · ${cuanto}`;
 }
 
+// "Japón: 40,46 EUR en 3 días". Los días, del primer gasto al último, como la media.
+function totalParaCopiar(viaje) {
+  const totales = sumarPorDivisa(viaje.gastos);
+  if (totales.length === 0) return "";
+  const dinero = ({ total, to }) => `${numeros({ minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(total)} ${to}`;
+  const dias = gastosPorDia(viaje.gastos);
+  const n = diasHasta(dias[0].dia, dias[dias.length - 1].dia);
+  return tr("copiar.total", {
+    viaje: viaje.nombre || tr("viajes.sinNombre"),
+    total: totales.map(dinero).join(" + "),
+    dias: tr(n === 1 ? "copiar.unDia" : "copiar.dias", { n }),
+  });
+}
+
 function textoParaCopiar(valor) {
   return valor.toFixed(2).replace(".", separadorDecimal());
 }
@@ -2945,7 +2959,7 @@ if (typeof module !== "undefined") {
     SEMANAS_MINIMAS, mejorDiaSemana, nombreDiaSemana, textoDiaSemana, indiceCercano, extremos, fechaCorta, largoEnPantalla,
     leerNumero, divisaDe, leerSeleccion, destinoPara, leerPegado, buscarPrecios, precioEntero, leerOmnibox, leerGastoBarra, gastoDeBarra, escaparXml,
     divisaDeIdioma, parPorIdioma, banderaDe, banderaDivisa,
-    HISTORIAL_MAX, leerHistorial, apuntarConversion, quitarConversion, haceCuanto, ultimoDeHoy, textoParaCopiar, fraseParaCopiar, gastoParaCopiar, simboloDe, textoConSimbolo,
+    HISTORIAL_MAX, leerHistorial, apuntarConversion, quitarConversion, haceCuanto, ultimoDeHoy, textoParaCopiar, fraseParaCopiar, gastoParaCopiar, totalParaCopiar, simboloDe, textoConSimbolo,
     celdaCsv, csvHistorial, csvGastos, csvViajes,
     GASTOS_MAX, CONCEPTO_MAX, crearGasto, leerGastos, apuntarGasto, NOCHES_MAX, repartirCentimos, repartirNoches, apuntarNoches, quitarGasto, cambiarConcepto, cambiarDia, buscarGastos, trozosResaltados, repetirGasto, devolverGasto, devolverTodos, sumarPorDivisa, gastosPorDia, categoriaDelDia, pesoDeLosDias, ordenarPorImporte, masCarosDelDia, pesoDeLosGastos, RARO_VECES, mediana, gastoRaro, REPETIDO_MS, gastoRepetido, mediaPorDia, categoriasAlDia, mediaPorGasto, comisionesPagadas, pagadoEnEfectivo, ahorroEnEfectivo,
     RETIRADAS_MAX, leerRetiradas, crearRetirada, apuntarRetirada, quitarRetirada, efectivoQueda, EFECTIVO_POCO, tonoEfectivo, redondoDeCajero, cuantoSacar, loQueSobra, gastadoHoy, nombreDia,
