@@ -2844,6 +2844,7 @@ const ATAJOS = {
   KeyG: "gastos",
   // E de efectivo: con el concepto a medio escribir, Alt+E y sigues.
   KeyE: "pago",
+  KeyV: "viajes",
   KeyP: "cuenta",
   // La H ya es la ayuda: R de "recientes".
   KeyR: "historial",

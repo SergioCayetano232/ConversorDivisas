@@ -4487,6 +4487,16 @@ function buscarDesdeAtajo() {
   if (!el.buscarAbrir.hidden) (el.buscar.hidden ? abrirBusqueda() : el.buscarCampo.focus());
 }
 
+function viajesDesdeAtajo() {
+  if (!el.viajes.hidden) {
+    cerrarViajes();
+    el.viaje.focus();
+    return;
+  }
+  if (el.gastos.hidden) abrirGastos();
+  abrirViajes();
+}
+
 function hacerAtajo(accion) {
   if (accion === "intercambiar" && !el.swap.disabled) onSwap();
   else if (accion === "copiar") onCopiar();
@@ -4500,6 +4510,7 @@ function hacerAtajo(accion) {
   else if (accion === "historial") (el.historial.hidden ? abrirHistorial() : cerrarHistorial()?.focus());
   else if (accion === "buscar") buscarDesdeAtajo();
   else if (accion === "pago") onCambiarPago();
+  else if (accion === "viajes") viajesDesdeAtajo();
   else if (accion === "deshacer") onDeshacer();
   else if (accion.startsWith("vista:")) cambiarVista(accion.slice(6));
 }
@@ -4667,6 +4678,7 @@ function ponerPistasDeAtajos() {
   el.swap.title = tr("intercambiar.titulo", { tecla: pista("intercambiar") });
   el.copiar.title = tr("copiar.titulo", { tecla: pista("copiar") });
   el.abrirGastos.title = `${tr("gastos")} (${pista("gastos")})`;
+  el.viaje.title = `${tr("viajes.cambiar")} (${pista("viajes")})`;
   el.abrirCuenta.title = `${tr("cuenta")} (${pista("cuenta")})`;
   el.abrirComparar.title = `${tr("comparar")} (${pista("comparar")})`;
   el.abrirHistorial.title = `${tr("historial")} (${pista("historial")})`;

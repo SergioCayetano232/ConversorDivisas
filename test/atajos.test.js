@@ -17,6 +17,7 @@ test("fuera de un campo basta la letra", () => {
   assert.equal(atajoPara(tecla("Digit6")), "vista:timo");
   assert.equal(atajoPara(tecla("KeyG")), "gastos");
   assert.equal(atajoPara(tecla("KeyE")), "pago");
+  assert.equal(atajoPara(tecla("KeyV")), "viajes");
   assert.equal(atajoPara(tecla("KeyP")), "cuenta");
   assert.equal(atajoPara(tecla("KeyR")), "historial");
 });
