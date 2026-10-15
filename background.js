@@ -50,6 +50,7 @@ async function hacerMenus() {
     contexts: ["page"],
   });
   // Estos salen al hacer clic derecho en el icono de la barra, no en la página.
+  chrome.contextMenus.create({ id: "gastos", title: tr("menu.gastos"), contexts: ["action"] });
   const { insigniaActiva = true } = await chrome.storage.local.get("insigniaActiva");
   chrome.contextMenus.create({
     id: "insignia",
@@ -645,6 +646,17 @@ async function irAGastos(viajeId) {
   await chrome.storage.session.set({ abrirGastos: true });
 }
 
+async function abrirConGastos() {
+  await chrome.storage.session.set({ abrirGastos: true });
+  try {
+    await chrome.action.openPopup();
+  } catch (error) {
+    // Si Chrome no deja abrirlo, que no se queden los gastos esperando a la próxima vez.
+    await chrome.storage.session.remove("abrirGastos");
+    console.warn("No se pudo abrir el popup", error);
+  }
+}
+
 chrome.notifications.onClicked.addListener(async (id) => {
   chrome.notifications.clear(id);
   if (id.startsWith("recordatorio:")) await irAGastos(id.slice(13));
@@ -661,6 +673,7 @@ chrome.notifications.onClicked.addListener(async (id) => {
 chrome.contextMenus.onClicked.addListener((info, tab) => {
   if (info.menuItemId === "convertir") convertirSeleccion(info, tab);
   if (info.menuItemId === "precios") convertirPagina(tab);
+  if (info.menuItemId === "gastos") abrirConGastos();
   if (info.menuItemId === "insignia") chrome.storage.local.set({ insigniaActiva: info.checked });
   if (String(info.menuItemId).startsWith("recordatorio:")) {
     const valor = info.menuItemId.slice(13);

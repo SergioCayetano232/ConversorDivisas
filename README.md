@@ -222,7 +222,8 @@ que necesitaba una conversión rápida. Ahora es un clic en la barra del navegad
 - Avisos de tasa: pones a cuánto quieres que llegue ("avísame si el dólar pasa
   de 1,15") y te salta una notificación cuando pase, aunque tengas el popup
   cerrado. Hasta cuatro a la vez
-- Se abre con `Ctrl+Shift+U` (en Mac, `Cmd+Shift+U`)
+- Se abre con `Ctrl+Shift+U` (en Mac, `Cmd+Shift+U`). Con clic derecho en el
+  icono → **Gastos del viaje**, se abre directamente en los gastos
 - Desde la barra de direcciones, sin abrir nada: escribes `cd`, espacio, y
   luego `20 usd`, `50 eur a gbp` o `100-15% jpy`. El resultado sale en las
   sugerencias de Chrome, con tus otras divisas debajo, y con Enter se abre el
