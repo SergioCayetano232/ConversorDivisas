@@ -2922,6 +2922,17 @@ body::after {
   color: var(--muted);
 }
 
+.viajes__pie {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 6px;
+  padding: 6px 2px 0 6px;
+  border-top: 1px solid var(--hairline);
+  font-size: 10px;
+  color: var(--muted);
+}
+
 /* El título va encima del total y no en su propia fila: la caja del resultado
    recorta lo que se sale, y cada fila de la lista cuenta. */
 .gastos__total {
@@ -3880,7 +3891,7 @@ body::after {
   font-weight: 600;
   color: var(--brass);
   cursor: copy;
-  transition: color 200ms var(--ease-out);
+  transition: color var(--fast) var(--ease);
 }
 
 /* Copiado con doble clic: late en verde, como el de arriba en dorado. */

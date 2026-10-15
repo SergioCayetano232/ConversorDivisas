@@ -120,6 +120,8 @@ const el = {
   viajesNuevo: document.getElementById("viajes-nuevo"),
   viajesNombre: document.getElementById("viajes-nombre"),
   viajesLleno: document.getElementById("viajes-lleno"),
+  viajesPie: document.getElementById("viajes-pie"),
+  viajesCsv: document.getElementById("viajes-csv"),
   gastos: document.getElementById("gastos"),
   gastosVaciar: document.getElementById("gastos-vaciar"),
   gastosSuma: document.getElementById("gastos-suma"),
@@ -3797,6 +3799,8 @@ function pintarViajes() {
   el.viajesNuevo.hidden = lleno;
   el.viajesLleno.hidden = !lleno;
   el.viajesLleno.textContent = tr("viajes.lleno", { n: VIAJES_MAX });
+  // Con un viaje solo es el CSV de abajo otra vez.
+  el.viajesPie.hidden = viajes.lista.length < 2 || !viajes.lista.some((v) => v.gastos.length > 0);
 }
 
 function abrirViajes() {
@@ -5387,6 +5391,7 @@ function bindEvents() {
   el.chuletaCompartir.addEventListener("click", onCompartirChuleta);
   el.chuletaImprimir.addEventListener("click", onImprimirChuleta);
   el.gastosCsv.addEventListener("click", () => descargarCsv(csvGastos(gastos), archivoGastos(viajeActivo(viajes).nombre), el.gastosCsv));
+  el.viajesCsv.addEventListener("click", () => descargarCsv(csvViajes(viajes.lista), tr("csv.archivoViajes"), el.viajesCsv));
   el.abrirGastos.addEventListener("click", () => (el.gastos.hidden ? abrirGastos() : cerrarGastos()));
   el.abrirGastos.addEventListener("animationend", () => el.abrirGastos.classList.remove("is-apuntado"));
   el.gastosForm.addEventListener("submit", onApuntarGasto);

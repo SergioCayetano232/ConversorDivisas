@@ -124,7 +124,8 @@ que necesitaba una conversión rápida. Ahora es un clic en la barra del navegad
 - Las conversiones y los gastos se bajan en CSV con el botón **CSV** de cada
   panel, listos para abrir en Excel o en Google Sheets: en español van con
   punto y coma y "12,50", en inglés con coma y "12.50", y las tildes no se rompen.
-  Los gastos llevan una columna con la comisión de cada uno
+  Los gastos llevan una columna con la comisión de cada uno. En la lista de
+  viajes, **CSV** baja los de todos juntos, con el viaje en la primera columna
 - Dividir la cuenta, en el tique que hay al lado de la cartera: con lo que
   pone la cuenta arriba, eliges la propina (sin, 10, 15, 20 % o la que quieras)
   y entre cuántos sois, y te dice lo que paga cada uno, en esa divisa y en la

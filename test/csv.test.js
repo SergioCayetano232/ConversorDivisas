@@ -1,7 +1,7 @@
 const { test, afterEach } = require("node:test");
 const assert = require("node:assert");
 const { ponerIdioma } = require("../textos.js");
-const { celdaCsv, csvHistorial, csvGastos } = require("../logica.js");
+const { celdaCsv, csvHistorial, csvGastos, csvViajes } = require("../logica.js");
 
 afterEach(() => ponerIdioma("es"));
 
@@ -66,4 +66,19 @@ test("la comisión va en su columna, en la divisa del importe", () => {
   assert.equal(csvGastos(conTarjeta).split("\r\n")[1], "2026-10-02;21:30;Taxi;Otros;12,00;USD;102,00;EUR;Tarjeta;2,00");
   ponerIdioma("en");
   assert.match(csvGastos(conTarjeta), /^Date,Time,What for,Category,Amount,Currency,Cost,In,Paid with,Fee\r\n.*,2\.00$/);
+});
+
+test("todos los viajes en uno, con el viaje delante y cada uno en orden", () => {
+  const lisboa = [{ id: "c", from: "EUR", to: "EUR", cantidad: 8, valor: 8, concepto: "Pastéis", categoria: "comida", cuando: hora("2026-09-10", 11) }];
+  const lineas = csvViajes([{ nombre: "Nueva York", gastos }, { nombre: "", gastos: lisboa }, { nombre: "Vacío", gastos: [] }]).split("\r\n");
+  assert.equal(lineas[0], "Viaje;Fecha;Hora;Concepto;Categoría;Cantidad;Divisa;Importe;En;Pago;Comisión");
+  assert.equal(lineas.length, 4, "un viaje sin gastos no deja filas");
+  assert.match(lineas[1], /^Nueva York;2026-10-01;14:00;"Cena; con vino";/);
+  assert.match(lineas[2], /^Nueva York;2026-10-02;21:30;Taxi;/);
+  assert.match(lineas[3], /^Mi viaje;2026-09-10;11:00;Pastéis;/, "sin nombre, el de siempre");
+});
+
+test("en inglés, la cabecera también", () => {
+  ponerIdioma("en");
+  assert.match(csvViajes([]), /^Trip,Date,Time,/);
 });

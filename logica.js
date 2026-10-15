@@ -2484,13 +2484,23 @@ function csvHistorial(lista) {
 }
 
 // Del más antiguo al último: en una hoja de gastos se lee así, al revés que en el popup.
+const cabeceraGastosCsv = () => [tr("csv.fecha"), tr("csv.hora"), tr("csv.concepto"), tr("csv.categoria"), tr("csv.cantidad"), tr("csv.de"), tr("csv.importe"), tr("csv.a"), tr("csv.pago"), tr("csv.comision")];
+
+const filaGastoCsv = (g) => [
+  isoLocal(new Date(g.cuando)), horaLocal(g.cuando), g.concepto, tr(`cat.${g.categoria ?? CATEGORIA_POR_DEFECTO}`),
+  numeroCsv(g.cantidad), g.from, numeroCsv(g.valor), g.to, tr(`pago.${leerPago(g.pago)}`), numeroCsv(comisionDe(g)),
+];
+
 function csvGastos(lista) {
+  return filasCsv(cabeceraGastosCsv(), [...lista].reverse().map(filaGastoCsv));
+}
+
+// Todos en uno, con el viaje delante para poder filtrar o hacer una tabla
+// dinámica. Por viajes y no mezclados por fecha: dos viajes a la vez se liaban.
+function csvViajes(lista) {
   return filasCsv(
-    [tr("csv.fecha"), tr("csv.hora"), tr("csv.concepto"), tr("csv.categoria"), tr("csv.cantidad"), tr("csv.de"), tr("csv.importe"), tr("csv.a"), tr("csv.pago"), tr("csv.comision")],
-    [...lista].reverse().map((g) => [
-      isoLocal(new Date(g.cuando)), horaLocal(g.cuando), g.concepto, tr(`cat.${g.categoria ?? CATEGORIA_POR_DEFECTO}`),
-      numeroCsv(g.cantidad), g.from, numeroCsv(g.valor), g.to, tr(`pago.${leerPago(g.pago)}`), numeroCsv(comisionDe(g)),
-    ]),
+    [tr("csv.viaje"), ...cabeceraGastosCsv()],
+    lista.flatMap((v) => [...v.gastos].reverse().map((g) => [v.nombre || tr("viajes.sinNombre"), ...filaGastoCsv(g)])),
   );
 }
 
@@ -2931,7 +2941,7 @@ if (typeof module !== "undefined") {
     leerNumero, divisaDe, leerSeleccion, destinoPara, leerPegado, buscarPrecios, precioEntero, leerOmnibox, leerGastoBarra, gastoDeBarra, escaparXml,
     divisaDeIdioma, parPorIdioma, banderaDe, banderaDivisa,
     HISTORIAL_MAX, leerHistorial, apuntarConversion, quitarConversion, haceCuanto, ultimoDeHoy, textoParaCopiar, fraseParaCopiar, gastoParaCopiar, simboloDe, textoConSimbolo,
-    celdaCsv, csvHistorial, csvGastos,
+    celdaCsv, csvHistorial, csvGastos, csvViajes,
     GASTOS_MAX, CONCEPTO_MAX, crearGasto, leerGastos, apuntarGasto, NOCHES_MAX, repartirCentimos, repartirNoches, apuntarNoches, quitarGasto, cambiarConcepto, cambiarDia, buscarGastos, trozosResaltados, repetirGasto, devolverGasto, devolverTodos, sumarPorDivisa, gastosPorDia, categoriaDelDia, pesoDeLosDias, ordenarPorImporte, masCarosDelDia, pesoDeLosGastos, RARO_VECES, mediana, gastoRaro, REPETIDO_MS, gastoRepetido, mediaPorDia, categoriasAlDia, mediaPorGasto, comisionesPagadas, pagadoEnEfectivo, ahorroEnEfectivo,
     RETIRADAS_MAX, leerRetiradas, crearRetirada, apuntarRetirada, quitarRetirada, efectivoQueda, EFECTIVO_POCO, tonoEfectivo, redondoDeCajero, cuantoSacar, loQueSobra, gastadoHoy, nombreDia,
     CATEGORIAS, CATEGORIA_POR_DEFECTO, adivinarCategoria, PAGOS, PAGO_POR_DEFECTO, leerPago, comisionDelPago, desglose, conceptosUsados, completarConcepto,
