@@ -2828,6 +2828,8 @@ const ATAJOS = {
   Digit5: "vista:fecha",
   Digit6: "vista:timo",
   KeyG: "gastos",
+  // E de efectivo: con el concepto a medio escribir, Alt+E y sigues.
+  KeyE: "pago",
   KeyP: "cuenta",
   // La H ya es la ayuda: R de "recientes".
   KeyR: "historial",

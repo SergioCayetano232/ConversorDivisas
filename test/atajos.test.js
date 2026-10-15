@@ -16,6 +16,7 @@ test("fuera de un campo basta la letra", () => {
   assert.equal(atajoPara(tecla("Digit5")), "vista:fecha");
   assert.equal(atajoPara(tecla("Digit6")), "vista:timo");
   assert.equal(atajoPara(tecla("KeyG")), "gastos");
+  assert.equal(atajoPara(tecla("KeyE")), "pago");
   assert.equal(atajoPara(tecla("KeyP")), "cuenta");
   assert.equal(atajoPara(tecla("KeyR")), "historial");
 });
@@ -88,4 +89,9 @@ test("la / busca en los gastos, venga de la tecla que venga", () => {
   assert.equal(atajoPara({ code: "Digit7", key: "/", shiftKey: true }), "buscar", "en un teclado español");
   assert.equal(atajoPara({ code: "Slash", key: "/", enCampo: true }), null, "en la cantidad es dividir");
   assert.equal(atajoPara({ code: "Slash", key: "/", ctrlKey: true }), null);
+});
+
+test("con el concepto a medio escribir, Alt+E cambia el pago", () => {
+  assert.equal(atajoPara(tecla("KeyE", { enCampo: true })), null, "la e es una letra");
+  assert.equal(atajoPara(tecla("KeyE", { enCampo: true, altKey: true, key: "Dead" })), "pago", "en Mac, Alt+E es la tilde muerta");
 });

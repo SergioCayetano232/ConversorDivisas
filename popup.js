@@ -2480,7 +2480,8 @@ function pintarPago(conGiro = false) {
   el.gastosPago.innerHTML = ICONOS_PAGO[pagoNuevo];
   el.gastosPago.dataset.pago = pagoNuevo;
   const nombre = tr(`pago.${pagoNuevo}`);
-  el.gastosPago.title = nombre;
+  // Con Alt: cuando lo quieres cambiar sueles estar escribiendo el concepto.
+  el.gastosPago.title = `${nombre} (${textoAtajo("KeyE", esMac)})`;
   el.gastosPago.setAttribute("aria-label", tr("pago.elegir", { nombre }));
   if (conGiro) restartAnimation(el.gastosPago, "is-girando");
 }
@@ -4487,6 +4488,7 @@ function hacerAtajo(accion) {
   else if (accion === "comparar") (el.comparar.hidden ? abrirComparar() : cerrarComparar()?.focus());
   else if (accion === "historial") (el.historial.hidden ? abrirHistorial() : cerrarHistorial()?.focus());
   else if (accion === "buscar") buscarDesdeAtajo();
+  else if (accion === "pago") onCambiarPago();
   else if (accion === "deshacer") onDeshacer();
   else if (accion.startsWith("vista:")) cambiarVista(accion.slice(6));
 }
@@ -4576,7 +4578,8 @@ function onAtajo(event) {
       : accion === "buscar" ? "/"
       : event.altKey ? textoAtajo(event.code, esMac) : event.code.replace(/^Key|^Digit/, "");
     const prefijo = accion === "copiarFrase" ? (esMac ? "⇧" : "Shift+") : "";
-    mostrarTecla(prefijo + tecla, queHace(accion));
+    // El de pagar dice cómo ha quedado, que "cambiar" no te dice a qué.
+    mostrarTecla(prefijo + tecla, accion === "pago" ? tr("pago.ahora", { nombre: tr(`pago.${pagoNuevo}`) }) : queHace(accion));
   }
 }
 
