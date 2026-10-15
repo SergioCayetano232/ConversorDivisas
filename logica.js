@@ -2846,6 +2846,9 @@ function atajoPara({ code, key, altKey, ctrlKey, metaKey, shiftKey, enCampo }) {
   if ((ctrlKey || metaKey) && code === "KeyZ" && !enCampo && !altKey && !shiftKey) return "deshacer";
   if (ctrlKey || metaKey) return null;
   if (!enCampo && key === "?") return "ayuda";
+  // Por la tecla y no por el código: en un teclado español la / es Shift+7. Y
+  // solo fuera de los campos, que en la cantidad es dividir.
+  if (!enCampo && key === "/") return "buscar";
   if (enCampo && !altKey) return null;
   const accion = ATAJOS[code] ?? null;
   return accion === "copiar" && shiftKey ? "copiarFrase" : accion;

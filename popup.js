@@ -4469,6 +4469,12 @@ const esMac = /mac|iphone|ipad/i.test(navigator.userAgentData?.platform ?? navig
 
 const queHace = (accion) => tr(`atajo.${accion}`);
 
+function buscarDesdeAtajo() {
+  if (el.gastos.hidden) abrirGastos();
+  // Con menos de dos gastos no hay lupa: se quedan abiertos y ya.
+  if (!el.buscarAbrir.hidden) (el.buscar.hidden ? abrirBusqueda() : el.buscarCampo.focus());
+}
+
 function hacerAtajo(accion) {
   if (accion === "intercambiar" && !el.swap.disabled) onSwap();
   else if (accion === "copiar") onCopiar();
@@ -4480,6 +4486,7 @@ function hacerAtajo(accion) {
   else if (accion === "cuenta") (el.cuenta.hidden ? abrirCuenta() : cerrarCuenta()?.focus());
   else if (accion === "comparar") (el.comparar.hidden ? abrirComparar() : cerrarComparar()?.focus());
   else if (accion === "historial") (el.historial.hidden ? abrirHistorial() : cerrarHistorial()?.focus());
+  else if (accion === "buscar") buscarDesdeAtajo();
   else if (accion === "deshacer") onDeshacer();
   else if (accion.startsWith("vista:")) cambiarVista(accion.slice(6));
 }
@@ -4566,6 +4573,7 @@ function onAtajo(event) {
   if (accion !== "ayuda") {
     const conCmd = event.metaKey || event.ctrlKey;
     const tecla = conCmd ? (esMac ? "⌘Z" : "Ctrl+Z")
+      : accion === "buscar" ? "/"
       : event.altKey ? textoAtajo(event.code, esMac) : event.code.replace(/^Key|^Digit/, "");
     const prefijo = accion === "copiarFrase" ? (esMac ? "⇧" : "Shift+") : "";
     mostrarTecla(prefijo + tecla, queHace(accion));
@@ -4576,7 +4584,9 @@ let focoAntesDeAyuda = null;
 
 function pintarAyuda() {
   const alt = esMac ? "⌥" : "Alt+";
-  el.ayudaLista.replaceChildren(...Object.entries(ATAJOS).map(([code, accion], i) => {
+  // La / no está en ATAJOS porque va por la tecla y no por el código; sale detrás de la G.
+  const atajos = Object.entries(ATAJOS).flatMap((par) => (par[1] === "gastos" ? [par, ["/", "buscar"]] : [par]));
+  el.ayudaLista.replaceChildren(...atajos.map(([code, accion], i) => {
     const fila = document.createElement("li");
     fila.className = "ayuda__fila";
     fila.style.setProperty("--i", i);

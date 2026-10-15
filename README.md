@@ -230,7 +230,7 @@ que necesitaba una conversión rápida. Ahora es un clic en la barra del navegad
   viaje abierto: `cd + 20 cena` o `cd + 1500 jpy taxi efectivo`. Usa tu
   comisión y cómo sueles pagar, salvo que pongas "efectivo" o "tarjeta"
 - Atajos dentro del popup: `S` da la vuelta al par, `C` copia, `D` y `A` abren
-  los desplegables, `G` los gastos, `P` dividir la cuenta, `B` la balanza, `R` las últimas conversiones, `Z` (o `Cmd+Z`, `Ctrl+Z`) deshace lo último que
+  los desplegables, `G` los gastos, `/` busca en ellos, `P` dividir la cuenta, `B` la balanza, `R` las últimas conversiones, `Z` (o `Cmd+Z`, `Ctrl+Z`) deshace lo último que
   has quitado de los gastos y del `1` al `6` cambian de pestaña. Si estás escribiendo en
   un campo, con `Alt` delante (`⌥` en Mac). En la cantidad, `↑` y `↓` suben o
   bajan 1, y con Shift, 10. Con `?` salen todos

@@ -82,3 +82,10 @@ test("no hay dos atajos para lo mismo", () => {
   const acciones = Object.values(ATAJOS);
   assert.equal(new Set(acciones).size, acciones.length);
 });
+
+test("la / busca en los gastos, venga de la tecla que venga", () => {
+  assert.equal(atajoPara({ code: "Slash", key: "/" }), "buscar");
+  assert.equal(atajoPara({ code: "Digit7", key: "/", shiftKey: true }), "buscar", "en un teclado español");
+  assert.equal(atajoPara({ code: "Slash", key: "/", enCampo: true }), null, "en la cantidad es dividir");
+  assert.equal(atajoPara({ code: "Slash", key: "/", ctrlKey: true }), null);
+});
