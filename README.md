@@ -135,7 +135,8 @@ que necesitaba una conversión rápida. Ahora es un clic en la barra del navegad
   ("🇺🇸 Allí se suele dejar un 18 %"), y pulsándola se pone. Más abajo, con
   qué billetes lo pagas justo ("20 + 10 + 5 + 2,20") y, si no llevas suelto,
   con qué puedes pagar y cuánto te devuelven ("Pagas con 50: te devuelven
-  12,80")
+  12,80"). Arriba, con **+ 19,02 EUR**, apuntas tu parte en los gastos del
+  viaje, propina incluida, y se queda en verde para que no la metas dos veces
 - La comisión de tu banco: pones el % que te cobra la tarjeta (0, 1, 2, 3 o el
   que quieras) y al lado del resultado sale lo que pagarías de verdad. También
   va sumada en la chuleta y en las otras divisas. Se queda guardada para la

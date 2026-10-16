@@ -100,6 +100,8 @@ const el = {
   cuentaPago: document.getElementById("cuenta-pago"),
   cuentaBilletes: document.getElementById("cuenta-billetes"),
   cuentaVuelta: document.getElementById("cuenta-vuelta"),
+  cuentaApuntar: document.getElementById("cuenta-apuntar"),
+  cuentaApuntarCifra: document.getElementById("cuenta-apuntar-cifra"),
   gastosCuenta: document.getElementById("gastos-cuenta"),
   gastosTitulo: document.getElementById("gastos-titulo"),
   viaje: document.getElementById("viaje"),
@@ -271,6 +273,8 @@ let comision = 0;
 let impuesto = 0;
 let cafe = null;
 let sueldo = null;
+// La última cuenta que apuntaste, para que un segundo clic no la meta dos veces.
+let cuentaApuntada = null;
 // El billete con el que pagas en el tique. No lo guardo: es de esa cuenta.
 let pagoCon = null;
 let tasaAlReves = false;
@@ -3378,6 +3382,7 @@ function pintarCuenta() {
   pintarPagoJusto(r?.cadaUno ?? null, from);
   pintarPagoCon(r?.cadaUno ?? null, from);
   el.cuentaCompartir.disabled = !r;
+  pintarApuntarCuenta();
 
   if (!r) {
     el.cuentaPie.textContent = tr("cuenta.nada");
@@ -3491,6 +3496,78 @@ async function onCompartirCuenta() {
   clearTimeout(boton.vuelta);
   boton.vuelta = setTimeout(() => boton.classList.remove("is-hecho", "is-fallo"), 1600);
   mostrarFlash([tr(bien ? "cuenta.copiada" : "compartir.fallo")], 2200);
+}
+
+function gastoDeCuenta() {
+  const from = el.from.value;
+  const to = el.to.value;
+  const r = repartirCuenta(cantidadOrigen(), from === to ? null : rate, reparto, comision);
+  const solo = reparto.personas === 1;
+  return gastoDeLaCuenta(r, {
+    id: `${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`,
+    from, to, rate, comision,
+    pago: pagoNuevo,
+    cuando: Date.now(),
+    concepto: tr(solo ? "cuenta.conceptoSolo" : "cuenta.concepto", { n: reparto.personas }),
+  });
+}
+
+const claveCuenta = (g) => `${viajes.activo} ${g.from} ${g.to} ${g.cantidad} ${g.valor} ${g.pago} ${g.concepto}`;
+
+function pintarApuntarCuenta() {
+  const gasto = gastoDeCuenta();
+  const boton = el.cuentaApuntar;
+  const hecho = gasto !== null && cuentaApuntada === claveCuenta(gasto);
+  boton.disabled = !gasto;
+  boton.classList.toggle("is-apuntado", hecho);
+  boton.setAttribute("aria-disabled", String(hecho));
+  const { nombre } = viajeActivo(viajes);
+  const apuntado = nombre ? tr("cuenta.apuntado", { viaje: nombre }) : tr("cuenta.apuntadoGastos");
+  const nota = comision === 0 ? ""
+    : pagoNuevo === "efectivo" ? tr("pago.efectivoNota")
+    : tr("gastos.comision", { pct: tr("pct", { n: nfComision.format(comision) }) });
+  const que = tr(reparto.personas === 1 ? "cuenta.apuntarSolo" : "cuenta.apuntar");
+  boton.title = hecho ? `${apuntado}. ${tr("cuenta.apuntadoTitulo")}` : [que, nota].filter(Boolean).join(". ");
+  if (!gasto) {
+    el.cuentaApuntarCifra.textContent = "+";
+    boton.setAttribute("aria-label", que);
+    return;
+  }
+  const valor = `${nf.format(gasto.valor)} ${gasto.to}`;
+  el.cuentaApuntarCifra.textContent = hecho ? valor : `+ ${valor}`;
+  boton.setAttribute("aria-label", hecho ? apuntado
+    : tr("cuenta.apuntarAria", { cantidad: `${nf.format(gasto.cantidad)} ${gasto.from}`, valor }));
+}
+
+function onApuntarCuenta() {
+  const gasto = gastoDeCuenta();
+  if (!gasto || cuentaApuntada === claveCuenta(gasto)) return;
+  gastos = apuntarGasto(gastos, gasto);
+  gastoNuevo = gasto.id;
+  if (filtroCategoria && filtroCategoria !== gasto.categoria) filtroCategoria = null;
+  dejarVerGasto(gasto);
+  guardarViajes();
+  cuentaApuntada = claveCuenta(gasto);
+  pintarGastos();
+  pintarApuntarCuenta();
+  restartAnimation(el.cuentaApuntar, "is-hecho");
+  restartAnimation(el.abrirGastos, "is-apuntado");
+  monedaQueSube(`+${nf.format(gasto.valor)}`);
+}
+
+// La cartera queda tapada por el panel, así que la cifra sube desde la pastilla
+// y se va, como cuando sumas puntos en un juego.
+function monedaQueSube(texto) {
+  const desde = el.cuentaApuntar.getBoundingClientRect();
+  if (sinMovimiento.matches || !desde.width) return;
+  const moneda = document.createElement("span");
+  moneda.className = "moneda-vuela";
+  moneda.setAttribute("aria-hidden", "true");
+  moneda.textContent = texto;
+  moneda.style.left = `${desde.left + desde.width / 2}px`;
+  moneda.style.top = `${desde.top}px`;
+  document.body.append(moneda);
+  setTimeout(() => moneda.remove(), 900);
 }
 
 function guardarReparto() {
@@ -5468,6 +5545,7 @@ function bindEvents() {
   el.viajesNombre.addEventListener("animationend", () => el.viajesNombre.classList.remove("is-mal"));
   el.viajesLista.addEventListener("animationend", (event) => event.target.classList.remove("is-renombrado"));
   el.abrirCuenta.addEventListener("click", () => (el.cuenta.hidden ? abrirCuenta() : cerrarCuenta()));
+  el.cuentaApuntar.addEventListener("click", onApuntarCuenta);
   el.cuentaCerrar.addEventListener("click", () => cerrarCuenta()?.focus());
   el.tasaVieja.addEventListener("click", () => {
     if (pidiendoTasa) return;

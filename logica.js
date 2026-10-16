@@ -1099,6 +1099,20 @@ function cuentaParaCompartir(r, from, to, { propina, personas }) {
   return texto.join("\n");
 }
 
+// Lo que pagas tú, para el viaje: tu parte con la propina dentro. Va a comida,
+// que una cuenta a medias casi siempre es de cenar; si no, se cambia con un clic.
+function gastoDeLaCuenta(r, { id, from, to, rate, pago, comision, cuando, concepto }) {
+  if (!r || !Number.isFinite(rate) || rate <= 0) return null;
+  const suya = comisionDelPago(pago, comision);
+  return crearGasto({
+    id, from, to, cuando, concepto, pago,
+    cantidad: r.cadaUno,
+    valor: alCentimo(conComision(r.cadaUno * rate, suya)),
+    categoria: "comida",
+    comision: suya,
+  });
+}
+
 // Hasta un 1 % es lo que cobra una buena tarjeta; del 7 % para arriba ya es
 // tarifa de aeropuerto.
 const MARGENES = [
@@ -2975,7 +2989,7 @@ if (typeof module !== "undefined") {
     COMISION_MAX, COMISIONES_RAPIDAS, leerComision, leerPorcentaje, conComision,
     IMPUESTO_MAX, IMPUESTOS_RAPIDOS, leerImpuesto, leerImpuestoEscrito, loQuePagas,
     COMPARAR_IGUAL, compararPrecios, inclinacion, ZONAS, desfase, esNoche, horaAlli, textoDiferencia, relojDe, tituloHoraAlli, leerCafe, enCafes, textoCafes, HORAS_JORNADA, enHoras, textoHoras,
-    PROPINAS_RAPIDAS, PROPINA_HABITUAL, propinaHabitual, PROPINA_MAX, PERSONAS_MAX, CUENTA_POR_DEFECTO, leerCuenta, redondoHaciaArriba, repartirCuenta, cuentaParaCompartir, BILLETES, PAGOS_MAX, pagosPosibles, vuelta, pagoJusto,
+    PROPINAS_RAPIDAS, PROPINA_HABITUAL, propinaHabitual, PROPINA_MAX, PERSONAS_MAX, CUENTA_POR_DEFECTO, leerCuenta, redondoHaciaArriba, repartirCuenta, cuentaParaCompartir, gastoDeLaCuenta, BILLETES, PAGOS_MAX, pagosPosibles, vuelta, pagoJusto,
     MARGENES, tasaOfrecida, analizarCambio,
     domingoDePascua, hayTasaEl, tasaVieja, textoTasaVieja, horaBce, textoActualizado, proximaTasa, textoProximaTasa,
     FECHA_MINIMA, fechaLarga, fechaValida, diaDelGrafico, mesesAtras, FECHAS_RAPIDAS, leerFecha, cambioDesde, notaDiaHabil,

@@ -2545,6 +2545,125 @@ body::after {
   font-style: italic;
 }
 
+/* Tu parte, a los gastos: una pastilla dorada como la de apuntar un gasto.
+   Apuntada, se queda en verde con su tic para que no la metas dos veces. */
+.cuenta__apuntar {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  max-width: 150px;
+  height: 22px;
+  padding: 0 8px 0 6px;
+  background: var(--brass);
+  border: 1px solid var(--brass);
+  border-radius: 6px;
+  color: var(--graphite);
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  box-shadow: 0 0 12px -3px var(--brass-glow);
+  cursor: pointer;
+  transition: background var(--fast) var(--ease), color var(--fast) var(--ease),
+    box-shadow var(--fast) var(--ease), transform var(--fast) var(--ease-spring);
+}
+
+.cuenta__apuntar:hover:not(:disabled):not(.is-apuntado) {
+  box-shadow: 0 0 16px -2px var(--brass-glow);
+  transform: translateY(-1px);
+}
+
+.cuenta__apuntar:active:not(:disabled):not(.is-apuntado) {
+  transform: scale(0.94);
+}
+
+.cuenta__apuntar:focus-visible {
+  outline: 2px solid var(--brass);
+  outline-offset: 1px;
+}
+
+.cuenta__apuntar:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+
+.cuenta__apuntar svg {
+  flex-shrink: 0;
+  width: 12px;
+  height: 12px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.4;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  transition: opacity var(--fast) var(--ease), transform var(--mid) var(--ease-spring);
+}
+
+.cuenta__apuntar-ok {
+  position: absolute;
+  opacity: 0;
+  transform: scale(0.3);
+}
+
+.cuenta__apuntar-cifra {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.cuenta__apuntar.is-apuntado {
+  color: var(--jade);
+  background: color-mix(in srgb, var(--jade) 12%, transparent);
+  border-color: color-mix(in srgb, var(--jade) 45%, transparent);
+  box-shadow: none;
+  cursor: default;
+}
+
+.cuenta__apuntar.is-apuntado .cuenta__apuntar-icono {
+  position: absolute;
+  opacity: 0;
+  transform: scale(0.3);
+}
+
+.cuenta__apuntar.is-apuntado .cuenta__apuntar-ok {
+  position: static;
+  opacity: 1;
+  transform: none;
+  stroke-width: 1.8;
+}
+
+.cuenta__apuntar.is-hecho {
+  animation: beat var(--mid) var(--ease-spring);
+}
+
+/* La cifra que sale de la pastilla al apuntar: salta, sube y se apaga. */
+.moneda-vuela {
+  position: fixed;
+  z-index: 50;
+  padding: 2px 7px;
+  background: var(--brass);
+  border-radius: 999px;
+  color: var(--graphite);
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  box-shadow: 0 0 14px var(--brass-glow);
+  pointer-events: none;
+  transform: translate(-50%, -50%);
+  animation: moneda-vuela 900ms var(--ease-out) forwards;
+}
+
+@keyframes moneda-vuela {
+  0% { transform: translate(-50%, -20%) scale(0.6); opacity: 0; }
+  25% { transform: translate(-50%, -110%) scale(1.08); opacity: 1; }
+  60% { opacity: 1; }
+  100% { transform: translate(-50%, -260%) scale(0.9); opacity: 0; }
+}
+
 /* El nombre del viaje hace de título y abre la lista de viajes. La flecha
    baja un poco al pasar por encima y da la vuelta con la lista abierta. */
 .viaje {
