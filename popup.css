@@ -3805,6 +3805,36 @@ body::after {
   padding-top: 0;
 }
 
+/* Un día (o varios) sin nada entre dos con gastos: una línea a rayas, en
+   bajito, y el que medita respirando despacio. */
+.gastos__hueco {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+  margin: 6px 2px 2px;
+  padding: 3px 8px;
+  border: 1px dashed var(--hairline-strong);
+  border-radius: 999px;
+  font-size: 9.5px;
+  font-style: italic;
+  color: var(--muted);
+  cursor: default;
+  animation: pop var(--mid) var(--ease-spring) both;
+  animation-delay: calc(var(--d, 0) * 40ms);
+}
+
+.gastos__hueco-zen {
+  display: inline-block;
+  font-style: normal;
+  animation: hueco-respira 4s var(--ease) infinite;
+}
+
+@keyframes hueco-respira {
+  0%, 100% { transform: translateY(0) scale(1); }
+  50% { transform: translateY(-1px) scale(1.12); }
+}
+
 /* Debajo del nombre del día, lo que gastaste al lado del día que más. */
 .gastos__barra {
   flex-basis: 100%;

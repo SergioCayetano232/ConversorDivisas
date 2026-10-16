@@ -2661,6 +2661,21 @@ function pintarBotonGasto() {
   );
 }
 
+function crearHueco({ dias, desde, hasta }, d) {
+  const fila = document.createElement("li");
+  fila.className = "gastos__hueco";
+  fila.style.setProperty("--d", Math.min(d, 8));
+  const zen = document.createElement("span");
+  zen.className = "gastos__hueco-zen";
+  zen.setAttribute("aria-hidden", "true");
+  zen.textContent = "🧘";
+  const texto = document.createElement("span");
+  texto.textContent = dias === 1 ? tr("gastos.huecoUno", { dia: nombreDia(desde) }) : tr("gastos.hueco", { n: dias });
+  fila.append(zen, texto);
+  if (dias > 1) fila.title = tr("gastos.huecoTitulo", { desde: fechaCorta(desde), hasta: fechaCorta(hasta) });
+  return fila;
+}
+
 function crearDiaGastos({ dia, gastos: suyos, totales }, peso, d) {
   const fila = document.createElement("li");
   fila.className = "gastos__dia";
@@ -3124,10 +3139,16 @@ function pintarGastos() {
     // Con todos los del día, no solo los que se ven: filtrando por comida, la
     // cena sigue sin ser lo más caro si ese día estuvo el hotel.
     const reyes = masCarosDelDia(gastos);
-    el.gastosLista.replaceChildren(...dias.flatMap((dia, d) => [
-      crearDiaGastos(dia, pesos[d], d),
-      ...dia.gastos.map((gasto) => crearFilaGasto(gasto, i++, undefined, reyes.has(gasto.id))),
-    ]));
+    // Filtrando o buscando, un día sin taxis no es un día sin gastos.
+    const conHuecos = !filtroCategoria && !busqueda.trim();
+    el.gastosLista.replaceChildren(...dias.flatMap((dia, d) => {
+      const hueco = conHuecos && d > 0 ? huecoEntre(dias[d - 1].dia, dia.dia) : null;
+      return [
+        ...(hueco ? [crearHueco(hueco, d)] : []),
+        crearDiaGastos(dia, pesos[d], d),
+        ...dia.gastos.map((gasto) => crearFilaGasto(gasto, i++, undefined, reyes.has(gasto.id))),
+      ];
+    }));
     reyesAntes = reyes;
   }
   cascadaGastos = false;

@@ -39,7 +39,9 @@ que necesitaba una conversión rápida. Ahora es un clic en la barra del navegad
   que se te olvidó apuntar: el gasto se va a su día con lo que valía.
   Con las flechas de al lado lo vuelves a apuntar hoy, para el metro o el café
   de cada día, con la tasa de hoy. Arriba sale el total en tu divisa y lo que llevas de media
-  al día, y debajo los gastos por días con lo de cada día y una barrita que dice cuánto pesa al lado del día que más. Cada uno se guarda con la tasa y la comisión de
+  al día, y debajo los gastos por días con lo de cada día y una barrita que dice cuánto pesa al lado del día que más. Entre
+  dos días con gastos, los que no apuntaste nada salen a rayas ("🧘 2 días sin
+  gastos"), por si se te olvidó algo. Cada uno se guarda con la tasa y la comisión de
   ese momento, así que lo que gastaste el lunes no cambia aunque el euro suba
   el martes. Hasta 200, y para vaciarlo hay que darle dos veces. Si
   quitas uno o los vacías todos sin querer, tienes cinco segundos para
