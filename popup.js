@@ -4463,11 +4463,30 @@ function pintarSentidoAviso() {
     parDelUmbral = par;
   }
 
-  el.avisoCodigo.textContent = to;
-  const sentido = from === to ? null : sentidoAviso(leerImporte(el.avisoUmbral.value), rate);
-  el.avisoSentido.textContent = tr(sentido === "sube" ? "avisos.sube" : sentido === "baja" ? "avisos.baja" : "avisos.llega", { from });
-  el.avisoSentido.dataset.sentido = sentido ?? "";
+  const porcentaje = from === to ? null : leerPorcentajeAviso(el.avisoUmbral.value);
+  el.avisoCodigo.textContent = porcentaje ? "" : to;
+  if (porcentaje) {
+    const sentido = porcentaje.signo > 0 ? "sube" : porcentaje.signo < 0 ? "baja" : "mueve";
+    el.avisoSentido.textContent = tr(`avisos.${sentido}Un`, { from });
+    el.avisoSentido.dataset.sentido = sentido;
+  } else {
+    const sentido = from === to ? null : sentidoAviso(leerImporte(el.avisoUmbral.value), rate);
+    el.avisoSentido.textContent = tr(sentido === "sube" ? "avisos.sube" : sentido === "baja" ? "avisos.baja" : "avisos.llega", { from });
+    el.avisoSentido.dataset.sentido = sentido ?? "";
+  }
   el.avisoBoton.disabled = from === to || rate === null;
+  pintarNota();
+}
+
+// Con un porcentaje no se ve a qué tasa saltará, así que lo digo debajo.
+function previaAviso() {
+  const to = el.to.value;
+  const p = el.from.value === to || rate === null ? null : leerPorcentajeAviso(el.avisoUmbral.value);
+  if (!p) return null;
+  const tasa = (signo) => nfRate.format(rate * (1 + (signo * p.pct) / 100));
+  return p.signo
+    ? tr("avisos.previa", { tasa: `${tasa(p.signo)} ${to}` })
+    : tr("avisos.previaMueve", { baja: tasa(-1), sube: `${tasa(1)} ${to}` });
 }
 
 let notaAviso = null;
@@ -4477,7 +4496,7 @@ let notaAviso = null;
 function pintarNota() {
   if (el.avisoNota.classList.contains("is-mensaje")) return;
   el.avisoNota.dataset.tipo = "pista";
-  el.avisoNota.textContent = avisos.length ? "" : tr("avisos.nota");
+  el.avisoNota.textContent = previaAviso() ?? (avisos.length ? "" : tr("avisos.nota"));
 }
 
 function decir(texto, tipo) {
@@ -4500,11 +4519,14 @@ function crearPastillaAviso(aviso) {
   ir.type = "button";
   ir.className = "aviso__ir";
   const umbral = nfRate.format(aviso.umbral);
+  const mueve = aviso.sentido === "mueve";
+  const pct = mueve ? tr("pct", { n: nfComision.format(aviso.pct) }) : null;
   ir.setAttribute(
     "aria-label",
-    tr("avisos.pastilla", {
-      from: aviso.from, sentido: tr(aviso.sentido === "sube" ? "avisos.subeDe" : "avisos.bajaDe"), umbral, to: aviso.to,
-    }),
+    mueve ? tr("avisos.pastillaMueve", { from: aviso.from, pct, umbral, to: aviso.to })
+      : tr("avisos.pastilla", {
+        from: aviso.from, sentido: tr(aviso.sentido === "sube" ? "avisos.subeDe" : "avisos.bajaDe"), umbral, to: aviso.to,
+      }),
   );
   const par = document.createElement("span");
   par.className = "aviso__par";
@@ -4512,10 +4534,11 @@ function crearPastillaAviso(aviso) {
   const flecha = document.createElement("span");
   flecha.className = "aviso__flecha";
   flecha.dataset.sentido = aviso.sentido;
-  flecha.textContent = aviso.sentido === "sube" ? "▲" : "▼";
+  flecha.textContent = mueve ? "⇕" : aviso.sentido === "sube" ? "▲" : "▼";
   const cifra = document.createElement("span");
   cifra.className = "aviso__umbral";
-  cifra.textContent = umbral;
+  cifra.textContent = mueve ? `±${pct}` : umbral;
+  if (mueve) cifra.title = umbral;
   ir.append(par, flecha, cifra);
   ir.addEventListener("click", () => onIrAviso(aviso));
 
@@ -4563,15 +4586,18 @@ function onCrearAviso(event) {
   event.preventDefault();
   const from = el.from.value;
   const to = el.to.value;
-  const umbral = leerImporte(el.avisoUmbral.value);
+  const porcentaje = leerPorcentajeAviso(el.avisoUmbral.value);
+  const umbral = porcentaje ? null : leerImporte(el.avisoUmbral.value);
 
   let problema = null;
-  if (umbral === null) problema = tr("avisos.escribe", { ejemplo: nf.format(1.15) });
+  if (!porcentaje && umbral === null) problema = tr("avisos.escribe", { ejemplo: nf.format(1.15) });
   else if (avisos.length >= AVISOS_MAX) problema = tr("avisos.lleno", { max: AVISOS_MAX });
-  else if (sentidoAviso(umbral, rate) === null) problema = tr("avisos.igual");
+  else if (!porcentaje && sentidoAviso(umbral, rate) === null) problema = tr("avisos.igual");
 
+  const id = `${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`;
   const aviso = problema ? null
-    : crearAviso(from, to, umbral, rate, `${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`);
+    : porcentaje ? crearAvisoPorcentaje(from, to, porcentaje, rate, id)
+    : crearAviso(from, to, umbral, rate, id);
   if (!aviso) {
     decir(problema ?? tr("avisos.noSe"), "error");
     restartAnimation(el.avisoUmbral, "is-mal");
@@ -4581,7 +4607,9 @@ function onCrearAviso(event) {
   avisos = [...avisos, aviso];
   guardarAvisos();
   pintarAvisos();
-  el.avisoUmbral.value = nfRate.format(aviso.umbral);
+  // Con "+2 %" se queda la tasa a la que saltará; con "2 %", lo que escribiste.
+  if (aviso.sentido !== "mueve") el.avisoUmbral.value = nfRate.format(aviso.umbral);
+  pintarSentidoAviso();
   restartAnimation(el.campana, "is-sonando");
   decir(tr("avisos.hecho"), "ok");
 }

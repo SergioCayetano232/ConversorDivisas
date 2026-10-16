@@ -2760,16 +2760,43 @@ function crearAviso(from, to, umbral, rate, id) {
   return { id, from, to, sentido, umbral };
 }
 
+// "2 %" es que se mueva para cualquier lado; con signo, "+2 %" o "-1 %", solo
+// hacia ese. Más de un 50 % en una divisa de las del BCE no pasa.
+const AVISO_PCT_MAX = 50;
+
+function leerPorcentajeAviso(texto) {
+  const m = String(texto ?? "").trim().match(/^([+\-−]?)\s*(\d+(?:[.,]\d+)?)\s*%$/);
+  if (!m) return null;
+  const pct = Number(m[2].replace(",", "."));
+  if (!(pct > 0) || pct > AVISO_PCT_MAX) return null;
+  return { pct, signo: m[1] === "+" ? 1 : m[1] ? -1 : 0 };
+}
+
+// Con signo es un aviso de los de siempre, con la tasa ya calculada. Sin él
+// guardo la de ahora y el porcentaje, y salta en cuanto se aleje eso.
+function crearAvisoPorcentaje(from, to, { pct, signo }, rate, id) {
+  if (!(rate > 0)) return null;
+  if (signo !== 0) return crearAviso(from, to, rate * (1 + (signo * pct) / 100), rate, id);
+  if (!isValidCode(from) || !isValidCode(to) || from === to || !(pct > 0) || pct > AVISO_PCT_MAX) return null;
+  return { id, from, to, sentido: "mueve", umbral: rate, pct };
+}
+
+const esAvisoMueve = (a) => a.sentido === "mueve" && typeof a.pct === "number" && a.pct > 0 && a.pct <= AVISO_PCT_MAX;
+
 function leerAvisos(guardado) {
   if (!Array.isArray(guardado)) return [];
   return guardado
     .filter((a) => a && typeof a.id === "string" && isValidCode(a.from) && isValidCode(a.to)
-      && (a.sentido === "sube" || a.sentido === "baja") && typeof a.umbral === "number" && a.umbral > 0)
+      && (a.sentido === "sube" || a.sentido === "baja" || esAvisoMueve(a)) && typeof a.umbral === "number" && a.umbral > 0)
     .slice(0, AVISOS_MAX);
 }
 
+// El margen es para que un 2 % justo no se quede en 1,99999 por los decimales.
+const movimiento = (aviso, rate) => rate / aviso.umbral - 1;
+
 function avisoCumplido(aviso, rate) {
   if (typeof rate !== "number") return false;
+  if (aviso.sentido === "mueve") return Math.abs(movimiento(aviso, rate)) >= aviso.pct / 100 - 1e-9;
   return aviso.sentido === "sube" ? rate >= aviso.umbral : rate <= aviso.umbral;
 }
 
@@ -2793,6 +2820,7 @@ function faltaParaAviso(aviso, { from, to }, rate) {
   const suya = aviso.from === from && aviso.to === to ? rate
     : aviso.from === to && aviso.to === from ? 1 / rate : null;
   if (suya === null) return null;
+  if (aviso.sentido === "mueve") return Math.max(aviso.pct / 100 - Math.abs(movimiento(aviso, suya)), 0);
   const falta = aviso.sentido === "sube" ? aviso.umbral / suya - 1 : 1 - aviso.umbral / suya;
   return Math.max(falta, 0);
 }
@@ -2809,6 +2837,14 @@ function textoFalta(falta) {
 }
 
 function mensajeAviso(aviso, rate) {
+  if (aviso.sentido === "mueve") {
+    const cambio = movimiento(aviso, rate);
+    const pct = numeros({ style: "percent", minimumFractionDigits: 1, maximumFractionDigits: 1 }).format(Math.abs(cambio));
+    return {
+      titulo: tr("avisos.notiTitulo", { from: aviso.from, tasa: tasaLarga(rate), to: aviso.to }),
+      cuerpo: tr(cambio > 0 ? "avisos.notiMueveSube" : "avisos.notiMueveBaja", { pct, umbral: tasaLarga(aviso.umbral) }),
+    };
+  }
   return {
     titulo: tr("avisos.notiTitulo", { from: aviso.from, tasa: tasaLarga(rate), to: aviso.to }),
     cuerpo: tr(aviso.sentido === "sube" ? "avisos.notiSube" : "avisos.notiBaja", { umbral: tasaLarga(aviso.umbral) }),
@@ -3042,7 +3078,7 @@ if (typeof module !== "undefined") {
     domingoDePascua, hayTasaEl, tasaVieja, textoTasaVieja, horaBce, textoActualizado, proximaTasa, textoProximaTasa,
     FECHA_MINIMA, fechaLarga, fechaValida, diaDelGrafico, mesesAtras, FECHAS_RAPIDAS, leerFecha, cambioDesde, notaDiaHabil,
     textoInsignia, cambioDiario, sentidoDe, cambioDelDia, textoCambioDia, ULTIMA_VEZ_MINIMO, desdeLaUltimaVez, ultimoVisto, tituloInsignia, lineaTasa,
-    AVISOS_MAX, sentidoAviso, crearAviso, leerAvisos, avisoCumplido, repartirAvisos, mensajeAviso, faltaParaAviso, cercaniaAviso, textoFalta,
+    AVISOS_MAX, AVISO_PCT_MAX, sentidoAviso, crearAviso, leerPorcentajeAviso, crearAvisoPorcentaje, leerAvisos, avisoCumplido, repartirAvisos, mensajeAviso, faltaParaAviso, cercaniaAviso, textoFalta,
     nivelPresupuesto, avisosPresupuesto, mensajePresupuesto,
     RECORDATORIO_HORA, RECORDATORIO_HORAS, leerHoraRecordatorio, viajesSinApuntar, tocaRecordar, mensajeRecordatorio,
     ATAJOS, atajoPara, textoAtajo,

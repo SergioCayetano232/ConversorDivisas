@@ -6879,6 +6879,10 @@ body::after {
   color: var(--cinnabar);
 }
 
+.aviso-form__sentido[data-sentido="mueve"] {
+  color: var(--brass);
+}
+
 .aviso-form__umbral {
   flex: 1;
   min-width: 0;
@@ -7030,6 +7034,18 @@ body::after {
 
 .aviso__flecha[data-sentido="baja"] {
   color: var(--cinnabar);
+}
+
+/* El que vale para los dos lados, en dorado y meciéndose arriba y abajo. */
+.aviso__flecha[data-sentido="mueve"] {
+  color: var(--brass);
+  animation: aviso-mece 2.4s var(--ease) infinite;
+}
+
+@keyframes aviso-mece {
+  0%, 100% { transform: translateY(0); }
+  25% { transform: translateY(-1.5px); }
+  75% { transform: translateY(1.5px); }
 }
 
 .aviso__umbral {
