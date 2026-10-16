@@ -6130,6 +6130,26 @@ body::after {
   margin-top: var(--s-2);
 }
 
+/* En el hueco de abajo a la derecha, que siempre queda libre: con cinco
+   divisas ya no está el "Añadir". */
+.extras__compartir {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  width: calc(50% - 3px);
+  height: 19px;
+  justify-content: center;
+}
+
+.extras__compartir[hidden] {
+  display: none;
+}
+
+.extras__rejilla.is-copiada .extra__elegir {
+  animation: ola 520ms var(--ease-out) backwards;
+  animation-delay: calc(var(--i, 0) * 45ms);
+}
+
 .extras__rejilla {
   display: grid;
   grid-template-columns: 1fr 1fr;

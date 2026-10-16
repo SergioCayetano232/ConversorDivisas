@@ -196,7 +196,8 @@ que necesitaba una conversión rápida. Ahora es un clic en la barra del navegad
   cinco, las eliges tú). Pulsando una la pones como destino. Detrás de cada una
   va un minigráfico de su última semana, verde si ahora te dan más que hace
   siete días y rojo si menos, con una flechita al lado del código; pasando el
-  ratón ves el porcentaje
+  ratón ves el porcentaje. Con el botón de **WhatsApp** las copias todas, con su
+  bandera ("🇯🇵 9.030,06 JPY"), para mandar en cuánto sale algo en cada sitio
 - Una chuleta de viaje en otra pestaña: 1, 5, 10, 20, 50 y 100 en las dos
   divisas, para mirar precios de un vistazo. Si la divisa es muy pequeña (yenes,
   rupias…) empieza en 100 o en 10.000, que si no la tabla no sirve. Pulsando una

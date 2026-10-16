@@ -824,6 +824,19 @@ function chuletaParaCompartir(filas, from, to, comision = 0) {
   return texto.join("\n");
 }
 
+// Lo mismo en varias divisas, para el grupo. Con las banderas no va en bloque de
+// código: los emojis ocupan lo que quieren y la columna no cuadraría igual.
+function extrasParaCompartir(cantidad, from, filas, comision = 0) {
+  if (!(cantidad > 0) || filas.length === 0 || filas.some((f) => f.valor === null)) return "";
+  const dinero = numeros({ minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  const texto = [
+    `*💱 ${tr("extras.compartirTitulo", { cantidad: `${dinero.format(cantidad)} ${from}` })}*`,
+    ...filas.map((f) => `${banderaDivisa(f.code)} ${dinero.format(f.valor)} ${f.code}`),
+  ];
+  if (comision > 0) texto.push(`_${tr("chuleta.conComision", { pct: tr("pct", { n: numeros({ maximumFractionDigits: 2 }).format(comision) }) })}_`);
+  return texto.join("\n");
+}
+
 // La chuleta para imprimir va por la URL de su pestaña: así no depende de que el
 // popup siga abierto, que se cierra en cuanto sale el diálogo de imprimir.
 function urlImpresion({ from, to, rate, comision = 0, fecha = null }) {
@@ -3111,7 +3124,7 @@ if (typeof module !== "undefined") {
     VIAJES_MAX, NOMBRE_VIAJE_MAX, leerViajes, leerPersonas, porPersona, compararViajes, COLORES_VIAJE, leerColorViaje, colorLibre, siguienteColor, viajeActivo, crearViaje, nombreCopia, duplicarViaje, renombrarViaje, elegirViaje, borrarViaje, cambiarViaje, resumenViaje, archivoGastos,
     diasHasta, leerPresupuesto, PRESUPUESTO_JUSTO, estadoPresupuesto, alDiaAlli, inicioDelViaje, diaDelViaje, cuentaAtras, textoCuentaAtras, loDeHoy, CELEBRADOS_MAX, leerCelebrados, anadirCelebrado, viajeParaCelebrar, textoCelebrar, RACHA_MINIMA, rachaPresupuesto, hastaCuandoLlega, loQueSeLleva, redondearDias,
     EXTRAS_MAX, EXTRAS_POR_DEFECTO, leerExtras, anadirExtra, quitarExtra,
-    extrasVisibles, disponiblesParaAnadir, convertirExtras, semanaDe, trazoMini, CHULETA, escalaChuleta, chuleta, chuletaParaCompartir,
+    extrasVisibles, disponiblesParaAnadir, convertirExtras, semanaDe, trazoMini, CHULETA, escalaChuleta, chuleta, chuletaParaCompartir, extrasParaCompartir,
     urlImpresion, leerImpresion, chuletaParaImprimir,
     COMISION_MAX, COMISIONES_RAPIDAS, leerComision, leerPorcentaje, conComision,
     IMPUESTO_MAX, IMPUESTOS_RAPIDOS, leerImpuesto, leerImpuestoEscrito, loQuePagas,

@@ -210,6 +210,7 @@ const el = {
   comisionCampo: document.getElementById("comision-campo"),
   chuletaTabla: document.getElementById("chuleta-tabla"),
   chuletaCompartir: document.getElementById("chuleta-compartir"),
+  extrasCompartir: document.getElementById("extras-compartir"),
   chuletaImprimir: document.getElementById("chuleta-imprimir"),
   semana: document.getElementById("trend-semana"),
   semanaBarras: document.getElementById("semana-barras"),
@@ -1396,6 +1397,35 @@ function pintarExtras() {
   const antes = [...el.rejilla.children].map((c) => c.dataset.code).join();
   const ahora = celdas.map((c) => c.dataset.code).join();
   if (antes !== ahora) el.rejilla.replaceChildren(...celdas);
+  el.extrasCompartir.hidden = !textoExtras();
+}
+
+// La de arriba primero, con la comisión como las otras, y luego las de la rejilla.
+function textoExtras() {
+  const from = el.from.value;
+  const to = el.to.value;
+  const cantidad = cantidadOrigen();
+  const tasas = tasasBase?.de === from ? tasasBase.rates : null;
+  const codes = extrasVisibles(extras, from, to);
+  if (codes.length === 0) return "";
+  const principal = from === to || rate === null || cantidad === null ? [] : [{ code: to, valor: conComision(cantidad * rate, comision) }];
+  return extrasParaCompartir(cantidad, from, [...principal, ...convertirExtras(cantidad, tasas, codes, comision)], comision);
+}
+
+async function onCompartirExtras() {
+  const texto = textoExtras();
+  if (!texto) return;
+  const bien = await copiar(texto);
+  const boton = el.extrasCompartir;
+  boton.classList.toggle("is-fallo", !bien);
+  restartAnimation(boton, "is-hecho");
+  clearTimeout(boton.vuelta);
+  boton.vuelta = setTimeout(() => boton.classList.remove("is-hecho", "is-fallo"), 1600);
+  if (bien) {
+    restartAnimation(el.rejilla, "is-copiada");
+    setTimeout(() => el.rejilla.classList.remove("is-copiada"), 1000);
+  }
+  mostrarFlash([tr(bien ? "extras.copiadas" : "compartir.fallo")], 2200);
 }
 
 const FLECHAS = { sube: "▲", baja: "▼", igual: "" };
@@ -5624,6 +5654,7 @@ function bindEvents() {
   el.historialCsv.addEventListener("click", () => descargarCsv(csvHistorial(historial), tr("csv.archivoHistorial"), el.historialCsv));
   el.gastosCompartir.addEventListener("click", onCompartir);
   el.chuletaCompartir.addEventListener("click", onCompartirChuleta);
+  el.extrasCompartir.addEventListener("click", onCompartirExtras);
   el.chuletaImprimir.addEventListener("click", onImprimirChuleta);
   el.gastosCsv.addEventListener("click", () => descargarCsv(csvGastos(gastos), archivoGastos(viajeActivo(viajes).nombre), el.gastosCsv));
   el.viajesCsv.addEventListener("click", () => descargarCsv(csvViajes(viajes.lista), tr("csv.archivoViajes"), el.viajesCsv));
