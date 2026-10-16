@@ -2842,6 +2842,47 @@ function crearFilaGasto(gasto, i, peso, rey = false) {
   return fila;
 }
 
+// El total que se ve, para contar desde ahí la próxima vez, y la cuenta en marcha.
+let sumaContada = null;
+let contador = null;
+
+function pararContador() {
+  if (!contador) return;
+  cancelAnimationFrame(contador.raf);
+  el.gastosSuma.classList.remove("is-contando");
+  el.gastosSuma.removeAttribute("aria-busy");
+  contador = null;
+}
+
+// La cifra corre de lo que había a lo nuevo. Mientras cuenta, aria-busy, que si
+// no el lector de pantalla leería cada número por el camino.
+function contarSuma(desde, { to, total }, final) {
+  pararContador();
+  const nodo = el.gastosSuma;
+  const empieza = performance.now();
+  const yo = { final, va: desde };
+  contador = yo;
+  nodo.setAttribute("aria-busy", "true");
+  nodo.classList.add("is-contando");
+  const paso = (ahora) => {
+    if (contador !== yo) return;
+    // Si lo copias a medias, el "Copiado" manda y luego vuelve el total bueno.
+    if (nodo.classList.contains("is-copiado") || nodo.classList.contains("is-fallo")) {
+      nodo.dataset.antes = final;
+      return pararContador();
+    }
+    const t = (ahora - empieza) / 650;
+    if (t >= 1) {
+      nodo.textContent = final;
+      return pararContador();
+    }
+    yo.va = cifraEnMarcha(desde, total, t);
+    nodo.textContent = `${nf.format(yo.va)} ${to}`;
+    yo.raf = requestAnimationFrame(paso);
+  };
+  yo.raf = requestAnimationFrame(paso);
+}
+
 // La cifra dice "Copiado" un momento en su sitio y vuelve.
 async function copiarEnSuSitio(cifra, texto) {
   // El doble clic ya ha seleccionado media cifra; queda feo con el "Copiado".
@@ -3112,15 +3153,26 @@ function pintarGastos() {
   if (el.gastos.hidden) return;
 
   pintarTituloViaje();
-  const suma = n ? textoTotales(sumarPorDivisa(gastos)) : `${nf.format(0)} ${el.to.value}`;
+  const totales = n ? sumarPorDivisa(gastos) : [{ to: el.to.value, total: 0 }];
+  const suma = textoTotales(totales);
+  const una = totales.length === 1 ? totales[0] : null;
   // Si está diciendo "Copiado", el total nuevo espera a que acabe.
   if (el.gastosSuma.classList.contains("is-copiado") || el.gastosSuma.classList.contains("is-fallo")) {
+    pararContador();
     el.gastosSuma.dataset.antes = suma;
-  } else if (el.gastosSuma.textContent !== suma) {
+  } else if (el.gastosSuma.textContent !== suma && contador?.final !== suma) {
     const habia = el.gastosSuma.textContent !== "";
-    el.gastosSuma.textContent = suma;
+    const desde = contador?.va ?? sumaContada?.total;
+    // Al abrir o cambiar de viaje no cuento: solo cuando apuntas o quitas algo.
+    if (habia && !cascadaGastos && una && sumaContada?.to === una.to && desde !== undefined && !sinMovimiento.matches) {
+      contarSuma(desde, una, suma);
+    } else {
+      pararContador();
+      el.gastosSuma.textContent = suma;
+    }
     if (habia) restartAnimation(el.gastosSuma, "is-tic");
   }
+  sumaContada = una;
   el.gastosN.textContent = n === 0 ? "" : n === 1 ? tr("gastos.uno") : tr("gastos.n", { n });
   const porGasto = mediaPorGasto(gastos);
   el.gastosN.title = porGasto ? tr("gastos.porGasto", { valor: `${nf.format(porGasto.media)} ${porGasto.to}` }) : "";
@@ -4178,6 +4230,7 @@ function abrirGastos() {
   el.gastos.hidden = false;
   el.abrirGastos.setAttribute("aria-expanded", "true");
   cascadaGastos = true;
+  pararContador();
   el.gastosSuma.textContent = "";
   pintarGastos();
   el.gastosConcepto.focus();

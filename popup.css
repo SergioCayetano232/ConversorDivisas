@@ -3121,6 +3121,17 @@ body::after {
   animation: beat var(--mid) var(--ease-spring);
 }
 
+/* Mientras corre la cifra, brilla un poco más; con números de ancho fijo para
+   que no tiemble al cambiar de dígito. */
+.gastos__suma {
+  font-variant-numeric: tabular-nums;
+  transition: text-shadow var(--mid) var(--ease);
+}
+
+.gastos__suma.is-contando {
+  text-shadow: 0 0 26px var(--brass-glow), 0 0 8px var(--brass-glow);
+}
+
 .gastos__n {
   font-family: var(--font-mono);
   font-size: 10px;
