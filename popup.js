@@ -121,6 +121,7 @@ const el = {
   viajesLista: document.getElementById("viajes-lista"),
   viajesNuevo: document.getElementById("viajes-nuevo"),
   viajesNombre: document.getElementById("viajes-nombre"),
+  viajesDuplicar: document.getElementById("viajes-duplicar"),
   viajesLleno: document.getElementById("viajes-lleno"),
   viajesPie: document.getElementById("viajes-pie"),
   viajesCsv: document.getElementById("viajes-csv"),
@@ -3962,6 +3963,8 @@ function pintarViajes() {
   el.viajesNuevo.hidden = lleno;
   el.viajesLleno.hidden = !lleno;
   el.viajesLleno.textContent = tr("viajes.lleno", { n: VIAJES_MAX });
+  el.viajesDuplicar.title = tr("viajes.duplicar", { nombre: nombreViaje(viajeActivo(viajes)) });
+  el.viajesDuplicar.setAttribute("aria-label", el.viajesDuplicar.title);
   // Con un viaje solo es el CSV de abajo otra vez.
   el.viajesPie.hidden = viajes.lista.length < 2 || !viajes.lista.some((v) => v.gastos.length > 0);
 }
@@ -4027,6 +4030,23 @@ function onCrearViaje(event) {
   cerrarViajes();
   ponerViaje(nuevos);
   restartAnimation(el.viaje, "is-estreno");
+  el.gastosConcepto.focus();
+}
+
+// Uno como el abierto. Si has escrito un nombre, ese; si no, "Lisboa (2)".
+function onDuplicarViaje() {
+  const id = `${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`;
+  // Con lo último del abierto dentro, que ponerViaje lee de la lista.
+  const antes = cambiarViaje(viajes, viajes.activo, { gastos, presupuesto, cajero });
+  const nuevos = duplicarViaje(antes, viajes.activo, id, { nombre: el.viajesNombre.value });
+  if (nuevos === antes) {
+    restartAnimation(el.viajesDuplicar, "is-mal");
+    return;
+  }
+  cerrarViajes();
+  ponerViaje(nuevos);
+  restartAnimation(el.viaje, "is-estreno");
+  mostrarFlash([tr("viajes.duplicado", { nombre: nombreViaje(viajeActivo(nuevos)) })], 2200);
   el.gastosConcepto.focus();
 }
 
@@ -5644,6 +5664,7 @@ function bindEvents() {
   el.viaje.addEventListener("animationend", () => el.viaje.classList.remove("is-estreno"));
   el.gastosTitulo.addEventListener("animationend", () => el.gastosTitulo.classList.remove("is-cambiado"));
   el.viajesNuevo.addEventListener("submit", onCrearViaje);
+  el.viajesDuplicar.addEventListener("click", onDuplicarViaje);
   el.viajesNombre.addEventListener("animationend", () => el.viajesNombre.classList.remove("is-mal"));
   el.viajesLista.addEventListener("animationend", (event) => event.target.classList.remove("is-renombrado"));
   el.abrirCuenta.addEventListener("click", () => (el.cuenta.hidden ? abrirCuenta() : cerrarCuenta()));

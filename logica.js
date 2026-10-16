@@ -1787,6 +1787,39 @@ function crearViaje(viajes, id, nombre) {
   return { activo: id, lista: [...viajes.lista, viajeVacio(id, limpio, colorLibre(viajes.lista))] };
 }
 
+// "Lisboa" → "Lisboa (2)", y si ya está, "Lisboa (3)". Entre paréntesis, que
+// "Japón 2026" ya lleva un número. Recorto el nombre para que quepa siempre.
+function nombreCopia(nombre, lista) {
+  const base = limpiarNombreViaje(nombre).replace(/ \(\d+\)$/, "");
+  if (!base) return "";
+  const usados = new Set(lista.map((v) => v.nombre));
+  for (let n = 2; ; n += 1) {
+    const cola = ` (${n})`;
+    const nuevo = `${base.slice(0, NOMBRE_VIAJE_MAX - cola.length).trim()}${cola}`;
+    if (!usados.has(nuevo)) return nuevo;
+  }
+}
+
+// Para la escapada que repites: el presupuesto y la gente, sin un solo gasto.
+// Las fechas del otro ya pasaron, así que empieza hoy y dura lo mismo. Con otro
+// color, que si no no sabrías en cuál apuntas.
+function duplicarViaje(viajes, id, nuevoId, { nombre = "", hoyIso = hoy() } = {}) {
+  const origen = viajes.lista.find((v) => v.id === id);
+  if (!origen || viajes.lista.length >= VIAJES_MAX || viajes.lista.some((v) => v.id === nuevoId)) return viajes;
+  let presupuesto = null;
+  if (origen.presupuesto) {
+    const dias = Math.max(diasHasta(origen.presupuesto.hasta, inicioDelViaje(origen.presupuesto, origen.gastos, hoyIso)), 1);
+    const [a, m, d] = hoyIso.split("-").map(Number);
+    presupuesto = { importe: origen.presupuesto.importe, to: origen.presupuesto.to, desde: hoyIso, hasta: isoLocal(new Date(a, m - 1, d + dias - 1)) };
+  }
+  const copia = {
+    ...viajeVacio(nuevoId, limpiarNombreViaje(nombre) || nombreCopia(origen.nombre, viajes.lista), colorLibre(viajes.lista)),
+    presupuesto,
+    personas: origen.personas,
+  };
+  return { activo: nuevoId, lista: [...viajes.lista, copia] };
+}
+
 function renombrarViaje(viajes, id, nombre) {
   const limpio = limpiarNombreViaje(nombre);
   if (!limpio) return viajes;
@@ -3075,7 +3108,7 @@ if (typeof module !== "undefined") {
     CATEGORIAS, CATEGORIA_POR_DEFECTO, adivinarCategoria, PAGOS, PAGO_POR_DEFECTO, leerPago, comisionDelPago, desglose, conceptosUsados, completarConcepto,
     EMOJI_CATEGORIA, destacados, resumenParaCompartir, FINDE_MINIMO, findeContraSemana, ESTRELLA_MINIMO, conceptoEstrella,
     COPIA_APP, COPIA_VERSION, CLAVES_COPIA, limpiarCopia, crearCopia, leerCopia, resumenCopia,
-    VIAJES_MAX, NOMBRE_VIAJE_MAX, leerViajes, leerPersonas, porPersona, compararViajes, COLORES_VIAJE, leerColorViaje, colorLibre, siguienteColor, viajeActivo, crearViaje, renombrarViaje, elegirViaje, borrarViaje, cambiarViaje, resumenViaje, archivoGastos,
+    VIAJES_MAX, NOMBRE_VIAJE_MAX, leerViajes, leerPersonas, porPersona, compararViajes, COLORES_VIAJE, leerColorViaje, colorLibre, siguienteColor, viajeActivo, crearViaje, nombreCopia, duplicarViaje, renombrarViaje, elegirViaje, borrarViaje, cambiarViaje, resumenViaje, archivoGastos,
     diasHasta, leerPresupuesto, PRESUPUESTO_JUSTO, estadoPresupuesto, alDiaAlli, inicioDelViaje, diaDelViaje, cuentaAtras, textoCuentaAtras, loDeHoy, CELEBRADOS_MAX, leerCelebrados, anadirCelebrado, viajeParaCelebrar, textoCelebrar, RACHA_MINIMA, rachaPresupuesto, hastaCuandoLlega, loQueSeLleva, redondearDias,
     EXTRAS_MAX, EXTRAS_POR_DEFECTO, leerExtras, anadirExtra, quitarExtra,
     extrasVisibles, disponiblesParaAnadir, convertirExtras, semanaDe, trazoMini, CHULETA, escalaChuleta, chuleta, chuletaParaCompartir,

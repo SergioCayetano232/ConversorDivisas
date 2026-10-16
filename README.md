@@ -57,7 +57,10 @@ que necesitaba una conversión rápida. Ahora es un clic en la barra del navegad
 - Varios viajes, cada uno con sus gastos y su presupuesto: pulsando el nombre
   del viaje, arriba del panel, cambias de uno a otro, ves cuánto llevas en
   cada uno y empiezas otro ("Japón", "Lisboa"). Se les cambia el nombre con el
-  lápiz, y para borrar uno hay que darle dos veces. Hasta ocho. Lo que tenías
+  lápiz, y para borrar uno hay que darle dos veces. Con el botón de las dos
+  hojas, al lado del +, empiezas uno como el que tienes abierto, con su
+  presupuesto y la gente pero sin gastos, para la escapada que repites: empieza
+  hoy y dura lo mismo. Hasta ocho. Lo que tenías
   apuntado antes de esto pasa al primero, sin perder nada
 - Comparar los viajes: en esa misma lista, debajo de cada uno, lo que gastaste
   de media al día y en qué se fue más ("110,00/día · 🏨 80 %"), con una barrita

@@ -3000,6 +3000,33 @@ body::after {
   transform: rotate(-12deg);
 }
 
+/* Al pasar por encima, la hoja de delante se separa un poco de la de atrás. */
+.viajes__duplicar {
+  height: auto;
+}
+
+.viajes__duplicar:hover {
+  color: var(--brass);
+  border-color: var(--brass-dim);
+  background: var(--brass-ghost);
+}
+
+.viajes__duplicar rect {
+  transition: transform var(--mid) var(--ease-spring);
+}
+
+.viajes__duplicar:hover svg {
+  transform: none;
+}
+
+.viajes__duplicar:hover rect {
+  transform: translate(0.8px, 0.8px);
+}
+
+.viajes__duplicar.is-mal {
+  animation: shake 400ms var(--ease);
+}
+
 .viajes__borrar:hover {
   color: var(--cinnabar);
   border-color: color-mix(in srgb, var(--cinnabar) 45%, transparent);
