@@ -85,6 +85,10 @@ que necesitaba una conversión rápida. Ahora es un clic en la barra del navegad
   la lista lleva un puntito verde. Se queda como lo dejes. Arriba, con un
   puntito rojo, lo que llevas pagado en comisiones en el viaje, y con uno verde
   lo que te has ahorrado pagando en efectivo, con la comisión que tengas puesta
+- A cuánto te ha salido el cambio en el viaje: debajo de las comisiones,
+  "⇄ Cambio: 162,9 JPY", lo que te ha dado cada euro de media con la comisión
+  dentro. Pasando el ratón, a cuánto te saldría hoy ("un 6 % más barato"), y
+  va también en el resumen para WhatsApp
 - El efectivo que te queda: pulsando la línea verde apuntas lo que sacas del
   cajero ("20k" son veinte mil) y los gastos en efectivo lo van descontando, en
   yenes y no en euros, que es lo que llevas en la cartera. Arriba pone "Quedan

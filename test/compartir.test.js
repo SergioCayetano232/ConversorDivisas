@@ -28,6 +28,7 @@ test("el resumen entero, con categorías, días y presupuesto", () => {
     "Total: *100,00 EUR* en 3 gastos (33,33 EUR de media)",
     "🏆 Lo más caro: Comida, 50,00 EUR (1 oct)",
     "📅 El día que más: 1 oct, 50,00 EUR",
+    "💱 Cambio medio: 1 EUR = 160,0 JPY",
     "",
     "*En qué se ha ido*",
     "🍽️ Comida: 80,00 EUR (80 %)",

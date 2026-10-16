@@ -130,6 +130,7 @@ const el = {
   gastosN: document.getElementById("gastos-n"),
   gastosMedia: document.getElementById("gastos-media"),
   gastosComisiones: document.getElementById("gastos-comisiones"),
+  gastosCambio: document.getElementById("gastos-cambio"),
   gastosAhorro: document.getElementById("gastos-ahorro"),
   gastosEfectivo: document.getElementById("gastos-efectivo"),
   gastosForm: document.getElementById("gastos-form"),
@@ -2831,6 +2832,33 @@ function pintarComisiones() {
     : "";
   if (habia && texto && habia !== texto) restartAnimation(el.gastosComisiones, "is-tic");
   pintarAhorro();
+  pintarCambioViaje();
+}
+
+// Con la de hoy en el título: si hoy sale más barato, ya sabes que la divisa
+// se ha movido a tu favor durante el viaje. Menos de un 1 % es lo mismo.
+function pintarCambioViaje() {
+  const c = cambioDelViaje(gastos);
+  const nodo = el.gastosCambio;
+  const habia = nodo.textContent;
+  nodo.hidden = !c;
+  if (!c) {
+    nodo.textContent = "";
+    nodo.title = "";
+    return;
+  }
+  const { cifra, otra } = cifraCambio(c.tasa, c.from, c.to);
+  const texto = tr("gastos.cambio", { cifra: `${cifra} ${otra}` });
+  nodo.textContent = texto;
+  nodo.title = tr("gastos.cambioTitulo", { n: c.n, tasa: textoCambio(c.tasa, c.from, c.to) });
+  const tasa = tasaDeHoy(c.from, c.to);
+  if (tasa) {
+    const hoyCuesta = conComision(tasa, comision);
+    const diferencia = hoyCuesta / c.tasa - 1;
+    const datos = { tasa: textoCambio(hoyCuesta, c.from, c.to), pct: porCientoEntero(Math.abs(diferencia)) };
+    nodo.title += `\n${tr(Math.abs(diferencia) < 0.01 ? "gastos.cambioIgual" : diferencia < 0 ? "gastos.cambioBarato" : "gastos.cambioCaro", datos)}`;
+  }
+  if (habia && habia !== texto) restartAnimation(nodo, "is-tic");
 }
 
 function pintarAhorro() {

@@ -1975,6 +1975,8 @@ function resumenParaCompartir({ nombre, gastos, presupuesto, personas }, hoyIso 
   if (pctEfectivo > 0 && pctEfectivo < 100) {
     lineas.push(tr("compartir.pago", { tarjeta: tr("pct", { n: 100 - pctEfectivo }), efectivo: tr("pct", { n: pctEfectivo }) }));
   }
+  const cambio = cambioDelViaje(gastos);
+  if (cambio) lineas.push(tr("compartir.cambio", { tasa: textoCambio(cambio.tasa, cambio.from, cambio.to) }));
 
   const trozos = desglose(gastos);
   if (trozos.length > 1) {
@@ -2127,6 +2129,42 @@ function comisionesPagadas(gastos) {
     .filter((g) => g.to === principal.to)
     .reduce((suma, g) => suma + comisionDe(g), 0);
   return total >= 0.005 ? { total, to: principal.to } : null;
+}
+
+// A cuánto te ha salido el cambio, comisión incluida: lo que pagaste allí entre
+// lo que te costó aquí. Solo el par que más pesa, que yenes y wones juntos no
+// dan ninguna tasa. Con un gasto solo es la tasa de ese día, y eso ya lo sabes.
+function cambioDelViaje(gastos) {
+  const principal = sumarPorDivisa(gastos)[0];
+  if (!principal) return null;
+  const pares = new Map();
+  for (const g of gastos) {
+    if (g.to !== principal.to || g.from === g.to || !(g.valor > 0)) continue;
+    const par = pares.get(g.from) ?? { from: g.from, cantidad: 0, valor: 0, n: 0 };
+    par.cantidad += g.cantidad;
+    par.valor += g.valor;
+    par.n += 1;
+    pares.set(g.from, par);
+  }
+  const [par] = [...pares.values()].sort((a, b) => b.valor - a.valor);
+  if (!par || par.n < 2) return null;
+  return { from: par.from, to: principal.to, tasa: par.valor / par.cantidad, n: par.n };
+}
+
+// Del lado que da más de uno, que "1 EUR = 158,2 JPY" se lee y "1 JPY = 0,0063
+// EUR" no. Cuatro cifras bastan para ver la diferencia con la de hoy.
+function cifraCambio(tasa, from, to) {
+  if (!(tasa > 0)) return null;
+  const alReves = tasa < 1;
+  const valor = alReves ? 1 / tasa : tasa;
+  const decimales = Math.max(0, 3 - Math.floor(Math.log10(valor)));
+  const cifra = numeros({ minimumFractionDigits: decimales, maximumFractionDigits: decimales }).format(valor);
+  return alReves ? { uno: to, cifra, otra: from } : { uno: from, cifra, otra: to };
+}
+
+function textoCambio(tasa, from, to) {
+  const c = cifraCambio(tasa, from, to);
+  return c ? `1 ${c.uno} = ${c.cifra} ${c.otra}` : "";
 }
 
 // Lo que se habría quedado el banco si lo de efectivo hubiera ido con tarjeta.
@@ -2986,7 +3024,7 @@ if (typeof module !== "undefined") {
     divisaDeIdioma, parPorIdioma, banderaDe, banderaDivisa,
     HISTORIAL_MAX, leerHistorial, apuntarConversion, quitarConversion, haceCuanto, ultimoDeHoy, textoParaCopiar, fraseParaCopiar, gastoParaCopiar, totalParaCopiar, simboloDe, textoConSimbolo,
     celdaCsv, csvHistorial, csvGastos, csvViajes,
-    GASTOS_MAX, CONCEPTO_MAX, crearGasto, leerGastos, apuntarGasto, NOCHES_MAX, repartirCentimos, repartirNoches, apuntarNoches, quitarGasto, cambiarConcepto, cambiarDia, buscarGastos, trozosResaltados, repetirGasto, devolverGasto, devolverTodos, sumarPorDivisa, gastosPorDia, categoriaDelDia, pesoDeLosDias, ordenarPorImporte, masCarosDelDia, pesoDeLosGastos, RARO_VECES, mediana, gastoRaro, REPETIDO_MS, gastoRepetido, mediaPorDia, categoriasAlDia, mediaPorGasto, comisionesPagadas, pagadoEnEfectivo, ahorroEnEfectivo,
+    GASTOS_MAX, CONCEPTO_MAX, crearGasto, leerGastos, apuntarGasto, NOCHES_MAX, repartirCentimos, repartirNoches, apuntarNoches, quitarGasto, cambiarConcepto, cambiarDia, buscarGastos, trozosResaltados, repetirGasto, devolverGasto, devolverTodos, sumarPorDivisa, gastosPorDia, categoriaDelDia, pesoDeLosDias, ordenarPorImporte, masCarosDelDia, pesoDeLosGastos, RARO_VECES, mediana, gastoRaro, REPETIDO_MS, gastoRepetido, mediaPorDia, categoriasAlDia, mediaPorGasto, comisionesPagadas, cambioDelViaje, cifraCambio, textoCambio, pagadoEnEfectivo, ahorroEnEfectivo,
     RETIRADAS_MAX, leerRetiradas, crearRetirada, apuntarRetirada, quitarRetirada, efectivoQueda, EFECTIVO_POCO, tonoEfectivo, redondoDeCajero, cuantoSacar, loQueSobra, gastadoHoy, nombreDia,
     CATEGORIAS, CATEGORIA_POR_DEFECTO, adivinarCategoria, PAGOS, PAGO_POR_DEFECTO, leerPago, comisionDelPago, desglose, conceptosUsados, completarConcepto,
     EMOJI_CATEGORIA, destacados, resumenParaCompartir, FINDE_MINIMO, findeContraSemana, ESTRELLA_MINIMO, conceptoEstrella,

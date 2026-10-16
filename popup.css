@@ -3137,6 +3137,40 @@ body::after {
   display: none;
 }
 
+/* El cambio medio del viaje, con dos flechas que se cruzan en vez del punto. */
+.gastos__cambio {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 10px;
+  color: color-mix(in srgb, var(--brass) 70%, var(--muted));
+  font-variant-numeric: tabular-nums;
+  cursor: default;
+  animation: pop var(--mid) var(--ease-spring);
+}
+
+.gastos__cambio::before {
+  content: "⇄";
+  display: inline-block;
+  margin-right: 3px;
+  color: var(--brass);
+  text-shadow: 0 0 6px var(--brass-glow);
+  transition: transform var(--mid) var(--ease-spring);
+}
+
+.gastos__cambio:hover::before {
+  transform: rotate(180deg);
+}
+
+.gastos__cambio[hidden] {
+  display: none;
+}
+
+.gastos__cambio.is-tic {
+  animation: beat var(--mid) var(--ease-spring);
+}
+
 /* La otra cara de las comisiones: lo que no se ha llevado el banco. */
 .gastos__ahorro {
   display: block;
