@@ -168,6 +168,7 @@ const el = {
   nochesCada: document.getElementById("noches-cada"),
   hoyLleno: document.getElementById("hoy-lleno"),
   presupuestoTexto: document.getElementById("presupuesto-texto"),
+  presupuestoAlli: document.getElementById("presupuesto-alli"),
   presupuestoForm: document.getElementById("presupuesto-form"),
   presupuestoImporte: document.getElementById("presupuesto-importe"),
   presupuestoCodigo: document.getElementById("presupuesto-codigo"),
@@ -3178,13 +3179,14 @@ function pintarPresupuesto() {
   // Si a este ritmo no llegas, eso importa más que el "al día", que pasa al título.
   // Y "Quedan" a secas y sin divisa, que si no la fecha no cabe.
   const llega = hastaCuandoLlega(presupuesto, gastos);
+  const alli = llega ? pintarAlDiaAlli(null) : pintarAlDiaAlli(estado.porDia);
   const partes = estado.queda < 0
     ? [tr("presupuesto.pasado", { pasado: dinero(-estado.queda) })]
-    : llega
+    : llega || alli
       ? [tr("presupuesto.quedaCorto", { queda: nf.format(estado.queda) })]
       : [tr("presupuesto.queda", { queda: dinero(estado.queda) })];
   if (llega) partes.push(tr("presupuesto.llega", { fecha: fechaCorta(llega) }));
-  else if (estado.porDia !== null) partes.push(tr("presupuesto.alDia", { porDia: nf.format(estado.porDia) }));
+  else if (estado.porDia !== null && !alli) partes.push(tr("presupuesto.alDia", { porDia: nf.format(estado.porDia) }));
   el.presupuestoTexto.textContent = partes.join(" · ");
   // Antes de salir, el hueco del "Día 3/7" es para la cuenta atrás.
   const falta = dia ? null : cuentaAtras(presupuesto);
@@ -3199,6 +3201,7 @@ function pintarPresupuesto() {
   el.presupuestoVer.title = tr("presupuesto.titulo", {
     gastado: nf.format(estado.gastado), importe: dinero(presupuesto.importe), fecha: fechaLarga(presupuesto.hasta),
   });
+  if (alli) el.presupuestoVer.title += `\n${tr("presupuesto.alliTitulo", { porDia: dinero(estado.porDia), importe: alli })}`;
   if (llega) el.presupuestoVer.title += `\n${tr("presupuesto.llegaTitulo", { fecha: fechaLarga(llega), porDia: dinero(estado.porDia) })}`;
   if (falta !== null) el.presupuestoVer.title += `\n${tr(falta === 1 ? "presupuesto.saleManana" : "presupuesto.saleEl", { fecha: fechaLarga(presupuesto.desde), n: falta })}`;
   // La marca es hasta dónde deberías llevar gastado al acabar hoy, si fueras
@@ -3222,6 +3225,28 @@ function pintarPresupuesto() {
   if (antes && antes !== "pasado" && estado.tono === "pasado") restartAnimation(el.presupuestoVer, "is-alarma");
   if (antes === "bien" && estado.tono === "justo") restartAnimation(el.presupuestoVer, "is-justo");
   pintarLoQueSeLleva();
+}
+
+// Detrás de lo de al día, lo mismo en la divisa de allí, como la sugerencia del
+// cajero: solo si la de arriba va a la del presupuesto, que si no no tengo tasa.
+function pintarAlDiaAlli(porDia) {
+  const from = el.from.value;
+  const cantidad = el.to.value === presupuesto.to && from !== presupuesto.to ? alDiaAlli(porDia, rate) : null;
+  const nodo = el.presupuestoAlli;
+  const habia = nodo.dataset.clave;
+  nodo.hidden = cantidad === null;
+  if (cantidad === null) {
+    delete nodo.dataset.clave;
+    return null;
+  }
+  const importe = `${nfEntero.format(cantidad)} ${from}`;
+  nodo.dataset.clave = importe;
+  nodo.replaceChildren(
+    Object.assign(document.createElement("span"), { className: "presupuesto__alli-bandera", textContent: banderaDivisa(from) }),
+    tr("presupuesto.alli", { importe }),
+  );
+  if (habia && habia !== importe) restartAnimation(nodo, "is-tic");
+  return importe;
 }
 
 // La llama se aviva al aparecer y cuando cambia, no cada vez que se repinta.

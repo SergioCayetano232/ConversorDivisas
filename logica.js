@@ -2316,6 +2316,16 @@ function estadoPresupuesto(presupuesto, gastos, hoyIso = hoy()) {
   };
 }
 
+// Lo de al día en la divisa de allí, que es la de los precios que ves. A dos
+// cifras y hacia abajo: "≈ 4.700 JPY" se lee de un vistazo y así no te pasas.
+function alDiaAlli(porDia, tasa) {
+  if (!(porDia > 0) || !(tasa > 0)) return null;
+  const n = porDia / tasa;
+  const paso = n < 100 ? 1 : 10 ** (Math.floor(Math.log10(n)) - 1);
+  const cantidad = Math.floor(n / paso + 1e-9) * paso;
+  return cantidad > 0 ? cantidad : null;
+}
+
 // El día que sales. Si el presupuesto no lo trae, el del primer gasto, y si
 // aún no hay ninguno, hoy.
 function inicioDelViaje(presupuesto, gastos, hoyIso = hoy()) {
@@ -2982,7 +2992,7 @@ if (typeof module !== "undefined") {
     EMOJI_CATEGORIA, destacados, resumenParaCompartir, FINDE_MINIMO, findeContraSemana, ESTRELLA_MINIMO, conceptoEstrella,
     COPIA_APP, COPIA_VERSION, CLAVES_COPIA, limpiarCopia, crearCopia, leerCopia, resumenCopia,
     VIAJES_MAX, NOMBRE_VIAJE_MAX, leerViajes, leerPersonas, porPersona, compararViajes, COLORES_VIAJE, leerColorViaje, colorLibre, siguienteColor, viajeActivo, crearViaje, renombrarViaje, elegirViaje, borrarViaje, cambiarViaje, resumenViaje, archivoGastos,
-    diasHasta, leerPresupuesto, PRESUPUESTO_JUSTO, estadoPresupuesto, inicioDelViaje, diaDelViaje, cuentaAtras, textoCuentaAtras, loDeHoy, CELEBRADOS_MAX, leerCelebrados, anadirCelebrado, viajeParaCelebrar, textoCelebrar, RACHA_MINIMA, rachaPresupuesto, hastaCuandoLlega, loQueSeLleva, redondearDias,
+    diasHasta, leerPresupuesto, PRESUPUESTO_JUSTO, estadoPresupuesto, alDiaAlli, inicioDelViaje, diaDelViaje, cuentaAtras, textoCuentaAtras, loDeHoy, CELEBRADOS_MAX, leerCelebrados, anadirCelebrado, viajeParaCelebrar, textoCelebrar, RACHA_MINIMA, rachaPresupuesto, hastaCuandoLlega, loQueSeLleva, redondearDias,
     EXTRAS_MAX, EXTRAS_POR_DEFECTO, leerExtras, anadirExtra, quitarExtra,
     extrasVisibles, disponiblesParaAnadir, convertirExtras, semanaDe, trazoMini, CHULETA, escalaChuleta, chuleta, chuletaParaCompartir,
     urlImpresion, leerImpresion, chuletaParaImprimir,

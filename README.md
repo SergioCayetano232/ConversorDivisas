@@ -103,7 +103,8 @@ que necesitaba una conversión rápida. Ahora es un clic en la barra del navegad
 - Un presupuesto para el viaje: le dices cuánto quieres gastar, qué día sales y
   hasta qué día (si aún no has salido, lo de al día se reparte entre los días del viaje),
   y una barra te enseña lo que llevas (verde, dorada pasado el 80 %, roja si te
-  pasas) y cuánto te queda al día. Antes de apuntar un gasto, sale a rayas en
+  pasas) y cuánto te queda al día, también en la divisa de allí ("🇯🇵 ≈ 8.600
+  JPY/día"), que es la de los precios que ves. Antes de apuntar un gasto, sale a rayas en
   la barra lo que se llevaría y cuántos días de presupuesto son ("≈ 0,6 días"). Al lado, en qué
   día del viaje vas ("Día 3/7"), y una marca en la barra con lo que llevarías
   gastado hoy yendo parejo: si la pasas, vas rápido. Cuando un gasto te lleva

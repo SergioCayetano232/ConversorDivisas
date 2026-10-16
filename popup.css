@@ -4518,6 +4518,39 @@ body::after {
   transition: color var(--mid) var(--ease);
 }
 
+/* Lo de al día en la divisa de allí: más bajito que el texto, que es una ayuda
+   para la tienda y no la cifra que manda. */
+.presupuesto__alli {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  flex-shrink: 0;
+  padding: 0 5px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--tono) 10%, transparent);
+  font-family: var(--font-mono);
+  font-size: 9px;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  color: var(--tono);
+  opacity: 0.85;
+  animation: pop var(--mid) var(--ease-spring);
+}
+
+/* Mientras escribes una cantidad manda lo que se llevaría, y no caben los dos. */
+.presupuesto__fila:has(.presupuesto__esto-texto:not(:empty)) .presupuesto__alli {
+  display: none;
+}
+
+.presupuesto__alli-bandera {
+  font-size: 10px;
+  line-height: 1;
+}
+
+.presupuesto__alli.is-tic {
+  animation: beat var(--mid) var(--ease-spring);
+}
+
 .presupuesto__ver:hover .presupuesto__texto {
   text-decoration: underline dotted;
   text-underline-offset: 2px;
