@@ -5354,8 +5354,11 @@ body::after {
   animation: beat var(--mid) var(--ease-spring);
 }
 
+/* Con el scroll de lado, el panel la encogía a lo alto cuando iba lleno y las
+   pastillas salían cortadas. Que ceda la lista, que tiene su scroll. */
 .desglose {
   display: flex;
+  flex-shrink: 0;
   gap: 4px;
   margin: -2px 0 var(--s-2);
   overflow-x: auto;
