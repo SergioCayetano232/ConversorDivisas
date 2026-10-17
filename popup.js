@@ -4061,6 +4061,9 @@ function pintarViajes() {
   el.viajesLleno.textContent = tr("viajes.lleno", { n: VIAJES_MAX });
   el.viajesDuplicar.title = tr("viajes.duplicar", { nombre: nombreViaje(viajeActivo(viajes)) });
   el.viajesDuplicar.setAttribute("aria-label", el.viajesDuplicar.title);
+  // Lo de arriba suele ser la divisa de allí: el nombre ya lo tengo.
+  const sugerido = nombreDeDestino(el.from.value, viajes.lista);
+  el.viajesNombre.placeholder = sugerido ? tr("viajes.nuevoDe", { nombre: sugerido }) : tr("viajes.nuevo");
   // Con un viaje solo es el CSV de abajo otra vez.
   el.viajesPie.hidden = viajes.lista.length < 2 || !viajes.lista.some((v) => v.gastos.length > 0);
 }
@@ -4117,7 +4120,7 @@ function onElegirViaje(id) {
 function onCrearViaje(event) {
   event.preventDefault();
   const id = `${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`;
-  const nuevos = crearViaje(viajes, id, el.viajesNombre.value);
+  const nuevos = crearViaje(viajes, id, el.viajesNombre.value.trim() || nombreDeDestino(el.from.value, viajes.lista));
   if (nuevos === viajes) {
     restartAnimation(el.viajesNombre, "is-mal");
     el.viajesNombre.focus();

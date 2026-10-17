@@ -1904,6 +1904,19 @@ function nombreCopia(nombre, lista) {
   }
 }
 
+// El nombre del viaje nuevo, si no escribes otro: el país de la divisa de allí,
+// con su bandera. Con el euro no: no dice a qué país vas.
+function nombreDeDestino(code, lista = []) {
+  if (!isValidCode(code) || code === "EUR") return "";
+  const region = code.slice(0, 2);
+  const nombres = (style) => new Intl.DisplayNames([localeActual()], { type: "region", style }).of(region);
+  // "RAE de Hong Kong (China)" no cabe; el corto se queda en "Hong Kong".
+  const largo = nombres("long");
+  const pais = /\(|SAR/.test(largo) ? nombres("short") : largo;
+  const nombre = limpiarNombreViaje(`${banderaDivisa(code)} ${pais}`);
+  return lista.some((v) => v.nombre === nombre) ? nombreCopia(nombre, lista) : nombre;
+}
+
 // Para la escapada que repites: el presupuesto y la gente, sin un solo gasto.
 // Las fechas del otro ya pasaron, así que empieza hoy y dura lo mismo. Con otro
 // color, que si no no sabrías en cuál apuntas.
@@ -3314,7 +3327,7 @@ if (typeof module !== "undefined") {
     CATEGORIAS, CATEGORIA_POR_DEFECTO, adivinarCategoria, PAGOS, PAGO_POR_DEFECTO, leerPago, comisionDelPago, desglose, conceptosUsados, completarConcepto,
     EMOJI_CATEGORIA, destacados, resumenParaCompartir, FINDE_MINIMO, findeContraSemana, ESTRELLA_MINIMO, conceptoEstrella,
     COPIA_APP, COPIA_VERSION, CLAVES_COPIA, limpiarCopia, crearCopia, leerCopia, resumenCopia,
-    VIAJES_MAX, NOMBRE_VIAJE_MAX, leerViajes, leerPersonas, porPersona, compararViajes, COLORES_VIAJE, leerColorViaje, colorLibre, siguienteColor, viajeActivo, crearViaje, nombreCopia, duplicarViaje, renombrarViaje, elegirViaje, borrarViaje, cambiarViaje, resumenViaje, archivoGastos,
+    VIAJES_MAX, NOMBRE_VIAJE_MAX, leerViajes, leerPersonas, porPersona, compararViajes, COLORES_VIAJE, leerColorViaje, colorLibre, siguienteColor, viajeActivo, crearViaje, nombreCopia, nombreDeDestino, duplicarViaje, renombrarViaje, elegirViaje, borrarViaje, cambiarViaje, resumenViaje, archivoGastos,
     diasHasta, leerPresupuesto, PRESUPUESTO_JUSTO, estadoPresupuesto, alDiaAlli, inicioDelViaje, diaDelViaje, cuentaAtras, textoCuentaAtras, loDeHoy, CELEBRADOS_MAX, leerCelebrados, anadirCelebrado, viajeParaCelebrar, textoCelebrar, RACHA_MINIMA, rachaPresupuesto, hastaCuandoLlega, previsionViaje, PREVISION_JUSTA, textoPrevision, loQueSeLleva, redondearDias,
     EXTRAS_MAX, EXTRAS_POR_DEFECTO, leerExtras, anadirExtra, quitarExtra,
     extrasVisibles, disponiblesParaAnadir, convertirExtras, semanaDe, trazoMini, CHULETA, escalaChuleta, chuleta, TRUCO_TOLERANCIA, trucoDeCabeza, textoTruco, tituloTruco, chuletaParaCompartir, extrasParaCompartir,

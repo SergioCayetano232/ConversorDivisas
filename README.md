@@ -59,7 +59,8 @@ que necesitaba una conversión rápida. Ahora es un clic en la barra del navegad
   fondo en cada uno que dice lo que pesa al lado del que más
 - Varios viajes, cada uno con sus gastos y su presupuesto: pulsando el nombre
   del viaje, arriba del panel, cambias de uno a otro, ves cuánto llevas en
-  cada uno y empiezas otro ("Japón", "Lisboa"). Se les cambia el nombre con el
+  cada uno y empiezas otro ("Japón", "Lisboa"). Si no le pones nombre, coge
+  el país de la divisa de arriba, con su bandera ("🇯🇵 Japón"). Se les cambia el nombre con el
   lápiz, y para borrar uno hay que darle dos veces. Con el botón de las dos
   hojas, al lado del +, empiezas uno como el que tienes abierto, con su
   presupuesto y la gente pero sin gastos, para la escapada que repites: empieza
