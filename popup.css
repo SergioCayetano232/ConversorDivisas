@@ -4396,6 +4396,24 @@ body::after {
   }
 }
 
+/* Lo que llevarías al acabar el viaje a este ritmo: el mismo color, apagado. Si
+   te vas a pasar, en rojo, que se vea antes de que pase. */
+.presupuesto__ritmo {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 0;
+  background: var(--tono);
+  opacity: 0.3;
+  transition: width var(--slow) var(--ease-out), left var(--slow) var(--ease-spring),
+    background-color var(--mid) var(--ease);
+}
+
+.presupuesto__ritmo.is-pasa {
+  --tono: var(--cinnabar);
+  opacity: 0.5;
+}
+
 /* El gasto que vas a apuntar, a rayas detrás de lo ya gastado. Las rayas
    corren despacio para que se note que aún no está. */
 .presupuesto__esto {

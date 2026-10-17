@@ -2613,6 +2613,39 @@ function hastaCuandoLlega(presupuesto, gastos, hoyIso = hoy()) {
   return isoLocal(new Date(a, m - 1, d + llega));
 }
 
+// Cuánto habrás gastado al acabar si sigues así. Lo ya apuntado para días que
+// vienen (las noches del hotel) cuenta tal cual, y su categoría no entra en el
+// ritmo: si no, el hotel saldría dos veces.
+function previsionViaje(presupuesto, gastos, hoyIso = hoy()) {
+  const dia = diaDelViaje(presupuesto, gastos, hoyIso);
+  // El primer día no, por lo mismo que arriba, y el último ya no hay nada que prever.
+  if (!dia || dia.dia < 2 || dia.dia >= dia.total) return null;
+  const suyos = gastos.filter((g) => g.to === presupuesto.to);
+  const esFuturo = (g) => isoLocal(new Date(g.cuando)) > hoyIso;
+  const yaPagadas = new Set(suyos.filter(esFuturo).map((g) => g.categoria));
+  let gastado = 0;
+  let ritmo = 0;
+  for (const g of suyos) {
+    gastado += g.valor;
+    if (!esFuturo(g) && !yaPagadas.has(g.categoria)) ritmo += g.valor / dia.dia;
+  }
+  const total = gastado + ritmo * (dia.total - dia.dia);
+  return { total, sobra: presupuesto.importe - total, fraccion: total / presupuesto.importe, to: presupuesto.to };
+}
+
+// Por debajo de un 2 % del presupuesto lo doy por clavado: es una previsión, no
+// una cuenta.
+const PREVISION_JUSTA = 0.02;
+
+function textoPrevision(prevision, importe) {
+  if (!prevision) return "";
+  const entero = numeros({ maximumFractionDigits: 0 });
+  const total = `${entero.format(prevision.total)} ${prevision.to}`;
+  if (Math.abs(prevision.sobra) < importe * PREVISION_JUSTA) return tr("prevision.justo", { total });
+  const diferencia = entero.format(Math.abs(prevision.sobra));
+  return tr(prevision.sobra > 0 ? "prevision.sobra" : "prevision.pasa", { total, diferencia });
+}
+
 // Lo que se llevaría el gasto que vas a apuntar: qué trozo del presupuesto y
 // cuántos días de lo que te queda al día. En otra divisa no cuenta, igual que arriba.
 function loQueSeLleva(presupuesto, gastos, gasto, hoyIso = hoy()) {
@@ -3192,7 +3225,7 @@ if (typeof module !== "undefined") {
     EMOJI_CATEGORIA, destacados, resumenParaCompartir, FINDE_MINIMO, findeContraSemana, ESTRELLA_MINIMO, conceptoEstrella,
     COPIA_APP, COPIA_VERSION, CLAVES_COPIA, limpiarCopia, crearCopia, leerCopia, resumenCopia,
     VIAJES_MAX, NOMBRE_VIAJE_MAX, leerViajes, leerPersonas, porPersona, compararViajes, COLORES_VIAJE, leerColorViaje, colorLibre, siguienteColor, viajeActivo, crearViaje, nombreCopia, duplicarViaje, renombrarViaje, elegirViaje, borrarViaje, cambiarViaje, resumenViaje, archivoGastos,
-    diasHasta, leerPresupuesto, PRESUPUESTO_JUSTO, estadoPresupuesto, alDiaAlli, inicioDelViaje, diaDelViaje, cuentaAtras, textoCuentaAtras, loDeHoy, CELEBRADOS_MAX, leerCelebrados, anadirCelebrado, viajeParaCelebrar, textoCelebrar, RACHA_MINIMA, rachaPresupuesto, hastaCuandoLlega, loQueSeLleva, redondearDias,
+    diasHasta, leerPresupuesto, PRESUPUESTO_JUSTO, estadoPresupuesto, alDiaAlli, inicioDelViaje, diaDelViaje, cuentaAtras, textoCuentaAtras, loDeHoy, CELEBRADOS_MAX, leerCelebrados, anadirCelebrado, viajeParaCelebrar, textoCelebrar, RACHA_MINIMA, rachaPresupuesto, hastaCuandoLlega, previsionViaje, PREVISION_JUSTA, textoPrevision, loQueSeLleva, redondearDias,
     EXTRAS_MAX, EXTRAS_POR_DEFECTO, leerExtras, anadirExtra, quitarExtra,
     extrasVisibles, disponiblesParaAnadir, convertirExtras, semanaDe, trazoMini, CHULETA, escalaChuleta, chuleta, TRUCO_TOLERANCIA, trucoDeCabeza, textoTruco, tituloTruco, chuletaParaCompartir, extrasParaCompartir,
     urlImpresion, leerImpresion, chuletaParaImprimir,

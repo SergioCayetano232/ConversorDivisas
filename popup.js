@@ -158,6 +158,7 @@ const el = {
   presupuestoAnadir: document.getElementById("presupuesto-anadir"),
   presupuestoVer: document.getElementById("presupuesto-ver"),
   presupuestoLleno: document.getElementById("presupuesto-lleno"),
+  presupuestoRitmo: document.getElementById("presupuesto-ritmo"),
   presupuestoHoy: document.getElementById("presupuesto-hoy"),
   presupuestoDia: document.getElementById("presupuesto-dia"),
   presupuestoRacha: document.getElementById("presupuesto-racha"),
@@ -3341,6 +3342,8 @@ function pintarPresupuesto() {
   if (alli) el.presupuestoVer.title += `\n${tr("presupuesto.alliTitulo", { porDia: dinero(estado.porDia), importe: alli })}`;
   if (llega) el.presupuestoVer.title += `\n${tr("presupuesto.llegaTitulo", { fecha: fechaLarga(llega), porDia: dinero(estado.porDia) })}`;
   if (falta !== null) el.presupuestoVer.title += `\n${tr(falta === 1 ? "presupuesto.saleManana" : "presupuesto.saleEl", { fecha: fechaLarga(presupuesto.desde), n: falta })}`;
+  const prevision = previsionViaje(presupuesto, gastos);
+  if (prevision) el.presupuestoVer.title += `\n${textoPrevision(prevision, presupuesto.importe)}`;
   // La marca es hasta dónde deberías llevar gastado al acabar hoy, si fueras
   // parejo. El último día no la pongo: estaría pegada al final y no dice nada.
   const marca = dia && dia.dia < dia.total;
@@ -3356,6 +3359,12 @@ function pintarPresupuesto() {
   const leido = !el.presupuestoDia.hidden ? `${el.presupuestoDia.textContent}. ${el.presupuestoTexto.textContent}` : el.presupuestoTexto.textContent;
   el.presupuestoVer.setAttribute("aria-label", `${leido}. ${el.presupuestoVer.title}`);
   el.presupuestoLleno.style.width = `${Math.min(estado.fraccion, 1) * 100}%`;
+  // Detrás de lo gastado, una sombra hasta donde llegarías al acabar.
+  const lleno = Math.min(estado.fraccion, 1);
+  const hasta = prevision ? Math.min(prevision.fraccion, 1) : lleno;
+  el.presupuestoRitmo.style.left = `${lleno * 100}%`;
+  el.presupuestoRitmo.style.width = `${Math.max(hasta - lleno, 0) * 100}%`;
+  el.presupuestoRitmo.classList.toggle("is-pasa", Boolean(prevision) && prevision.fraccion > 1 + PREVISION_JUSTA);
   // El temblor solo al pasarte, no cada vez que abres el panel ya pasado.
   const antes = el.presupuestoVer.dataset.tono;
   el.presupuestoVer.dataset.tono = estado.tono;

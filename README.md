@@ -116,7 +116,10 @@ que necesitaba una conversión rápida. Ahora es un clic en la barra del navegad
   JPY/día"), que es la de los precios que ves. Antes de apuntar un gasto, sale a rayas en
   la barra lo que se llevaría y cuántos días de presupuesto son ("≈ 0,6 días"). Al lado, en qué
   día del viaje vas ("Día 3/7"), y una marca en la barra con lo que llevarías
-  gastado hoy yendo parejo: si la pasas, vas rápido. Cuando un gasto te lleva
+  gastado hoy yendo parejo: si la pasas, vas rápido. Detrás de lo gastado, una
+  sombra hasta donde llegarás al acabar el viaje a este ritmo, en rojo si te vas a
+  pasar, y pasando el ratón, cuánto ("acabarás gastando unos 735 EUR: te pasarás
+  35"). Las noches de hotel ya apuntadas cuentan una vez, no dos. Cuando un gasto te lleva
   al 80 % o te pasas, te salta una notificación, y la barra da un latido con
   un brillo dorado. Arriba, una llamita con los días seguidos que llevas
   gastando lo que toca o menos ("🔥 3"), y un aro que se va cerrando con lo que
