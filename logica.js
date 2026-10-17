@@ -2941,6 +2941,28 @@ function tituloHoy(viaje, hoyIso = hoy()) {
   return gastado ? tr("insignia.hoy", { gastado: `${dinero(gastado.total)} ${gastado.to}`, viaje: nombre }) : "";
 }
 
+// "cd 75f" en la barra: el tiempo de allí, que en Estados Unidos va en
+// Fahrenheit. Con signo, que en invierno hace falta, y coma o punto.
+const HAY_GRADOS = /^\s*([-−]?)\s*(\d+(?:[.,]\d+)?)\s*[°º]?\s*(f|c|fahrenheit|celsius)\s*$/i;
+
+function leerGrados(texto) {
+  const m = String(texto ?? "").match(HAY_GRADOS);
+  if (!m) return null;
+  const valor = Number(m[2].replace(",", ".")) * (m[1] ? -1 : 1);
+  return { valor, de: m[3][0].toLowerCase() };
+}
+
+function convertirGrados({ valor, de }) {
+  return de === "f" ? { valor: ((valor - 32) * 5) / 9, a: "c" } : { valor: (valor * 9) / 5 + 32, a: "f" };
+}
+
+function textoGrados(leido) {
+  if (!leido) return "";
+  const grados = (n, u) => `${numeros({ maximumFractionDigits: 1 }).format(Math.abs(n) < 0.05 ? 0 : n)} °${u.toUpperCase()}`;
+  const otro = convertirGrados(leido);
+  return `${grados(leido.valor, leido.de)} = ${grados(otro.valor, otro.a)}`;
+}
+
 // "cd hoy" en la barra: cómo vas sin abrir nada. Arriba lo de hoy, y detrás el
 // total del viaje y lo que queda del presupuesto.
 const esHoyBarra = (texto) => /^\s*(hoy|today)\s*$/i.test(String(texto ?? ""));
@@ -3304,7 +3326,7 @@ if (typeof module !== "undefined") {
     MARGENES, tasaOfrecida, analizarCambio,
     domingoDePascua, hayTasaEl, tasaVieja, textoTasaVieja, horaBce, textoActualizado, proximaTasa, textoProximaTasa,
     FECHA_MINIMA, fechaLarga, fechaValida, diaDelGrafico, mesesAtras, FECHAS_RAPIDAS, leerFecha, cambioDesde, notaDiaHabil,
-    textoInsignia, cambioDiario, sentidoDe, cambioDelDia, textoCambioDia, ULTIMA_VEZ_MINIMO, desdeLaUltimaVez, ultimoVisto, tituloInsignia, tituloHoy, esHoyBarra, resumenHoyBarra, lineaTasa,
+    textoInsignia, cambioDiario, sentidoDe, cambioDelDia, textoCambioDia, ULTIMA_VEZ_MINIMO, desdeLaUltimaVez, ultimoVisto, tituloInsignia, tituloHoy, leerGrados, convertirGrados, textoGrados, esHoyBarra, resumenHoyBarra, lineaTasa,
     AVISOS_MAX, AVISO_PCT_MAX, sentidoAviso, crearAviso, leerPorcentajeAviso, crearAvisoPorcentaje, leerAvisos, avisoCumplido, repartirAvisos, mensajeAviso, faltaParaAviso, cercaniaAviso, textoFalta,
     nivelPresupuesto, avisosPresupuesto, mensajePresupuesto,
     RECORDATORIO_HORA, RECORDATORIO_HORAS, leerHoraRecordatorio, viajesSinApuntar, tocaRecordar, mensajeRecordatorio,

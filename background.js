@@ -466,6 +466,12 @@ async function sugerirEnBarra(texto, sugerir) {
   await idiomaListo;
   if (/^\s*\+/.test(texto)) return sugerirGasto(texto, sugerir, actual);
   if (esHoyBarra(texto)) return sugerirHoy(sugerir, actual);
+  const grados = leerGrados(texto);
+  if (grados) {
+    sugerir([]);
+    chrome.omnibox.setDefaultSuggestion({ description: `<match>${escaparXml(textoGrados(grados))}</match>` });
+    return;
+  }
   const leido = leerOmnibox(texto, await leerPar());
   if (actual !== barraId) return;
   if (!leido) {
@@ -513,6 +519,8 @@ async function abrirDesdeBarra(texto) {
     await abrirConGastos();
     return;
   }
+  // Los grados ya están en la sugerencia: no hay nada que abrir.
+  if (leerGrados(texto)) return;
   const leido = leerOmnibox(texto, await leerPar());
   if (leido) await chrome.storage.session.set({ pendiente: leido });
   try {
