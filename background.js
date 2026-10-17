@@ -116,7 +116,10 @@ chrome.alarms.onAlarm.addListener((alarma) => {
 // El popup guarda el par al cambiarlo; con esto el icono cambia a la vez.
 chrome.storage.onChanged.addListener((cambios, zona) => {
   if (zona !== "local") return;
-  if (cambios.viajes) revisarPresupuesto(cambios.viajes.oldValue, cambios.viajes.newValue);
+  if (cambios.viajes) {
+    revisarPresupuesto(cambios.viajes.oldValue, cambios.viajes.newValue);
+    ponerTitulo();
+  }
   if (cambios[IDIOMA_KEY]) {
     idiomaListo = aplicarIdioma();
     crearMenus();
@@ -158,7 +161,7 @@ async function actualizarInsignia() {
 
   if (!insigniaActiva || par.from === par.to) {
     await chrome.action.setBadgeText({ text: "" });
-    await chrome.action.setTitle({ title: TITULO });
+    await ponerTitulo("");
     return;
   }
 
@@ -174,7 +177,7 @@ async function actualizarInsignia() {
     const antes = await chrome.action.getBadgeText({});
 
     await chrome.action.setBadgeTextColor({ color: "#0B0E13" });
-    await chrome.action.setTitle({ title: `${tituloInsignia(par, rate, cambio, puntos[puntos.length - 1].fecha)}\n${TITULO}` });
+    await ponerTitulo(tituloInsignia(par, rate, cambio, puntos[puntos.length - 1].fecha));
     await chrome.action.setBadgeText({ text: texto });
     // Si la cifra ha cambiado, un destello en blanco antes del color: es el
     // latido de la cifra del popup, pero en el icono.
@@ -188,6 +191,21 @@ async function actualizarInsignia() {
     // Sin conexión me quedo con lo que hubiera: la tasa de hace una hora sigue
     // siendo mejor que un icono vacío.
     console.warn("No se pudo actualizar la insignia", error);
+  }
+}
+
+// La línea de la tasa se queda en la sesión: al apuntar un gasto rehago el
+// título con lo de hoy sin volver a pedir la tasa a la red.
+async function ponerTitulo(lineaTasa) {
+  try {
+    if (lineaTasa === undefined) ({ tituloTasa: lineaTasa = "" } = await chrome.storage.session.get("tituloTasa"));
+    else await chrome.storage.session.set({ tituloTasa: lineaTasa });
+    await idiomaListo;
+    const { viajes } = await chrome.storage.local.get("viajes");
+    const deHoy = viajes ? tituloHoy(viajeActivo(leerViajes(viajes))) : "";
+    await chrome.action.setTitle({ title: [lineaTasa, deHoy, TITULO].filter(Boolean).join("\n") });
+  } catch (error) {
+    console.warn("No se pudo poner el título", error);
   }
 }
 

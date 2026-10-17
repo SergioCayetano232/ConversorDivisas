@@ -604,6 +604,8 @@ const TEXTOS = {
 
     "insignia.cambio": "{tasa} · {cambio} desde el día anterior",
     "insignia.fecha": "Tasa del BCE del {fecha}",
+    "insignia.hoy": "Hoy llevas {gastado} en {viaje}",
+    "insignia.hoyDe": "Hoy llevas {gastado} de {toca} {to} en {viaje}",
     "menu.convertir": "Convertir «%s»",
     "menu.gastos": "Gastos del viaje",
     "menu.insignia": "Mostrar la tasa en el icono",
@@ -1244,6 +1246,8 @@ const TEXTOS = {
 
     "insignia.cambio": "{tasa} · {cambio} since the previous day",
     "insignia.fecha": "ECB rate from {fecha}",
+    "insignia.hoy": "Today: {gastado} on {viaje}",
+    "insignia.hoyDe": "Today: {gastado} of {toca} {to} on {viaje}",
     "menu.convertir": "Convert “%s”",
     "menu.gastos": "Trip expenses",
     "menu.insignia": "Show the rate on the icon",

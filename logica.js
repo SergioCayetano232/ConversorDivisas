@@ -2927,6 +2927,20 @@ function tituloInsignia(par, rate, cambio, fecha = null) {
   return fecha ? `${linea}\n${tr("insignia.fecha", { fecha: fechaCorta(fecha) })}` : linea;
 }
 
+// Lo de hoy del viaje abierto, para verlo pasando el ratón por el icono. Con
+// presupuesto y de viaje, contra lo que toca hoy; si no, lo gastado a secas.
+function tituloHoy(viaje, hoyIso = hoy()) {
+  if (!viaje) return "";
+  const dinero = (n) => numeros({ minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(n);
+  const nombre = viaje.nombre || tr("viajes.sinNombre");
+  const deHoy = loDeHoy(viaje.presupuesto, viaje.gastos, hoyIso);
+  if (deHoy) {
+    return tr("insignia.hoyDe", { gastado: dinero(deHoy.gastado), toca: dinero(deHoy.toca), to: viaje.presupuesto.to, viaje: nombre });
+  }
+  const gastado = gastadoHoy(viaje.gastos, hoyIso);
+  return gastado ? tr("insignia.hoy", { gastado: `${dinero(gastado.total)} ${gastado.to}`, viaje: nombre }) : "";
+}
+
 // Cuatro caben en dos filas de la pestaña sin que el popup crezca.
 const AVISOS_MAX = 4;
 
@@ -3264,7 +3278,7 @@ if (typeof module !== "undefined") {
     MARGENES, tasaOfrecida, analizarCambio,
     domingoDePascua, hayTasaEl, tasaVieja, textoTasaVieja, horaBce, textoActualizado, proximaTasa, textoProximaTasa,
     FECHA_MINIMA, fechaLarga, fechaValida, diaDelGrafico, mesesAtras, FECHAS_RAPIDAS, leerFecha, cambioDesde, notaDiaHabil,
-    textoInsignia, cambioDiario, sentidoDe, cambioDelDia, textoCambioDia, ULTIMA_VEZ_MINIMO, desdeLaUltimaVez, ultimoVisto, tituloInsignia, lineaTasa,
+    textoInsignia, cambioDiario, sentidoDe, cambioDelDia, textoCambioDia, ULTIMA_VEZ_MINIMO, desdeLaUltimaVez, ultimoVisto, tituloInsignia, tituloHoy, lineaTasa,
     AVISOS_MAX, AVISO_PCT_MAX, sentidoAviso, crearAviso, leerPorcentajeAviso, crearAvisoPorcentaje, leerAvisos, avisoCumplido, repartirAvisos, mensajeAviso, faltaParaAviso, cercaniaAviso, textoFalta,
     nivelPresupuesto, avisosPresupuesto, mensajePresupuesto,
     RECORDATORIO_HORA, RECORDATORIO_HORAS, leerHoraRecordatorio, viajesSinApuntar, tocaRecordar, mensajeRecordatorio,

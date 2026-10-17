@@ -238,7 +238,9 @@ que necesitaba una conversión rápida. Ahora es un clic en la barra del navegad
   ("BCE hoy 16:00", a tu hora) y, pasando el ratón, cuándo sale la siguiente
 - La tasa de tu par en el propio icono de la barra, en verde si ha subido desde
   el día anterior, en rojo si ha bajado. Se actualiza cada hora; si no la
-  quieres, clic derecho en el icono y la quitas
+  quieres, clic derecho en el icono y la quitas. Pasando el ratón por el icono,
+  lo que llevas gastado hoy en el viaje ("Hoy llevas 42,00 de 100,00 EUR en
+  Japón"), que cambia en cuanto apuntas algo
 - Avisos de tasa: pones a cuánto quieres que llegue ("avísame si el dólar pasa
   de 1,15") y te salta una notificación cuando pase, aunque tengas el popup
   cerrado. Hasta cuatro a la vez. También vale un porcentaje: con "2 %" te
