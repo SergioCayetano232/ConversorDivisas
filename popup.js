@@ -210,6 +210,7 @@ const el = {
   comisionCampo: document.getElementById("comision-campo"),
   chuletaTabla: document.getElementById("chuleta-tabla"),
   chuletaCompartir: document.getElementById("chuleta-compartir"),
+  chuletaTruco: document.getElementById("chuleta-truco"),
   extrasCompartir: document.getElementById("extras-compartir"),
   chuletaImprimir: document.getElementById("chuleta-imprimir"),
   semana: document.getElementById("trend-semana"),
@@ -1607,6 +1608,10 @@ function pintarChuleta() {
   const filas = chuleta(rate, comision);
   el.chuletaCompartir.disabled = filas[0].valor === null;
   el.chuletaImprimir.disabled = filas[0].valor === null;
+  // Con la comisión dentro, que si no el truco y la tabla no dirían lo mismo.
+  const truco = trucoDeCabeza(conComision(rate, comision));
+  el.chuletaTruco.textContent = textoTruco(truco);
+  el.chuletaTruco.title = tituloTruco(truco);
   const tuya = cantidadOrigen();
   if (el.chuletaTabla.children.length !== filas.length) {
     el.chuletaTabla.replaceChildren(...filas.map(crearFilaChuleta));

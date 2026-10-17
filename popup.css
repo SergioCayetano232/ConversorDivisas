@@ -6423,8 +6423,28 @@ body::after {
 .chuleta__pie {
   display: flex;
   justify-content: flex-end;
+  align-items: center;
   gap: 4px;
   margin-top: 5px;
+}
+
+/* El truco de cabeza, a la izquierda de los botones. */
+.chuleta__truco {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  color: var(--muted);
+  font-size: 10px;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  cursor: help;
+}
+
+/* El emoji algo más pequeño: con "Quita 3 ceros, ÷ 7,5" va justo. */
+.chuleta__truco:not(:empty)::before {
+  content: "🧠";
+  margin-right: 3px;
+  font-size: 8px;
 }
 
 /* La impresora: al pasar por encima asoma el papel. */

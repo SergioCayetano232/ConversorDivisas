@@ -201,7 +201,9 @@ que necesitaba una conversión rápida. Ahora es un clic en la barra del navegad
 - Una chuleta de viaje en otra pestaña: 1, 5, 10, 20, 50 y 100 en las dos
   divisas, para mirar precios de un vistazo. Si la divisa es muy pequeña (yenes,
   rupias…) empieza en 100 o en 10.000, que si no la tabla no sirve. Pulsando una
-  fila la pones como cantidad. Con el botón de **WhatsApp** la copias en
+  fila la pones como cantidad. Abajo, el truco para hacerlo de cabeza en la
+  tienda ("Quítale un 10 %", "Quita 3 ceros, × 6"), el más fácil que no se
+  aparte más de un 4 %; pasando el ratón, cuánto se aparta. Con el botón de **WhatsApp** la copias en
   columna, lista para pegar en el grupo del viaje, y con **Imprimir** te la
   llevas en papel: sale del tamaño de una tarjeta de crédito, por un lado los
   precios de allí y por el otro lo que te dan por lo tuyo, para recortarla,

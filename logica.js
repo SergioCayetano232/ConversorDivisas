@@ -809,6 +809,69 @@ function chuleta(rate, comision = 0) {
   return CHULETA.map((n) => ({ cantidad: n * escala, valor: hay ? conComision(n * escala * rate, comision) : null }));
 }
 
+// En la tienda no vas a sacar el móvil para cada precio. Busco la cuenta más
+// fácil que no se aparte más de un 4 %: antes "quítale un 10 %" que "por 0,92".
+const TRUCO_TOLERANCIA = 0.04;
+
+function candidatosTruco(rate) {
+  const lista = [{ tipo: "igual", factor: 1, nivel: 0 }];
+  for (let pct = 5; pct <= 30; pct += 5) {
+    lista.push({ tipo: "mas", pct, factor: 1 + pct / 100, nivel: 1 });
+    lista.push({ tipo: "menos", pct, factor: 1 - pct / 100, nivel: 1 });
+  }
+  const k = Math.floor(Math.log10(rate));
+  for (let e = k - 1; e <= k + 1; e++) {
+    // Quitar ceros y luego multiplicar es un paso más que multiplicar sin más.
+    for (let d = 1; d <= 9; d++) lista.push({ tipo: "por", d, e, factor: d * 10 ** e, nivel: d === 1 ? 1 : e < 0 ? 2.5 : 2 });
+  }
+  for (let d = 10; d <= 99; d++) lista.push({ tipo: "por", d, e: k - 1, factor: d * 10 ** (k - 1), nivel: 4 });
+  // Dividir solo entre números de 1,5 para arriba: "divide entre 0,2" no lo hace nadie.
+  const kq = Math.floor(Math.log10(1 / rate));
+  for (let e = Math.max(0, kq - 1); e <= kq + 1; e++) {
+    // Mitades solo por debajo de 10: "entre 7,5" sí, "entre 12,5" ya no.
+    for (let d = 1.5; d <= 20; d += d < 10 ? 0.5 : 1) {
+      const nivel = !Number.isInteger(d) ? 3.5 : d < 10 ? 2 : 3;
+      lista.push({ tipo: "entre", d, e, factor: 1 / (d * 10 ** e), nivel });
+    }
+  }
+  return lista;
+}
+
+function trucoDeCabeza(rate) {
+  if (!Number.isFinite(rate) || rate <= 0) return null;
+  const lista = candidatosTruco(rate).map((c) => ({ ...c, desvio: c.factor / rate - 1 }));
+  const buenos = lista.filter((c) => Math.abs(c.desvio) <= TRUCO_TOLERANCIA);
+  // Si ninguno entra en el 4 % (pasa con 1,05 o 10,5), el que menos se aparte.
+  if (buenos.length === 0) return lista.reduce((a, b) => (Math.abs(b.desvio) < Math.abs(a.desvio) ? b : a));
+  return buenos.reduce((a, b) =>
+    b.nivel < a.nivel || (b.nivel === a.nivel && Math.abs(b.desvio) < Math.abs(a.desvio)) ? b : a);
+}
+
+function textoTruco(truco) {
+  if (!truco) return "";
+  const { tipo, d, e } = truco;
+  if (tipo === "igual") return tr("truco.igual");
+  if (tipo === "mas" || tipo === "menos") return tr(`truco.${tipo}`, { pct: tr("pct", { n: truco.pct }) });
+  const numero = (n) => numeros({ maximumFractionDigits: 1 }).format(Number(n.toPrecision(6)));
+  // En cifra y con × y ÷: al lado de los botones caben unas veinte letras.
+  const ceros = (n) => tr(n === 1 ? "truco.ceros.1" : "truco.ceros", { n });
+  if (tipo === "entre") {
+    return e >= 3 ? tr("truco.quitaEntre", { ceros: ceros(e), d: numero(d) }) : tr("truco.entre", { n: numero(d * 10 ** e) });
+  }
+  if (d === 1) return tr(e > 0 ? "truco.pon" : "truco.quita", { ceros: ceros(Math.abs(e)) });
+  if (e >= 3) return tr("truco.porPon", { d: numero(d), ceros: ceros(e) });
+  if (d * 10 ** e < 1) return tr("truco.quitaPor", { ceros: ceros(-e), d: numero(d) });
+  return tr("truco.por", { n: numero(d * 10 ** e) });
+}
+
+// Para que sepas cuánto te fías: lo que se aparta de la cuenta buena.
+function tituloTruco(truco) {
+  if (!truco) return "";
+  const pct = Math.round(Math.abs(truco.desvio) * 100);
+  if (pct === 0) return tr("truco.clavado");
+  return tr(truco.desvio > 0 ? "truco.deMas" : "truco.deMenos", { pct: tr("pct", { n: pct }) });
+}
+
 // Para el grupo del viaje. Las filas van entre ``` para que WhatsApp las ponga
 // en letra de máquina y los números queden en columna.
 function chuletaParaCompartir(filas, from, to, comision = 0) {
@@ -3131,7 +3194,7 @@ if (typeof module !== "undefined") {
     VIAJES_MAX, NOMBRE_VIAJE_MAX, leerViajes, leerPersonas, porPersona, compararViajes, COLORES_VIAJE, leerColorViaje, colorLibre, siguienteColor, viajeActivo, crearViaje, nombreCopia, duplicarViaje, renombrarViaje, elegirViaje, borrarViaje, cambiarViaje, resumenViaje, archivoGastos,
     diasHasta, leerPresupuesto, PRESUPUESTO_JUSTO, estadoPresupuesto, alDiaAlli, inicioDelViaje, diaDelViaje, cuentaAtras, textoCuentaAtras, loDeHoy, CELEBRADOS_MAX, leerCelebrados, anadirCelebrado, viajeParaCelebrar, textoCelebrar, RACHA_MINIMA, rachaPresupuesto, hastaCuandoLlega, loQueSeLleva, redondearDias,
     EXTRAS_MAX, EXTRAS_POR_DEFECTO, leerExtras, anadirExtra, quitarExtra,
-    extrasVisibles, disponiblesParaAnadir, convertirExtras, semanaDe, trazoMini, CHULETA, escalaChuleta, chuleta, chuletaParaCompartir, extrasParaCompartir,
+    extrasVisibles, disponiblesParaAnadir, convertirExtras, semanaDe, trazoMini, CHULETA, escalaChuleta, chuleta, TRUCO_TOLERANCIA, trucoDeCabeza, textoTruco, tituloTruco, chuletaParaCompartir, extrasParaCompartir,
     urlImpresion, leerImpresion, chuletaParaImprimir,
     COMISION_MAX, COMISIONES_RAPIDAS, leerComision, leerPorcentaje, conComision,
     IMPUESTO_MAX, IMPUESTOS_RAPIDOS, leerImpuesto, leerImpuestoEscrito, loQuePagas,
