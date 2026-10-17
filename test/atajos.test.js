@@ -20,6 +20,7 @@ test("fuera de un campo basta la letra", () => {
   assert.equal(atajoPara(tecla("KeyV")), "viajes");
   assert.equal(atajoPara(tecla("KeyP")), "cuenta");
   assert.equal(atajoPara(tecla("KeyR")), "historial");
+  assert.equal(atajoPara(tecla("KeyO")), "discreto");
 });
 
 test("fuera de un campo también vale con Alt", () => {
@@ -83,6 +84,14 @@ test("cómo se escribe cada atajo", () => {
 test("no hay dos atajos para lo mismo", () => {
   const acciones = Object.values(ATAJOS);
   assert.equal(new Set(acciones).size, acciones.length);
+});
+
+test("cada atajo tiene su texto en la ayuda, en los dos idiomas", () => {
+  const { TEXTOS } = require("../textos.js");
+  for (const accion of Object.values(ATAJOS)) {
+    assert.ok(TEXTOS.es[`atajo.${accion}`], `es: ${accion}`);
+    assert.ok(TEXTOS.en[`atajo.${accion}`], `en: ${accion}`);
+  }
 });
 
 test("la / busca en los gastos, venga de la tecla que venga", () => {

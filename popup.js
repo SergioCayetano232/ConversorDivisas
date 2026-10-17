@@ -4796,6 +4796,12 @@ function viajesDesdeAtajo() {
   abrirViajes();
 }
 
+// Con los gastos cerrados no verías nada: los abro, como con la lupa.
+function discretoDesdeAtajo() {
+  if (el.gastos.hidden) abrirGastos();
+  onDiscreto();
+}
+
 function hacerAtajo(accion) {
   if (accion === "intercambiar" && !el.swap.disabled) onSwap();
   else if (accion === "copiar") onCopiar();
@@ -4810,6 +4816,7 @@ function hacerAtajo(accion) {
   else if (accion === "buscar") buscarDesdeAtajo();
   else if (accion === "pago") onCambiarPago();
   else if (accion === "viajes") viajesDesdeAtajo();
+  else if (accion === "discreto") discretoDesdeAtajo();
   else if (accion === "deshacer") onDeshacer();
   else if (accion.startsWith("vista:")) cambiarVista(accion.slice(6));
 }
@@ -4899,8 +4906,11 @@ function onAtajo(event) {
       : accion === "buscar" ? "/"
       : event.altKey ? textoAtajo(event.code, esMac) : event.code.replace(/^Key|^Digit/, "");
     const prefijo = accion === "copiarFrase" ? (esMac ? "⇧" : "Shift+") : "";
-    // El de pagar dice cómo ha quedado, que "cambiar" no te dice a qué.
-    mostrarTecla(prefijo + tecla, accion === "pago" ? tr("pago.ahora", { nombre: tr(`pago.${pagoNuevo}`) }) : queHace(accion));
+    // El de pagar y el discreto dicen cómo han quedado, que "cambiar" no te dice a qué.
+    const dice = accion === "pago" ? tr("pago.ahora", { nombre: tr(`pago.${pagoNuevo}`) })
+      : accion === "discreto" ? tr(discreto ? "discreto.puesto" : "discreto.quitado")
+      : queHace(accion);
+    mostrarTecla(prefijo + tecla, dice);
   }
 }
 

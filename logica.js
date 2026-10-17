@@ -3210,6 +3210,8 @@ const ATAJOS = {
   KeyR: "historial",
   // B de balanza.
   KeyB: "comparar",
+  // O de ojo, el botón que hace lo mismo.
+  KeyO: "discreto",
   KeyZ: "deshacer",
   KeyH: "ayuda",
 };
