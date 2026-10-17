@@ -2941,6 +2941,32 @@ function tituloHoy(viaje, hoyIso = hoy()) {
   return gastado ? tr("insignia.hoy", { gastado: `${dinero(gastado.total)} ${gastado.to}`, viaje: nombre }) : "";
 }
 
+// "cd hoy" en la barra: cómo vas sin abrir nada. Arriba lo de hoy, y detrás el
+// total del viaje y lo que queda del presupuesto.
+const esHoyBarra = (texto) => /^\s*(hoy|today)\s*$/i.test(String(texto ?? ""));
+
+function resumenHoyBarra(viaje, hoyIso = hoy()) {
+  if (!viaje) return null;
+  const dinero = (n) => numeros({ minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(n);
+  const { gastos, presupuesto } = viaje;
+  const nombre = viaje.nombre || tr("viajes.sinNombre");
+  const deHoy = loDeHoy(presupuesto, gastos, hoyIso);
+  const gastado = gastadoHoy(gastos, hoyIso);
+  const principal = deHoy
+    ? tr("barra.hoyDe", { gastado: dinero(deHoy.gastado), toca: dinero(deHoy.toca), to: presupuesto.to })
+    : gastado ? tr("barra.hoy", { gastado: `${dinero(gastado.total)} ${gastado.to}` }) : tr("barra.hoyNada");
+  const detalle = [];
+  const total = sumarPorDivisa(gastos)[0];
+  if (total) detalle.push(tr("barra.hoyViaje", { viaje: nombre, total: `${dinero(total.total)} ${total.to}` }));
+  const estado = estadoPresupuesto(presupuesto, gastos, hoyIso);
+  if (estado) {
+    detalle.push(estado.queda < 0
+      ? tr("presupuesto.pasado", { pasado: `${dinero(-estado.queda)} ${presupuesto.to}` })
+      : tr("presupuesto.queda", { queda: `${dinero(estado.queda)} ${presupuesto.to}` }));
+  }
+  return { principal, detalle };
+}
+
 // Cuatro caben en dos filas de la pestaña sin que el popup crezca.
 const AVISOS_MAX = 4;
 
@@ -3278,7 +3304,7 @@ if (typeof module !== "undefined") {
     MARGENES, tasaOfrecida, analizarCambio,
     domingoDePascua, hayTasaEl, tasaVieja, textoTasaVieja, horaBce, textoActualizado, proximaTasa, textoProximaTasa,
     FECHA_MINIMA, fechaLarga, fechaValida, diaDelGrafico, mesesAtras, FECHAS_RAPIDAS, leerFecha, cambioDesde, notaDiaHabil,
-    textoInsignia, cambioDiario, sentidoDe, cambioDelDia, textoCambioDia, ULTIMA_VEZ_MINIMO, desdeLaUltimaVez, ultimoVisto, tituloInsignia, tituloHoy, lineaTasa,
+    textoInsignia, cambioDiario, sentidoDe, cambioDelDia, textoCambioDia, ULTIMA_VEZ_MINIMO, desdeLaUltimaVez, ultimoVisto, tituloInsignia, tituloHoy, esHoyBarra, resumenHoyBarra, lineaTasa,
     AVISOS_MAX, AVISO_PCT_MAX, sentidoAviso, crearAviso, leerPorcentajeAviso, crearAvisoPorcentaje, leerAvisos, avisoCumplido, repartirAvisos, mensajeAviso, faltaParaAviso, cercaniaAviso, textoFalta,
     nivelPresupuesto, avisosPresupuesto, mensajePresupuesto,
     RECORDATORIO_HORA, RECORDATORIO_HORAS, leerHoraRecordatorio, viajesSinApuntar, tocaRecordar, mensajeRecordatorio,
