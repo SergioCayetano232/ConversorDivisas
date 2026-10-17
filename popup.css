@@ -5585,6 +5585,11 @@ body::after {
   font-variant-numeric: tabular-nums;
 }
 
+.result__meta.is-unidad {
+  max-width: 60%;
+  color: var(--brass);
+}
+
 /* Los cafés van pegados a la cifra pequeña, discretos: es una pista, no una
    cuenta. Al salir, la taza echa un hilo de vapor. */
 /* Cafés y horas comparten hueco: una encima de la otra en la misma celda. */

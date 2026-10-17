@@ -5131,6 +5131,15 @@ function renderResult() {
 
   const enviados = escribiendoAbajo ? convertido : valor;
   el.resultMeta.textContent = `${nf.format(enviados)} ${from}`;
+  el.resultMeta.title = "";
+  // Con "3,99/lb" arriba, aquí va lo que vale el kilo, que es lo que sabes comparar.
+  const { unidad } = escribiendoAbajo ? { unidad: null } : quitarUnidad(el.amount.value);
+  const metrica = porUnidadMetrica(convertido, unidad);
+  el.resultMeta.classList.toggle("is-unidad", Boolean(metrica));
+  if (metrica) {
+    el.resultMeta.textContent = `≈ ${nf.format(metrica.valor)} ${to}/${metrica.unidad}`;
+    el.resultMeta.title = `${nf.format(valor)} ${from}/${unidad === "floz" ? "fl oz" : unidad} = ${nf.format(convertido)} ${to}/${unidad === "floz" ? "fl oz" : unidad} ≈ ${nf.format(metrica.valor)} ${to}/${metrica.unidad}`;
+  }
   pintarComision();
   pintarCafes();
   pintarHoras();

@@ -217,7 +217,35 @@ function completar(texto) {
 }
 
 function leerImporte(texto) {
-  return evaluar(completar(texto));
+  return evaluar(completar(quitarUnidad(texto).texto));
+}
+
+// En Estados Unidos los precios van por libra, onza o galón, y así no hay quien
+// compare. "3,99/lb" vale 3,99 para todo; la unidad solo sirve para el precio
+// por kilo o por litro.
+const UNIDADES = {
+  lb: { a: "kg", factor: 2.20462262 },
+  oz: { a: "kg", factor: 35.2739619 },
+  floz: { a: "l", factor: 33.8140227 },
+  gal: { a: "l", factor: 1 / 3.78541178 },
+};
+
+// El "fl oz" antes que el "oz", que si no se quedaría con la mitad.
+const HAY_UNIDAD = /\s*(?:\/|\bper\b|\bpor\b)?\s*(fl\.?\s*oz|lbs?|pounds?|libras?|oz|ounces?|onzas?|gal(?:lons?|ones|[oó]n)?)\.?\s*$/i;
+
+function quitarUnidad(texto) {
+  const t = String(texto ?? "");
+  const m = t.match(HAY_UNIDAD);
+  if (!m || m.index === 0) return { texto: t, unidad: null };
+  const u = m[1].toLowerCase().replace(/[\s.]/g, "");
+  const unidad = u.startsWith("fl") ? "floz" : /^(lb|pound|libra)/.test(u) ? "lb" : u.startsWith("gal") ? "gal" : "oz";
+  return { texto: t.slice(0, m.index), unidad };
+}
+
+function porUnidadMetrica(valor, unidad) {
+  const u = UNIDADES[unidad];
+  if (!u || !Number.isFinite(valor)) return null;
+  return { valor: valor * u.factor, unidad: u.a };
 }
 
 function esOperacion(texto) {
@@ -3210,7 +3238,7 @@ function resumenCopia(datos) {
 if (typeof module !== "undefined") {
   module.exports = {
     CURRENCIES, isValidCode, nombreDe, parseAmount, isoLocal, hoy, isFresh,
-    evaluar, completar, leerImporte, esOperacion, pasoCantidad, leerCantidad,
+    evaluar, completar, leerImporte, UNIDADES, quitarUnidad, porUnidadMetrica, esOperacion, pasoCantidad, leerCantidad,
     normalizar, filtrarDivisas, buildPaths, startDateFor, errorMessageFor,
     RECIENTES_MAX, FIJOS_MAX, apuntarReciente, fijarReciente, leerRecientes, recientesVisibles,
     RANGOS, RANGO_POR_DEFECTO, leerRango, coordenadas, alturaEn, MOMENTO_UMBRAL, momento, textoMomento,

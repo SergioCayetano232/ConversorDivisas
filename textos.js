@@ -4,7 +4,7 @@
 const TEXTOS = {
   es: {
     "cantidad": "Cantidad",
-    "cantidad.pista": "También vale una cuenta: 20+15, 3*12,50, 100-15% o 2k",
+    "cantidad.pista": "También vale una cuenta: 20+15, 3*12,50, 100-15% o 2k. Y por libra: 3,99/lb",
     "cantidad.invalida": "Introduce una cantidad válida",
     "de": "De",
     "a": "A",
@@ -644,7 +644,7 @@ const TEXTOS = {
 
   en: {
     "cantidad": "Amount",
-    "cantidad.pista": "You can also type a sum: 20+15, 3*12.50, 100-15% or 2k",
+    "cantidad.pista": "You can also type a sum: 20+15, 3*12.50, 100-15% or 2k. Or per pound: 3.99/lb",
     "cantidad.invalida": "Enter a valid amount",
     "de": "From",
     "a": "To",

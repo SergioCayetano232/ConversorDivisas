@@ -14,6 +14,9 @@ que necesitaba una conversión rápida. Ahora es un clic en la barra del navegad
 - Puedes escribir una cuenta en vez de un número: `20+15`, `3*12,50`,
   `(40+60)/4` o `100-15%`. Mientras escribes te enseña el total, y al darle a
   Enter se queda con él. `2k` son dos mil y `1,5m`, millón y medio
+- Precios por libra, onza o galón: escribes `3,99/lb` (o `0,25 oz`, `4,59/gal`,
+  `1,99 fl oz`) y debajo del resultado sale lo que vale el kilo o el litro, en
+  tu divisa ("≈ 7,82 EUR/kg"). Para todo lo demás cuenta como 3,99
 - Si pegas un precio con su divisa ("1.299,00 £", "$49.99"), pone la cantidad
   y cambia la divisa a la vez. Pegado abajo, cambia la de destino
 - Buscas la divisa escribiendo: pones "mex" y sale el peso mexicano
