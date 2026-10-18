@@ -472,6 +472,12 @@ async function sugerirEnBarra(texto, sugerir) {
     chrome.omnibox.setDefaultSuggestion({ description: `<match>${escaparXml(textoGrados(grados))}</match>` });
     return;
   }
+  const distancia = leerDistancia(texto);
+  if (distancia) {
+    sugerir([]);
+    chrome.omnibox.setDefaultSuggestion({ description: `<match>${escaparXml(textoDistancia(distancia))}</match>` });
+    return;
+  }
   const leido = leerOmnibox(texto, await leerPar());
   if (actual !== barraId) return;
   if (!leido) {
@@ -519,8 +525,8 @@ async function abrirDesdeBarra(texto) {
     await abrirConGastos();
     return;
   }
-  // Los grados ya están en la sugerencia: no hay nada que abrir.
-  if (leerGrados(texto)) return;
+  // Los grados y las distancias ya están en la sugerencia: no hay nada que abrir.
+  if (leerGrados(texto) || leerDistancia(texto)) return;
   const leido = leerOmnibox(texto, await leerPar());
   if (leido) await chrome.storage.session.set({ pendiente: leido });
   try {

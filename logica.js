@@ -2976,6 +2976,28 @@ function textoGrados(leido) {
   return `${grados(leido.valor, leido.de)} = ${grados(otro.valor, otro.a)}`;
 }
 
+// "cd 10mi" en la barra, para las señales de allí. "m" sola no vale, que en
+// las cantidades son millones.
+const HAY_DISTANCIA = /^\s*(\d+(?:[.,]\d+)?)\s*(mi|millas?|miles?|km|kil[oó]metros?|kilometers?)\s*$/i;
+const KM_POR_MILLA = 1.609344;
+
+function leerDistancia(texto) {
+  const m = String(texto ?? "").match(HAY_DISTANCIA);
+  if (!m) return null;
+  return { valor: Number(m[1].replace(",", ".")), de: /^k/i.test(m[2]) ? "km" : "mi" };
+}
+
+function convertirDistancia({ valor, de }) {
+  return de === "mi" ? { valor: valor * KM_POR_MILLA, a: "km" } : { valor: valor / KM_POR_MILLA, a: "mi" };
+}
+
+function textoDistancia(leido) {
+  if (!leido) return "";
+  const distancia = (n, u) => `${numeros({ maximumFractionDigits: 1 }).format(n)} ${u}`;
+  const otro = convertirDistancia(leido);
+  return `${distancia(leido.valor, leido.de)} = ${distancia(otro.valor, otro.a)}`;
+}
+
 // "cd hoy" en la barra: cómo vas sin abrir nada. Arriba lo de hoy, y detrás el
 // total del viaje y lo que queda del presupuesto.
 const esHoyBarra = (texto) => /^\s*(hoy|today)\s*$/i.test(String(texto ?? ""));
@@ -3341,7 +3363,7 @@ if (typeof module !== "undefined") {
     MARGENES, tasaOfrecida, analizarCambio,
     domingoDePascua, hayTasaEl, tasaVieja, textoTasaVieja, horaBce, textoActualizado, proximaTasa, textoProximaTasa,
     FECHA_MINIMA, fechaLarga, fechaValida, diaDelGrafico, mesesAtras, FECHAS_RAPIDAS, leerFecha, cambioDesde, notaDiaHabil,
-    textoInsignia, cambioDiario, sentidoDe, cambioDelDia, textoCambioDia, ULTIMA_VEZ_MINIMO, desdeLaUltimaVez, ultimoVisto, tituloInsignia, tituloHoy, leerGrados, convertirGrados, textoGrados, esHoyBarra, resumenHoyBarra, lineaTasa,
+    textoInsignia, cambioDiario, sentidoDe, cambioDelDia, textoCambioDia, ULTIMA_VEZ_MINIMO, desdeLaUltimaVez, ultimoVisto, tituloInsignia, tituloHoy, leerGrados, convertirGrados, textoGrados, leerDistancia, convertirDistancia, textoDistancia, esHoyBarra, resumenHoyBarra, lineaTasa,
     AVISOS_MAX, AVISO_PCT_MAX, sentidoAviso, crearAviso, leerPorcentajeAviso, crearAvisoPorcentaje, leerAvisos, avisoCumplido, repartirAvisos, mensajeAviso, faltaParaAviso, cercaniaAviso, textoFalta,
     nivelPresupuesto, avisosPresupuesto, mensajePresupuesto,
     RECORDATORIO_HORA, RECORDATORIO_HORAS, leerHoraRecordatorio, viajesSinApuntar, tocaRecordar, mensajeRecordatorio,
