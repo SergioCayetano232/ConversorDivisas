@@ -256,7 +256,8 @@ que necesitaba una conversión rápida. Ahora es un clic en la barra del navegad
   viaje abierto: `cd + 20 cena` o `cd + 1500 jpy taxi efectivo`. Usa tu
   comisión y cómo sueles pagar, salvo que pongas "efectivo" o "tarjeta". Y con
   `cd hoy` ves cómo vas sin abrir nada: lo de hoy, el total del viaje y lo que
-  te queda del presupuesto. Con Enter se abren los gastos. Para el tiempo de
+  te queda del presupuesto. Con `cd ayer`, lo de ayer y lo más caro
+  ("Ayer: 64,20 EUR en 4 gastos · Lo más caro: Cena 27,60"). Con Enter se abren los gastos. Para el tiempo de
   allí, `cd 75f` o `cd 20c`: "75 °F = 23,9 °C". Y para las señales de la
   carretera, `cd 10mi` o `cd 5km`: "10 mi = 16,1 km"
 - Atajos dentro del popup: `S` da la vuelta al par, `C` copia, `D` y `A` abren

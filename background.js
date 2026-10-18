@@ -450,11 +450,11 @@ async function apuntarDesdeBarra(texto) {
   return true;
 }
 
-async function sugerirHoy(sugerir, actual) {
+async function sugerirHoy(sugerir, actual, resumir = resumenHoyBarra) {
   sugerir([]);
   const guardado = await chrome.storage.local.get(["viajes", "gastosViaje", "presupuestoViaje"]);
   if (actual !== barraId) return;
-  const r = resumenHoyBarra(viajeActivo(leerViajes(guardado.viajes, guardado.gastosViaje, guardado.presupuestoViaje)));
+  const r = resumir(viajeActivo(leerViajes(guardado.viajes, guardado.gastosViaje, guardado.presupuestoViaje)));
   if (!r) return;
   chrome.omnibox.setDefaultSuggestion({
     description: `<match>${escaparXml(r.principal)}</match> <dim>${escaparXml([...r.detalle, tr("barra.hoyEnter")].map((t) => `· ${t}`).join(" "))}</dim>`,
@@ -466,6 +466,7 @@ async function sugerirEnBarra(texto, sugerir) {
   await idiomaListo;
   if (/^\s*\+/.test(texto)) return sugerirGasto(texto, sugerir, actual);
   if (esHoyBarra(texto)) return sugerirHoy(sugerir, actual);
+  if (esAyerBarra(texto)) return sugerirHoy(sugerir, actual, resumenAyerBarra);
   const grados = leerGrados(texto);
   if (grados) {
     sugerir([]);
@@ -521,7 +522,7 @@ async function abrirDesdeBarra(texto) {
     await apuntarDesdeBarra(texto);
     return;
   }
-  if (esHoyBarra(texto)) {
+  if (esHoyBarra(texto) || esAyerBarra(texto)) {
     await abrirConGastos();
     return;
   }

@@ -3024,6 +3024,25 @@ function resumenHoyBarra(viaje, hoyIso = hoy()) {
   return { principal, detalle };
 }
 
+// "cd ayer", para repasar por la mañana lo que se gastó el día anterior.
+const esAyerBarra = (texto) => /^\s*(ayer|yesterday)\s*$/i.test(String(texto ?? ""));
+
+function resumenAyerBarra(viaje, hoyIso = hoy()) {
+  if (!viaje) return null;
+  const dinero = (n) => numeros({ minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(n);
+  const [y, m, d] = hoyIso.split("-").map(Number);
+  const ayerIso = isoLocal(new Date(y, m - 1, d - 1));
+  const gastado = gastadoHoy(viaje.gastos, ayerIso);
+  if (!gastado) return { principal: tr("barra.ayerNada"), detalle: [] };
+  const deAyer = viaje.gastos.filter((g) => g.to === gastado.to && isoLocal(new Date(g.cuando)) === ayerIso);
+  const caro = deAyer.reduce((a, b) => (b.valor > a.valor ? b : a));
+  const principal = tr(deAyer.length === 1 ? "barra.ayerUno" : "barra.ayer", { gastado: `${dinero(gastado.total)} ${gastado.to}`, n: deAyer.length });
+  const detalle = deAyer.length > 1
+    ? [tr("barra.ayerCaro", { gasto: `${caro.concepto || tr("barra.ayerSinConcepto")} ${dinero(caro.valor)}` })]
+    : [];
+  return { principal, detalle };
+}
+
 // Cuatro caben en dos filas de la pestaña sin que el popup crezca.
 const AVISOS_MAX = 4;
 
@@ -3363,7 +3382,7 @@ if (typeof module !== "undefined") {
     MARGENES, tasaOfrecida, analizarCambio,
     domingoDePascua, hayTasaEl, tasaVieja, textoTasaVieja, horaBce, textoActualizado, proximaTasa, textoProximaTasa,
     FECHA_MINIMA, fechaLarga, fechaValida, diaDelGrafico, mesesAtras, FECHAS_RAPIDAS, leerFecha, cambioDesde, notaDiaHabil,
-    textoInsignia, cambioDiario, sentidoDe, cambioDelDia, textoCambioDia, ULTIMA_VEZ_MINIMO, desdeLaUltimaVez, ultimoVisto, tituloInsignia, tituloHoy, leerGrados, convertirGrados, textoGrados, leerDistancia, convertirDistancia, textoDistancia, esHoyBarra, resumenHoyBarra, lineaTasa,
+    textoInsignia, cambioDiario, sentidoDe, cambioDelDia, textoCambioDia, ULTIMA_VEZ_MINIMO, desdeLaUltimaVez, ultimoVisto, tituloInsignia, tituloHoy, leerGrados, convertirGrados, textoGrados, leerDistancia, convertirDistancia, textoDistancia, esHoyBarra, resumenHoyBarra, esAyerBarra, resumenAyerBarra, lineaTasa,
     AVISOS_MAX, AVISO_PCT_MAX, sentidoAviso, crearAviso, leerPorcentajeAviso, crearAvisoPorcentaje, leerAvisos, avisoCumplido, repartirAvisos, mensajeAviso, faltaParaAviso, cercaniaAviso, textoFalta,
     nivelPresupuesto, avisosPresupuesto, mensajePresupuesto,
     RECORDATORIO_HORA, RECORDATORIO_HORAS, leerHoraRecordatorio, viajesSinApuntar, tocaRecordar, mensajeRecordatorio,
