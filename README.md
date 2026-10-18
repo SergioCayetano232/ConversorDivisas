@@ -260,7 +260,8 @@ que necesitaba una conversión rápida. Ahora es un clic en la barra del navegad
   ("Ayer: 64,20 EUR en 4 gastos · Lo más caro: Cena 27,60"). Con Enter se abren los gastos. Para el tiempo de
   allí, `cd 75f` o `cd 20c`: "75 °F = 23,9 °C". Y para las señales de la
   carretera, `cd 10mi` o `cd 5km`: "10 mi = 16,1 km". Y para la maleta,
-  `cd 50lb` o `cd 23kg`: "50 lb = 22,7 kg"
+  `cd 50lb` o `cd 23kg`: "50 lb = 22,7 kg". Y para las alturas, `cd 6ft` o
+  `cd 2 metros`: "6 ft = 1,83 m"
 - Atajos dentro del popup: `S` da la vuelta al par, `I` a la tasa de arriba, `C` copia, `T` copia la tasa ("1 EUR = 1,1253 USD"), `D` y `A` abren
   los desplegables, `G` los gastos, `/` busca en ellos, `E` cambia entre tarjeta y efectivo, `V` abre la lista de viajes, `P` dividir la cuenta, `B` la balanza, `R` las últimas conversiones, `O` el modo discreto, `X` baja los gastos en CSV, `Z` (o `Cmd+Z`, `Ctrl+Z`) deshace lo último que
   has quitado de los gastos y del `1` al `6` cambian de pestaña. Si estás escribiendo en

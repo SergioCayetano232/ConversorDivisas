@@ -3019,6 +3019,28 @@ function textoPeso(leido) {
   return `${peso(leido.valor, leido.de)} = ${peso(otro.valor, otro.a)}`;
 }
 
+// "cd 6ft", para alturas. Los metros, escritos enteros: "2m" son dos millones.
+const HAY_ALTURA = /^\s*(\d+(?:[.,]\d+)?)\s*(ft|pies?|feet|foot|metros?|meters?|metres?)\s*$/i;
+const M_POR_PIE = 0.3048;
+
+function leerAltura(texto) {
+  const m = String(texto ?? "").match(HAY_ALTURA);
+  if (!m) return null;
+  return { valor: Number(m[1].replace(",", ".")), de: /^m/i.test(m[2]) ? "m" : "ft" };
+}
+
+function convertirAltura({ valor, de }) {
+  return de === "ft" ? { valor: valor * M_POR_PIE, a: "m" } : { valor: valor / M_POR_PIE, a: "ft" };
+}
+
+// En metros con dos decimales, que una altura en 1,8 se queda corta.
+function textoAltura(leido) {
+  if (!leido) return "";
+  const altura = (n, u) => `${numeros({ maximumFractionDigits: u === "m" ? 2 : 1 }).format(n)} ${u}`;
+  const otro = convertirAltura(leido);
+  return `${altura(leido.valor, leido.de)} = ${altura(otro.valor, otro.a)}`;
+}
+
 // "cd hoy" en la barra: cómo vas sin abrir nada. Arriba lo de hoy, y detrás el
 // total del viaje y lo que queda del presupuesto.
 const esHoyBarra = (texto) => /^\s*(hoy|today)\s*$/i.test(String(texto ?? ""));
@@ -3408,7 +3430,7 @@ if (typeof module !== "undefined") {
     MARGENES, tasaOfrecida, analizarCambio,
     domingoDePascua, hayTasaEl, tasaVieja, textoTasaVieja, horaBce, textoActualizado, proximaTasa, textoProximaTasa,
     FECHA_MINIMA, fechaLarga, fechaValida, diaDelGrafico, mesesAtras, FECHAS_RAPIDAS, leerFecha, cambioDesde, notaDiaHabil,
-    textoInsignia, cambioDiario, sentidoDe, cambioDelDia, textoCambioDia, ULTIMA_VEZ_MINIMO, desdeLaUltimaVez, ultimoVisto, tituloInsignia, tituloHoy, leerGrados, convertirGrados, textoGrados, leerDistancia, convertirDistancia, textoDistancia, leerPeso, convertirPeso, textoPeso, esHoyBarra, resumenHoyBarra, esAyerBarra, resumenAyerBarra, lineaTasa,
+    textoInsignia, cambioDiario, sentidoDe, cambioDelDia, textoCambioDia, ULTIMA_VEZ_MINIMO, desdeLaUltimaVez, ultimoVisto, tituloInsignia, tituloHoy, leerGrados, convertirGrados, textoGrados, leerDistancia, convertirDistancia, textoDistancia, leerPeso, convertirPeso, textoPeso, leerAltura, convertirAltura, textoAltura, esHoyBarra, resumenHoyBarra, esAyerBarra, resumenAyerBarra, lineaTasa,
     AVISOS_MAX, AVISO_PCT_MAX, sentidoAviso, crearAviso, leerPorcentajeAviso, crearAvisoPorcentaje, leerAvisos, avisoCumplido, repartirAvisos, mensajeAviso, faltaParaAviso, cercaniaAviso, textoFalta,
     nivelPresupuesto, avisosPresupuesto, mensajePresupuesto,
     RECORDATORIO_HORA, RECORDATORIO_HORAS, leerHoraRecordatorio, viajesSinApuntar, tocaRecordar, mensajeRecordatorio,
