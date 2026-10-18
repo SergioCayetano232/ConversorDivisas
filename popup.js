@@ -4806,6 +4806,7 @@ function hacerAtajo(accion) {
   if (accion === "intercambiar" && !el.swap.disabled) onSwap();
   else if (accion === "copiar") onCopiar();
   else if (accion === "copiarFrase") onCopiar(true);
+  else if (accion === "girarTasa") onDarLaVueltaATasa();
   else if (accion === "origen") el.from.click();
   else if (accion === "destino") el.to.click();
   else if (accion === "ayuda") abrirAyuda();
@@ -4906,9 +4907,10 @@ function onAtajo(event) {
       : accion === "buscar" ? "/"
       : event.altKey ? textoAtajo(event.code, esMac) : event.code.replace(/^Key|^Digit/, "");
     const prefijo = accion === "copiarFrase" ? (esMac ? "⇧" : "Shift+") : "";
-    // El de pagar y el discreto dicen cómo han quedado, que "cambiar" no te dice a qué.
+    // El de pagar, el discreto y la tasa dicen cómo han quedado, que "cambiar" no te dice a qué.
     const dice = accion === "pago" ? tr("pago.ahora", { nombre: tr(`pago.${pagoNuevo}`) })
       : accion === "discreto" ? tr(discreto ? "discreto.puesto" : "discreto.quitado")
+      : accion === "girarTasa" ? el.rateLine.textContent || queHace(accion)
       : queHace(accion);
     mostrarTecla(prefijo + tecla, dice);
   }

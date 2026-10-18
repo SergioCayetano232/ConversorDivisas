@@ -3254,6 +3254,8 @@ function mensajeRecordatorio(viaje) {
 // teclados la tecla de la S puede traer otra letra.
 const ATAJOS = {
   KeyS: "intercambiar",
+  // I de invertir: la tasa de arriba, como al pulsarla.
+  KeyI: "girarTasa",
   KeyC: "copiar",
   KeyD: "origen",
   KeyA: "destino",
