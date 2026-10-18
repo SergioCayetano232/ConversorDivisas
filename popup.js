@@ -4802,11 +4802,18 @@ function discretoDesdeAtajo() {
   onDiscreto();
 }
 
+// Copia la tasa como se ve arriba, al derecho o al revés, para compararla con
+// la de la casa de cambio o mandarla.
+async function copiarTasa() {
+  if (!(await copiar(el.rateLine.textContent))) avisar(tr("copiar.fallo"));
+}
+
 function hacerAtajo(accion) {
   if (accion === "intercambiar" && !el.swap.disabled) onSwap();
   else if (accion === "copiar") onCopiar();
   else if (accion === "copiarFrase") onCopiar(true);
   else if (accion === "girarTasa") onDarLaVueltaATasa();
+  else if (accion === "copiarTasa") copiarTasa();
   else if (accion === "origen") el.from.click();
   else if (accion === "destino") el.to.click();
   else if (accion === "ayuda") abrirAyuda();
@@ -4899,7 +4906,8 @@ function onAtajo(event) {
     ctrlKey: event.ctrlKey, metaKey: event.metaKey, shiftKey: event.shiftKey, enCampo,
   });
   // Sin nada que deshacer la Z no hace nada, ni siquiera el aviso de abajo. Sin gastos, la X igual.
-  if (!accion || (accion === "deshacer" && !quitado) || (accion === "csv" && !gastos.length)) return;
+  if (!accion || (accion === "deshacer" && !quitado) || (accion === "csv" && !gastos.length)
+    || (accion === "copiarTasa" && rate === null)) return;
   event.preventDefault();
   hacerAtajo(accion);
   if (accion !== "ayuda") {
@@ -4912,6 +4920,7 @@ function onAtajo(event) {
     const dice = accion === "pago" ? tr("pago.ahora", { nombre: tr(`pago.${pagoNuevo}`) })
       : accion === "discreto" ? tr(discreto ? "discreto.puesto" : "discreto.quitado")
       : accion === "girarTasa" ? el.rateLine.textContent || queHace(accion)
+      : accion === "copiarTasa" ? tr("copiado.tasa", { tasa: el.rateLine.textContent })
       : queHace(accion);
     mostrarTecla(prefijo + tecla, dice);
   }

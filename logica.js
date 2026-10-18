@@ -3256,6 +3256,7 @@ const ATAJOS = {
   KeyS: "intercambiar",
   // I de invertir: la tasa de arriba, como al pulsarla.
   KeyI: "girarTasa",
+  KeyT: "copiarTasa",
   KeyC: "copiar",
   KeyD: "origen",
   KeyA: "destino",
