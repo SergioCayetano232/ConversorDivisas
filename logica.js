@@ -3276,6 +3276,8 @@ const ATAJOS = {
   KeyB: "comparar",
   // O de ojo, el botón que hace lo mismo.
   KeyO: "discreto",
+  // X de Excel, que es donde acaba el CSV.
+  KeyX: "csv",
   KeyZ: "deshacer",
   KeyH: "ayuda",
 };

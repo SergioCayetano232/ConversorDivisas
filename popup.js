@@ -4818,6 +4818,7 @@ function hacerAtajo(accion) {
   else if (accion === "pago") onCambiarPago();
   else if (accion === "viajes") viajesDesdeAtajo();
   else if (accion === "discreto") discretoDesdeAtajo();
+  else if (accion === "csv") el.gastosCsv.click();
   else if (accion === "deshacer") onDeshacer();
   else if (accion.startsWith("vista:")) cambiarVista(accion.slice(6));
 }
@@ -4897,8 +4898,8 @@ function onAtajo(event) {
     code: event.code, key: event.key, altKey: event.altKey,
     ctrlKey: event.ctrlKey, metaKey: event.metaKey, shiftKey: event.shiftKey, enCampo,
   });
-  // Sin nada que deshacer la Z no hace nada, ni siquiera el aviso de abajo.
-  if (!accion || (accion === "deshacer" && !quitado)) return;
+  // Sin nada que deshacer la Z no hace nada, ni siquiera el aviso de abajo. Sin gastos, la X igual.
+  if (!accion || (accion === "deshacer" && !quitado) || (accion === "csv" && !gastos.length)) return;
   event.preventDefault();
   hacerAtajo(accion);
   if (accion !== "ayuda") {

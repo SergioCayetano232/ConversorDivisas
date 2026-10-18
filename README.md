@@ -262,7 +262,7 @@ que necesitaba una conversión rápida. Ahora es un clic en la barra del navegad
   carretera, `cd 10mi` o `cd 5km`: "10 mi = 16,1 km". Y para la maleta,
   `cd 50lb` o `cd 23kg`: "50 lb = 22,7 kg"
 - Atajos dentro del popup: `S` da la vuelta al par, `I` a la tasa de arriba, `C` copia, `D` y `A` abren
-  los desplegables, `G` los gastos, `/` busca en ellos, `E` cambia entre tarjeta y efectivo, `V` abre la lista de viajes, `P` dividir la cuenta, `B` la balanza, `R` las últimas conversiones, `O` el modo discreto, `Z` (o `Cmd+Z`, `Ctrl+Z`) deshace lo último que
+  los desplegables, `G` los gastos, `/` busca en ellos, `E` cambia entre tarjeta y efectivo, `V` abre la lista de viajes, `P` dividir la cuenta, `B` la balanza, `R` las últimas conversiones, `O` el modo discreto, `X` baja los gastos en CSV, `Z` (o `Cmd+Z`, `Ctrl+Z`) deshace lo último que
   has quitado de los gastos y del `1` al `6` cambian de pestaña. Si estás escribiendo en
   un campo, con `Alt` delante (`⌥` en Mac). En la cantidad, `↑` y `↓` suben o
   bajan 1, y con Shift, 10. Con `?` salen todos
