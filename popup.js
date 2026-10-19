@@ -4811,6 +4811,13 @@ function rangoDesdeAtajo() {
   else ponerRango(siguienteRango(dias));
 }
 
+// Como el botón de + 38,90 EUR. Con el presupuesto a medio editar el botón no
+// se ve, así que tampoco apunto nada.
+function apuntarDesdeAtajo() {
+  if (el.gastos.hidden) abrirGastos();
+  if (!el.gastosForm.hidden) el.gastosForm.requestSubmit();
+}
+
 // Con los gastos cerrados no verías nada: los abro, como con la lupa.
 function discretoDesdeAtajo() {
   if (el.gastos.hidden) abrirGastos();
@@ -4851,6 +4858,7 @@ function hacerAtajo(accion) {
   else if (accion === "comparar") (el.comparar.hidden ? abrirComparar() : cerrarComparar()?.focus());
   else if (accion === "historial") (el.historial.hidden ? abrirHistorial() : cerrarHistorial()?.focus());
   else if (accion === "buscar") buscarDesdeAtajo();
+  else if (accion === "apuntar") apuntarDesdeAtajo();
   else if (accion === "pago") onCambiarPago();
   else if (accion === "viajes") viajesDesdeAtajo();
   else if (accion === "nuevoViaje") nuevoViajeDesdeAtajo();

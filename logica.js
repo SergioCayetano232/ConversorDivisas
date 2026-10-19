@@ -3406,6 +3406,8 @@ const ATAJOS = {
   Digit5: "vista:fecha",
   Digit6: "vista:timo",
   KeyG: "gastos",
+  // La A ya es el destino: U de apUntar.
+  KeyU: "apuntar",
   // E de efectivo: con el concepto a medio escribir, Alt+E y sigues.
   KeyE: "pago",
   KeyV: "viajes",
