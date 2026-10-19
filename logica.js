@@ -3388,6 +3388,8 @@ const ATAJOS = {
   KeyO: "discreto",
   // X de Excel, que es donde acaba el CSV.
   KeyX: "csv",
+  // W de WhatsApp, que es donde va el resumen.
+  KeyW: "compartir",
   KeyZ: "deshacer",
   KeyH: "ayuda",
 };

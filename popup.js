@@ -4826,6 +4826,7 @@ function hacerAtajo(accion) {
   else if (accion === "viajes") viajesDesdeAtajo();
   else if (accion === "discreto") discretoDesdeAtajo();
   else if (accion === "csv") el.gastosCsv.click();
+  else if (accion === "compartir") onCompartir();
   else if (accion === "deshacer") onDeshacer();
   else if (accion.startsWith("vista:")) cambiarVista(accion.slice(6));
 }
@@ -4906,11 +4907,12 @@ function onAtajo(event) {
     ctrlKey: event.ctrlKey, metaKey: event.metaKey, shiftKey: event.shiftKey, enCampo,
   });
   // Sin nada que deshacer la Z no hace nada, ni siquiera el aviso de abajo. Sin gastos, la X igual.
-  if (!accion || (accion === "deshacer" && !quitado) || (accion === "csv" && !gastos.length)
+  if (!accion || (accion === "deshacer" && !quitado) || ((accion === "csv" || accion === "compartir") && !gastos.length)
     || (accion === "copiarTasa" && rate === null)) return;
   event.preventDefault();
   hacerAtajo(accion);
-  if (accion !== "ayuda") {
+  // El resumen ya avisa él al copiar, y si falla dice que ha fallado.
+  if (accion !== "ayuda" && accion !== "compartir") {
     const conCmd = event.metaKey || event.ctrlKey;
     const tecla = conCmd ? (esMac ? "⌘Z" : "Ctrl+Z")
       : accion === "buscar" ? "/"
