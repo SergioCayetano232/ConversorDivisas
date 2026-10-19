@@ -3024,6 +3024,28 @@ function textoPeso(leido) {
   return `${peso(leido.valor, leido.de)} = ${peso(otro.valor, otro.a)}`;
 }
 
+// "cd 8oz", para la carne y el queso del súper. Las "fl oz" son volumen y no
+// entran.
+const HAY_ONZAS = /^\s*(\d+(?:[.,]\d+)?)\s*(oz|ounces?|onzas?|g|gr|gramos?|grams?)\s*$/i;
+const G_POR_ONZA = 28.349523125;
+
+function leerOnzas(texto) {
+  const m = String(texto ?? "").match(HAY_ONZAS);
+  if (!m) return null;
+  return { valor: Number(m[1].replace(",", ".")), de: /^g/i.test(m[2]) ? "g" : "oz" };
+}
+
+function convertirOnzas({ valor, de }) {
+  return de === "oz" ? { valor: valor * G_POR_ONZA, a: "g" } : { valor: valor / G_POR_ONZA, a: "oz" };
+}
+
+function textoOnzas(leido) {
+  if (!leido) return "";
+  const peso = (n, u) => `${numeros({ maximumFractionDigits: 1 }).format(n)} ${u}`;
+  const otro = convertirOnzas(leido);
+  return `${peso(leido.valor, leido.de)} = ${peso(otro.valor, otro.a)}`;
+}
+
 // "cd 6ft", para alturas. Los metros, escritos enteros: "2m" son dos millones.
 const HAY_ALTURA = /^\s*(\d+(?:[.,]\d+)?)\s*(ft|pies?|feet|foot|metros?|meters?|metres?)\s*$/i;
 const M_POR_PIE = 0.3048;
@@ -3560,7 +3582,7 @@ if (typeof module !== "undefined") {
     MARGENES, tasaOfrecida, analizarCambio,
     domingoDePascua, hayTasaEl, tasaVieja, textoTasaVieja, horaBce, textoActualizado, proximaTasa, textoProximaTasa,
     FECHA_MINIMA, fechaLarga, fechaValida, diaDelGrafico, mesesAtras, FECHAS_RAPIDAS, leerFecha, cambioDesde, notaDiaHabil,
-    textoInsignia, cambioDiario, sentidoDe, cambioDelDia, textoCambioDia, ULTIMA_VEZ_MINIMO, desdeLaUltimaVez, ultimoVisto, tituloInsignia, tituloHoy, leerGrados, convertirGrados, textoGrados, leerDistancia, convertirDistancia, textoDistancia, leerPeso, convertirPeso, textoPeso, leerAltura, convertirAltura, textoAltura, leerVelocidad, convertirVelocidad, textoVelocidad, leerVolumen, convertirVolumen, textoVolumen, leerLongitud, convertirLongitud, textoLongitud, leerSuperficie, convertirSuperficie, textoSuperficie, leerConsumo, convertirConsumo, textoConsumo, esHoyBarra, resumenHoyBarra, esAyerBarra, resumenAyerBarra, lineaTasa,
+    textoInsignia, cambioDiario, sentidoDe, cambioDelDia, textoCambioDia, ULTIMA_VEZ_MINIMO, desdeLaUltimaVez, ultimoVisto, tituloInsignia, tituloHoy, leerGrados, convertirGrados, textoGrados, leerDistancia, convertirDistancia, textoDistancia, leerPeso, convertirPeso, textoPeso, leerOnzas, convertirOnzas, textoOnzas, leerAltura, convertirAltura, textoAltura, leerVelocidad, convertirVelocidad, textoVelocidad, leerVolumen, convertirVolumen, textoVolumen, leerLongitud, convertirLongitud, textoLongitud, leerSuperficie, convertirSuperficie, textoSuperficie, leerConsumo, convertirConsumo, textoConsumo, esHoyBarra, resumenHoyBarra, esAyerBarra, resumenAyerBarra, lineaTasa,
     AVISOS_MAX, AVISO_PCT_MAX, sentidoAviso, crearAviso, leerPorcentajeAviso, crearAvisoPorcentaje, leerAvisos, avisoCumplido, repartirAvisos, mensajeAviso, faltaParaAviso, cercaniaAviso, textoFalta,
     nivelPresupuesto, avisosPresupuesto, mensajePresupuesto,
     RECORDATORIO_HORA, RECORDATORIO_HORAS, leerHoraRecordatorio, viajesSinApuntar, tocaRecordar, mensajeRecordatorio,
