@@ -4796,6 +4796,14 @@ function viajesDesdeAtajo() {
   abrirViajes();
 }
 
+// La lista de viajes con el nombre listo para escribir. Si ya hay ocho, la
+// lista sin más, que abajo ya dice que no caben.
+function nuevoViajeDesdeAtajo() {
+  if (el.gastos.hidden) abrirGastos();
+  if (el.viajes.hidden) abrirViajes();
+  if (!el.viajesNuevo.hidden) el.viajesNombre.focus();
+}
+
 // Con los gastos cerrados no verías nada: los abro, como con la lupa.
 function discretoDesdeAtajo() {
   if (el.gastos.hidden) abrirGastos();
@@ -4838,6 +4846,7 @@ function hacerAtajo(accion) {
   else if (accion === "buscar") buscarDesdeAtajo();
   else if (accion === "pago") onCambiarPago();
   else if (accion === "viajes") viajesDesdeAtajo();
+  else if (accion === "nuevoViaje") nuevoViajeDesdeAtajo();
   else if (accion === "discreto") discretoDesdeAtajo();
   else if (accion === "csv") el.gastosCsv.click();
   else if (accion === "compartir") onCompartir();
@@ -4939,6 +4948,7 @@ function onAtajo(event) {
       : accion === "girarTasa" ? el.rateLine.textContent || queHace(accion)
       : accion === "copiarTasa" ? tr("copiado.tasa", { tasa: el.rateLine.textContent })
       : accion === "fijar" ? fijarDice
+      : accion === "nuevoViaje" && el.viajesNuevo.hidden ? tr("viajes.lleno", { n: VIAJES_MAX })
       : queHace(accion);
     mostrarTecla(prefijo + tecla, dice);
   }
