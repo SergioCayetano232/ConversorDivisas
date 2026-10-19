@@ -4879,6 +4879,7 @@ function hacerAtajo(accion) {
   else if (accion === "csv") el.gastosCsv.click();
   else if (accion === "compartir") onCompartir();
   else if (accion === "chuleta") chuletaDesdeAtajo();
+  else if (accion === "imprimirChuleta") onImprimirChuleta();
   else if (accion === "extras") extrasDesdeAtajo();
   else if (accion === "fijar") fijarDice = fijarActual();
   else if (accion === "deshacer") onDeshacer();
@@ -4962,7 +4963,7 @@ function onAtajo(event) {
   });
   // Sin nada que deshacer la Z no hace nada, ni siquiera el aviso de abajo. Sin gastos, la X igual.
   if (!accion || (accion === "deshacer" && !quitado) || ((accion === "csv" || accion === "compartir") && !gastos.length)
-    || ((accion === "copiarTasa" || accion === "chuleta") && rate === null)) return;
+    || ((accion === "copiarTasa" || accion === "chuleta" || accion === "imprimirChuleta") && rate === null)) return;
   event.preventDefault();
   hacerAtajo(accion);
   // El resumen, la chuleta y las otras divisas ya avisan ellos al copiar, y si falla dicen que ha fallado.
@@ -4971,7 +4972,7 @@ function onAtajo(event) {
     const tecla = conCmd ? (esMac ? "⌘Z" : "Ctrl+Z")
       : accion === "buscar" ? "/"
       : event.altKey ? textoAtajo(event.code, esMac) : event.code.replace(/^Key|^Digit/, "");
-    const prefijo = accion === "copiarFrase" ? (esMac ? "⇧" : "Shift+") : "";
+    const prefijo = accion === "copiarFrase" || accion === "imprimirChuleta" ? (esMac ? "⇧" : "Shift+") : "";
     // El de pagar, el discreto y la tasa dicen cómo han quedado, que "cambiar" no te dice a qué.
     const dice = accion === "pago" ? tr("pago.ahora", { nombre: tr(`pago.${pagoNuevo}`) })
       : accion === "discreto" ? tr(discreto ? "discreto.puesto" : "discreto.quitado")

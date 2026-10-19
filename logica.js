@@ -3501,6 +3501,9 @@ const ATAJOS = {
   KeyH: "ayuda",
 };
 
+// Con Shift, la versión larga: la frase entera, o la chuleta en papel.
+const CON_SHIFT = { copiar: "copiarFrase", chuleta: "imprimirChuleta" };
+
 // Escribiendo en un campo las letras son letras (la x es "por" en las
 // cuentas), así que ahí hace falta Alt. Cmd y Ctrl no los toco nunca: son
 // copiar, pegar y compañía.
@@ -3515,7 +3518,7 @@ function atajoPara({ code, key, altKey, ctrlKey, metaKey, shiftKey, enCampo }) {
   if (!enCampo && key === "/") return "buscar";
   if (enCampo && !altKey) return null;
   const accion = ATAJOS[code] ?? null;
-  return accion === "copiar" && shiftKey ? "copiarFrase" : accion;
+  return (shiftKey && CON_SHIFT[accion]) || accion;
 }
 
 function textoAtajo(code, esMac) {
