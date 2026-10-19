@@ -539,6 +539,12 @@ async function sugerirEnBarra(texto, sugerir) {
     chrome.omnibox.setDefaultSuggestion({ description: `<match>${escaparXml(textoTazas(tazas))}</match>` });
     return;
   }
+  const cucharadas = leerCucharadas(texto);
+  if (cucharadas) {
+    sugerir([]);
+    chrome.omnibox.setDefaultSuggestion({ description: `<match>${escaparXml(textoCucharadas(cucharadas))}</match>` });
+    return;
+  }
   const leido = leerOmnibox(texto, await leerPar());
   if (actual !== barraId) return;
   if (!leido) {
@@ -587,7 +593,7 @@ async function abrirDesdeBarra(texto) {
     return;
   }
   // Las medidas ya están en la sugerencia: no hay nada que abrir.
-  if (leerGrados(texto) || leerDistancia(texto) || leerPeso(texto) || leerOnzas(texto) || leerAltura(texto) || leerVelocidad(texto) || leerVolumen(texto) || leerLongitud(texto) || leerSuperficie(texto) || leerConsumo(texto) || leerPresion(texto) || leerTazas(texto)) return;
+  if (leerGrados(texto) || leerDistancia(texto) || leerPeso(texto) || leerOnzas(texto) || leerAltura(texto) || leerVelocidad(texto) || leerVolumen(texto) || leerLongitud(texto) || leerSuperficie(texto) || leerConsumo(texto) || leerPresion(texto) || leerTazas(texto) || leerCucharadas(texto)) return;
   const leido = leerOmnibox(texto, await leerPar());
   if (leido) await chrome.storage.session.set({ pendiente: leido });
   try {
