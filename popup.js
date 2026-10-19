@@ -4824,6 +4824,12 @@ function chuletaDesdeAtajo() {
   onCompartirChuleta();
 }
 
+// Sin ninguna elegida no hay nada que copiar, pero en la pestaña ves dónde se añaden.
+function extrasDesdeAtajo() {
+  if (vista !== "extras") cambiarVista("extras");
+  onCompartirExtras();
+}
+
 // Con los gastos cerrados no verías nada: los abro, como con la lupa.
 function discretoDesdeAtajo() {
   if (el.gastos.hidden) abrirGastos();
@@ -4873,6 +4879,7 @@ function hacerAtajo(accion) {
   else if (accion === "csv") el.gastosCsv.click();
   else if (accion === "compartir") onCompartir();
   else if (accion === "chuleta") chuletaDesdeAtajo();
+  else if (accion === "extras") extrasDesdeAtajo();
   else if (accion === "fijar") fijarDice = fijarActual();
   else if (accion === "deshacer") onDeshacer();
   else if (accion.startsWith("vista:")) cambiarVista(accion.slice(6));
@@ -4958,8 +4965,8 @@ function onAtajo(event) {
     || ((accion === "copiarTasa" || accion === "chuleta") && rate === null)) return;
   event.preventDefault();
   hacerAtajo(accion);
-  // El resumen y la chuleta ya avisan ellos al copiar, y si falla dicen que ha fallado.
-  if (accion !== "ayuda" && accion !== "compartir" && accion !== "chuleta") {
+  // El resumen, la chuleta y las otras divisas ya avisan ellos al copiar, y si falla dicen que ha fallado.
+  if (accion !== "ayuda" && accion !== "compartir" && accion !== "chuleta" && !(accion === "extras" && textoExtras())) {
     const conCmd = event.metaKey || event.ctrlKey;
     const tecla = conCmd ? (esMac ? "⌘Z" : "Ctrl+Z")
       : accion === "buscar" ? "/"
@@ -4972,6 +4979,7 @@ function onAtajo(event) {
       : accion === "copiarTasa" ? tr("copiado.tasa", { tasa: el.rateLine.textContent })
       : accion === "fijar" ? fijarDice
       : accion === "rango" ? tr(`rango.${dias}.largo`)
+      : accion === "extras" ? tr("extras.ninguna")
       : accion === "nuevoViaje" && el.viajesNuevo.hidden ? tr("viajes.lleno", { n: VIAJES_MAX })
       : queHace(accion);
     mostrarTecla(prefijo + tecla, dice);

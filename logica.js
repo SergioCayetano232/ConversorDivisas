@@ -3427,6 +3427,8 @@ const ATAJOS = {
   KeyW: "compartir",
   // La C ya copia el resultado: K, que suena igual, copia la chuleta.
   KeyK: "chuleta",
+  // L de lista: las otras divisas, también para WhatsApp.
+  KeyL: "extras",
   // F de fijar: la chincheta del par que tienes puesto, que no sale en las pastillas.
   KeyF: "fijar",
   KeyZ: "deshacer",

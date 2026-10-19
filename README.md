@@ -268,7 +268,7 @@ que necesitaba una conversión rápida. Ahora es un clic en la barra del navegad
   de alquiler, `cd 800sqft` o `cd 75m2`: "800 sq ft = 74,3 m²". Y para el
   coche de alquiler, `cd 30mpg` o `cd 6,5 l/100km`: "30 mpg = 7,8 l/100 km"
 - Atajos dentro del popup: `S` da la vuelta al par, `I` a la tasa de arriba, `C` copia, `T` copia la tasa ("1 EUR = 1,1253 USD"), `D` y `A` abren
-  los desplegables, `G` los gastos, `U` apunta la cantidad en ellos, `/` busca en ellos, `E` cambia entre tarjeta y efectivo, `V` abre la lista de viajes, `N` empieza uno nuevo, `P` dividir la cuenta, `B` la balanza, `R` las últimas conversiones, `O` el modo discreto, `M` cambia el periodo del gráfico, `X` baja los gastos en CSV, `W` copia el resumen del viaje para WhatsApp, `K` la chuleta, `F` fija el par que tienes puesto, `Z` (o `Cmd+Z`, `Ctrl+Z`) deshace lo último que
+  los desplegables, `G` los gastos, `U` apunta la cantidad en ellos, `/` busca en ellos, `E` cambia entre tarjeta y efectivo, `V` abre la lista de viajes, `N` empieza uno nuevo, `P` dividir la cuenta, `B` la balanza, `R` las últimas conversiones, `O` el modo discreto, `M` cambia el periodo del gráfico, `X` baja los gastos en CSV, `W` copia el resumen del viaje para WhatsApp, `K` la chuleta, `L` las otras divisas, `F` fija el par que tienes puesto, `Z` (o `Cmd+Z`, `Ctrl+Z`) deshace lo último que
   has quitado de los gastos y del `1` al `6` cambian de pestaña. Si estás escribiendo en
   un campo, con `Alt` delante (`⌥` en Mac). En la cantidad, `↑` y `↓` suben o
   bajan 1, y con Shift, 10. Con `?` salen todos
