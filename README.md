@@ -262,7 +262,8 @@ que necesitaba una conversión rápida. Ahora es un clic en la barra del navegad
   carretera, `cd 10mi` o `cd 5km`: "10 mi = 16,1 km". Y para la maleta,
   `cd 50lb` o `cd 23kg`: "50 lb = 22,7 kg". Y para las alturas, `cd 6ft` o
   `cd 2 metros`: "6 ft = 1,83 m". Y para los límites de velocidad, `cd 65mph`
-  o `cd 120 km/h`: "65 mph = 104,6 km/h"
+  o `cd 120 km/h`: "65 mph = 104,6 km/h". Y para la gasolina, `cd 10gal` o
+  `cd 40 litros`: "10 gal = 37,9 l"
 - Atajos dentro del popup: `S` da la vuelta al par, `I` a la tasa de arriba, `C` copia, `T` copia la tasa ("1 EUR = 1,1253 USD"), `D` y `A` abren
   los desplegables, `G` los gastos, `/` busca en ellos, `E` cambia entre tarjeta y efectivo, `V` abre la lista de viajes, `P` dividir la cuenta, `B` la balanza, `R` las últimas conversiones, `O` el modo discreto, `X` baja los gastos en CSV, `Z` (o `Cmd+Z`, `Ctrl+Z`) deshace lo último que
   has quitado de los gastos y del `1` al `6` cambian de pestaña. Si estás escribiendo en
