@@ -641,7 +641,7 @@ const TEXTOS = {
     "tarjeta.sinSeleccion": "Selecciona un precio en la página y vuelve a pulsar el atajo.",
 
     "menu.precios": "Convertir los precios de la página",
-    "barra.pista": "Escribe una cantidad: 20 usd, 50 eur a gbp, 100-15% jpy. Con + delante apuntas un gasto: + 20 cena. Con hoy o ayer, cómo vas; con 75f, los grados; con 10mi, los km; con 5lb, los kilos; con 8oz, los gramos; con 6ft, los metros; con 65mph, los km/h; con 10gal, los litros; con 55in, los cm; con 800sqft, los m²; con 30mpg, los l/100 km, y con 35psi, los bares",
+    "barra.pista": "Escribe una cantidad: 20 usd, 50 eur a gbp, 100-15% jpy. Con + delante apuntas un gasto: + 20 cena. Con hoy o ayer, cómo vas; con 75f, los grados; con 10mi, los km; con 5lb, los kilos; con 8oz, los gramos; con 6ft, los metros; con 65mph, los km/h; con 10gal, los litros; con 55in, los cm; con 800sqft, los m²; con 30mpg, los l/100 km; con 35psi, los bares, y con 2cups, los ml",
     "barra.no": "No lo entiendo. Prueba con 20 usd o 50 eur a gbp",
     "barra.enter": "Enter lo abre en el conversor",
     "barra.gastoPista": "Apunta un gasto: + 20 cena, + 1500 jpy taxi efectivo",
@@ -1311,7 +1311,7 @@ const TEXTOS = {
     "tarjeta.sinSeleccion": "Select a price on the page and press the shortcut again.",
 
     "menu.precios": "Convert prices on this page",
-    "barra.pista": "Type an amount: 20 usd, 50 eur to gbp, 100-15% jpy. Start with + to log an expense: + 20 dinner. Type today or yesterday to see how it's going, 75f for the temperature, 10mi for km, 5lb for kg, 8oz for grams, 6ft for meters, 65mph for km/h, 10gal for liters, 55in for cm, 800sqft for m², 30mpg for l/100 km or 35psi for bar",
+    "barra.pista": "Type an amount: 20 usd, 50 eur to gbp, 100-15% jpy. Start with + to log an expense: + 20 dinner. Type today or yesterday to see how it's going, 75f for the temperature, 10mi for km, 5lb for kg, 8oz for grams, 6ft for meters, 65mph for km/h, 10gal for liters, 55in for cm, 800sqft for m², 30mpg for l/100 km, 35psi for bar or 2cups for ml",
     "barra.no": "I don't get it. Try 20 usd or 50 eur to gbp",
     "barra.enter": "Enter opens it in the converter",
     "barra.gastoPista": "Log an expense: + 20 dinner, + 1500 jpy taxi cash",

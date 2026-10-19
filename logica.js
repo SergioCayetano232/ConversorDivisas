@@ -3202,6 +3202,28 @@ function textoPresion(leido) {
   return `${presion(leido.valor, leido.de)} = ${presion(otro.valor, otro.a)}`;
 }
 
+// "cd 2 cups", para las recetas americanas. La taza de allí, no la métrica de 250.
+const HAY_TAZAS = /^\s*(\d+(?:[.,]\d+)?)\s*(cups?|tazas?|ml|mililitros?|millilit(?:er|re)s?)\s*$/i;
+const ML_POR_TAZA = 236.5882365;
+
+function leerTazas(texto) {
+  const m = String(texto ?? "").match(HAY_TAZAS);
+  if (!m) return null;
+  return { valor: Number(m[1].replace(",", ".")), de: /^m/i.test(m[2]) ? "ml" : "cups" };
+}
+
+function convertirTazas({ valor, de }) {
+  return de === "cups" ? { valor: valor * ML_POR_TAZA, a: "ml" } : { valor: valor / ML_POR_TAZA, a: "cups" };
+}
+
+// Los ml, enteros, y las tazas con dos decimales, que media taza de más ya se nota.
+function textoTazas(leido) {
+  if (!leido) return "";
+  const cuanto = (n, u) => `${numeros({ maximumFractionDigits: u === "ml" ? 0 : 2 }).format(n)} ${u === "cups" && n === 1 ? "cup" : u}`;
+  const otro = convertirTazas(leido);
+  return `${cuanto(leido.valor, leido.de)} = ${cuanto(otro.valor, otro.a)}`;
+}
+
 // "cd hoy" en la barra: cómo vas sin abrir nada. Arriba lo de hoy, y detrás el
 // total del viaje y lo que queda del presupuesto.
 const esHoyBarra = (texto) => /^\s*(hoy|today)\s*$/i.test(String(texto ?? ""));
@@ -3604,7 +3626,7 @@ if (typeof module !== "undefined") {
     MARGENES, tasaOfrecida, analizarCambio,
     domingoDePascua, hayTasaEl, tasaVieja, textoTasaVieja, horaBce, textoActualizado, proximaTasa, textoProximaTasa,
     FECHA_MINIMA, fechaLarga, fechaValida, diaDelGrafico, mesesAtras, FECHAS_RAPIDAS, leerFecha, cambioDesde, notaDiaHabil,
-    textoInsignia, cambioDiario, sentidoDe, cambioDelDia, textoCambioDia, ULTIMA_VEZ_MINIMO, desdeLaUltimaVez, ultimoVisto, tituloInsignia, tituloHoy, leerGrados, convertirGrados, textoGrados, leerDistancia, convertirDistancia, textoDistancia, leerPeso, convertirPeso, textoPeso, leerOnzas, convertirOnzas, textoOnzas, leerAltura, convertirAltura, textoAltura, leerVelocidad, convertirVelocidad, textoVelocidad, leerVolumen, convertirVolumen, textoVolumen, leerLongitud, convertirLongitud, textoLongitud, leerSuperficie, convertirSuperficie, textoSuperficie, leerConsumo, convertirConsumo, textoConsumo, leerPresion, convertirPresion, textoPresion, esHoyBarra, resumenHoyBarra, esAyerBarra, resumenAyerBarra, lineaTasa,
+    textoInsignia, cambioDiario, sentidoDe, cambioDelDia, textoCambioDia, ULTIMA_VEZ_MINIMO, desdeLaUltimaVez, ultimoVisto, tituloInsignia, tituloHoy, leerGrados, convertirGrados, textoGrados, leerDistancia, convertirDistancia, textoDistancia, leerPeso, convertirPeso, textoPeso, leerOnzas, convertirOnzas, textoOnzas, leerAltura, convertirAltura, textoAltura, leerVelocidad, convertirVelocidad, textoVelocidad, leerVolumen, convertirVolumen, textoVolumen, leerLongitud, convertirLongitud, textoLongitud, leerSuperficie, convertirSuperficie, textoSuperficie, leerConsumo, convertirConsumo, textoConsumo, leerPresion, convertirPresion, textoPresion, leerTazas, convertirTazas, textoTazas, esHoyBarra, resumenHoyBarra, esAyerBarra, resumenAyerBarra, lineaTasa,
     AVISOS_MAX, AVISO_PCT_MAX, sentidoAviso, crearAviso, leerPorcentajeAviso, crearAvisoPorcentaje, leerAvisos, avisoCumplido, repartirAvisos, mensajeAviso, faltaParaAviso, cercaniaAviso, textoFalta,
     nivelPresupuesto, avisosPresupuesto, mensajePresupuesto,
     RECORDATORIO_HORA, RECORDATORIO_HORAS, leerHoraRecordatorio, viajesSinApuntar, tocaRecordar, mensajeRecordatorio,
