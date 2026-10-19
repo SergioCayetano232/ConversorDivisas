@@ -4808,6 +4808,20 @@ async function copiarTasa() {
   if (!(await copiar(el.rateLine.textContent))) avisar(tr("copiar.fallo"));
 }
 
+// El par puesto siempre está en la lista, que se apunta al cambiarlo.
+function fijarActual() {
+  const datos = { de: el.from.value, a: el.to.value };
+  const nuevos = fijarReciente(recientes, datos.de, datos.a);
+  if (nuevos === recientes) return tr("reciente.lleno", { n: FIJOS_MAX });
+  recientes = nuevos;
+  guardarRecientes();
+  pintarRecientes();
+  const fijo = recientes.some((p) => p.fijo && p.from === datos.de && p.to === datos.a);
+  return tr(fijo ? "reciente.fijado" : "reciente.soltado", datos);
+}
+
+let fijarDice = "";
+
 function hacerAtajo(accion) {
   if (accion === "intercambiar" && !el.swap.disabled) onSwap();
   else if (accion === "copiar") onCopiar();
@@ -4827,6 +4841,7 @@ function hacerAtajo(accion) {
   else if (accion === "discreto") discretoDesdeAtajo();
   else if (accion === "csv") el.gastosCsv.click();
   else if (accion === "compartir") onCompartir();
+  else if (accion === "fijar") fijarDice = fijarActual();
   else if (accion === "deshacer") onDeshacer();
   else if (accion.startsWith("vista:")) cambiarVista(accion.slice(6));
 }
@@ -4923,6 +4938,7 @@ function onAtajo(event) {
       : accion === "discreto" ? tr(discreto ? "discreto.puesto" : "discreto.quitado")
       : accion === "girarTasa" ? el.rateLine.textContent || queHace(accion)
       : accion === "copiarTasa" ? tr("copiado.tasa", { tasa: el.rateLine.textContent })
+      : accion === "fijar" ? fijarDice
       : queHace(accion);
     mostrarTecla(prefijo + tecla, dice);
   }

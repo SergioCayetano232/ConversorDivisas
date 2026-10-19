@@ -91,6 +91,15 @@ test("fijar un par lo pone delante y quitarlo lo devuelve al resto", () => {
   assert.deepEqual(pares(lista), ["EURJPY", "EURUSD", "EURGBP"], "suelto, va el primero del resto");
 });
 
+test("el par que tienes puesto se fija igual, aunque no salga en las pastillas", () => {
+  let lista = apuntarReciente([{ from: "EUR", to: "USD" }], "EUR", "JPY");
+  assert.deepEqual(recientesVisibles(lista, "EUR", "JPY").map((p) => `${p.from}${p.to}`), ["EURUSD"]);
+  lista = fijarReciente(lista, "EUR", "JPY");
+  assert.deepEqual(fijos(lista), ["EURJPY"]);
+  lista = apuntarReciente(lista, "EUR", "GBP");
+  assert.deepEqual(recientesVisibles(lista, "EUR", "GBP").map((p) => `${p.from}${p.to}`)[0], "EURJPY", "al cambiar de par, sale delante");
+});
+
 test("un par fijo no se va aunque cambies mucho", () => {
   let lista = fijarReciente([{ from: "EUR", to: "JPY" }], "EUR", "JPY");
   for (const to of ["USD", "GBP", "CHF", "CAD", "AUD", "MXN"]) lista = apuntarReciente(lista, "EUR", to);
