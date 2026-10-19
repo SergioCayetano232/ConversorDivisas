@@ -3106,6 +3106,28 @@ function textoLongitud(leido) {
   return `${longitud(leido.valor, leido.de)} = ${longitud(otro.valor, otro.a)}`;
 }
 
+// "cd 800sqft", para los pisos de alquiler, que allí se anuncian así.
+const HAY_SUPERFICIE = /^\s*(\d+(?:[.,]\d+)?)\s*(sq\.?\s*ft|ft²|ft2|square (?:feet|foot)|pies? cuadrados?|m²|m2|metros? cuadrados?|square met(?:er|re)s?)\s*$/i;
+const M2_POR_PIE2 = 0.09290304;
+
+function leerSuperficie(texto) {
+  const m = String(texto ?? "").match(HAY_SUPERFICIE);
+  if (!m) return null;
+  return { valor: Number(m[1].replace(",", ".")), de: /^(m|square met)/i.test(m[2]) ? "m²" : "sq ft" };
+}
+
+function convertirSuperficie({ valor, de }) {
+  return de === "sq ft" ? { valor: valor * M2_POR_PIE2, a: "m²" } : { valor: valor / M2_POR_PIE2, a: "sq ft" };
+}
+
+// Los pies cuadrados, sin decimales: nadie anuncia un piso de 861,1.
+function textoSuperficie(leido) {
+  if (!leido) return "";
+  const superficie = (n, u) => `${numeros({ maximumFractionDigits: u === "m²" ? 1 : 0 }).format(n)} ${u}`;
+  const otro = convertirSuperficie(leido);
+  return `${superficie(leido.valor, leido.de)} = ${superficie(otro.valor, otro.a)}`;
+}
+
 // "cd hoy" en la barra: cómo vas sin abrir nada. Arriba lo de hoy, y detrás el
 // total del viaje y lo que queda del presupuesto.
 const esHoyBarra = (texto) => /^\s*(hoy|today)\s*$/i.test(String(texto ?? ""));
@@ -3495,7 +3517,7 @@ if (typeof module !== "undefined") {
     MARGENES, tasaOfrecida, analizarCambio,
     domingoDePascua, hayTasaEl, tasaVieja, textoTasaVieja, horaBce, textoActualizado, proximaTasa, textoProximaTasa,
     FECHA_MINIMA, fechaLarga, fechaValida, diaDelGrafico, mesesAtras, FECHAS_RAPIDAS, leerFecha, cambioDesde, notaDiaHabil,
-    textoInsignia, cambioDiario, sentidoDe, cambioDelDia, textoCambioDia, ULTIMA_VEZ_MINIMO, desdeLaUltimaVez, ultimoVisto, tituloInsignia, tituloHoy, leerGrados, convertirGrados, textoGrados, leerDistancia, convertirDistancia, textoDistancia, leerPeso, convertirPeso, textoPeso, leerAltura, convertirAltura, textoAltura, leerVelocidad, convertirVelocidad, textoVelocidad, leerVolumen, convertirVolumen, textoVolumen, leerLongitud, convertirLongitud, textoLongitud, esHoyBarra, resumenHoyBarra, esAyerBarra, resumenAyerBarra, lineaTasa,
+    textoInsignia, cambioDiario, sentidoDe, cambioDelDia, textoCambioDia, ULTIMA_VEZ_MINIMO, desdeLaUltimaVez, ultimoVisto, tituloInsignia, tituloHoy, leerGrados, convertirGrados, textoGrados, leerDistancia, convertirDistancia, textoDistancia, leerPeso, convertirPeso, textoPeso, leerAltura, convertirAltura, textoAltura, leerVelocidad, convertirVelocidad, textoVelocidad, leerVolumen, convertirVolumen, textoVolumen, leerLongitud, convertirLongitud, textoLongitud, leerSuperficie, convertirSuperficie, textoSuperficie, esHoyBarra, resumenHoyBarra, esAyerBarra, resumenAyerBarra, lineaTasa,
     AVISOS_MAX, AVISO_PCT_MAX, sentidoAviso, crearAviso, leerPorcentajeAviso, crearAvisoPorcentaje, leerAvisos, avisoCumplido, repartirAvisos, mensajeAviso, faltaParaAviso, cercaniaAviso, textoFalta,
     nivelPresupuesto, avisosPresupuesto, mensajePresupuesto,
     RECORDATORIO_HORA, RECORDATORIO_HORAS, leerHoraRecordatorio, viajesSinApuntar, tocaRecordar, mensajeRecordatorio,
