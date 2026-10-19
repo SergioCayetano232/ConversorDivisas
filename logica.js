@@ -3049,8 +3049,19 @@ function textoOnzas(leido) {
 // "cd 6ft", para alturas. Los metros, escritos enteros: "2m" son dos millones.
 const HAY_ALTURA = /^\s*(\d+(?:[.,]\d+)?)\s*(ft|pies?|feet|foot|metros?|meters?|metres?)\s*$/i;
 const M_POR_PIE = 0.3048;
+// Allí la gente mide 5'10", pies y pulgadas juntos. Las comillas pueden venir
+// dobladas ('') o curvas, que es como salen en el móvil.
+const HAY_PIES_Y_PULGADAS = /^\s*(\d+)\s*(?:'|’|ft|feet|foot|pies?)\s*(\d+(?:[.,]\d+)?)\s*(?:"|”|''|’’|in|inch(?:es)?|pulgadas?)?\s*$/i;
 
 function leerAltura(texto) {
+  const juntos = String(texto ?? "").match(HAY_PIES_Y_PULGADAS);
+  if (juntos) {
+    const pies = Number(juntos[1]);
+    const pulgadas = Number(juntos[2].replace(",", "."));
+    // 5'14" no existe: serían 6'2".
+    if (pulgadas >= 12) return null;
+    return { valor: pies + pulgadas / 12, de: "ft", pies, pulgadas };
+  }
   const m = String(texto ?? "").match(HAY_ALTURA);
   if (!m) return null;
   return { valor: Number(m[1].replace(",", ".")), de: /^m/i.test(m[2]) ? "m" : "ft" };
@@ -3065,7 +3076,9 @@ function textoAltura(leido) {
   if (!leido) return "";
   const altura = (n, u) => `${numeros({ maximumFractionDigits: u === "m" ? 2 : 1 }).format(n)} ${u}`;
   const otro = convertirAltura(leido);
-  return `${altura(leido.valor, leido.de)} = ${altura(otro.valor, otro.a)}`;
+  const antes = leido.pulgadas === undefined ? altura(leido.valor, leido.de)
+    : `${leido.pies} ft ${numeros({ maximumFractionDigits: 1 }).format(leido.pulgadas)} in`;
+  return `${antes} = ${altura(otro.valor, otro.a)}`;
 }
 
 // "cd 65mph", para los límites de la carretera. Las millas sueltas ya son

@@ -16,6 +16,18 @@ test("lee las alturas como se escriben", () => {
   assert.deepEqual(leerAltura("3 metres"), { valor: 3, de: "m" });
 });
 
+test("pies y pulgadas juntos, como se dice allí", () => {
+  assert.deepEqual(leerAltura(`5'10"`), { valor: 5 + 10 / 12, de: "ft", pies: 5, pulgadas: 10 });
+  assert.deepEqual(leerAltura("5'10"), { valor: 5 + 10 / 12, de: "ft", pies: 5, pulgadas: 10 });
+  assert.deepEqual(leerAltura("5' 10''"), { valor: 5 + 10 / 12, de: "ft", pies: 5, pulgadas: 10 });
+  assert.deepEqual(leerAltura("5’10”"), { valor: 5 + 10 / 12, de: "ft", pies: 5, pulgadas: 10 });
+  assert.deepEqual(leerAltura("5ft 10in"), { valor: 5 + 10 / 12, de: "ft", pies: 5, pulgadas: 10 });
+  assert.deepEqual(leerAltura("5 feet 10 inches"), { valor: 5 + 10 / 12, de: "ft", pies: 5, pulgadas: 10 });
+  assert.deepEqual(leerAltura("6'0\""), { valor: 6, de: "ft", pies: 6, pulgadas: 0 });
+  assert.equal(leerAltura(`5'12"`), null);
+  assert.equal(leerAltura(`5'`), null);
+});
+
 test("lo que no son alturas, no", () => {
   for (const t of ["ft", "10", "2m", "2 m", "20 usd", "-5 ft", "", undefined]) assert.equal(leerAltura(t), null, String(t));
 });
@@ -36,6 +48,8 @@ test("de pies a metros y al revés", () => {
 test("el texto: metros con dos decimales, pies con uno", () => {
   assert.equal(texto("6ft"), "6 ft = 1,83 m");
   assert.equal(texto("2 metros"), "2 m = 6,6 ft");
+  assert.equal(texto(`5'10"`), "5 ft 10 in = 1,78 m");
+  assert.equal(texto(`5'7,5"`), "5 ft 7,5 in = 1,71 m");
   assert.equal(textoAltura(null), "");
 });
 
