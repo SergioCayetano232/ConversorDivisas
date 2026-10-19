@@ -4818,6 +4818,12 @@ function apuntarDesdeAtajo() {
   if (!el.gastosForm.hidden) el.gastosForm.requestSubmit();
 }
 
+// Te llevo a la chuleta para que veas qué se ha copiado.
+function chuletaDesdeAtajo() {
+  if (vista !== "chuleta") cambiarVista("chuleta");
+  onCompartirChuleta();
+}
+
 // Con los gastos cerrados no verías nada: los abro, como con la lupa.
 function discretoDesdeAtajo() {
   if (el.gastos.hidden) abrirGastos();
@@ -4866,6 +4872,7 @@ function hacerAtajo(accion) {
   else if (accion === "discreto") discretoDesdeAtajo();
   else if (accion === "csv") el.gastosCsv.click();
   else if (accion === "compartir") onCompartir();
+  else if (accion === "chuleta") chuletaDesdeAtajo();
   else if (accion === "fijar") fijarDice = fijarActual();
   else if (accion === "deshacer") onDeshacer();
   else if (accion.startsWith("vista:")) cambiarVista(accion.slice(6));
@@ -4948,11 +4955,11 @@ function onAtajo(event) {
   });
   // Sin nada que deshacer la Z no hace nada, ni siquiera el aviso de abajo. Sin gastos, la X igual.
   if (!accion || (accion === "deshacer" && !quitado) || ((accion === "csv" || accion === "compartir") && !gastos.length)
-    || (accion === "copiarTasa" && rate === null)) return;
+    || ((accion === "copiarTasa" || accion === "chuleta") && rate === null)) return;
   event.preventDefault();
   hacerAtajo(accion);
-  // El resumen ya avisa él al copiar, y si falla dice que ha fallado.
-  if (accion !== "ayuda" && accion !== "compartir") {
+  // El resumen y la chuleta ya avisan ellos al copiar, y si falla dicen que ha fallado.
+  if (accion !== "ayuda" && accion !== "compartir" && accion !== "chuleta") {
     const conCmd = event.metaKey || event.ctrlKey;
     const tecla = conCmd ? (esMac ? "⌘Z" : "Ctrl+Z")
       : accion === "buscar" ? "/"

@@ -3425,6 +3425,8 @@ const ATAJOS = {
   KeyX: "csv",
   // W de WhatsApp, que es donde va el resumen.
   KeyW: "compartir",
+  // La C ya copia el resultado: K, que suena igual, copia la chuleta.
+  KeyK: "chuleta",
   // F de fijar: la chincheta del par que tienes puesto, que no sale en las pastillas.
   KeyF: "fijar",
   KeyZ: "deshacer",
