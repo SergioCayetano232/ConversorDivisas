@@ -3084,6 +3084,28 @@ function textoVolumen(leido) {
   return `${volumen(leido.valor, leido.de)} = ${volumen(otro.valor, otro.a)}`;
 }
 
+// "cd 55in", para pantallas, tallas y la maleta de cabina. Las comillas también
+// valen, que es como sale en las tiendas: 55".
+const HAY_LONGITUD = /^\s*(\d+(?:[.,]\d+)?)\s*(in|inch(?:es)?|pulgadas?|"|cm|cent[ií]metros?|centimet(?:er|re)s?)\s*$/i;
+const CM_POR_PULGADA = 2.54;
+
+function leerLongitud(texto) {
+  const m = String(texto ?? "").match(HAY_LONGITUD);
+  if (!m) return null;
+  return { valor: Number(m[1].replace(",", ".")), de: /^c/i.test(m[2]) ? "cm" : "in" };
+}
+
+function convertirLongitud({ valor, de }) {
+  return de === "in" ? { valor: valor * CM_POR_PULGADA, a: "cm" } : { valor: valor / CM_POR_PULGADA, a: "in" };
+}
+
+function textoLongitud(leido) {
+  if (!leido) return "";
+  const longitud = (n, u) => `${numeros({ maximumFractionDigits: 1 }).format(n)} ${u}`;
+  const otro = convertirLongitud(leido);
+  return `${longitud(leido.valor, leido.de)} = ${longitud(otro.valor, otro.a)}`;
+}
+
 // "cd hoy" en la barra: cómo vas sin abrir nada. Arriba lo de hoy, y detrás el
 // total del viaje y lo que queda del presupuesto.
 const esHoyBarra = (texto) => /^\s*(hoy|today)\s*$/i.test(String(texto ?? ""));
@@ -3473,7 +3495,7 @@ if (typeof module !== "undefined") {
     MARGENES, tasaOfrecida, analizarCambio,
     domingoDePascua, hayTasaEl, tasaVieja, textoTasaVieja, horaBce, textoActualizado, proximaTasa, textoProximaTasa,
     FECHA_MINIMA, fechaLarga, fechaValida, diaDelGrafico, mesesAtras, FECHAS_RAPIDAS, leerFecha, cambioDesde, notaDiaHabil,
-    textoInsignia, cambioDiario, sentidoDe, cambioDelDia, textoCambioDia, ULTIMA_VEZ_MINIMO, desdeLaUltimaVez, ultimoVisto, tituloInsignia, tituloHoy, leerGrados, convertirGrados, textoGrados, leerDistancia, convertirDistancia, textoDistancia, leerPeso, convertirPeso, textoPeso, leerAltura, convertirAltura, textoAltura, leerVelocidad, convertirVelocidad, textoVelocidad, leerVolumen, convertirVolumen, textoVolumen, esHoyBarra, resumenHoyBarra, esAyerBarra, resumenAyerBarra, lineaTasa,
+    textoInsignia, cambioDiario, sentidoDe, cambioDelDia, textoCambioDia, ULTIMA_VEZ_MINIMO, desdeLaUltimaVez, ultimoVisto, tituloInsignia, tituloHoy, leerGrados, convertirGrados, textoGrados, leerDistancia, convertirDistancia, textoDistancia, leerPeso, convertirPeso, textoPeso, leerAltura, convertirAltura, textoAltura, leerVelocidad, convertirVelocidad, textoVelocidad, leerVolumen, convertirVolumen, textoVolumen, leerLongitud, convertirLongitud, textoLongitud, esHoyBarra, resumenHoyBarra, esAyerBarra, resumenAyerBarra, lineaTasa,
     AVISOS_MAX, AVISO_PCT_MAX, sentidoAviso, crearAviso, leerPorcentajeAviso, crearAvisoPorcentaje, leerAvisos, avisoCumplido, repartirAvisos, mensajeAviso, faltaParaAviso, cercaniaAviso, textoFalta,
     nivelPresupuesto, avisosPresupuesto, mensajePresupuesto,
     RECORDATORIO_HORA, RECORDATORIO_HORAS, leerHoraRecordatorio, viajesSinApuntar, tocaRecordar, mensajeRecordatorio,

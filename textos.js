@@ -631,7 +631,7 @@ const TEXTOS = {
     "tarjeta.sinSeleccion": "Selecciona un precio en la página y vuelve a pulsar el atajo.",
 
     "menu.precios": "Convertir los precios de la página",
-    "barra.pista": "Escribe una cantidad: 20 usd, 50 eur a gbp, 100-15% jpy. Con + delante apuntas un gasto: + 20 cena. Con hoy o ayer, cómo vas; con 75f, los grados; con 10mi, los km; con 5lb, los kilos; con 6ft, los metros; con 65mph, los km/h, y con 10gal, los litros",
+    "barra.pista": "Escribe una cantidad: 20 usd, 50 eur a gbp, 100-15% jpy. Con + delante apuntas un gasto: + 20 cena. Con hoy o ayer, cómo vas; con 75f, los grados; con 10mi, los km; con 5lb, los kilos; con 6ft, los metros; con 65mph, los km/h; con 10gal, los litros, y con 55in, los cm",
     "barra.no": "No lo entiendo. Prueba con 20 usd o 50 eur a gbp",
     "barra.enter": "Enter lo abre en el conversor",
     "barra.gastoPista": "Apunta un gasto: + 20 cena, + 1500 jpy taxi efectivo",
@@ -1291,7 +1291,7 @@ const TEXTOS = {
     "tarjeta.sinSeleccion": "Select a price on the page and press the shortcut again.",
 
     "menu.precios": "Convert prices on this page",
-    "barra.pista": "Type an amount: 20 usd, 50 eur to gbp, 100-15% jpy. Start with + to log an expense: + 20 dinner. Type today or yesterday to see how it's going, 75f for the temperature, 10mi for km, 5lb for kg, 6ft for meters, 65mph for km/h or 10gal for liters",
+    "barra.pista": "Type an amount: 20 usd, 50 eur to gbp, 100-15% jpy. Start with + to log an expense: + 20 dinner. Type today or yesterday to see how it's going, 75f for the temperature, 10mi for km, 5lb for kg, 6ft for meters, 65mph for km/h, 10gal for liters or 55in for cm",
     "barra.no": "I don't get it. Try 20 usd or 50 eur to gbp",
     "barra.enter": "Enter opens it in the converter",
     "barra.gastoPista": "Log an expense: + 20 dinner, + 1500 jpy taxi cash",
