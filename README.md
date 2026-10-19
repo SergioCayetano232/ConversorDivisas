@@ -144,7 +144,7 @@ que necesitaba una conversión rápida. Ahora es un clic en la barra del navegad
   Los gastos llevan una columna con la comisión de cada uno. En la lista de
   viajes, **CSV** baja los de todos juntos, con el viaje en la primera columna
 - Dividir la cuenta, en el tique que hay al lado de la cartera: con lo que
-  pone la cuenta arriba, eliges la propina (sin, 10, 15, 20 % o la que quieras)
+  pone la cuenta arriba, eliges la propina (sin, 10, 15, 20, 25 % o la que quieras)
   y entre cuántos sois, y te dice lo que paga cada uno, en esa divisa y en la
   tuya. Se redondea hacia arriba al céntimo, para que en la mesa no falte nada.
   Puedes cambiar la cantidad con el panel abierto, y la propina y la gente se
