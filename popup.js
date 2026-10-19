@@ -4804,6 +4804,13 @@ function nuevoViajeDesdeAtajo() {
   if (!el.viajesNuevo.hidden) el.viajesNombre.focus();
 }
 
+// Desde otra pestaña, la primera vez solo te lleva al gráfico: así ves en qué
+// periodo está antes de cambiarlo.
+function rangoDesdeAtajo() {
+  if (vista !== "evolucion") cambiarVista("evolucion");
+  else ponerRango(siguienteRango(dias));
+}
+
 // Con los gastos cerrados no verías nada: los abro, como con la lupa.
 function discretoDesdeAtajo() {
   if (el.gastos.hidden) abrirGastos();
@@ -4847,6 +4854,7 @@ function hacerAtajo(accion) {
   else if (accion === "pago") onCambiarPago();
   else if (accion === "viajes") viajesDesdeAtajo();
   else if (accion === "nuevoViaje") nuevoViajeDesdeAtajo();
+  else if (accion === "rango") rangoDesdeAtajo();
   else if (accion === "discreto") discretoDesdeAtajo();
   else if (accion === "csv") el.gastosCsv.click();
   else if (accion === "compartir") onCompartir();
@@ -4948,6 +4956,7 @@ function onAtajo(event) {
       : accion === "girarTasa" ? el.rateLine.textContent || queHace(accion)
       : accion === "copiarTasa" ? tr("copiado.tasa", { tasa: el.rateLine.textContent })
       : accion === "fijar" ? fijarDice
+      : accion === "rango" ? tr(`rango.${dias}.largo`)
       : accion === "nuevoViaje" && el.viajesNuevo.hidden ? tr("viajes.lleno", { n: VIAJES_MAX })
       : queHace(accion);
     mostrarTecla(prefijo + tecla, dice);
@@ -5692,7 +5701,10 @@ function marcarRango() {
 }
 
 function onRango(event) {
-  const nuevos = Number(event.currentTarget.dataset.dias);
+  ponerRango(Number(event.currentTarget.dataset.dias));
+}
+
+function ponerRango(nuevos) {
   if (nuevos === dias) return;
 
   dias = nuevos;

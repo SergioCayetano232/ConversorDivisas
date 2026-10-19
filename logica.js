@@ -476,6 +476,11 @@ function leerRango(guardado) {
   return RANGOS.includes(guardado) ? guardado : RANGO_POR_DEFECTO;
 }
 
+// Del año vuelve a la semana, como un dial.
+function siguienteRango(dias) {
+  return RANGOS[(RANGOS.indexOf(leerRango(dias)) + 1) % RANGOS.length];
+}
+
 // El primer día que publicó el BCE; antes la API contesta "not found".
 const FECHA_MINIMA = "1999-01-04";
 
@@ -3387,6 +3392,8 @@ const ATAJOS = {
   KeyB: "comparar",
   // O de ojo, el botón que hace lo mismo.
   KeyO: "discreto",
+  // M de meses: 7D, 1M, 3M, 1A y vuelta.
+  KeyM: "rango",
   // X de Excel, que es donde acaba el CSV.
   KeyX: "csv",
   // W de WhatsApp, que es donde va el resumen.
@@ -3499,7 +3506,7 @@ if (typeof module !== "undefined") {
     evaluar, completar, leerImporte, UNIDADES, quitarUnidad, porUnidadMetrica, esOperacion, pasoCantidad, leerCantidad,
     normalizar, filtrarDivisas, buildPaths, startDateFor, errorMessageFor,
     RECIENTES_MAX, FIJOS_MAX, apuntarReciente, fijarReciente, leerRecientes, recientesVisibles,
-    RANGOS, RANGO_POR_DEFECTO, leerRango, coordenadas, alturaEn, MOMENTO_UMBRAL, momento, textoMomento,
+    RANGOS, RANGO_POR_DEFECTO, leerRango, siguienteRango, coordenadas, alturaEn, MOMENTO_UMBRAL, momento, textoMomento,
     SEMANAS_MINIMAS, mejorDiaSemana, nombreDiaSemana, textoDiaSemana, indiceCercano, extremos, fechaCorta, largoEnPantalla,
     leerNumero, divisaDe, leerSeleccion, destinoPara, leerPegado, buscarPrecios, precioEntero, leerOmnibox, leerGastoBarra, gastoDeBarra, escaparXml,
     divisaDeIdioma, parPorIdioma, banderaDe, banderaDivisa,

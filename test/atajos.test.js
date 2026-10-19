@@ -27,6 +27,7 @@ test("fuera de un campo basta la letra", () => {
   assert.equal(atajoPara(tecla("KeyW")), "compartir");
   assert.equal(atajoPara(tecla("KeyF")), "fijar");
   assert.equal(atajoPara(tecla("KeyN")), "nuevoViaje");
+  assert.equal(atajoPara(tecla("KeyM")), "rango");
 });
 
 test("fuera de un campo también vale con Alt", () => {
