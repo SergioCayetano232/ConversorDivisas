@@ -3283,6 +3283,33 @@ function textoYardas(leido) {
   return `${cuanto(leido.valor, leido.de)} = ${cuanto(otro.valor, otro.a)}`;
 }
 
+// "cd 11st", el peso de la gente en Reino Unido. Muchas veces con libras
+// detrás, "11 st 4 lb", como los pies y las pulgadas. Solo hacia los kilos:
+// al revés ya están las libras.
+const HAY_STONE = /^\s*(\d+(?:[.,]\d+)?)\s*(?:st|stones?)\s*(?:(\d+(?:[.,]\d+)?)\s*(?:lbs?|pounds?))?\s*$/i;
+const LIBRAS_POR_STONE = 14;
+
+function leerStone(texto) {
+  const m = String(texto ?? "").match(HAY_STONE);
+  if (!m) return null;
+  const stone = Number(m[1].replace(",", "."));
+  if (m[2] === undefined) return { stone, libras: 0 };
+  const libras = Number(m[2].replace(",", "."));
+  // 11 st 14 lb serían 12 st.
+  return libras < LIBRAS_POR_STONE ? { stone, libras } : null;
+}
+
+function convertirStone({ stone, libras }) {
+  return { valor: (stone * LIBRAS_POR_STONE + libras) * KG_POR_LIBRA, a: "kg" };
+}
+
+function textoStone(leido) {
+  if (!leido) return "";
+  const n = numeros({ maximumFractionDigits: 1 });
+  const antes = `${n.format(leido.stone)} st${leido.libras ? ` ${n.format(leido.libras)} lb` : ""}`;
+  return `${antes} = ${n.format(convertirStone(leido).valor)} kg`;
+}
+
 // "cd hoy" en la barra: cómo vas sin abrir nada. Arriba lo de hoy, y detrás el
 // total del viaje y lo que queda del presupuesto.
 const esHoyBarra = (texto) => /^\s*(hoy|today)\s*$/i.test(String(texto ?? ""));
@@ -3688,7 +3715,7 @@ if (typeof module !== "undefined") {
     MARGENES, tasaOfrecida, analizarCambio,
     domingoDePascua, hayTasaEl, tasaVieja, textoTasaVieja, horaBce, textoActualizado, proximaTasa, textoProximaTasa,
     FECHA_MINIMA, fechaLarga, fechaValida, diaDelGrafico, mesesAtras, FECHAS_RAPIDAS, leerFecha, cambioDesde, notaDiaHabil,
-    textoInsignia, cambioDiario, sentidoDe, cambioDelDia, textoCambioDia, ULTIMA_VEZ_MINIMO, desdeLaUltimaVez, ultimoVisto, tituloInsignia, tituloHoy, leerGrados, convertirGrados, textoGrados, leerDistancia, convertirDistancia, textoDistancia, leerPeso, convertirPeso, textoPeso, leerOnzas, convertirOnzas, textoOnzas, leerAltura, convertirAltura, textoAltura, leerVelocidad, convertirVelocidad, textoVelocidad, leerVolumen, convertirVolumen, textoVolumen, leerLongitud, convertirLongitud, textoLongitud, leerSuperficie, convertirSuperficie, textoSuperficie, leerConsumo, convertirConsumo, textoConsumo, leerPresion, convertirPresion, textoPresion, leerTazas, convertirTazas, textoTazas, leerCucharadas, convertirCucharadas, textoCucharadas, leerYardas, convertirYardas, textoYardas, esHoyBarra, resumenHoyBarra, esAyerBarra, resumenAyerBarra, lineaTasa,
+    textoInsignia, cambioDiario, sentidoDe, cambioDelDia, textoCambioDia, ULTIMA_VEZ_MINIMO, desdeLaUltimaVez, ultimoVisto, tituloInsignia, tituloHoy, leerGrados, convertirGrados, textoGrados, leerDistancia, convertirDistancia, textoDistancia, leerPeso, convertirPeso, textoPeso, leerOnzas, convertirOnzas, textoOnzas, leerAltura, convertirAltura, textoAltura, leerVelocidad, convertirVelocidad, textoVelocidad, leerVolumen, convertirVolumen, textoVolumen, leerLongitud, convertirLongitud, textoLongitud, leerSuperficie, convertirSuperficie, textoSuperficie, leerConsumo, convertirConsumo, textoConsumo, leerPresion, convertirPresion, textoPresion, leerTazas, convertirTazas, textoTazas, leerCucharadas, convertirCucharadas, textoCucharadas, leerYardas, convertirYardas, textoYardas, leerStone, convertirStone, textoStone, esHoyBarra, resumenHoyBarra, esAyerBarra, resumenAyerBarra, lineaTasa,
     AVISOS_MAX, AVISO_PCT_MAX, sentidoAviso, crearAviso, leerPorcentajeAviso, crearAvisoPorcentaje, leerAvisos, avisoCumplido, repartirAvisos, mensajeAviso, faltaParaAviso, cercaniaAviso, textoFalta,
     nivelPresupuesto, avisosPresupuesto, mensajePresupuesto,
     RECORDATORIO_HORA, RECORDATORIO_HORAS, leerHoraRecordatorio, viajesSinApuntar, tocaRecordar, mensajeRecordatorio,
