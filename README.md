@@ -270,7 +270,7 @@ que necesitaba una conversión rápida. Ahora es un clic en la barra del navegad
   coche de alquiler, `cd 30mpg` o `cd 6,5 l/100km`: "30 mpg = 7,8 l/100 km". Y para las ruedas, `cd 35psi` o `cd 2,4 bar`: "35 psi
   = 2,4 bar". Y para las recetas, `cd 2 cups` o `cd 250ml`: "2 cups = 473 ml", y `cd 2 tbsp` o `cd 1 tsp` para las cucharas: "2 tbsp = 29,6 ml". Y
   para el golf o las telas, `cd 100yd`: "100 yd = 91,4 m". Y
-  para el peso en Reino Unido, `cd 11st` o `cd 11 st 4 lb`: "11 st 4 lb = 71,7 kg"
+  para el peso en Reino Unido, `cd 11st` o `cd 11 st 4 lb`: "11 st 4 lb = 71,7 kg". Y para las latas y las botellas, `cd 12 fl oz`: "12 fl oz = 354,9 ml"
 - Atajos dentro del popup: `S` da la vuelta al par, `I` a la tasa de arriba, `C` copia, `T` copia la tasa ("1 EUR = 1,1253 USD"), `D` y `A` abren
   los desplegables, `G` los gastos, `U` apunta la cantidad en ellos, `/` busca en ellos, `E` cambia entre tarjeta y efectivo, `V` abre la lista de viajes, `N` empieza uno nuevo, `P` dividir la cuenta, `B` la balanza, `R` las últimas conversiones, `O` el modo discreto, `M` cambia el periodo del gráfico, `X` baja los gastos en CSV, `W` copia el resumen del viaje para WhatsApp, `K` la chuleta (con Shift, la imprime), `L` las otras divisas, `F` fija el par que tienes puesto, `Z` (o `Cmd+Z`, `Ctrl+Z`) deshace lo último que
   has quitado de los gastos y del `1` al `6` cambian de pestaña. Si estás escribiendo en
