@@ -1075,9 +1075,9 @@ function textoHoras(min, corto = false) {
   return tr(`horas.dias${sufijo}`, { n: n.format(min / 60 / HORAS_JORNADA) });
 }
 
-// Las propinas de siempre: en Europa poco o nada, en Estados Unidos del 15 al 25,
-// que los datáfonos de allí ya empiezan a proponerla.
-const PROPINAS_RAPIDAS = [0, 10, 15, 20, 25];
+// Las propinas de siempre: en Europa poco o nada (el 5 es redondear en el bar),
+// en Estados Unidos del 15 al 25, que los datáfonos de allí ya empiezan a proponerla.
+const PROPINAS_RAPIDAS = [0, 5, 10, 15, 20, 25];
 const PROPINA_MAX = 30;
 const PERSONAS_MAX = 20;
 const CUENTA_POR_DEFECTO = { propina: 10, personas: 2, redondear: false };

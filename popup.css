@@ -2266,7 +2266,7 @@ body::after {
   }
 }
 
-/* Con "10 %" en español y cinco propinas, la fila va justa: aquí todo más
+/* Con "10 %" en español y seis propinas, la fila va justa: aquí todo más
    apretado que en la burbuja de la comisión. */
 .cuenta .burbuja__rapidas {
   gap: 3px;
@@ -2287,8 +2287,14 @@ body::after {
   padding: 0 3px;
 }
 
+/* Con seis propinas "otra" ya no cabe al lado: baja, debajo de los botones. */
 .cuenta__fila:has(#cuenta-propinas) {
+  flex-wrap: wrap;
   gap: 4px;
+}
+
+.cuenta__fila:has(#cuenta-propinas) .burbuja__otra {
+  margin-left: 56px;
 }
 
 .cuenta__nombre {
