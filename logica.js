@@ -3594,6 +3594,8 @@ const ATAJOS = {
   KeyI: "girarTasa",
   KeyT: "copiarTasa",
   KeyC: "copiar",
+  // Y, que parece un ¥: el resultado con su símbolo, como Alt+clic en Copiar.
+  KeyY: "copiarSimbolo",
   KeyD: "origen",
   KeyA: "destino",
   Digit1: "vista:evolucion",

@@ -4860,6 +4860,7 @@ function hacerAtajo(accion) {
   if (accion === "intercambiar" && !el.swap.disabled) onSwap();
   else if (accion === "copiar") onCopiar();
   else if (accion === "copiarFrase") onCopiar(true);
+  else if (accion === "copiarSimbolo") onCopiar(false, true);
   else if (accion === "girarTasa") onDarLaVueltaATasa();
   else if (accion === "copiarTasa") copiarTasa();
   else if (accion === "origen") el.from.click();
@@ -4963,7 +4964,8 @@ function onAtajo(event) {
   });
   // Sin nada que deshacer la Z no hace nada, ni siquiera el aviso de abajo. Sin gastos, la X igual.
   if (!accion || (accion === "deshacer" && !quitado) || ((accion === "csv" || accion === "compartir") && !gastos.length)
-    || ((accion === "copiarTasa" || accion === "chuleta" || accion === "imprimirChuleta") && rate === null)) return;
+    || ((accion === "copiarTasa" || accion === "chuleta" || accion === "imprimirChuleta") && rate === null)
+    || (accion === "copiarSimbolo" && (rate === null || leerImporte(el.result.value) === null))) return;
   event.preventDefault();
   hacerAtajo(accion);
   // El resumen, la chuleta y las otras divisas ya avisan ellos al copiar, y si falla dicen que ha fallado.
@@ -4978,6 +4980,7 @@ function onAtajo(event) {
       : accion === "discreto" ? tr(discreto ? "discreto.puesto" : "discreto.quitado")
       : accion === "girarTasa" ? el.rateLine.textContent || queHace(accion)
       : accion === "copiarTasa" ? tr("copiado.tasa", { tasa: el.rateLine.textContent })
+      : accion === "copiarSimbolo" ? tr("copiado.tasa", { tasa: textoConSimbolo(leerImporte(el.result.value), el.to.value) })
       : accion === "fijar" ? fijarDice
       : accion === "rango" ? tr(`rango.${dias}.largo`)
       : accion === "extras" ? tr("extras.ninguna")
