@@ -4838,8 +4838,11 @@ function discretoDesdeAtajo() {
 
 // Copia la tasa como se ve arriba, al derecho o al revés, para compararla con
 // la de la casa de cambio o mandarla.
-async function copiarTasa() {
-  if (!(await copiar(el.rateLine.textContent))) avisar(tr("copiar.fallo"));
+// Con Shift, al revés de como está arriba, sin tener que girarla antes.
+const tasaParaCopiar = (alReves = false) => lineaTasa(rate, el.from.value, el.to.value, tasaAlReves !== alReves);
+
+async function copiarTasa(alReves = false) {
+  if (!(await copiar(tasaParaCopiar(alReves)))) avisar(tr("copiar.fallo"));
 }
 
 // El par puesto siempre está en la lista, que se apunta al cambiarlo.
@@ -4863,6 +4866,7 @@ function hacerAtajo(accion) {
   else if (accion === "copiarSimbolo") onCopiar(false, true);
   else if (accion === "girarTasa") onDarLaVueltaATasa();
   else if (accion === "copiarTasa") copiarTasa();
+  else if (accion === "copiarTasaAlReves") copiarTasa(true);
   else if (accion === "origen") el.from.click();
   else if (accion === "destino") el.to.click();
   else if (accion === "ayuda") abrirAyuda();
@@ -4964,7 +4968,7 @@ function onAtajo(event) {
   });
   // Sin nada que deshacer la Z no hace nada, ni siquiera el aviso de abajo. Sin gastos, la X igual.
   if (!accion || (accion === "deshacer" && !quitado) || ((accion === "csv" || accion === "compartir") && !gastos.length)
-    || ((accion === "copiarTasa" || accion === "chuleta" || accion === "imprimirChuleta") && rate === null)
+    || ((accion === "copiarTasa" || accion === "copiarTasaAlReves" || accion === "chuleta" || accion === "imprimirChuleta") && rate === null)
     || (accion === "copiarSimbolo" && (rate === null || leerImporte(el.result.value) === null))) return;
   event.preventDefault();
   hacerAtajo(accion);
@@ -4974,12 +4978,12 @@ function onAtajo(event) {
     const tecla = conCmd ? (esMac ? "⌘Z" : "Ctrl+Z")
       : accion === "buscar" ? "/"
       : event.altKey ? textoAtajo(event.code, esMac) : event.code.replace(/^Key|^Digit/, "");
-    const prefijo = accion === "copiarFrase" || accion === "imprimirChuleta" ? (esMac ? "⇧" : "Shift+") : "";
+    const prefijo = accion === "copiarFrase" || accion === "imprimirChuleta" || accion === "copiarTasaAlReves" ? (esMac ? "⇧" : "Shift+") : "";
     // El de pagar, el discreto y la tasa dicen cómo han quedado, que "cambiar" no te dice a qué.
     const dice = accion === "pago" ? tr("pago.ahora", { nombre: tr(`pago.${pagoNuevo}`) })
       : accion === "discreto" ? tr(discreto ? "discreto.puesto" : "discreto.quitado")
       : accion === "girarTasa" ? el.rateLine.textContent || queHace(accion)
-      : accion === "copiarTasa" ? tr("copiado.tasa", { tasa: el.rateLine.textContent })
+      : accion === "copiarTasa" || accion === "copiarTasaAlReves" ? tr("copiado.tasa", { tasa: tasaParaCopiar(accion === "copiarTasaAlReves") })
       : accion === "copiarSimbolo" ? tr("copiado.tasa", { tasa: textoConSimbolo(leerImporte(el.result.value), el.to.value) })
       : accion === "fijar" ? fijarDice
       : accion === "rango" ? tr(`rango.${dias}.largo`)
