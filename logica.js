@@ -3283,6 +3283,29 @@ function textoOnzasLiquidas(leido) {
   return `${cuanto(leido.valor, leido.de)} = ${cuanto(otro.valor, otro.a)}`;
 }
 
+// "cd 1 pint", la del pub. Va la británica (568 ml) y no la americana (473):
+// en Estados Unidos casi nadie la pide en pintas.
+const HAY_PINTAS = /^\s*(\d+(?:[.,]\d+)?)\s*(pints?|pintas?|pt)\s*$/i;
+const ML_POR_PINTA = 568.26125;
+
+function leerPintas(texto) {
+  const m = String(texto ?? "").match(HAY_PINTAS);
+  if (!m) return null;
+  return { valor: Number(m[1].replace(",", ".")), de: "pt" };
+}
+
+function convertirPintas({ valor }) {
+  return { valor: valor * ML_POR_PINTA, a: "ml" };
+}
+
+// En ml enteros, que es como viene en la carta.
+function textoPintas(leido) {
+  if (!leido) return "";
+  const cuanto = (n, u) => `${numeros({ maximumFractionDigits: u === "ml" ? 0 : 1 }).format(n)} ${u}`;
+  const otro = convertirPintas(leido);
+  return `${cuanto(leido.valor, leido.de)} = ${cuanto(otro.valor, otro.a)}`;
+}
+
 // "cd 100yd", para el golf y las telas. Solo hacia los metros: "100 metros" ya
 // lo cogen las alturas, y "100m" son cien millones.
 const HAY_YARDAS = /^\s*(\d+(?:[.,]\d+)?)\s*(yds?|yards?|yardas?)\s*$/i;
@@ -3737,7 +3760,7 @@ if (typeof module !== "undefined") {
     MARGENES, tasaOfrecida, analizarCambio,
     domingoDePascua, hayTasaEl, tasaVieja, textoTasaVieja, horaBce, textoActualizado, proximaTasa, textoProximaTasa,
     FECHA_MINIMA, fechaLarga, fechaValida, diaDelGrafico, mesesAtras, FECHAS_RAPIDAS, leerFecha, cambioDesde, notaDiaHabil,
-    textoInsignia, cambioDiario, sentidoDe, cambioDelDia, textoCambioDia, ULTIMA_VEZ_MINIMO, desdeLaUltimaVez, ultimoVisto, tituloInsignia, tituloHoy, leerGrados, convertirGrados, textoGrados, leerDistancia, convertirDistancia, textoDistancia, leerPeso, convertirPeso, textoPeso, leerOnzas, convertirOnzas, textoOnzas, leerAltura, convertirAltura, textoAltura, leerVelocidad, convertirVelocidad, textoVelocidad, leerVolumen, convertirVolumen, textoVolumen, leerLongitud, convertirLongitud, textoLongitud, leerSuperficie, convertirSuperficie, textoSuperficie, leerConsumo, convertirConsumo, textoConsumo, leerPresion, convertirPresion, textoPresion, leerTazas, convertirTazas, textoTazas, leerCucharadas, convertirCucharadas, textoCucharadas, leerYardas, convertirYardas, textoYardas, leerStone, convertirStone, textoStone, leerOnzasLiquidas, convertirOnzasLiquidas, textoOnzasLiquidas, esHoyBarra, resumenHoyBarra, esAyerBarra, resumenAyerBarra, lineaTasa,
+    textoInsignia, cambioDiario, sentidoDe, cambioDelDia, textoCambioDia, ULTIMA_VEZ_MINIMO, desdeLaUltimaVez, ultimoVisto, tituloInsignia, tituloHoy, leerGrados, convertirGrados, textoGrados, leerDistancia, convertirDistancia, textoDistancia, leerPeso, convertirPeso, textoPeso, leerOnzas, convertirOnzas, textoOnzas, leerAltura, convertirAltura, textoAltura, leerVelocidad, convertirVelocidad, textoVelocidad, leerVolumen, convertirVolumen, textoVolumen, leerLongitud, convertirLongitud, textoLongitud, leerSuperficie, convertirSuperficie, textoSuperficie, leerConsumo, convertirConsumo, textoConsumo, leerPresion, convertirPresion, textoPresion, leerTazas, convertirTazas, textoTazas, leerCucharadas, convertirCucharadas, textoCucharadas, leerYardas, convertirYardas, textoYardas, leerStone, convertirStone, textoStone, leerOnzasLiquidas, convertirOnzasLiquidas, textoOnzasLiquidas, leerPintas, convertirPintas, textoPintas, esHoyBarra, resumenHoyBarra, esAyerBarra, resumenAyerBarra, lineaTasa,
     AVISOS_MAX, AVISO_PCT_MAX, sentidoAviso, crearAviso, leerPorcentajeAviso, crearAvisoPorcentaje, leerAvisos, avisoCumplido, repartirAvisos, mensajeAviso, faltaParaAviso, cercaniaAviso, textoFalta,
     nivelPresupuesto, avisosPresupuesto, mensajePresupuesto,
     RECORDATORIO_HORA, RECORDATORIO_HORAS, leerHoraRecordatorio, viajesSinApuntar, tocaRecordar, mensajeRecordatorio,
