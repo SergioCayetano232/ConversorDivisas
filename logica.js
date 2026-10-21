@@ -3322,6 +3322,29 @@ function textoCucharadas(leido) {
   return `${cuanto(leido.valor, leido.de)} = ${cuanto(otro.valor, otro.a)}`;
 }
 
+// "cd 1 stick", la barra de mantequilla de las recetas americanas: un cuarto
+// de libra. Con medias, que "½ stick" sale mucho.
+const HAY_STICKS = /^\s*(½|1\/2|\d+(?:[.,]\d+)?)\s*(?:sticks?|barras?)(?:\s+(?:of|de)\s+(?:butter|mantequilla))?\s*$/i;
+const G_POR_STICK = KG_POR_LIBRA * 1000 / 4;
+
+function leerSticks(texto) {
+  const m = String(texto ?? "").match(HAY_STICKS);
+  if (!m) return null;
+  const valor = m[1] === "½" || m[1] === "1/2" ? 0.5 : Number(m[1].replace(",", "."));
+  return valor > 0 ? { valor } : null;
+}
+
+function convertirSticks({ valor }) {
+  return { valor: valor * G_POR_STICK, a: "g" };
+}
+
+function textoSticks(leido) {
+  if (!leido) return "";
+  const n = numeros({ maximumFractionDigits: 1 });
+  const cuantos = leido.valor === 0.5 ? "½" : n.format(leido.valor);
+  return `${cuantos} ${leido.valor > 1 ? "sticks" : "stick"} = ${numeros({ maximumFractionDigits: 0 }).format(convertirSticks(leido).valor)} g`;
+}
+
 // "cd 12 fl oz", lo que pone en las latas y las botellas de allí. Solo hacia
 // los ml, que los 250 ml ya los pasan las tazas.
 const HAY_ONZAS_LIQUIDAS = /^\s*(\d+(?:[.,]\d+)?)\s*(fl\.?\s*oz|fluid\s+ounces?|onzas?\s+l[ií]quidas?)\s*$/i;
@@ -3994,7 +4017,7 @@ if (typeof module !== "undefined") {
     MARGENES, tasaOfrecida, analizarCambio,
     domingoDePascua, hayTasaEl, tasaVieja, textoTasaVieja, horaBce, textoActualizado, proximaTasa, textoProximaTasa,
     FECHA_MINIMA, fechaLarga, fechaValida, diaDelGrafico, mesesAtras, FECHAS_RAPIDAS, leerFecha, cambioDesde, notaDiaHabil,
-    textoInsignia, cambioDiario, sentidoDe, cambioDelDia, textoCambioDia, ULTIMA_VEZ_MINIMO, desdeLaUltimaVez, ultimoVisto, tituloInsignia, tituloHoy, leerGrados, convertirGrados, textoGrados, leerGas, convertirGas, textoGas, leerDistancia, convertirDistancia, textoDistancia, leerRitmo, convertirRitmo, textoRitmo, leerPeso, convertirPeso, textoPeso, leerOnzas, convertirOnzas, textoOnzas, leerAltura, convertirAltura, textoAltura, leerVelocidad, convertirVelocidad, textoVelocidad, leerVolumen, convertirVolumen, textoVolumen, leerLongitud, convertirLongitud, textoLongitud, leerSuperficie, convertirSuperficie, textoSuperficie, leerConsumo, convertirConsumo, textoConsumo, leerPresion, convertirPresion, textoPresion, leerTazas, convertirTazas, textoTazas, leerCucharadas, convertirCucharadas, textoCucharadas, leerYardas, convertirYardas, textoYardas, leerStone, convertirStone, textoStone, leerLibrasYOnzas, convertirLibrasYOnzas, textoLibrasYOnzas, leerOnzasLiquidas, convertirOnzasLiquidas, textoOnzasLiquidas, leerPintas, convertirPintas, textoPintas, leerCuartos, convertirCuartos, textoCuartos, leerNudos, convertirNudos, textoNudos, leerMillasNauticas, convertirMillasNauticas, textoMillasNauticas, leerAcres, convertirAcres, textoAcres, leerCalorias, convertirCalorias, textoCalorias, leerPotencia, convertirPotencia, textoPotencia, esHoyBarra, resumenHoyBarra, esAyerBarra, resumenAyerBarra, lineaTasa,
+    textoInsignia, cambioDiario, sentidoDe, cambioDelDia, textoCambioDia, ULTIMA_VEZ_MINIMO, desdeLaUltimaVez, ultimoVisto, tituloInsignia, tituloHoy, leerGrados, convertirGrados, textoGrados, leerGas, convertirGas, textoGas, leerDistancia, convertirDistancia, textoDistancia, leerRitmo, convertirRitmo, textoRitmo, leerPeso, convertirPeso, textoPeso, leerOnzas, convertirOnzas, textoOnzas, leerAltura, convertirAltura, textoAltura, leerVelocidad, convertirVelocidad, textoVelocidad, leerVolumen, convertirVolumen, textoVolumen, leerLongitud, convertirLongitud, textoLongitud, leerSuperficie, convertirSuperficie, textoSuperficie, leerConsumo, convertirConsumo, textoConsumo, leerPresion, convertirPresion, textoPresion, leerTazas, convertirTazas, textoTazas, leerCucharadas, convertirCucharadas, textoCucharadas, leerSticks, convertirSticks, textoSticks, leerYardas, convertirYardas, textoYardas, leerStone, convertirStone, textoStone, leerLibrasYOnzas, convertirLibrasYOnzas, textoLibrasYOnzas, leerOnzasLiquidas, convertirOnzasLiquidas, textoOnzasLiquidas, leerPintas, convertirPintas, textoPintas, leerCuartos, convertirCuartos, textoCuartos, leerNudos, convertirNudos, textoNudos, leerMillasNauticas, convertirMillasNauticas, textoMillasNauticas, leerAcres, convertirAcres, textoAcres, leerCalorias, convertirCalorias, textoCalorias, leerPotencia, convertirPotencia, textoPotencia, esHoyBarra, resumenHoyBarra, esAyerBarra, resumenAyerBarra, lineaTasa,
     AVISOS_MAX, AVISO_PCT_MAX, sentidoAviso, crearAviso, leerPorcentajeAviso, crearAvisoPorcentaje, leerAvisos, avisoCumplido, repartirAvisos, mensajeAviso, faltaParaAviso, cercaniaAviso, textoFalta,
     nivelPresupuesto, avisosPresupuesto, mensajePresupuesto,
     RECORDATORIO_HORA, RECORDATORIO_HORAS, leerHoraRecordatorio, viajesSinApuntar, tocaRecordar, mensajeRecordatorio,
