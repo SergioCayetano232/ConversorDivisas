@@ -2793,6 +2793,13 @@ function gastoParaCopiar(gasto) {
   return `${que} · ${cuanto}`;
 }
 
+// Por la fecha y no por el orden de la lista, que el hotel y la cena de ayer
+// se colocan en su día. Las noches que aún no han llegado no cuentan.
+function ultimoGasto(gastos, ahora = Date.now()) {
+  const hechos = gastos.filter((g) => g.cuando <= ahora);
+  return hechos.length ? hechos.reduce((a, b) => (b.cuando > a.cuando ? b : a)) : null;
+}
+
 // "Japón: 40,46 EUR en 3 días". Los días, del primer gasto al último, como la media.
 function totalParaCopiar(viaje) {
   const totales = sumarPorDivisa(viaje.gastos);
@@ -3693,6 +3700,8 @@ const ATAJOS = {
   KeyW: "compartir",
   // J, que no estaba cogida: el total del viaje, como el doble clic en la cifra.
   KeyJ: "copiarTotal",
+  // Q, la otra libre: el último gasto suelto, como el doble clic en su cifra.
+  KeyQ: "copiarGasto",
   // La C ya copia el resultado: K, que suena igual, copia la chuleta.
   KeyK: "chuleta",
   // L de lista: las otras divisas, también para WhatsApp.
@@ -3812,7 +3821,7 @@ if (typeof module !== "undefined") {
     SEMANAS_MINIMAS, mejorDiaSemana, nombreDiaSemana, textoDiaSemana, indiceCercano, extremos, fechaCorta, largoEnPantalla,
     leerNumero, divisaDe, leerSeleccion, destinoPara, leerPegado, buscarPrecios, precioEntero, leerOmnibox, leerGastoBarra, gastoDeBarra, escaparXml,
     divisaDeIdioma, parPorIdioma, banderaDe, banderaDivisa,
-    HISTORIAL_MAX, leerHistorial, apuntarConversion, quitarConversion, haceCuanto, ultimoDeHoy, textoParaCopiar, fraseParaCopiar, gastoParaCopiar, totalParaCopiar, simboloDe, textoConSimbolo,
+    HISTORIAL_MAX, leerHistorial, apuntarConversion, quitarConversion, haceCuanto, ultimoDeHoy, textoParaCopiar, fraseParaCopiar, gastoParaCopiar, ultimoGasto, totalParaCopiar, simboloDe, textoConSimbolo,
     celdaCsv, csvHistorial, csvGastos, csvViajes,
     GASTOS_MAX, CONCEPTO_MAX, crearGasto, leerGastos, apuntarGasto, NOCHES_MAX, repartirCentimos, repartirNoches, apuntarNoches, quitarGasto, cambiarConcepto, cambiarDia, buscarGastos, trozosResaltados, repetirGasto, devolverGasto, devolverTodos, sumarPorDivisa, gastosPorDia, huecoEntre, cifraEnMarcha, categoriaDelDia, pesoDeLosDias, ordenarPorImporte, masCarosDelDia, pesoDeLosGastos, RARO_VECES, mediana, gastoRaro, REPETIDO_MS, gastoRepetido, mediaPorDia, categoriasAlDia, mediaPorGasto, comisionesPagadas, cambioDelViaje, cifraCambio, textoCambio, pagadoEnEfectivo, ahorroEnEfectivo,
     RETIRADAS_MAX, leerRetiradas, crearRetirada, apuntarRetirada, quitarRetirada, efectivoQueda, EFECTIVO_POCO, tonoEfectivo, redondoDeCajero, cuantoSacar, loQueSobra, gastadoHoy, nombreDia,

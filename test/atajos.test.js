@@ -27,6 +27,7 @@ test("fuera de un campo basta la letra", () => {
   assert.equal(atajoPara(tecla("KeyT", { shiftKey: true })), "copiarTasaAlReves");
   assert.equal(atajoPara(tecla("KeyW")), "compartir");
   assert.equal(atajoPara(tecla("KeyJ")), "copiarTotal");
+  assert.equal(atajoPara(tecla("KeyQ")), "copiarGasto");
   assert.equal(atajoPara(tecla("KeyF")), "fijar");
   assert.equal(atajoPara(tecla("KeyN")), "nuevoViaje");
   assert.equal(atajoPara(tecla("KeyM")), "rango");
@@ -85,7 +86,7 @@ test("la interrogación abre la ayuda fuera de un campo", () => {
 });
 
 test("lo que no es un atajo no hace nada", () => {
-  assert.equal(atajoPara(tecla("KeyQ")), null);
+  assert.equal(atajoPara(tecla("Digit9")), null);
   assert.equal(atajoPara(tecla("Enter")), null);
 });
 
