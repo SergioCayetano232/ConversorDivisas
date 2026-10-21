@@ -587,6 +587,12 @@ async function sugerirEnBarra(texto, sugerir) {
     chrome.omnibox.setDefaultSuggestion({ description: `<match>${escaparXml(textoAcres(acres))}</match>` });
     return;
   }
+  const calorias = leerCalorias(texto);
+  if (calorias) {
+    sugerir([]);
+    chrome.omnibox.setDefaultSuggestion({ description: `<match>${escaparXml(textoCalorias(calorias))}</match>` });
+    return;
+  }
   const leido = leerOmnibox(texto, await leerPar());
   if (actual !== barraId) return;
   if (!leido) {
@@ -635,7 +641,7 @@ async function abrirDesdeBarra(texto) {
     return;
   }
   // Las medidas ya están en la sugerencia: no hay nada que abrir.
-  if (leerGrados(texto) || leerDistancia(texto) || leerPeso(texto) || leerOnzas(texto) || leerAltura(texto) || leerVelocidad(texto) || leerVolumen(texto) || leerLongitud(texto) || leerSuperficie(texto) || leerConsumo(texto) || leerPresion(texto) || leerTazas(texto) || leerCucharadas(texto) || leerYardas(texto) || leerStone(texto) || leerOnzasLiquidas(texto) || leerPintas(texto) || leerCuartos(texto) || leerNudos(texto) || leerAcres(texto)) return;
+  if (leerGrados(texto) || leerDistancia(texto) || leerPeso(texto) || leerOnzas(texto) || leerAltura(texto) || leerVelocidad(texto) || leerVolumen(texto) || leerLongitud(texto) || leerSuperficie(texto) || leerConsumo(texto) || leerPresion(texto) || leerTazas(texto) || leerCucharadas(texto) || leerYardas(texto) || leerStone(texto) || leerOnzasLiquidas(texto) || leerPintas(texto) || leerCuartos(texto) || leerNudos(texto) || leerAcres(texto) || leerCalorias(texto)) return;
   const leido = leerOmnibox(texto, await leerPar());
   if (leido) await chrome.storage.session.set({ pendiente: leido });
   try {

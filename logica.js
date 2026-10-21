@@ -3380,6 +3380,29 @@ function textoAcres(leido) {
   return `${cuanto(leido.valor, leido.de)} = ${cuanto(otro.valor, otro.a)}`;
 }
 
+// "cd 250 kcal" o "cd 1000 kJ": en Australia las etiquetas solo traen kJ. Las
+// "calorías" de la comida son kilocalorías, así que "cal" a secas cuenta igual.
+const HAY_CALORIAS = /^\s*(\d+(?:[.,]\d+)?)\s*(kcal|cal|calor[ií]as?|calories?|kj|kilojul(?:io)?s?|kilojoules?)\s*$/i;
+const KJ_POR_KCAL = 4.184;
+
+function leerCalorias(texto) {
+  const m = String(texto ?? "").match(HAY_CALORIAS);
+  if (!m) return null;
+  return { valor: Number(m[1].replace(",", ".")), de: /^k(j|ilo)/i.test(m[2]) ? "kJ" : "kcal" };
+}
+
+function convertirCalorias({ valor, de }) {
+  return de === "kcal" ? { valor: valor * KJ_POR_KCAL, a: "kJ" } : { valor: valor / KJ_POR_KCAL, a: "kcal" };
+}
+
+// Sin decimales, como en las etiquetas.
+function textoCalorias(leido) {
+  if (!leido) return "";
+  const cuanto = (n, u) => `${numeros({ maximumFractionDigits: 0 }).format(n)} ${u}`;
+  const otro = convertirCalorias(leido);
+  return `${cuanto(leido.valor, leido.de)} = ${cuanto(otro.valor, otro.a)}`;
+}
+
 // "cd 100yd", para el golf y las telas. Solo hacia los metros: "100 metros" ya
 // lo cogen las alturas, y "100m" son cien millones.
 const HAY_YARDAS = /^\s*(\d+(?:[.,]\d+)?)\s*(yds?|yards?|yardas?)\s*$/i;
@@ -3841,7 +3864,7 @@ if (typeof module !== "undefined") {
     MARGENES, tasaOfrecida, analizarCambio,
     domingoDePascua, hayTasaEl, tasaVieja, textoTasaVieja, horaBce, textoActualizado, proximaTasa, textoProximaTasa,
     FECHA_MINIMA, fechaLarga, fechaValida, diaDelGrafico, mesesAtras, FECHAS_RAPIDAS, leerFecha, cambioDesde, notaDiaHabil,
-    textoInsignia, cambioDiario, sentidoDe, cambioDelDia, textoCambioDia, ULTIMA_VEZ_MINIMO, desdeLaUltimaVez, ultimoVisto, tituloInsignia, tituloHoy, leerGrados, convertirGrados, textoGrados, leerDistancia, convertirDistancia, textoDistancia, leerPeso, convertirPeso, textoPeso, leerOnzas, convertirOnzas, textoOnzas, leerAltura, convertirAltura, textoAltura, leerVelocidad, convertirVelocidad, textoVelocidad, leerVolumen, convertirVolumen, textoVolumen, leerLongitud, convertirLongitud, textoLongitud, leerSuperficie, convertirSuperficie, textoSuperficie, leerConsumo, convertirConsumo, textoConsumo, leerPresion, convertirPresion, textoPresion, leerTazas, convertirTazas, textoTazas, leerCucharadas, convertirCucharadas, textoCucharadas, leerYardas, convertirYardas, textoYardas, leerStone, convertirStone, textoStone, leerOnzasLiquidas, convertirOnzasLiquidas, textoOnzasLiquidas, leerPintas, convertirPintas, textoPintas, leerCuartos, convertirCuartos, textoCuartos, leerNudos, convertirNudos, textoNudos, leerAcres, convertirAcres, textoAcres, esHoyBarra, resumenHoyBarra, esAyerBarra, resumenAyerBarra, lineaTasa,
+    textoInsignia, cambioDiario, sentidoDe, cambioDelDia, textoCambioDia, ULTIMA_VEZ_MINIMO, desdeLaUltimaVez, ultimoVisto, tituloInsignia, tituloHoy, leerGrados, convertirGrados, textoGrados, leerDistancia, convertirDistancia, textoDistancia, leerPeso, convertirPeso, textoPeso, leerOnzas, convertirOnzas, textoOnzas, leerAltura, convertirAltura, textoAltura, leerVelocidad, convertirVelocidad, textoVelocidad, leerVolumen, convertirVolumen, textoVolumen, leerLongitud, convertirLongitud, textoLongitud, leerSuperficie, convertirSuperficie, textoSuperficie, leerConsumo, convertirConsumo, textoConsumo, leerPresion, convertirPresion, textoPresion, leerTazas, convertirTazas, textoTazas, leerCucharadas, convertirCucharadas, textoCucharadas, leerYardas, convertirYardas, textoYardas, leerStone, convertirStone, textoStone, leerOnzasLiquidas, convertirOnzasLiquidas, textoOnzasLiquidas, leerPintas, convertirPintas, textoPintas, leerCuartos, convertirCuartos, textoCuartos, leerNudos, convertirNudos, textoNudos, leerAcres, convertirAcres, textoAcres, leerCalorias, convertirCalorias, textoCalorias, esHoyBarra, resumenHoyBarra, esAyerBarra, resumenAyerBarra, lineaTasa,
     AVISOS_MAX, AVISO_PCT_MAX, sentidoAviso, crearAviso, leerPorcentajeAviso, crearAvisoPorcentaje, leerAvisos, avisoCumplido, repartirAvisos, mensajeAviso, faltaParaAviso, cercaniaAviso, textoFalta,
     nivelPresupuesto, avisosPresupuesto, mensajePresupuesto,
     RECORDATORIO_HORA, RECORDATORIO_HORAS, leerHoraRecordatorio, viajesSinApuntar, tocaRecordar, mensajeRecordatorio,
