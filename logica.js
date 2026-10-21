@@ -3690,6 +3690,8 @@ const ATAJOS = {
   KeyX: "csv",
   // W de WhatsApp, que es donde va el resumen.
   KeyW: "compartir",
+  // J, que no estaba cogida: el total del viaje, como el doble clic en la cifra.
+  KeyJ: "copiarTotal",
   // La C ya copia el resultado: K, que suena igual, copia la chuleta.
   KeyK: "chuleta",
   // L de lista: las otras divisas, también para WhatsApp.

@@ -26,6 +26,7 @@ test("fuera de un campo basta la letra", () => {
   assert.equal(atajoPara(tecla("KeyT")), "copiarTasa");
   assert.equal(atajoPara(tecla("KeyT", { shiftKey: true })), "copiarTasaAlReves");
   assert.equal(atajoPara(tecla("KeyW")), "compartir");
+  assert.equal(atajoPara(tecla("KeyJ")), "copiarTotal");
   assert.equal(atajoPara(tecla("KeyF")), "fijar");
   assert.equal(atajoPara(tecla("KeyN")), "nuevoViaje");
   assert.equal(atajoPara(tecla("KeyM")), "rango");

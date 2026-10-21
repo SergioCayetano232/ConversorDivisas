@@ -2912,6 +2912,11 @@ function onCopiarTotal() {
   if (texto) copiarEnSuSitio(el.gastosSuma, texto);
 }
 
+// Con la J los gastos pueden estar cerrados, así que lo dice la tecla de abajo y no la cifra.
+async function copiarTotalDesdeAtajo() {
+  if (!(await copiar(totalParaCopiar(viajeActivo(viajes))))) avisar(tr("copiar.fallo"));
+}
+
 // Estas tres líneas van sin la divisa, como la media: con los botones de al
 // lado no cabían y salía "en comisione". Con su divisa, en el title.
 function pintarComisiones() {
@@ -4883,6 +4888,7 @@ function hacerAtajo(accion) {
   else if (accion === "discreto") discretoDesdeAtajo();
   else if (accion === "csv") el.gastosCsv.click();
   else if (accion === "compartir") onCompartir();
+  else if (accion === "copiarTotal") copiarTotalDesdeAtajo();
   else if (accion === "chuleta") chuletaDesdeAtajo();
   else if (accion === "imprimirChuleta") onImprimirChuleta();
   else if (accion === "extras") extrasDesdeAtajo();
@@ -4967,7 +4973,7 @@ function onAtajo(event) {
     ctrlKey: event.ctrlKey, metaKey: event.metaKey, shiftKey: event.shiftKey, enCampo,
   });
   // Sin nada que deshacer la Z no hace nada, ni siquiera el aviso de abajo. Sin gastos, la X igual.
-  if (!accion || (accion === "deshacer" && !quitado) || ((accion === "csv" || accion === "compartir") && !gastos.length)
+  if (!accion || (accion === "deshacer" && !quitado) || ((accion === "csv" || accion === "compartir" || accion === "copiarTotal") && !gastos.length)
     || ((accion === "copiarTasa" || accion === "copiarTasaAlReves" || accion === "chuleta" || accion === "imprimirChuleta") && rate === null)
     || (accion === "copiarSimbolo" && (rate === null || leerImporte(el.result.value) === null))) return;
   event.preventDefault();
@@ -4985,6 +4991,7 @@ function onAtajo(event) {
       : accion === "girarTasa" ? el.rateLine.textContent || queHace(accion)
       : accion === "copiarTasa" || accion === "copiarTasaAlReves" ? tr("copiado.tasa", { tasa: tasaParaCopiar(accion === "copiarTasaAlReves") })
       : accion === "copiarSimbolo" ? tr("copiado.tasa", { tasa: textoConSimbolo(leerImporte(el.result.value), el.to.value) })
+      : accion === "copiarTotal" ? tr("copiado.tasa", { tasa: totalParaCopiar(viajeActivo(viajes)) })
       : accion === "fijar" ? fijarDice
       : accion === "rango" ? tr(`rango.${dias}.largo`)
       : accion === "extras" ? tr("extras.ninguna")
