@@ -2283,9 +2283,9 @@ body::after {
   gap: 2px;
 }
 
-/* Lo justo para que se lea "otra" entera. */
+/* Lo justo para que se lea "other" entera, que en inglés es más larga. */
 .cuenta .burbuja__campo {
-  width: 35px;
+  width: 42px;
   padding: 0 3px;
 }
 
