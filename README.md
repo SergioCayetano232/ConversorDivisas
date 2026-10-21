@@ -267,7 +267,7 @@ que necesitaba una conversión rápida. Ahora es un clic en la barra del navegad
   o `cd 120 km/h`: "65 mph = 104,6 km/h". Y para la gasolina, `cd 10gal` o
   `cd 40 litros`: "10 gal = 37,9 l". Y para pantallas, tallas o la maleta de
   cabina, `cd 55in`, `cd 32"` o `cd 40cm`: "55 in = 139,7 cm". Y para los pisos
-  de alquiler, `cd 800sqft` o `cd 75m2`: "800 sq ft = 74,3 m²", y para los parques y las ciudades, `cd 5 sq mi` o `cd 10 km²`: "5 sq mi = 12,9 km²". Y para el
+  de alquiler, `cd 800sqft` o `cd 75m2`: "800 sq ft = 74,3 m²", y para los parques y las ciudades, `cd 5 sq mi` o `cd 10 km²`: "5 sq mi = 12,9 km²". Y para las alfombras, `cd 10 sq yd`: "10 sq yd = 8,4 m²". Y para el
   coche de alquiler, `cd 30mpg` o `cd 6,5 l/100km`: "30 mpg = 7,8 l/100 km". Y para las ruedas, `cd 35psi` o `cd 2,4 bar`: "35 psi
   = 2,4 bar". Y para las recetas, `cd 2 cups` o `cd 250ml`: "2 cups = 473 ml", y `cd 2 tbsp` o `cd 1 tsp` para las cucharas: "2 tbsp = 29,6 ml", `cd 1 stick` para la mantequilla: "1 stick = 113 g", y `cd gas 4` para el horno: "Gas 4 = 180 °C (350 °F)". Y
   para el golf o las telas, `cd 100yd`: "100 yd = 91,4 m". Y
