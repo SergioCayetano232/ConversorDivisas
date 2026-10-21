@@ -3358,6 +3358,28 @@ function textoNudos(leido) {
   return `${cuanto(leido.valor, leido.de)} = ${cuanto(otro.valor, otro.a)}`;
 }
 
+// "cd 3 nmi", la del barco: las distancias que van con los nudos. "nm" también,
+// que es como sale en las cartas, y nadie va a buscar aquí nanómetros.
+const HAY_MILLAS_NAUTICAS = /^\s*(\d+(?:[.,]\d+)?)\s*(nmi|nm|millas? n[aá]uticas?|nautical miles?)\s*$/i;
+
+function leerMillasNauticas(texto) {
+  const m = String(texto ?? "").match(HAY_MILLAS_NAUTICAS);
+  if (!m) return null;
+  return { valor: Number(m[1].replace(",", ".")), de: "nmi" };
+}
+
+// La misma cuenta que los nudos: un nudo es una de estas por hora.
+function convertirMillasNauticas({ valor }) {
+  return { valor: valor * KM_POR_NUDO, a: "km" };
+}
+
+function textoMillasNauticas(leido) {
+  if (!leido) return "";
+  const cuanto = (n, u) => `${numeros({ maximumFractionDigits: 1 }).format(n)} ${u}`;
+  const otro = convertirMillasNauticas(leido);
+  return `${cuanto(leido.valor, leido.de)} = ${cuanto(otro.valor, otro.a)}`;
+}
+
 // "cd 2 acres", para la casa rural o el parque. Sin "ac", que suena a otra cosa.
 const HAY_ACRES = /^\s*(\d+(?:[.,]\d+)?)\s*(acres?)\s*$/i;
 const HA_POR_ACRE = 0.40468564224;
@@ -3888,7 +3910,7 @@ if (typeof module !== "undefined") {
     MARGENES, tasaOfrecida, analizarCambio,
     domingoDePascua, hayTasaEl, tasaVieja, textoTasaVieja, horaBce, textoActualizado, proximaTasa, textoProximaTasa,
     FECHA_MINIMA, fechaLarga, fechaValida, diaDelGrafico, mesesAtras, FECHAS_RAPIDAS, leerFecha, cambioDesde, notaDiaHabil,
-    textoInsignia, cambioDiario, sentidoDe, cambioDelDia, textoCambioDia, ULTIMA_VEZ_MINIMO, desdeLaUltimaVez, ultimoVisto, tituloInsignia, tituloHoy, leerGrados, convertirGrados, textoGrados, leerDistancia, convertirDistancia, textoDistancia, leerPeso, convertirPeso, textoPeso, leerOnzas, convertirOnzas, textoOnzas, leerAltura, convertirAltura, textoAltura, leerVelocidad, convertirVelocidad, textoVelocidad, leerVolumen, convertirVolumen, textoVolumen, leerLongitud, convertirLongitud, textoLongitud, leerSuperficie, convertirSuperficie, textoSuperficie, leerConsumo, convertirConsumo, textoConsumo, leerPresion, convertirPresion, textoPresion, leerTazas, convertirTazas, textoTazas, leerCucharadas, convertirCucharadas, textoCucharadas, leerYardas, convertirYardas, textoYardas, leerStone, convertirStone, textoStone, leerOnzasLiquidas, convertirOnzasLiquidas, textoOnzasLiquidas, leerPintas, convertirPintas, textoPintas, leerCuartos, convertirCuartos, textoCuartos, leerNudos, convertirNudos, textoNudos, leerAcres, convertirAcres, textoAcres, leerCalorias, convertirCalorias, textoCalorias, leerPotencia, convertirPotencia, textoPotencia, esHoyBarra, resumenHoyBarra, esAyerBarra, resumenAyerBarra, lineaTasa,
+    textoInsignia, cambioDiario, sentidoDe, cambioDelDia, textoCambioDia, ULTIMA_VEZ_MINIMO, desdeLaUltimaVez, ultimoVisto, tituloInsignia, tituloHoy, leerGrados, convertirGrados, textoGrados, leerDistancia, convertirDistancia, textoDistancia, leerPeso, convertirPeso, textoPeso, leerOnzas, convertirOnzas, textoOnzas, leerAltura, convertirAltura, textoAltura, leerVelocidad, convertirVelocidad, textoVelocidad, leerVolumen, convertirVolumen, textoVolumen, leerLongitud, convertirLongitud, textoLongitud, leerSuperficie, convertirSuperficie, textoSuperficie, leerConsumo, convertirConsumo, textoConsumo, leerPresion, convertirPresion, textoPresion, leerTazas, convertirTazas, textoTazas, leerCucharadas, convertirCucharadas, textoCucharadas, leerYardas, convertirYardas, textoYardas, leerStone, convertirStone, textoStone, leerOnzasLiquidas, convertirOnzasLiquidas, textoOnzasLiquidas, leerPintas, convertirPintas, textoPintas, leerCuartos, convertirCuartos, textoCuartos, leerNudos, convertirNudos, textoNudos, leerMillasNauticas, convertirMillasNauticas, textoMillasNauticas, leerAcres, convertirAcres, textoAcres, leerCalorias, convertirCalorias, textoCalorias, leerPotencia, convertirPotencia, textoPotencia, esHoyBarra, resumenHoyBarra, esAyerBarra, resumenAyerBarra, lineaTasa,
     AVISOS_MAX, AVISO_PCT_MAX, sentidoAviso, crearAviso, leerPorcentajeAviso, crearAvisoPorcentaje, leerAvisos, avisoCumplido, repartirAvisos, mensajeAviso, faltaParaAviso, cercaniaAviso, textoFalta,
     nivelPresupuesto, avisosPresupuesto, mensajePresupuesto,
     RECORDATORIO_HORA, RECORDATORIO_HORAS, leerHoraRecordatorio, viajesSinApuntar, tocaRecordar, mensajeRecordatorio,
