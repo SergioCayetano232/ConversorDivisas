@@ -3712,8 +3712,9 @@ const ATAJOS = {
   KeyH: "ayuda",
 };
 
-// Con Shift, la otra versión: la frase entera, la chuleta en papel o la tasa al revés.
-const CON_SHIFT = { copiar: "copiarFrase", chuleta: "imprimirChuleta", copiarTasa: "copiarTasaAlReves" };
+// Con Shift, la otra versión: la frase entera, la chuleta en papel, la tasa al
+// revés o el CSV de todos los viajes.
+const CON_SHIFT = { copiar: "copiarFrase", chuleta: "imprimirChuleta", copiarTasa: "copiarTasaAlReves", csv: "csvViajes" };
 
 // Escribiendo en un campo las letras son letras (la x es "por" en las
 // cuentas), así que ahí hace falta Alt. Cmd y Ctrl no los toco nunca: son

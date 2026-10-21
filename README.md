@@ -112,6 +112,7 @@ que necesitaba una conversión rápida. Ahora es un clic en la barra del navegad
   u otros), que sale sola por el concepto ("taxi", "cena", "hotel") y se cambia
   con un clic. Arriba, en qué se te va el dinero en porcentajes; pulsando una
   ves solo esos gastos, y pasando el ratón, lo que llevas al día en ella
+
   ("Comida: 120,00 EUR, 30,00 al día")
 - Un presupuesto para el viaje: le dices cuánto quieres gastar, qué día sales y
   hasta qué día (si aún no has salido, lo de al día se reparte entre los días del viaje),
@@ -272,7 +273,7 @@ que necesitaba una conversión rápida. Ahora es un clic en la barra del navegad
   para el golf o las telas, `cd 100yd`: "100 yd = 91,4 m". Y
   para el peso en Reino Unido, `cd 11st` o `cd 11 st 4 lb`: "11 st 4 lb = 71,7 kg". Y para las latas y las botellas, `cd 12 fl oz`: "12 fl oz = 354,9 ml". Y para el pub, `cd 1 pint`: "1 pt = 568 ml". Y para la leche de allí, `cd 2 qt`: "2 qt = 1,89 l". Y para el barco o el viento, `cd 20 kn`: "20 kn = 37 km/h". Y para la casa rural, `cd 2 acres`: "2 acres = 0,81 ha"
 - Atajos dentro del popup: `S` da la vuelta al par, `I` a la tasa de arriba, `C` copia, `T` copia la tasa ("1 EUR = 1,1253 USD"; con Shift, al revés), `Y` copia el resultado con su símbolo ("42,79 $"), `D` y `A` abren
-  los desplegables, `G` los gastos, `U` apunta la cantidad en ellos, `/` busca en ellos, `E` cambia entre tarjeta y efectivo, `V` abre la lista de viajes, `N` empieza uno nuevo, `P` dividir la cuenta, `B` la balanza, `R` las últimas conversiones, `O` el modo discreto, `M` cambia el periodo del gráfico, `X` baja los gastos en CSV, `W` copia el resumen del viaje para WhatsApp, `J` copia el total del viaje ("Japón: 40,46 EUR en 3 días"), `Q` el último gasto ("Cena · 27,60 EUR (4.500,00 JPY)"), `K` la chuleta (con Shift, la imprime), `L` las otras divisas, `F` fija el par que tienes puesto, `Z` (o `Cmd+Z`, `Ctrl+Z`) deshace lo último que
+  los desplegables, `G` los gastos, `U` apunta la cantidad en ellos, `/` busca en ellos, `E` cambia entre tarjeta y efectivo, `V` abre la lista de viajes, `N` empieza uno nuevo, `P` dividir la cuenta, `B` la balanza, `R` las últimas conversiones, `O` el modo discreto, `M` cambia el periodo del gráfico, `X` baja los gastos en CSV (con Shift, los de todos los viajes), `W` copia el resumen del viaje para WhatsApp, `J` copia el total del viaje ("Japón: 40,46 EUR en 3 días"), `Q` el último gasto ("Cena · 27,60 EUR (4.500,00 JPY)"), `K` la chuleta (con Shift, la imprime), `L` las otras divisas, `F` fija el par que tienes puesto, `Z` (o `Cmd+Z`, `Ctrl+Z`) deshace lo último que
   has quitado de los gastos y del `1` al `6` cambian de pestaña. Si estás escribiendo en
   un campo, con `Alt` delante (`⌥` en Mac). En la cantidad, `↑` y `↓` suben o
   bajan 1, y con Shift, 10. Con `?` salen todos
