@@ -4827,6 +4827,12 @@ function apuntarDesdeAtajo() {
   if (!el.gastosForm.hidden) el.gastosForm.requestSubmit();
 }
 
+// Se queda en efectivo, como con el botón: el siguiente suele ir igual.
+function apuntarEnEfectivo() {
+  if (pagoNuevo !== "efectivo") onCambiarPago();
+  apuntarDesdeAtajo();
+}
+
 // Te llevo a la chuleta para que veas qué se ha copiado.
 function chuletaDesdeAtajo() {
   if (vista !== "chuleta") cambiarVista("chuleta");
@@ -4885,6 +4891,7 @@ function hacerAtajo(accion) {
   else if (accion === "historial") (el.historial.hidden ? abrirHistorial() : cerrarHistorial()?.focus());
   else if (accion === "buscar") buscarDesdeAtajo();
   else if (accion === "apuntar") apuntarDesdeAtajo();
+  else if (accion === "apuntarEfectivo") apuntarEnEfectivo();
   else if (accion === "pago") onCambiarPago();
   else if (accion === "viajes") viajesDesdeAtajo();
   else if (accion === "nuevoViaje") nuevoViajeDesdeAtajo();
@@ -4992,7 +4999,7 @@ function onAtajo(event) {
     const tecla = conCmd ? (esMac ? "⌘Z" : "Ctrl+Z")
       : accion === "buscar" ? "/"
       : event.altKey ? textoAtajo(event.code, esMac) : event.code.replace(/^Key|^Digit/, "");
-    const prefijo = accion === "copiarFrase" || accion === "imprimirChuleta" || accion === "copiarTasaAlReves" || accion === "csvViajes" ? (esMac ? "⇧" : "Shift+") : "";
+    const prefijo = accion === "copiarFrase" || accion === "imprimirChuleta" || accion === "copiarTasaAlReves" || accion === "csvViajes" || accion === "apuntarEfectivo" ? (esMac ? "⇧" : "Shift+") : "";
     // El de pagar, el discreto y la tasa dicen cómo han quedado, que "cambiar" no te dice a qué.
     const dice = accion === "pago" ? tr("pago.ahora", { nombre: tr(`pago.${pagoNuevo}`) })
       : accion === "discreto" ? tr(discreto ? "discreto.puesto" : "discreto.quitado")
