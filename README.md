@@ -269,7 +269,7 @@ que necesitaba una conversión rápida. Ahora es un clic en la barra del navegad
   cabina, `cd 55in`, `cd 32"` o `cd 40cm`: "55 in = 139,7 cm". Y para los pisos
   de alquiler, `cd 800sqft` o `cd 75m2`: "800 sq ft = 74,3 m²". Y para el
   coche de alquiler, `cd 30mpg` o `cd 6,5 l/100km`: "30 mpg = 7,8 l/100 km". Y para las ruedas, `cd 35psi` o `cd 2,4 bar`: "35 psi
-  = 2,4 bar". Y para las recetas, `cd 2 cups` o `cd 250ml`: "2 cups = 473 ml", y `cd 2 tbsp` o `cd 1 tsp` para las cucharas: "2 tbsp = 29,6 ml". Y
+  = 2,4 bar". Y para las recetas, `cd 2 cups` o `cd 250ml`: "2 cups = 473 ml", y `cd 2 tbsp` o `cd 1 tsp` para las cucharas: "2 tbsp = 29,6 ml", y `cd gas 4` para el horno: "Gas 4 = 180 °C (350 °F)". Y
   para el golf o las telas, `cd 100yd`: "100 yd = 91,4 m". Y
   para el peso en Reino Unido, `cd 11st` o `cd 11 st 4 lb`: "11 st 4 lb = 71,7 kg", y para las básculas de Estados Unidos, `cd 5 lb 4 oz`: "5 lb 4 oz = 2,38 kg". Y para las latas y las botellas, `cd 12 fl oz`: "12 fl oz = 354,9 ml". Y para el pub, `cd 1 pint`: "1 pt = 568 ml". Y para la leche de allí, `cd 2 qt`: "2 qt = 1,89 l". Y para el barco o el viento, `cd 20 kn`: "20 kn = 37 km/h", y `cd 3 nmi` para la distancia: "3 nmi = 5,6 km". Y para la casa rural, `cd 2 acres` o `cd 2 ha`: "2 acres = 0,81 ha". Y para las etiquetas de la comida, `cd 250 kcal` o `cd 1000 kJ`: "1.000 kJ = 239 kcal". Y para el coche de alquiler, `cd 150 hp`, `cd 150 cv` o `cd 110 kW`: "150 hp = 112 kW · 152 CV"
 - Atajos dentro del popup: `S` da la vuelta al par, `I` a la tasa de arriba, `C` copia, `T` copia la tasa ("1 EUR = 1,1253 USD"; con Shift, al revés), `Y` copia el resultado con su símbolo ("42,79 $"), `D` y `A` abren

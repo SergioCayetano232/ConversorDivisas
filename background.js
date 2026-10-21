@@ -473,6 +473,12 @@ async function sugerirEnBarra(texto, sugerir) {
     chrome.omnibox.setDefaultSuggestion({ description: `<match>${escaparXml(textoGrados(grados))}</match>` });
     return;
   }
+  const gas = leerGas(texto);
+  if (gas) {
+    sugerir([]);
+    chrome.omnibox.setDefaultSuggestion({ description: `<match>${escaparXml(textoGas(gas))}</match>` });
+    return;
+  }
   const distancia = leerDistancia(texto);
   if (distancia) {
     sugerir([]);
@@ -665,7 +671,7 @@ async function abrirDesdeBarra(texto) {
     return;
   }
   // Las medidas ya están en la sugerencia: no hay nada que abrir.
-  if (leerGrados(texto) || leerDistancia(texto) || leerRitmo(texto) || leerPeso(texto) || leerOnzas(texto) || leerAltura(texto) || leerVelocidad(texto) || leerVolumen(texto) || leerLongitud(texto) || leerSuperficie(texto) || leerConsumo(texto) || leerPresion(texto) || leerTazas(texto) || leerCucharadas(texto) || leerYardas(texto) || leerStone(texto) || leerLibrasYOnzas(texto) || leerOnzasLiquidas(texto) || leerPintas(texto) || leerCuartos(texto) || leerNudos(texto) || leerMillasNauticas(texto) || leerAcres(texto) || leerCalorias(texto) || leerPotencia(texto)) return;
+  if (leerGrados(texto) || leerGas(texto) || leerDistancia(texto) || leerRitmo(texto) || leerPeso(texto) || leerOnzas(texto) || leerAltura(texto) || leerVelocidad(texto) || leerVolumen(texto) || leerLongitud(texto) || leerSuperficie(texto) || leerConsumo(texto) || leerPresion(texto) || leerTazas(texto) || leerCucharadas(texto) || leerYardas(texto) || leerStone(texto) || leerLibrasYOnzas(texto) || leerOnzasLiquidas(texto) || leerPintas(texto) || leerCuartos(texto) || leerNudos(texto) || leerMillasNauticas(texto) || leerAcres(texto) || leerCalorias(texto) || leerPotencia(texto)) return;
   const leido = leerOmnibox(texto, await leerPar());
   if (leido) await chrome.storage.session.set({ pendiente: leido });
   try {
