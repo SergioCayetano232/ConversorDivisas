@@ -3380,18 +3380,19 @@ function textoMillasNauticas(leido) {
   return `${cuanto(leido.valor, leido.de)} = ${cuanto(otro.valor, otro.a)}`;
 }
 
-// "cd 2 acres", para la casa rural o el parque. Sin "ac", que suena a otra cosa.
-const HAY_ACRES = /^\s*(\d+(?:[.,]\d+)?)\s*(acres?)\s*$/i;
+// "cd 2 acres", para la casa rural o el parque, y "cd 2 ha" al revés. Sin
+// "ac", que suena a otra cosa.
+const HAY_ACRES = /^\s*(\d+(?:[.,]\d+)?)\s*(acres?|ha|hect[aá]reas?|hectares?)\s*$/i;
 const HA_POR_ACRE = 0.40468564224;
 
 function leerAcres(texto) {
   const m = String(texto ?? "").match(HAY_ACRES);
   if (!m) return null;
-  return { valor: Number(m[1].replace(",", ".")), de: "acres" };
+  return { valor: Number(m[1].replace(",", ".")), de: /^h/i.test(m[2]) ? "ha" : "acres" };
 }
 
-function convertirAcres({ valor }) {
-  return { valor: valor * HA_POR_ACRE, a: "ha" };
+function convertirAcres({ valor, de }) {
+  return de === "ha" ? { valor: valor / HA_POR_ACRE, a: "acres" } : { valor: valor * HA_POR_ACRE, a: "ha" };
 }
 
 // Dos decimales, que un acre se queda en 0,4 ha y con uno no se distinguen.
