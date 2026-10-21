@@ -1,6 +1,6 @@
 const { test } = require("node:test");
 const assert = require("node:assert");
-const { CURRENCIES, PROPINA_HABITUAL, PROPINA_MAX, propinaHabitual } = require("../logica.js");
+const { CURRENCIES, PROPINA_HABITUAL, PROPINA_MAX, PROPINAS_RAPIDAS, propinaHabitual } = require("../logica.js");
 
 test("todas las divisas tienen su propina, y ninguna de más", () => {
   assert.deepEqual(Object.keys(PROPINA_HABITUAL).sort(), CURRENCIES.map((c) => c.code).sort());
@@ -18,4 +18,8 @@ test("en Estados Unidos se deja y en Japón no", () => {
 test("una divisa que no conozco no tiene propina, ni siquiera cero", () => {
   assert.equal(propinaHabitual("XXX"), null);
   assert.equal(propinaHabitual(undefined), null);
+});
+
+test("la de Estados Unidos tiene su botón", () => {
+  assert.ok(PROPINAS_RAPIDAS.includes(propinaHabitual("USD")));
 });

@@ -2269,11 +2269,13 @@ body::after {
 /* Con "10 %" en español y seis propinas, la fila va justa: aquí todo más
    apretado que en la burbuja de la comisión. */
 .cuenta .burbuja__rapidas {
-  gap: 3px;
+  gap: 2px;
 }
 
+/* Siete propinas con "10 %" en mono no caben a 11px al lado de "Propina". */
 .cuenta .burbuja__rapida {
-  padding: 0 3px;
+  padding: 0 2px;
+  font-size: 10px;
 }
 
 .cuenta .burbuja__otra {
