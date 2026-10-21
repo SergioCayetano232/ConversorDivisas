@@ -10,6 +10,7 @@ test("lee los caballos y los kilovatios", () => {
   for (const t of ["150 hp", "150hp", "150 HP", "150 bhp", "150 horsepower"]) assert.deepEqual(leerPotencia(t), { valor: 150, de: "hp" }, t);
   for (const t of ["110 kW", "110kw", "110 kilovatios", "110 kilowatts"]) assert.deepEqual(leerPotencia(t), { valor: 110, de: "kW" }, t);
   assert.deepEqual(leerPotencia("1 kilovatio"), { valor: 1, de: "kW" });
+  for (const t of ["150 cv", "150CV", "150 caballos", "1 caballo"]) assert.equal(leerPotencia(t).de, "CV", t);
 });
 
 test("lo que no es potencia, no", () => {
@@ -21,14 +22,20 @@ test("de hp a kW, con los CV, y al revés", () => {
   const hp = convertirPotencia({ valor: 1, de: "hp" });
   cerca(hp.valor, 0.745699872);
   assert.equal(hp.a, "kW");
-  assert.ok(hp.cv > 1, "un hp es algo más que un CV");
+  assert.equal(hp.en, "CV");
+  assert.ok(hp.otra > 1, "un hp es algo más que un CV");
+  const cv = convertirPotencia({ valor: 1, de: "CV" });
+  cerca(cv.valor, 0.73549875);
+  assert.equal(cv.en, "hp");
+  assert.ok(cv.otra < 1);
   cerca(convertirPotencia({ valor: 0.745699872, de: "kW" }).valor, 1);
-  assert.equal(convertirPotencia({ valor: 1, de: "kW" }).cv, undefined);
+  assert.equal(convertirPotencia({ valor: 1, de: "kW" }).otra, undefined);
 });
 
 test("el texto, sin decimales", () => {
   assert.equal(texto("150 hp"), "150 hp = 112 kW · 152 CV");
   assert.equal(texto("110 kW"), "110 kW = 148 hp");
+  assert.equal(texto("150 cv"), "150 CV = 110 kW · 148 hp");
   assert.equal(textoPotencia(null), "");
 });
 

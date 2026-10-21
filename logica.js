@@ -3427,26 +3427,30 @@ function textoCalorias(leido) {
 
 // "cd 150 hp", el coche de alquiler. Aquí la ficha va en kW y lo que se dice
 // son CV, que no son lo mismo: el hp inglés es un poco más grande.
-const HAY_POTENCIA = /^\s*(\d+(?:[.,]\d+)?)\s*(b?hp|horsepower|kw|kilovatios?|kilowatts?)\s*$/i;
+const HAY_POTENCIA = /^\s*(\d+(?:[.,]\d+)?)\s*(b?hp|horsepower|kw|kilovatios?|kilowatts?|cv|caballos?)\s*$/i;
 const KW_POR_HP = 0.745699872;
 const KW_POR_CV = 0.73549875;
 
 function leerPotencia(texto) {
   const m = String(texto ?? "").match(HAY_POTENCIA);
   if (!m) return null;
-  return { valor: Number(m[1].replace(",", ".")), de: /^k/i.test(m[2]) ? "kW" : "hp" };
+  const de = /^k/i.test(m[2]) ? "kW" : /^c/i.test(m[2]) ? "CV" : "hp";
+  return { valor: Number(m[1].replace(",", ".")), de };
 }
 
+// De hp y de CV, a kW y a la otra: son las dos que se confunden.
 function convertirPotencia({ valor, de }) {
-  return de === "hp" ? { valor: valor * KW_POR_HP, a: "kW", cv: (valor * KW_POR_HP) / KW_POR_CV } : { valor: valor / KW_POR_HP, a: "hp" };
+  if (de === "kW") return { valor: valor / KW_POR_HP, a: "hp" };
+  const kw = valor * (de === "hp" ? KW_POR_HP : KW_POR_CV);
+  return de === "hp" ? { valor: kw, a: "kW", otra: kw / KW_POR_CV, en: "CV" } : { valor: kw, a: "kW", otra: kw / KW_POR_HP, en: "hp" };
 }
 
 function textoPotencia(leido) {
   if (!leido) return "";
   const cuanto = (n, u) => `${numeros({ maximumFractionDigits: 0 }).format(n)} ${u}`;
   const otro = convertirPotencia(leido);
-  const cv = otro.cv === undefined ? "" : ` · ${cuanto(otro.cv, "CV")}`;
-  return `${cuanto(leido.valor, leido.de)} = ${cuanto(otro.valor, otro.a)}${cv}`;
+  const otra = otro.otra === undefined ? "" : ` · ${cuanto(otro.otra, otro.en)}`;
+  return `${cuanto(leido.valor, leido.de)} = ${cuanto(otro.valor, otro.a)}${otra}`;
 }
 
 // "cd 100yd", para el golf y las telas. Solo hacia los metros: "100 metros" ya
