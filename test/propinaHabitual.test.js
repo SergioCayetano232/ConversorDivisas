@@ -23,3 +23,7 @@ test("una divisa que no conozco no tiene propina, ni siquiera cero", () => {
 test("la de Estados Unidos tiene su botón", () => {
   assert.ok(PROPINAS_RAPIDAS.includes(propinaHabitual("USD")));
 });
+
+test("en Reino Unido, el 12,5 del service charge", () => {
+  assert.equal(propinaHabitual("GBP"), 12.5);
+});

@@ -1085,8 +1085,9 @@ const CUENTA_POR_DEFECTO = { propina: 10, personas: 2, redondear: false };
 
 // Lo que se suele dejar en un restaurante, por la divisa de la cuenta. Es a ojo:
 // en el euro cambia de un país a otro, y en Japón o Corea dejarla queda raro.
+// La libra, 12,5: es el service charge que ya viene en la cuenta en Reino Unido.
 const PROPINA_HABITUAL = {
-  USD: 18, CAD: 15, MXN: 10, BRL: 10, GBP: 10, EUR: 5, CHF: 5, JPY: 0, KRW: 0, CNY: 0,
+  USD: 18, CAD: 15, MXN: 10, BRL: 10, GBP: 12.5, EUR: 5, CHF: 5, JPY: 0, KRW: 0, CNY: 0,
   HKD: 10, SGD: 0, AUD: 5, NZD: 5, THB: 5, IDR: 5, INR: 10, PHP: 10, MYR: 0, ZAR: 10,
   ILS: 12, TRY: 10, PLN: 10, CZK: 10, HUF: 10, RON: 10, SEK: 5, NOK: 5, DKK: 5, ISK: 0,
 };

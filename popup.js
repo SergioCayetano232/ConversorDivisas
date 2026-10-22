@@ -3765,12 +3765,12 @@ function pintarPropinaHabitual(from) {
   const boton = el.cuentaHabitual;
   boton.hidden = pct === null;
   if (pct === null) return;
-  const texto = pct === 0 ? tr("cuenta.habitualNada") : tr("cuenta.habitual", { pct: tr("pct", { n: pct }) });
+  const texto = pct === 0 ? tr("cuenta.habitualNada") : tr("cuenta.habitual", { pct: tr("pct", { n: nfComision.format(pct) }) });
   const puesta = reparto.propina === pct;
   boton.classList.toggle("is-puesta", puesta);
   boton.title = puesta ? tr("cuenta.habitualPuesta")
     : pct === 0 ? tr("cuenta.habitualQuitar")
-    : tr("cuenta.habitualPoner", { pct: tr("pct", { n: pct }) });
+    : tr("cuenta.habitualPoner", { pct: tr("pct", { n: nfComision.format(pct) }) });
   boton.setAttribute("aria-label", `${texto}. ${boton.title}`);
   if (boton.dataset.code === from && boton.dataset.texto === texto) return;
   boton.dataset.code = from;
