@@ -2917,6 +2917,10 @@ async function copiarTotalDesdeAtajo() {
   if (!(await copiar(totalParaCopiar(viajeActivo(viajes))))) avisar(tr("copiar.fallo"));
 }
 
+async function copiarHoyDesdeAtajo() {
+  if (!(await copiar(hoyParaCopiar(viajeActivo(viajes))))) avisar(tr("copiar.fallo"));
+}
+
 async function copiarGastoDesdeAtajo() {
   if (!(await copiar(gastoParaCopiar(ultimoGasto(gastos))))) avisar(tr("copiar.fallo"));
 }
@@ -4901,6 +4905,7 @@ function hacerAtajo(accion) {
   else if (accion === "csvViajes") el.viajesCsv.click();
   else if (accion === "compartir") onCompartir();
   else if (accion === "copiarTotal") copiarTotalDesdeAtajo();
+  else if (accion === "copiarHoy") copiarHoyDesdeAtajo();
   else if (accion === "copiarGasto") copiarGastoDesdeAtajo();
   else if (accion === "chuleta") chuletaDesdeAtajo();
   else if (accion === "imprimirChuleta") onImprimirChuleta();
@@ -4988,6 +4993,7 @@ function onAtajo(event) {
   // Sin nada que deshacer la Z no hace nada, ni siquiera el aviso de abajo. Sin gastos, la X igual.
   if (!accion || (accion === "deshacer" && !quitado) || ((accion === "csv" || accion === "compartir" || accion === "copiarTotal") && !gastos.length)
     || (accion === "copiarGasto" && !ultimoGasto(gastos))
+    || (accion === "copiarHoy" && !hoyParaCopiar(viajeActivo(viajes)))
     || (accion === "csvViajes" && !viajes.lista.some((v) => v.gastos.length))
     || ((accion === "copiarTasa" || accion === "copiarTasaAlReves" || accion === "chuleta" || accion === "imprimirChuleta") && rate === null)
     || (accion === "copiarSimbolo" && (rate === null || leerImporte(el.result.value) === null))) return;
@@ -4999,7 +5005,7 @@ function onAtajo(event) {
     const tecla = conCmd ? (esMac ? "⌘Z" : "Ctrl+Z")
       : accion === "buscar" ? "/"
       : event.altKey ? textoAtajo(event.code, esMac) : event.code.replace(/^Key|^Digit/, "");
-    const prefijo = accion === "copiarFrase" || accion === "imprimirChuleta" || accion === "copiarTasaAlReves" || accion === "csvViajes" || accion === "apuntarEfectivo" ? (esMac ? "⇧" : "Shift+") : "";
+    const prefijo = accion === "copiarFrase" || accion === "imprimirChuleta" || accion === "copiarTasaAlReves" || accion === "csvViajes" || accion === "apuntarEfectivo" || accion === "copiarHoy" ? (esMac ? "⇧" : "Shift+") : "";
     // El de pagar, el discreto y la tasa dicen cómo han quedado, que "cambiar" no te dice a qué.
     const dice = accion === "pago" ? tr("pago.ahora", { nombre: tr(`pago.${pagoNuevo}`) })
       : accion === "discreto" ? tr(discreto ? "discreto.puesto" : "discreto.quitado")
@@ -5007,6 +5013,7 @@ function onAtajo(event) {
       : accion === "copiarTasa" || accion === "copiarTasaAlReves" ? tr("copiado.tasa", { tasa: tasaParaCopiar(accion === "copiarTasaAlReves") })
       : accion === "copiarSimbolo" ? tr("copiado.tasa", { tasa: textoConSimbolo(leerImporte(el.result.value), el.to.value) })
       : accion === "copiarTotal" ? tr("copiado.tasa", { tasa: totalParaCopiar(viajeActivo(viajes)) })
+      : accion === "copiarHoy" ? tr("copiado.tasa", { tasa: hoyParaCopiar(viajeActivo(viajes)) })
       : accion === "copiarGasto" ? tr("copiado.tasa", { tasa: gastoParaCopiar(ultimoGasto(gastos)) })
       : accion === "fijar" ? fijarDice
       : accion === "rango" ? tr(`rango.${dias}.largo`)
