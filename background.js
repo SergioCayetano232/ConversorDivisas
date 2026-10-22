@@ -647,6 +647,12 @@ async function sugerirEnBarra(texto, sugerir) {
     chrome.omnibox.setDefaultSuggestion({ description: `<match>${escaparXml(textoPotencia(potencia))}</match>` });
     return;
   }
+  const btu = leerBtu(texto);
+  if (btu) {
+    sugerir([]);
+    chrome.omnibox.setDefaultSuggestion({ description: `<match>${escaparXml(textoBtu(btu))}</match>` });
+    return;
+  }
   const leido = leerOmnibox(texto, await leerPar());
   if (actual !== barraId) return;
   if (!leido) {
@@ -695,7 +701,7 @@ async function abrirDesdeBarra(texto) {
     return;
   }
   // Las medidas ya están en la sugerencia: no hay nada que abrir.
-  if (leerGrados(texto) || leerGas(texto) || leerDistancia(texto) || leerRitmo(texto) || leerPeso(texto) || leerOnzas(texto) || leerOnzasTroy(texto) || leerAltura(texto) || leerVelocidad(texto) || leerVolumen(texto) || leerLongitud(texto) || leerSuperficie(texto) || leerMillasCuadradas(texto) || leerYardasCuadradas(texto) || leerConsumo(texto) || leerPresion(texto) || leerTazas(texto) || leerCucharadas(texto) || leerSticks(texto) || leerYardas(texto) || leerStone(texto) || leerLibrasYOnzas(texto) || leerOnzasLiquidas(texto) || leerPintas(texto) || leerCuartos(texto) || leerNudos(texto) || leerMillasNauticas(texto) || leerAcres(texto) || leerCalorias(texto) || leerPotencia(texto)) return;
+  if (leerGrados(texto) || leerGas(texto) || leerDistancia(texto) || leerRitmo(texto) || leerPeso(texto) || leerOnzas(texto) || leerOnzasTroy(texto) || leerAltura(texto) || leerVelocidad(texto) || leerVolumen(texto) || leerLongitud(texto) || leerSuperficie(texto) || leerMillasCuadradas(texto) || leerYardasCuadradas(texto) || leerConsumo(texto) || leerPresion(texto) || leerTazas(texto) || leerCucharadas(texto) || leerSticks(texto) || leerYardas(texto) || leerStone(texto) || leerLibrasYOnzas(texto) || leerOnzasLiquidas(texto) || leerPintas(texto) || leerCuartos(texto) || leerNudos(texto) || leerMillasNauticas(texto) || leerAcres(texto) || leerCalorias(texto) || leerPotencia(texto) || leerBtu(texto)) return;
   const leido = leerOmnibox(texto, await leerPar());
   if (leido) await chrome.storage.session.set({ pendiente: leido });
   try {

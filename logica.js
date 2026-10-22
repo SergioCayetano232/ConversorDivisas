@@ -3572,6 +3572,28 @@ function textoPotencia(leido) {
   return `${cuanto(leido.valor, leido.de)} = ${cuanto(otro.valor, otro.a)}${otra}`;
 }
 
+// "cd 12000 btu", el aire acondicionado del hotel en Estados Unidos. Siempre
+// son miles, así que "12.000" y "12,000" van como doce mil y no como doce.
+const HAY_BTU = /^\s*(\d{1,3}(?:[.,]\d{3})+|\d+(?:[.,]\d+)?)\s*(?:btus?|btu\/h)\s*$/i;
+const KW_POR_BTU = 0.00029307107;
+
+function leerBtu(texto) {
+  const m = String(texto ?? "").match(HAY_BTU);
+  if (!m) return null;
+  const miles = /^\d{1,3}(?:[.,]\d{3})+$/.test(m[1]);
+  return { valor: Number(miles ? m[1].replace(/[.,]/g, "") : m[1].replace(",", ".")), de: "BTU" };
+}
+
+function convertirBtu({ valor }) {
+  return { valor: valor * KW_POR_BTU, a: "kW" };
+}
+
+function textoBtu(leido) {
+  if (!leido) return "";
+  const otro = convertirBtu(leido);
+  return `${numeros({ maximumFractionDigits: 0 }).format(leido.valor)} ${leido.de} = ${numeros({ maximumFractionDigits: 1 }).format(otro.valor)} ${otro.a}`;
+}
+
 // "cd 100yd", para el golf y las telas. Solo hacia los metros: "100 metros" ya
 // lo cogen las alturas, y "100m" son cien millones.
 const HAY_YARDAS = /^\s*(\d+(?:[.,]\d+)?)\s*(yds?|yards?|yardas?)\s*$/i;
@@ -4081,7 +4103,7 @@ if (typeof module !== "undefined") {
     MARGENES, tasaOfrecida, analizarCambio,
     domingoDePascua, hayTasaEl, tasaVieja, textoTasaVieja, horaBce, textoActualizado, proximaTasa, textoProximaTasa,
     FECHA_MINIMA, fechaLarga, fechaValida, diaDelGrafico, mesesAtras, FECHAS_RAPIDAS, leerFecha, cambioDesde, notaDiaHabil,
-    textoInsignia, cambioDiario, sentidoDe, cambioDelDia, textoCambioDia, ULTIMA_VEZ_MINIMO, desdeLaUltimaVez, ultimoVisto, tituloInsignia, tituloHoy, leerGrados, convertirGrados, textoGrados, leerGas, convertirGas, textoGas, leerDistancia, convertirDistancia, textoDistancia, leerRitmo, convertirRitmo, textoRitmo, leerPeso, convertirPeso, textoPeso, leerOnzas, convertirOnzas, textoOnzas, leerOnzasTroy, convertirOnzasTroy, textoOnzasTroy, leerAltura, convertirAltura, textoAltura, leerVelocidad, convertirVelocidad, textoVelocidad, leerVolumen, convertirVolumen, textoVolumen, leerLongitud, convertirLongitud, textoLongitud, leerSuperficie, convertirSuperficie, textoSuperficie, leerMillasCuadradas, convertirMillasCuadradas, textoMillasCuadradas, leerYardasCuadradas, convertirYardasCuadradas, textoYardasCuadradas, leerConsumo, convertirConsumo, textoConsumo, leerPresion, convertirPresion, textoPresion, leerTazas, convertirTazas, textoTazas, leerCucharadas, convertirCucharadas, textoCucharadas, leerSticks, convertirSticks, textoSticks, leerYardas, convertirYardas, textoYardas, leerStone, convertirStone, textoStone, leerLibrasYOnzas, convertirLibrasYOnzas, textoLibrasYOnzas, leerOnzasLiquidas, convertirOnzasLiquidas, textoOnzasLiquidas, leerPintas, convertirPintas, textoPintas, leerCuartos, convertirCuartos, textoCuartos, leerNudos, convertirNudos, textoNudos, leerMillasNauticas, convertirMillasNauticas, textoMillasNauticas, leerAcres, convertirAcres, textoAcres, leerCalorias, convertirCalorias, textoCalorias, leerPotencia, convertirPotencia, textoPotencia, esHoyBarra, resumenHoyBarra, esAyerBarra, resumenAyerBarra, lineaTasa,
+    textoInsignia, cambioDiario, sentidoDe, cambioDelDia, textoCambioDia, ULTIMA_VEZ_MINIMO, desdeLaUltimaVez, ultimoVisto, tituloInsignia, tituloHoy, leerGrados, convertirGrados, textoGrados, leerGas, convertirGas, textoGas, leerDistancia, convertirDistancia, textoDistancia, leerRitmo, convertirRitmo, textoRitmo, leerPeso, convertirPeso, textoPeso, leerOnzas, convertirOnzas, textoOnzas, leerOnzasTroy, convertirOnzasTroy, textoOnzasTroy, leerAltura, convertirAltura, textoAltura, leerVelocidad, convertirVelocidad, textoVelocidad, leerVolumen, convertirVolumen, textoVolumen, leerLongitud, convertirLongitud, textoLongitud, leerSuperficie, convertirSuperficie, textoSuperficie, leerMillasCuadradas, convertirMillasCuadradas, textoMillasCuadradas, leerYardasCuadradas, convertirYardasCuadradas, textoYardasCuadradas, leerConsumo, convertirConsumo, textoConsumo, leerPresion, convertirPresion, textoPresion, leerTazas, convertirTazas, textoTazas, leerCucharadas, convertirCucharadas, textoCucharadas, leerSticks, convertirSticks, textoSticks, leerYardas, convertirYardas, textoYardas, leerStone, convertirStone, textoStone, leerLibrasYOnzas, convertirLibrasYOnzas, textoLibrasYOnzas, leerOnzasLiquidas, convertirOnzasLiquidas, textoOnzasLiquidas, leerPintas, convertirPintas, textoPintas, leerCuartos, convertirCuartos, textoCuartos, leerNudos, convertirNudos, textoNudos, leerMillasNauticas, convertirMillasNauticas, textoMillasNauticas, leerAcres, convertirAcres, textoAcres, leerCalorias, convertirCalorias, textoCalorias, leerPotencia, convertirPotencia, textoPotencia, leerBtu, convertirBtu, textoBtu, esHoyBarra, resumenHoyBarra, esAyerBarra, resumenAyerBarra, lineaTasa,
     AVISOS_MAX, AVISO_PCT_MAX, sentidoAviso, crearAviso, leerPorcentajeAviso, crearAvisoPorcentaje, leerAvisos, avisoCumplido, repartirAvisos, mensajeAviso, faltaParaAviso, cercaniaAviso, textoFalta,
     nivelPresupuesto, avisosPresupuesto, mensajePresupuesto,
     RECORDATORIO_HORA, RECORDATORIO_HORAS, leerHoraRecordatorio, viajesSinApuntar, tocaRecordar, mensajeRecordatorio,
