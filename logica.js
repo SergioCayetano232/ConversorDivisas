@@ -3289,9 +3289,10 @@ function textoMillasCuadradas(leido) {
   return `${cuanto(leido.valor, leido.de)} = ${cuanto(otro.valor, otro.a)}`;
 }
 
-// "cd 30mpg", para el coche de alquiler. Millas por galón americano; el inglés
-// es más grande y daría otra cifra, pero allí casi no se ve.
-const HAY_CONSUMO = /^\s*(\d+(?:[.,]\d+)?)\s*(mpg|miles? per gallon|millas? por gal[oó]n|l\/100\s*km|l\/100)\s*$/i;
+// "cd 30mpg", para el coche de alquiler. Millas por galón americano, salvo con
+// "uk" detrás: en Reino Unido el galón es el imperial y la cifra sale un 20 % más alta.
+const HAY_CONSUMO = /^\s*(\d+(?:[.,]\d+)?)\s*(mpg|miles? per gallon|millas? por gal[oó]n|l\/100\s*km|l\/100)\s*(\(?\s*(?:uk|imp(?:erial)?)\s*\)?)?\s*$/i;
+const L_POR_GALON_UK = 4.54609;
 
 function leerConsumo(texto) {
   const m = String(texto ?? "").match(HAY_CONSUMO);
@@ -3299,17 +3300,18 @@ function leerConsumo(texto) {
   const valor = Number(m[1].replace(",", "."));
   // Va al revés (cuanto más mpg, menos litros), así que el cero no tiene vuelta.
   if (!valor) return null;
-  return { valor, de: /^l/i.test(m[2]) ? "l/100 km" : "mpg" };
+  return { valor, de: /^l/i.test(m[2]) ? "l/100 km" : "mpg", ...(m[3] && { uk: true }) };
 }
 
 // La misma cuenta sirve para ir y para volver.
-function convertirConsumo({ valor, de }) {
-  return { valor: (100 * L_POR_GALON) / (valor * KM_POR_MILLA), a: de === "mpg" ? "l/100 km" : "mpg" };
+function convertirConsumo({ valor, de, uk }) {
+  const litros = uk ? L_POR_GALON_UK : L_POR_GALON;
+  return { valor: (100 * litros) / (valor * KM_POR_MILLA), a: de === "mpg" ? "l/100 km" : "mpg" };
 }
 
 function textoConsumo(leido) {
   if (!leido) return "";
-  const consumo = (n, u) => `${numeros({ maximumFractionDigits: 1 }).format(n)} ${u}`;
+  const consumo = (n, u) => `${numeros({ maximumFractionDigits: 1 }).format(n)} ${u === "mpg" && leido.uk ? "mpg UK" : u}`;
   const otro = convertirConsumo(leido);
   return `${consumo(leido.valor, leido.de)} = ${consumo(otro.valor, otro.a)}`;
 }

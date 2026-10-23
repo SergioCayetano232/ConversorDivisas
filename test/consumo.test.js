@@ -16,6 +16,17 @@ test("lee los consumos como se escriben", () => {
   assert.deepEqual(leerConsumo("7l/100"), { valor: 7, de: "l/100 km" });
 });
 
+test("con uk detrás, el galón imperial", () => {
+  assert.deepEqual(leerConsumo("40mpg uk"), { valor: 40, de: "mpg", uk: true });
+  assert.deepEqual(leerConsumo("40 mpg (UK)"), { valor: 40, de: "mpg", uk: true });
+  assert.deepEqual(leerConsumo("40 mpg imperial"), { valor: 40, de: "mpg", uk: true });
+  assert.deepEqual(leerConsumo("6,5 l/100km uk"), { valor: 6.5, de: "l/100 km", uk: true });
+  cerca(convertirConsumo({ valor: 40, de: "mpg", uk: true }).valor, (100 * 4.54609) / (40 * 1.609344));
+  assert.equal(texto("40 mpg uk"), "40 mpg UK = 7,1 l/100 km");
+  assert.equal(texto("6,5 l/100km uk"), "6,5 l/100 km = 43,5 mpg UK");
+  assert.equal(leerConsumo("40 mpg usa"), null);
+});
+
 test("lo que no son consumos, no", () => {
   for (const t of ["mpg", "30", "0mpg", "0 l/100km", "-5 mpg", "10gal", "", undefined]) assert.equal(leerConsumo(t), null, String(t));
 });
