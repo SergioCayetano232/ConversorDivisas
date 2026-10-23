@@ -2983,23 +2983,28 @@ function tituloHoy(viaje, hoyIso = hoy()) {
 }
 
 // "cd 75f" en la barra: el tiempo de allí, que en Estados Unidos va en
-// Fahrenheit. Con signo, que en invierno hace falta, y coma o punto.
-const HAY_GRADOS = /^\s*([-−]?)\s*(\d+(?:[.,]\d+)?)\s*[°º]?\s*(f|c|fahrenheit|celsius)\s*$/i;
+// Fahrenheit. Con signo, que en invierno hace falta, y coma o punto. Los kelvin,
+// solo con la palabra entera: "300k" son trescientos mil.
+const HAY_GRADOS = /^\s*([-−]?)\s*(\d+(?:[.,]\d+)?)\s*[°º]?\s*(f|c|fahrenheit|celsius|kelvins?)\s*$/i;
+const CERO_ABSOLUTO = 273.15;
 
 function leerGrados(texto) {
   const m = String(texto ?? "").match(HAY_GRADOS);
   if (!m) return null;
   const valor = Number(m[2].replace(",", ".")) * (m[1] ? -1 : 1);
-  return { valor, de: m[3][0].toLowerCase() };
+  const de = m[3][0].toLowerCase();
+  if (de === "k" && valor < 0) return null;
+  return { valor, de };
 }
 
 function convertirGrados({ valor, de }) {
+  if (de === "k") return { valor: valor - CERO_ABSOLUTO, a: "c" };
   return de === "f" ? { valor: ((valor - 32) * 5) / 9, a: "c" } : { valor: (valor * 9) / 5 + 32, a: "f" };
 }
 
 function textoGrados(leido) {
   if (!leido) return "";
-  const grados = (n, u) => `${numeros({ maximumFractionDigits: 1 }).format(Math.abs(n) < 0.05 ? 0 : n)} °${u.toUpperCase()}`;
+  const grados = (n, u) => `${numeros({ maximumFractionDigits: 1 }).format(Math.abs(n) < 0.05 ? 0 : n)} ${u === "k" ? "K" : `°${u.toUpperCase()}`}`;
   const otro = convertirGrados(leido);
   return `${grados(leido.valor, leido.de)} = ${grados(otro.valor, otro.a)}`;
 }

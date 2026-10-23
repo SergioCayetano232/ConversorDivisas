@@ -259,7 +259,7 @@ que necesitaba una conversión rápida. Ahora es un clic en la barra del navegad
   `cd hoy` ves cómo vas sin abrir nada: lo de hoy, el total del viaje y lo que
   te queda del presupuesto. Con `cd ayer`, lo de ayer y lo más caro
   ("Ayer: 64,20 EUR en 4 gastos · Lo más caro: Cena 27,60"). Con Enter se abren los gastos. Para el tiempo de
-  allí, `cd 75f` o `cd 20c`: "75 °F = 23,9 °C". Y para las señales de la
+  allí, `cd 75f` o `cd 20c`: "75 °F = 23,9 °C". Y para los que vienen en kelvin, `cd 300 kelvin`: "300 K = 26,9 °C". Y para las señales de la
   carretera, `cd 10mi` o `cd 5km`: "10 mi = 16,1 km", y para salir a correr, `cd 9 min/mi` o `cd 5:30/km`: "9:00 min/mi = 5:36 min/km". Y para la maleta,
   `cd 50lb` o `cd 23kg`: "50 lb = 22,7 kg". Y para el súper,
   `cd 8oz` o `cd 200g`: "8 oz = 226,8 g", y para el oro, `cd 1 ozt`: "1 ozt = 31,1 g". Y para las alturas, `cd 6ft`, `cd 5'10"` o

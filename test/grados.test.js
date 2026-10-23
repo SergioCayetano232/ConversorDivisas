@@ -41,6 +41,16 @@ test("el texto, con un decimal", () => {
   assert.equal(textoGrados(null), "");
 });
 
+test("los kelvin, solo con la palabra entera", () => {
+  assert.deepEqual(leerGrados("300 kelvin"), { valor: 300, de: "k" });
+  assert.deepEqual(leerGrados("300 Kelvins"), { valor: 300, de: "k" });
+  assert.equal(leerGrados("300 K"), null);
+  assert.equal(leerGrados("-5 kelvin"), null);
+  assert.equal(leerOmnibox("300k", { from: "EUR", to: "USD" }).cantidad, 300000);
+  assert.equal(textoGrados(leerGrados("300 kelvin")), "300 K = 26,9 °C");
+  assert.equal(textoGrados(leerGrados("273,15 kelvin")), "273,2 K = 0 °C");
+});
+
 test("en inglés, con punto", () => {
   ponerIdioma("en");
   try {
