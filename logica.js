@@ -3222,25 +3222,28 @@ function textoVolumen(leido) {
 }
 
 // "cd 55in", para pantallas, tallas y la maleta de cabina. Las comillas también
-// valen, que es como sale en las tiendas: 55".
-const HAY_LONGITUD = /^\s*(\d+(?:[.,]\d+)?)\s*(in|inch(?:es)?|pulgadas?|"|cm|cent[ií]metros?|centimet(?:er|re)s?)\s*$/i;
+// valen, que es como sale en las tiendas: 55". Y "cd 10mm", para tornillos y brocas.
+const HAY_LONGITUD = /^\s*(\d+(?:[.,]\d+)?)\s*(in|inch(?:es)?|pulgadas?|"|cm|cent[ií]metros?|centimet(?:er|re)s?|mm|mil[ií]metros?|millimet(?:er|re)s?)\s*$/i;
 const CM_POR_PULGADA = 2.54;
 
 function leerLongitud(texto) {
   const m = String(texto ?? "").match(HAY_LONGITUD);
   if (!m) return null;
-  return { valor: Number(m[1].replace(",", ".")), de: /^c/i.test(m[2]) ? "cm" : "in" };
+  const de = /^c/i.test(m[2]) ? "cm" : /^m/i.test(m[2]) ? "mm" : "in";
+  return { valor: Number(m[1].replace(",", ".")), de };
 }
 
 function convertirLongitud({ valor, de }) {
+  if (de === "mm") return { valor: valor / 10 / CM_POR_PULGADA, a: "in" };
   return de === "in" ? { valor: valor * CM_POR_PULGADA, a: "cm" } : { valor: valor / CM_POR_PULGADA, a: "in" };
 }
 
+// Desde los mm, las pulgadas con dos decimales: 3 mm con uno serían 0,1.
 function textoLongitud(leido) {
   if (!leido) return "";
-  const longitud = (n, u) => `${numeros({ maximumFractionDigits: 1 }).format(n)} ${u}`;
+  const longitud = (n, u, d = 1) => `${numeros({ maximumFractionDigits: d }).format(n)} ${u}`;
   const otro = convertirLongitud(leido);
-  return `${longitud(leido.valor, leido.de)} = ${longitud(otro.valor, otro.a)}`;
+  return `${longitud(leido.valor, leido.de)} = ${longitud(otro.valor, otro.a, leido.de === "mm" ? 2 : 1)}`;
 }
 
 // "cd 800sqft", para los pisos de alquiler, que allí se anuncian así.
