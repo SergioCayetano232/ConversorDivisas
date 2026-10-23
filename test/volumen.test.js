@@ -17,6 +17,16 @@ test("lee los volúmenes como se escriben", () => {
   assert.deepEqual(leerVolumen("2 litres"), { valor: 2, de: "l" });
 });
 
+test("con uk detrás, el galón inglés", () => {
+  assert.deepEqual(leerVolumen("10 gal uk"), { valor: 10, de: "gal", uk: true });
+  assert.deepEqual(leerVolumen("10 gallons (UK)"), { valor: 10, de: "gal", uk: true });
+  assert.deepEqual(leerVolumen("40 l imperial"), { valor: 40, de: "l", uk: true });
+  cerca(convertirVolumen({ valor: 1, de: "gal", uk: true }).valor, 4.54609);
+  assert.equal(texto("10 gal uk"), "10 gal UK = 45,5 l");
+  assert.equal(texto("40 litros uk"), "40 l = 8,8 gal UK");
+  assert.equal(leerVolumen("10 gal usa"), null);
+});
+
 test("lo que no son volúmenes, no", () => {
   for (const t of ["gal", "10", "4,59/gal", "4,59 por galón", "10 lb", "20 usd", "-5 l", "", undefined]) assert.equal(leerVolumen(t), null, String(t));
 });

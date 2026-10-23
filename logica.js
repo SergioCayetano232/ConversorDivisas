@@ -3200,23 +3200,25 @@ function textoVelocidad(leido) {
 }
 
 // "cd 10gal", para la gasolina. Con barra delante ("4,59/gal") sigue siendo un
-// precio. Galón americano, que es el que te vas a encontrar.
-const HAY_VOLUMEN = /^\s*(\d+(?:[.,]\d+)?)\s*(gal(?:lons?|ones|[oó]n)?|l|litros?|liters?|litres?)\s*$/i;
+// precio. Galón americano, que es el que te vas a encontrar; con "uk" detrás, el inglés.
+const HAY_VOLUMEN = /^\s*(\d+(?:[.,]\d+)?)\s*(gal(?:lons?|ones|[oó]n)?|l|litros?|liters?|litres?)\s*(\(?\s*(?:uk|imp(?:erial)?)\s*\)?)?\s*$/i;
 const L_POR_GALON = 3.78541178;
+const L_POR_GALON_UK = 4.54609;
 
 function leerVolumen(texto) {
   const m = String(texto ?? "").match(HAY_VOLUMEN);
   if (!m) return null;
-  return { valor: Number(m[1].replace(",", ".")), de: /^g/i.test(m[2]) ? "gal" : "l" };
+  return { valor: Number(m[1].replace(",", ".")), de: /^g/i.test(m[2]) ? "gal" : "l", ...(m[3] && { uk: true }) };
 }
 
-function convertirVolumen({ valor, de }) {
-  return de === "gal" ? { valor: valor * L_POR_GALON, a: "l" } : { valor: valor / L_POR_GALON, a: "gal" };
+function convertirVolumen({ valor, de, uk }) {
+  const litros = uk ? L_POR_GALON_UK : L_POR_GALON;
+  return de === "gal" ? { valor: valor * litros, a: "l" } : { valor: valor / litros, a: "gal" };
 }
 
 function textoVolumen(leido) {
   if (!leido) return "";
-  const volumen = (n, u) => `${numeros({ maximumFractionDigits: 1 }).format(n)} ${u}`;
+  const volumen = (n, u) => `${numeros({ maximumFractionDigits: 1 }).format(n)} ${u === "gal" && leido.uk ? "gal UK" : u}`;
   const otro = convertirVolumen(leido);
   return `${volumen(leido.valor, leido.de)} = ${volumen(otro.valor, otro.a)}`;
 }
@@ -3292,7 +3294,6 @@ function textoMillasCuadradas(leido) {
 // "cd 30mpg", para el coche de alquiler. Millas por galón americano, salvo con
 // "uk" detrás: en Reino Unido el galón es el imperial y la cifra sale un 20 % más alta.
 const HAY_CONSUMO = /^\s*(\d+(?:[.,]\d+)?)\s*(mpg|miles? per gallon|millas? por gal[oó]n|l\/100\s*km|l\/100)\s*(\(?\s*(?:uk|imp(?:erial)?)\s*\)?)?\s*$/i;
-const L_POR_GALON_UK = 4.54609;
 
 function leerConsumo(texto) {
   const m = String(texto ?? "").match(HAY_CONSUMO);

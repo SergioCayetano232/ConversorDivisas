@@ -265,7 +265,7 @@ que necesitaba una conversión rápida. Ahora es un clic en la barra del navegad
   `cd 8oz` o `cd 200g`: "8 oz = 226,8 g", y para el oro, `cd 1 ozt`: "1 ozt = 31,1 g". Y para las alturas, `cd 6ft`, `cd 5'10"` o
   `cd 2 metros`: "5 ft 10 in = 1,78 m". Y para los límites de velocidad, `cd 65mph`
   o `cd 120 km/h`: "65 mph = 104,6 km/h". Y para la gasolina, `cd 10gal` o
-  `cd 40 litros`: "10 gal = 37,9 l". Y para pantallas, tallas o la maleta de
+  `cd 40 litros`: "10 gal = 37,9 l", y el inglés, `cd 10 gal uk`: "10 gal UK = 45,5 l". Y para pantallas, tallas o la maleta de
   cabina, `cd 55in`, `cd 32"` o `cd 40cm`: "55 in = 139,7 cm", y para los tornillos, `cd 10mm`: "10 mm = 0,39 in". Y para los pisos
   de alquiler, `cd 800sqft` o `cd 75m2`: "800 sq ft = 74,3 m²", y para los parques y las ciudades, `cd 5 sq mi` o `cd 10 km²`: "5 sq mi = 12,9 km²". Y para las alfombras, `cd 10 sq yd`: "10 sq yd = 8,4 m²". Y para el
   coche de alquiler, `cd 30mpg` o `cd 6,5 l/100km`: "30 mpg = 7,8 l/100 km", y en Reino Unido, con su galón, `cd 40 mpg uk`: "40 mpg UK = 7,1 l/100 km". Y para las ruedas, `cd 35psi` o `cd 2,4 bar`: "35 psi
