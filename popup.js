@@ -5271,7 +5271,7 @@ function renderResult() {
   el.resultMeta.classList.toggle("is-unidad", Boolean(metrica));
   if (metrica) {
     el.resultMeta.textContent = `≈ ${nf.format(metrica.valor)} ${to}/${metrica.unidad}`;
-    el.resultMeta.title = `${nf.format(valor)} ${from}/${unidad === "floz" ? "fl oz" : unidad} = ${nf.format(convertido)} ${to}/${unidad === "floz" ? "fl oz" : unidad} ≈ ${nf.format(metrica.valor)} ${to}/${metrica.unidad}`;
+    el.resultMeta.title = `${nf.format(valor)} ${from}/${nombreUnidad(unidad)} = ${nf.format(convertido)} ${to}/${nombreUnidad(unidad)} ≈ ${nf.format(metrica.valor)} ${to}/${metrica.unidad}`;
   }
   pintarComision();
   pintarCafes();
@@ -6166,7 +6166,7 @@ async function init() {
     // Esto sí es elegir: viene de lo que has seleccionado en la página.
     tocado = true;
     // "cd 3,50 usd/gal" llega con su unidad, y así sale también el precio por litro.
-    const unidad = UNIDADES[pendiente.unidad] ? `/${pendiente.unidad === "floz" ? "fl oz" : pendiente.unidad}` : "";
+    const unidad = UNIDADES[pendiente.unidad] ? `/${nombreUnidad(pendiente.unidad)}` : "";
     el.amount.value = nf.format(pendiente.cantidad) + unidad;
     savePair(pendiente.from, pendiente.to);
     apuntarPar();

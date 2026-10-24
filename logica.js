@@ -228,17 +228,22 @@ const UNIDADES = {
   oz: { a: "kg", factor: 35.2739619 },
   floz: { a: "l", factor: 33.8140227 },
   gal: { a: "l", factor: 1 / 3.78541178 },
+  galuk: { a: "l", factor: 1 / 4.54609 },
 };
 
-// El "fl oz" antes que el "oz", que si no se quedaría con la mitad.
-const HAY_UNIDAD = /\s*(?:\/|\bper\b|\bpor\b)?\s*(fl\.?\s*oz|lbs?|pounds?|libras?|oz|ounces?|onzas?|gal(?:lons?|ones|[oó]n)?)\.?\s*$/i;
+const nombreUnidad = (unidad) => ({ floz: "fl oz", galuk: "gal UK" })[unidad] ?? unidad;
+
+// El "fl oz" antes que el "oz", que si no se quedaría con la mitad. El galón
+// inglés, con su "uk" detrás, como en la barra.
+const HAY_UNIDAD = /\s*(?:\/|\bper\b|\bpor\b)?\s*(fl\.?\s*oz|lbs?|pounds?|libras?|oz|ounces?|onzas?|gal(?:lons?|ones|[oó]n)?(?:\s*\(?\s*(?:uk|imp(?:erial)?)\s*\)?)?)\.?\s*$/i;
 
 function quitarUnidad(texto) {
   const t = String(texto ?? "");
   const m = t.match(HAY_UNIDAD);
   if (!m || m.index === 0) return { texto: t, unidad: null };
   const u = m[1].toLowerCase().replace(/[\s.]/g, "");
-  const unidad = u.startsWith("fl") ? "floz" : /^(lb|pound|libra)/.test(u) ? "lb" : u.startsWith("gal") ? "gal" : "oz";
+  const unidad = u.startsWith("fl") ? "floz" : /^(lb|pound|libra)/.test(u) ? "lb"
+    : u.startsWith("gal") ? (/(uk|imp)/.test(u) ? "galuk" : "gal") : "oz";
   return { texto: t.slice(0, m.index), unidad };
 }
 
@@ -1442,7 +1447,7 @@ function precioUnidadBarra({ cantidad, from, to, unidad }, rate) {
   const metrica = porUnidadMetrica(cantidad * rate, unidad);
   if (!metrica) return null;
   const dinero = (n) => numeros({ minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(n);
-  const nombre = unidad === "floz" ? "fl oz" : unidad;
+  const nombre = nombreUnidad(unidad);
   return {
     principal: `${dinero(cantidad)} ${from}/${nombre} = ${dinero(metrica.valor)} ${to}/${metrica.unidad}`,
     detalle: `${dinero(cantidad * rate)} ${to}/${nombre}`,
@@ -4383,7 +4388,7 @@ function resumenCopia(datos) {
 if (typeof module !== "undefined") {
   module.exports = {
     CURRENCIES, isValidCode, nombreDe, parseAmount, isoLocal, hoy, isFresh,
-    evaluar, completar, leerImporte, UNIDADES, quitarUnidad, porUnidadMetrica, esOperacion, pasoCantidad, leerCantidad,
+    evaluar, completar, leerImporte, UNIDADES, quitarUnidad, nombreUnidad, porUnidadMetrica, esOperacion, pasoCantidad, leerCantidad,
     normalizar, filtrarDivisas, buildPaths, startDateFor, errorMessageFor,
     RECIENTES_MAX, FIJOS_MAX, apuntarReciente, fijarReciente, leerRecientes, recientesVisibles,
     RANGOS, RANGO_POR_DEFECTO, leerRango, siguienteRango, coordenadas, alturaEn, MOMENTO_UMBRAL, momento, textoMomento,

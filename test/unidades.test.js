@@ -24,6 +24,15 @@ test("reconoce cada unidad, con barra o sin ella", () => {
   assert.equal(unidad("1,99/fl oz"), "floz", "no se queda con el oz");
   assert.equal(unidad("1,99 fl. oz"), "floz");
   assert.equal(unidad("3,99/LB"), "lb");
+  assert.equal(unidad("6,50/gal uk"), "galuk");
+  assert.equal(unidad("6,50 per gal (UK)"), "galuk");
+  assert.equal(unidad("6,50/gal imp"), "galuk");
+  assert.equal(unidad("6,50 gallons imperial"), "galuk");
+});
+
+test("el galón inglés vale su número para todo lo demás", () => {
+  assert.equal(leerImporte("6,50/gal uk"), 6.5);
+  assert.equal(leerImporte("6,50 per gal (UK)"), 6.5);
 });
 
 test("sin unidad, todo como estaba", () => {
@@ -45,6 +54,8 @@ test("de libra a kilo y de galón a litro", () => {
   assert.equal(litro.unidad, "l");
   cerca(litro.valor, 1);
   cerca(porUnidadMetrica(1, "floz").valor, 33.8140227);
+  // El inglés es más grande: el mismo precio sale más barato por litro.
+  cerca(porUnidadMetrica(4.54609, "galuk").valor, 1);
 });
 
 test("sin unidad o sin valor, nada", () => {

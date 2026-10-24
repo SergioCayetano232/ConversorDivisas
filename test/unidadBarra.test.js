@@ -10,6 +10,7 @@ test("la unidad, pegada a la divisa o al número", () => {
   assert.deepEqual(leerOmnibox("3,50/gal usd", par), { cantidad: 3.5, from: "USD", to: "EUR", unidad: "gal" });
   assert.deepEqual(leerOmnibox("$3,99/lb", par), { cantidad: 3.99, from: "USD", to: "EUR", unidad: "lb" });
   assert.deepEqual(leerOmnibox("1,99 usd per fl oz", par), { cantidad: 1.99, from: "USD", to: "EUR", unidad: "floz" });
+  assert.deepEqual(leerOmnibox("6,50 gbp/gal uk", par), { cantidad: 6.5, from: "GBP", to: "USD", unidad: "galuk" });
 });
 
 test("sin unidad, como siempre", () => {
@@ -28,6 +29,8 @@ test("el galón en litros y la libra en kilos", () => {
   assert.deepEqual(precioUnidadBarra({ cantidad: 3.99, from: "USD", to: "EUR", unidad: "lb" }, 0.86),
     { principal: "3,99 USD/lb = 7,56 EUR/kg", detalle: "3,43 EUR/lb" });
   assert.equal(precioUnidadBarra({ cantidad: 1.99, from: "USD", to: "EUR", unidad: "floz" }, 1).principal, "1,99 USD/fl oz = 67,29 EUR/l");
+  assert.deepEqual(precioUnidadBarra({ cantidad: 6.5, from: "GBP", to: "EUR", unidad: "galuk" }, 1.15),
+    { principal: "6,50 GBP/gal UK = 1,64 EUR/l", detalle: "7,48 EUR/gal UK" });
 });
 
 test("sin unidad no hay nada que decir", () => {
