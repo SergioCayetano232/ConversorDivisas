@@ -3700,26 +3700,27 @@ function textoBtu(leido) {
   return `${numeros({ maximumFractionDigits: 0 }).format(leido.valor)} ${leido.de} = ${numeros({ maximumFractionDigits: 1 }).format(otro.valor)} ${otro.a}`;
 }
 
-// "cd 30 inhg", la presión del parte del tiempo en Estados Unidos. Solo hacia
-// los hPa, que son los milibares de aquí.
-const HAY_INHG = /^\s*(\d+(?:[.,]\d+)?)\s*(?:in\.?\s*hg|"\s*hg|pulgadas? de mercurio|inch(?:es)? of mercury)\s*$/i;
+// "cd 30 inhg", la presión del parte del tiempo en Estados Unidos, a los hPa,
+// que son los milibares de aquí. Y "cd 1013 hpa" al revés, para el barómetro de allí.
+const HAY_INHG = /^\s*(\d+(?:[.,]\d+)?)\s*(?:(in\.?\s*hg|"\s*hg|pulgadas? de mercurio|inch(?:es)? of mercury)|(hpa|mbar|milibares?|millibars?))\s*$/i;
 const HPA_POR_INHG = 33.8638866667;
 
 function leerInHg(texto) {
   const m = String(texto ?? "").match(HAY_INHG);
   if (!m) return null;
-  return { valor: Number(m[1].replace(",", ".")), de: "inHg" };
+  return { valor: Number(m[1].replace(",", ".")), de: m[2] ? "inHg" : "hPa" };
 }
 
-function convertirInHg({ valor }) {
-  return { valor: valor * HPA_POR_INHG, a: "hPa" };
+function convertirInHg({ valor, de }) {
+  return de === "hPa" ? { valor: valor / HPA_POR_INHG, a: "inHg" } : { valor: valor * HPA_POR_INHG, a: "hPa" };
 }
 
 // Los inHg salen con dos decimales en el parte (29,92), los hPa, enteros.
 function textoInHg(leido) {
   if (!leido) return "";
+  const presion = (n, u) => `${numeros({ maximumFractionDigits: u === "inHg" ? 2 : 0 }).format(n)} ${u}`;
   const otro = convertirInHg(leido);
-  return `${numeros({ maximumFractionDigits: 2 }).format(leido.valor)} ${leido.de} = ${numeros({ maximumFractionDigits: 0 }).format(otro.valor)} ${otro.a}`;
+  return `${presion(leido.valor, leido.de)} = ${presion(otro.valor, otro.a)}`;
 }
 
 // "cd 10 cu ft", las neveras, los trasteros y el maletero del coche de alquiler.

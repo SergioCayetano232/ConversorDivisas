@@ -26,6 +26,16 @@ test("29,92 inHg son 1.013 hPa, la presión normal", () => {
   assert.equal(textoInHg(null), "");
 });
 
+test("y los hPa al revés", () => {
+  for (const t of ["1013 hpa", "1013hPa", "1013 mbar", "1013 milibares", "1013 millibars"]) assert.deepEqual(leerInHg(t), { valor: 1013, de: "hPa" }, t);
+  assert.equal(convertirInHg({ valor: 1013, de: "hPa" }).a, "inHg");
+  assert.equal(texto("1013 hpa"), "1.013 hPa = 29,91 inHg");
+  assert.equal(texto("1016 mbar"), "1.016 hPa = 30 inHg");
+  assert.equal(leerPresion("1013 mbar"), null);
+  assert.equal(leerInHg("1013 mb"), null, "mb también son megas");
+  assert.equal(leerOmnibox("1013 hpa", { from: "EUR", to: "USD" }), null);
+});
+
 test("en inglés, con punto", () => {
   ponerIdioma("en");
   try {
