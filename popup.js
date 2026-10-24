@@ -2925,6 +2925,10 @@ async function copiarGastoDesdeAtajo() {
   if (!(await copiar(gastoParaCopiar(ultimoGasto(gastos))))) avisar(tr("copiar.fallo"));
 }
 
+async function copiarMasCaroDesdeAtajo() {
+  if (!(await copiar(gastoParaCopiar(gastoMasCaro(gastos))))) avisar(tr("copiar.fallo"));
+}
+
 // Estas tres líneas van sin la divisa, como la media: con los botones de al
 // lado no cabían y salía "en comisione". Con su divisa, en el title.
 function pintarComisiones() {
@@ -4907,6 +4911,7 @@ function hacerAtajo(accion) {
   else if (accion === "copiarTotal") copiarTotalDesdeAtajo();
   else if (accion === "copiarHoy") copiarHoyDesdeAtajo();
   else if (accion === "copiarGasto") copiarGastoDesdeAtajo();
+  else if (accion === "copiarMasCaro") copiarMasCaroDesdeAtajo();
   else if (accion === "chuleta") chuletaDesdeAtajo();
   else if (accion === "imprimirChuleta") onImprimirChuleta();
   else if (accion === "extras") extrasDesdeAtajo();
@@ -4993,6 +4998,7 @@ function onAtajo(event) {
   // Sin nada que deshacer la Z no hace nada, ni siquiera el aviso de abajo. Sin gastos, la X igual.
   if (!accion || (accion === "deshacer" && !quitado) || ((accion === "csv" || accion === "compartir" || accion === "copiarTotal") && !gastos.length)
     || (accion === "copiarGasto" && !ultimoGasto(gastos))
+    || (accion === "copiarMasCaro" && !gastos.length)
     || (accion === "copiarHoy" && !hoyParaCopiar(viajeActivo(viajes)))
     || (accion === "csvViajes" && !viajes.lista.some((v) => v.gastos.length))
     || ((accion === "copiarTasa" || accion === "copiarTasaAlReves" || accion === "chuleta" || accion === "imprimirChuleta") && rate === null)
@@ -5005,7 +5011,7 @@ function onAtajo(event) {
     const tecla = conCmd ? (esMac ? "⌘Z" : "Ctrl+Z")
       : accion === "buscar" ? "/"
       : event.altKey ? textoAtajo(event.code, esMac) : event.code.replace(/^Key|^Digit/, "");
-    const prefijo = accion === "copiarFrase" || accion === "imprimirChuleta" || accion === "copiarTasaAlReves" || accion === "csvViajes" || accion === "apuntarEfectivo" || accion === "copiarHoy" ? (esMac ? "⇧" : "Shift+") : "";
+    const prefijo = accion === "copiarFrase" || accion === "imprimirChuleta" || accion === "copiarTasaAlReves" || accion === "csvViajes" || accion === "apuntarEfectivo" || accion === "copiarHoy" || accion === "copiarMasCaro" ? (esMac ? "⇧" : "Shift+") : "";
     // El de pagar, el discreto y la tasa dicen cómo han quedado, que "cambiar" no te dice a qué.
     const dice = accion === "pago" ? tr("pago.ahora", { nombre: tr(`pago.${pagoNuevo}`) })
       : accion === "discreto" ? tr(discreto ? "discreto.puesto" : "discreto.quitado")
@@ -5015,6 +5021,7 @@ function onAtajo(event) {
       : accion === "copiarTotal" ? tr("copiado.tasa", { tasa: totalParaCopiar(viajeActivo(viajes)) })
       : accion === "copiarHoy" ? tr("copiado.tasa", { tasa: hoyParaCopiar(viajeActivo(viajes)) })
       : accion === "copiarGasto" ? tr("copiado.tasa", { tasa: gastoParaCopiar(ultimoGasto(gastos)) })
+      : accion === "copiarMasCaro" ? tr("copiado.tasa", { tasa: gastoParaCopiar(gastoMasCaro(gastos)) })
       : accion === "fijar" ? fijarDice
       : accion === "rango" ? tr(`rango.${dias}.largo`)
       : accion === "extras" ? tr("extras.ninguna")
