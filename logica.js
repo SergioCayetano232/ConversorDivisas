@@ -3494,24 +3494,26 @@ function textoOnzasLiquidas(leido) {
 }
 
 // "cd 1 pint", la del pub. Va la británica (568 ml) y no la americana (473):
-// en Estados Unidos casi nadie la pide en pintas.
-const HAY_PINTAS = /^\s*(\d+(?:[.,]\d+)?)\s*(pints?|pintas?|pt)\s*$/i;
+// en Estados Unidos casi nadie la pide en pintas. Con "us" detrás, la de allí,
+// que sale en las recetas y en los helados.
+const HAY_PINTAS = /^\s*(\d+(?:[.,]\d+)?)\s*(pints?|pintas?|pt)\s*(\(?\s*us\s*\)?)?\s*$/i;
 const ML_POR_PINTA = 568.26125;
+const ML_POR_PINTA_US = 473.176473;
 
 function leerPintas(texto) {
   const m = String(texto ?? "").match(HAY_PINTAS);
   if (!m) return null;
-  return { valor: Number(m[1].replace(",", ".")), de: "pt" };
+  return m[3] ? { valor: Number(m[1].replace(",", ".")), de: "pt", us: true } : { valor: Number(m[1].replace(",", ".")), de: "pt" };
 }
 
-function convertirPintas({ valor }) {
-  return { valor: valor * ML_POR_PINTA, a: "ml" };
+function convertirPintas({ valor, us }) {
+  return { valor: valor * (us ? ML_POR_PINTA_US : ML_POR_PINTA), a: "ml" };
 }
 
 // En ml enteros, que es como viene en la carta.
 function textoPintas(leido) {
   if (!leido) return "";
-  const cuanto = (n, u) => `${numeros({ maximumFractionDigits: u === "ml" ? 0 : 1 }).format(n)} ${u}`;
+  const cuanto = (n, u) => `${numeros({ maximumFractionDigits: u === "ml" ? 0 : 1 }).format(n)} ${u === "pt" && leido.us ? "pt US" : u}`;
   const otro = convertirPintas(leido);
   return `${cuanto(leido.valor, leido.de)} = ${cuanto(otro.valor, otro.a)}`;
 }
