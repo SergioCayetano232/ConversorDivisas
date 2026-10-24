@@ -3220,13 +3220,14 @@ function textoAltura(leido) {
 }
 
 // "cd 65mph", para los límites de la carretera. Las millas sueltas ya son
-// distancia, así que aquí solo entra lo que lleva "por hora".
-const HAY_VELOCIDAD = /^\s*(\d+(?:[.,]\d+)?)\s*(mph|millas? por hora|miles? per hour|km\/h|kmh|kph|km por hora|kil[oó]metros? por hora|kilometers? per hour)\s*$/i;
+// distancia, así que aquí solo entra lo que lleva "por hora". "mi/h" sale en
+// algunos coches de alquiler en vez de "mph".
+const HAY_VELOCIDAD = /^\s*(\d+(?:[.,]\d+)?)\s*(mph|mi\s*\/\s*h|millas? por hora|miles? per hour|km\/h|kmh|kph|km por hora|kil[oó]metros? por hora|kilometers? per hour)\s*$/i;
 
 function leerVelocidad(texto) {
   const m = String(texto ?? "").match(HAY_VELOCIDAD);
   if (!m) return null;
-  return { valor: Number(m[1].replace(",", ".")), de: /^(mph|mil)/i.test(m[2]) ? "mph" : "km/h" };
+  return { valor: Number(m[1].replace(",", ".")), de: /^(mph|mi\b|mi\s*\/|mil)/i.test(m[2]) ? "mph" : "km/h" };
 }
 
 function convertirVelocidad({ valor, de }) {

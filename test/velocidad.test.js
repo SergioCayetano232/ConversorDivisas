@@ -16,6 +16,8 @@ test("lee las velocidades como se escriben", () => {
   assert.deepEqual(leerVelocidad("100 kph"), { valor: 100, de: "km/h" });
   assert.deepEqual(leerVelocidad("50 kilómetros por hora"), { valor: 50, de: "km/h" });
   assert.deepEqual(leerVelocidad("7,5 mph"), { valor: 7.5, de: "mph" });
+  assert.deepEqual(leerVelocidad("60 mi/h"), { valor: 60, de: "mph" });
+  assert.deepEqual(leerVelocidad("60mi / h"), { valor: 60, de: "mph" });
 });
 
 test("lo que no son velocidades, no", () => {
