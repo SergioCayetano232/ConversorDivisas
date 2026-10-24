@@ -253,7 +253,7 @@ que necesitaba una conversión rápida. Ahora es un clic en la barra del navegad
 - Desde la barra de direcciones, sin abrir nada: escribes `cd`, espacio, y
   luego `20 usd`, `50 eur a gbp` o `100-15% jpy`. El resultado sale en las
   sugerencias de Chrome, con tus otras divisas debajo, y con Enter se abre el
-  popup con esa conversión puesta. Con un `+` delante apuntas un gasto en el
+  popup con esa conversión puesta. Con la unidad detrás, `cd 3,50 usd/gal` o `cd 3,99 usd/lb`, te da el litro o el kilo: "3,50 USD/gal = 0,80 EUR/l". Con un `+` delante apuntas un gasto en el
   viaje abierto: `cd + 20 cena` o `cd + 1500 jpy taxi efectivo`. Usa tu
   comisión y cómo sueles pagar, salvo que pongas "efectivo" o "tarjeta". Y con
   `cd hoy` ves cómo vas sin abrir nada: lo de hoy, el total del viaje y lo que

@@ -6151,7 +6151,9 @@ async function init() {
   if (pendiente) {
     // Esto sí es elegir: viene de lo que has seleccionado en la página.
     tocado = true;
-    el.amount.value = nf.format(pendiente.cantidad);
+    // "cd 3,50 usd/gal" llega con su unidad, y así sale también el precio por litro.
+    const unidad = UNIDADES[pendiente.unidad] ? `/${pendiente.unidad === "floz" ? "fl oz" : pendiente.unidad}` : "";
+    el.amount.value = nf.format(pendiente.cantidad) + unidad;
     savePair(pendiente.from, pendiente.to);
     apuntarPar();
     restartAnimation(el.amount, "is-cambiado");

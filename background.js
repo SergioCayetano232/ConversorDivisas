@@ -719,6 +719,15 @@ async function sugerirEnBarra(texto, sugerir) {
     if (actual !== barraId) return;
     const rate = rates[to];
     if (typeof rate !== "number") throw new Error("Respuesta inesperada");
+    const porUnidad = precioUnidadBarra(leido, rate);
+    if (porUnidad) {
+      chrome.omnibox.setDefaultSuggestion({
+        description: `<match>${escaparXml(porUnidad.principal)}</match>`
+          + ` <dim>${escaparXml(`· ${porUnidad.detalle} · 1 ${from} = ${nfRate.format(rate)} ${to} · ${tr("barra.enter")}`)}</dim>`,
+      });
+      sugerir([]);
+      return;
+    }
     chrome.omnibox.setDefaultSuggestion({
       description: `<match>${escaparXml(`${de} = ${nf.format(cantidad * rate)} ${to}`)}</match>`
         + ` <dim>${escaparXml(`· 1 ${from} = ${nfRate.format(rate)} ${to} · ${tr("barra.enter")}`)}</dim>`,

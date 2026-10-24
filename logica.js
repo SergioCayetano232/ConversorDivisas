@@ -1409,8 +1409,12 @@ const ENLACES = new Set(["a", "to", "en", "in", "->", "→", "=", "de"]);
 
 function leerOmnibox(texto, par) {
   if (typeof texto !== "string") return null;
+  // "3,50 usd/gal": la unidad, fuera antes de trocear, que "usd/gal" no es ninguna
+  // divisa. Solo con la barra o el "per": "20 libras" a secas son esterlinas.
+  const conBarra = (t) => (/^\s*(\/|per\b|por\b)/i.test(t.match(HAY_UNIDAD)?.[0] ?? "") ? quitarUnidad(t) : { texto: t, unidad: null });
+  const fuera = conBarra(texto);
   // El símbolo pegado al número ("20€", "$20") va aparte, que si no la cuenta no se entiende.
-  const palabras = texto.replace(/([€$£¥₹₩₪฿₱₺])/g, " $1 ").trim().split(/\s+/);
+  const palabras = fuera.texto.replace(/([€$£¥₹₩₪฿₱₺])/g, " $1 ").trim().split(/\s+/);
   const divisas = [];
   const resto = [];
   for (const palabra of palabras) {
@@ -1421,11 +1425,28 @@ function leerOmnibox(texto, par) {
     else resto.push(palabra);
   }
   if (divisas.length > 2) return null;
+  const { unidad } = conBarra(resto.join(" "));
   const cantidad = leerImporte(resto.join(" "));
   if (cantidad === null || cantidad <= 0) return null;
   const [de, a] = divisas;
   const { from, to } = a ? { from: de, to: a } : destinoPara(de ?? null, par);
-  return from === to ? null : { cantidad, from, to };
+  if (from === to) return null;
+  const leido = { cantidad, from, to };
+  if (fuera.unidad ?? unidad) leido.unidad = fuera.unidad ?? unidad;
+  return leido;
+}
+
+// "3,50 usd/gal = 0,80 EUR/l": en la gasolinera lo que quieres saber es el
+// litro. El galón convertido va detrás, por si el precio de aquí lo tienes así.
+function precioUnidadBarra({ cantidad, from, to, unidad }, rate) {
+  const metrica = porUnidadMetrica(cantidad * rate, unidad);
+  if (!metrica) return null;
+  const dinero = (n) => numeros({ minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(n);
+  const nombre = unidad === "floz" ? "fl oz" : unidad;
+  return {
+    principal: `${dinero(cantidad)} ${from}/${nombre} = ${dinero(metrica.valor)} ${to}/${metrica.unidad}`,
+    detalle: `${dinero(cantidad * rate)} ${to}/${nombre}`,
+  };
 }
 
 // "+ 20 cena", "+ 1.500 jpy taxi efectivo": un gasto sin abrir el popup. Lo
@@ -4314,7 +4335,7 @@ if (typeof module !== "undefined") {
     RECIENTES_MAX, FIJOS_MAX, apuntarReciente, fijarReciente, leerRecientes, recientesVisibles,
     RANGOS, RANGO_POR_DEFECTO, leerRango, siguienteRango, coordenadas, alturaEn, MOMENTO_UMBRAL, momento, textoMomento,
     SEMANAS_MINIMAS, mejorDiaSemana, nombreDiaSemana, textoDiaSemana, indiceCercano, extremos, fechaCorta, largoEnPantalla,
-    leerNumero, divisaDe, leerSeleccion, destinoPara, leerPegado, buscarPrecios, precioEntero, leerOmnibox, leerGastoBarra, gastoDeBarra, escaparXml,
+    leerNumero, divisaDe, leerSeleccion, destinoPara, leerPegado, buscarPrecios, precioEntero, leerOmnibox, precioUnidadBarra, leerGastoBarra, gastoDeBarra, escaparXml,
     divisaDeIdioma, parPorIdioma, banderaDe, banderaDivisa,
     HISTORIAL_MAX, leerHistorial, apuntarConversion, quitarConversion, haceCuanto, ultimoDeHoy, textoParaCopiar, fraseParaCopiar, gastoParaCopiar, ultimoGasto, totalParaCopiar, hoyParaCopiar, simboloDe, textoConSimbolo,
     celdaCsv, csvHistorial, csvGastos, csvViajes,
