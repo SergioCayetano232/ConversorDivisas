@@ -262,7 +262,7 @@ que necesitaba una conversión rápida. Ahora es un clic en la barra del navegad
   allí, `cd 75f` o `cd 20c`: "75 °F = 23,9 °C". Y para los que vienen en kelvin, `cd 300 kelvin`: "300 K = 26,9 °C". Y para las señales de la
   carretera, `cd 10mi` o `cd 5km`: "10 mi = 16,1 km", y para salir a correr, `cd 9 min/mi` o `cd 5:30/km`: "9:00 min/mi = 5:36 min/km". Y para la maleta,
   `cd 50lb` o `cd 23kg`: "50 lb = 22,7 kg". Y para el súper,
-  `cd 8oz` o `cd 200g`: "8 oz = 226,8 g", y para el oro, `cd 1 ozt`: "1 ozt = 31,1 g". Y para las alturas, `cd 6ft`, `cd 5'10"` o
+  `cd 8oz` o `cd 200g`: "8 oz = 226,8 g", y para el oro, `cd 1 ozt`: "1 ozt = 31,1 g". Y para los diamantes, `cd 1,5 ct`: "1,5 ct = 0,3 g". Y para las alturas, `cd 6ft`, `cd 5'10"` o
   `cd 2 metros`: "5 ft 10 in = 1,78 m". Y para los límites de velocidad, `cd 65mph`
   o `cd 120 km/h`: "65 mph = 104,6 km/h". Y para la gasolina, `cd 10gal` o
   `cd 40 litros`: "10 gal = 37,9 l", y el inglés, `cd 10 gal uk`: "10 gal UK = 45,5 l". Y para pantallas, tallas o la maleta de
