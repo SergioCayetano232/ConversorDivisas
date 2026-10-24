@@ -3934,34 +3934,39 @@ function resumenAyerBarra(viaje, hoyIso = hoy()) {
 }
 
 // "cd semana": los últimos siete días contando hoy, no la semana del calendario,
-// que el lunes por la mañana saldría casi vacía.
+// que el lunes por la mañana saldría casi vacía. "cd mes", lo mismo con treinta.
 const esSemanaBarra = (texto) => /^\s*(semana|week)\s*$/i.test(String(texto ?? ""));
+const esMesBarra = (texto) => /^\s*(mes|month)\s*$/i.test(String(texto ?? ""));
 
-function resumenSemanaBarra(viaje, hoyIso = hoy()) {
+function resumenUltimosDias(viaje, cuantos, clave, formatoDia, hoyIso) {
   if (!viaje) return null;
   const dinero = (n) => numeros({ minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(n);
   const [y, m, d] = hoyIso.split("-").map(Number);
-  const dias = Array.from({ length: 7 }, (_, i) => isoLocal(new Date(y, m - 1, d - i)));
+  const dias = Array.from({ length: cuantos }, (_, i) => isoLocal(new Date(y, m - 1, d - i)));
   const principal = sumarPorDivisa(viaje.gastos)[0];
-  const deLaSemana = principal ? viaje.gastos.filter((g) => g.to === principal.to && dias.includes(isoLocal(new Date(g.cuando)))) : [];
-  const total = deLaSemana.reduce((suma, g) => suma + g.valor, 0);
-  if (total < 0.005) return { principal: tr("barra.semanaNada"), detalle: [] };
+  const deLosDias = principal ? viaje.gastos.filter((g) => g.to === principal.to && dias.includes(isoLocal(new Date(g.cuando)))) : [];
+  const total = deLosDias.reduce((suma, g) => suma + g.valor, 0);
+  if (total < 0.005) return { principal: tr(`barra.${clave}Nada`), detalle: [] };
   const porDia = new Map();
-  for (const g of deLaSemana) {
+  for (const g of deLosDias) {
     const dia = isoLocal(new Date(g.cuando));
     porDia.set(dia, (porDia.get(dia) ?? 0) + g.valor);
   }
   // La media, desde el primer día con gastos: si el viaje empezó anteayer, entre tres.
   const desde = dias.indexOf([...porDia.keys()].sort()[0]) + 1;
-  const detalle = [tr("barra.semanaDia", { media: dinero(total / desde) })];
+  const detalle = [tr(`barra.${clave}Dia`, { media: dinero(total / desde) })];
   if (porDia.size > 1) {
     const [diaMas, cuanto] = [...porDia].reduce((a, b) => (b[1] > a[1] ? b : a));
     const [yy, mm, dd] = diaMas.split("-").map(Number);
-    detalle.push(tr("barra.semanaMas", { dia: fechas({ weekday: "long" }).format(new Date(yy, mm - 1, dd)), gastado: dinero(cuanto) }));
+    detalle.push(tr(`barra.${clave}Mas`, { dia: fechas(formatoDia).format(new Date(yy, mm - 1, dd)), gastado: dinero(cuanto) }));
   }
-  const n = deLaSemana.length;
-  return { principal: tr(n === 1 ? "barra.semanaUno" : "barra.semana", { gastado: `${dinero(total)} ${principal.to}`, n }), detalle };
+  const n = deLosDias.length;
+  return { principal: tr(n === 1 ? `barra.${clave}Uno` : `barra.${clave}`, { gastado: `${dinero(total)} ${principal.to}`, n }), detalle };
 }
+
+const resumenSemanaBarra = (viaje, hoyIso = hoy()) => resumenUltimosDias(viaje, 7, "semana", { weekday: "long" }, hoyIso);
+// En un mes el "martes" no dice cuál, así que va con su fecha.
+const resumenMesBarra = (viaje, hoyIso = hoy()) => resumenUltimosDias(viaje, 30, "mes", { day: "numeric", month: "long" }, hoyIso);
 
 // Cuatro caben en dos filas de la pestaña sin que el popup crezca.
 const AVISOS_MAX = 4;
@@ -4330,7 +4335,7 @@ if (typeof module !== "undefined") {
     MARGENES, tasaOfrecida, analizarCambio,
     domingoDePascua, hayTasaEl, tasaVieja, textoTasaVieja, horaBce, textoActualizado, proximaTasa, textoProximaTasa,
     FECHA_MINIMA, fechaLarga, fechaValida, diaDelGrafico, mesesAtras, FECHAS_RAPIDAS, leerFecha, cambioDesde, notaDiaHabil,
-    textoInsignia, cambioDiario, sentidoDe, cambioDelDia, textoCambioDia, ULTIMA_VEZ_MINIMO, desdeLaUltimaVez, ultimoVisto, tituloInsignia, tituloHoy, leerGrados, convertirGrados, textoGrados, leerGas, convertirGas, textoGas, leerDistancia, convertirDistancia, textoDistancia, leerRitmo, convertirRitmo, textoRitmo, leerPeso, convertirPeso, textoPeso, leerOnzas, convertirOnzas, textoOnzas, leerOnzasTroy, convertirOnzasTroy, textoOnzasTroy, leerAltura, convertirAltura, textoAltura, leerVelocidad, convertirVelocidad, textoVelocidad, leerVolumen, convertirVolumen, textoVolumen, leerLongitud, convertirLongitud, textoLongitud, leerSuperficie, convertirSuperficie, textoSuperficie, leerMillasCuadradas, convertirMillasCuadradas, textoMillasCuadradas, leerYardasCuadradas, convertirYardasCuadradas, textoYardasCuadradas, leerConsumo, convertirConsumo, textoConsumo, leerElectrico, convertirElectrico, textoElectrico, leerPresion, convertirPresion, textoPresion, leerTazas, convertirTazas, textoTazas, leerCucharadas, convertirCucharadas, textoCucharadas, leerSticks, convertirSticks, textoSticks, leerYardas, convertirYardas, textoYardas, leerStone, convertirStone, textoStone, leerLibrasYOnzas, convertirLibrasYOnzas, textoLibrasYOnzas, leerOnzasLiquidas, convertirOnzasLiquidas, textoOnzasLiquidas, leerPintas, convertirPintas, textoPintas, leerCuartos, convertirCuartos, textoCuartos, leerNudos, convertirNudos, textoNudos, leerMetrosPorSegundo, convertirMetrosPorSegundo, textoMetrosPorSegundo, leerMillasNauticas, convertirMillasNauticas, textoMillasNauticas, leerAcres, convertirAcres, textoAcres, leerCalorias, convertirCalorias, textoCalorias, leerPotencia, convertirPotencia, textoPotencia, leerBtu, convertirBtu, textoBtu, leerInHg, convertirInHg, textoInHg, leerPiesCubicos, convertirPiesCubicos, textoPiesCubicos, leerPulgadasCubicas, convertirPulgadasCubicas, textoPulgadasCubicas, leerBarriles, convertirBarriles, textoBarriles, leerParMotor, convertirParMotor, textoParMotor, leerToneladasCortas, convertirToneladasCortas, textoToneladasCortas, esHoyBarra, resumenHoyBarra, esAyerBarra, resumenAyerBarra, esSemanaBarra, resumenSemanaBarra, lineaTasa,
+    textoInsignia, cambioDiario, sentidoDe, cambioDelDia, textoCambioDia, ULTIMA_VEZ_MINIMO, desdeLaUltimaVez, ultimoVisto, tituloInsignia, tituloHoy, leerGrados, convertirGrados, textoGrados, leerGas, convertirGas, textoGas, leerDistancia, convertirDistancia, textoDistancia, leerRitmo, convertirRitmo, textoRitmo, leerPeso, convertirPeso, textoPeso, leerOnzas, convertirOnzas, textoOnzas, leerOnzasTroy, convertirOnzasTroy, textoOnzasTroy, leerAltura, convertirAltura, textoAltura, leerVelocidad, convertirVelocidad, textoVelocidad, leerVolumen, convertirVolumen, textoVolumen, leerLongitud, convertirLongitud, textoLongitud, leerSuperficie, convertirSuperficie, textoSuperficie, leerMillasCuadradas, convertirMillasCuadradas, textoMillasCuadradas, leerYardasCuadradas, convertirYardasCuadradas, textoYardasCuadradas, leerConsumo, convertirConsumo, textoConsumo, leerElectrico, convertirElectrico, textoElectrico, leerPresion, convertirPresion, textoPresion, leerTazas, convertirTazas, textoTazas, leerCucharadas, convertirCucharadas, textoCucharadas, leerSticks, convertirSticks, textoSticks, leerYardas, convertirYardas, textoYardas, leerStone, convertirStone, textoStone, leerLibrasYOnzas, convertirLibrasYOnzas, textoLibrasYOnzas, leerOnzasLiquidas, convertirOnzasLiquidas, textoOnzasLiquidas, leerPintas, convertirPintas, textoPintas, leerCuartos, convertirCuartos, textoCuartos, leerNudos, convertirNudos, textoNudos, leerMetrosPorSegundo, convertirMetrosPorSegundo, textoMetrosPorSegundo, leerMillasNauticas, convertirMillasNauticas, textoMillasNauticas, leerAcres, convertirAcres, textoAcres, leerCalorias, convertirCalorias, textoCalorias, leerPotencia, convertirPotencia, textoPotencia, leerBtu, convertirBtu, textoBtu, leerInHg, convertirInHg, textoInHg, leerPiesCubicos, convertirPiesCubicos, textoPiesCubicos, leerPulgadasCubicas, convertirPulgadasCubicas, textoPulgadasCubicas, leerBarriles, convertirBarriles, textoBarriles, leerParMotor, convertirParMotor, textoParMotor, leerToneladasCortas, convertirToneladasCortas, textoToneladasCortas, esHoyBarra, resumenHoyBarra, esAyerBarra, resumenAyerBarra, esSemanaBarra, resumenSemanaBarra, esMesBarra, resumenMesBarra, lineaTasa,
     AVISOS_MAX, AVISO_PCT_MAX, sentidoAviso, crearAviso, leerPorcentajeAviso, crearAvisoPorcentaje, leerAvisos, avisoCumplido, repartirAvisos, mensajeAviso, faltaParaAviso, cercaniaAviso, textoFalta,
     nivelPresupuesto, avisosPresupuesto, mensajePresupuesto,
     RECORDATORIO_HORA, RECORDATORIO_HORAS, leerHoraRecordatorio, viajesSinApuntar, tocaRecordar, mensajeRecordatorio,

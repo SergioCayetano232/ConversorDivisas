@@ -468,6 +468,7 @@ async function sugerirEnBarra(texto, sugerir) {
   if (esHoyBarra(texto)) return sugerirHoy(sugerir, actual);
   if (esAyerBarra(texto)) return sugerirHoy(sugerir, actual, resumenAyerBarra);
   if (esSemanaBarra(texto)) return sugerirHoy(sugerir, actual, resumenSemanaBarra);
+  if (esMesBarra(texto)) return sugerirHoy(sugerir, actual, resumenMesBarra);
   const grados = leerGrados(texto);
   if (grados) {
     sugerir([]);
@@ -745,7 +746,7 @@ async function abrirDesdeBarra(texto) {
     await apuntarDesdeBarra(texto);
     return;
   }
-  if (esHoyBarra(texto) || esAyerBarra(texto) || esSemanaBarra(texto)) {
+  if (esHoyBarra(texto) || esAyerBarra(texto) || esSemanaBarra(texto) || esMesBarra(texto)) {
     await abrirConGastos();
     return;
   }
