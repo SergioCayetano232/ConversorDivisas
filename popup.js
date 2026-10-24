@@ -4887,6 +4887,7 @@ function hacerAtajo(accion) {
   else if (accion === "copiar") onCopiar();
   else if (accion === "copiarFrase") onCopiar(true);
   else if (accion === "copiarSimbolo") onCopiar(false, true);
+  else if (accion === "copiarFraseSimbolo") onCopiar(true, true);
   else if (accion === "girarTasa") onDarLaVueltaATasa();
   else if (accion === "copiarTasa") copiarTasa();
   else if (accion === "copiarTasaAlReves") copiarTasa(true);
@@ -5002,7 +5003,8 @@ function onAtajo(event) {
     || (accion === "copiarHoy" && !hoyParaCopiar(viajeActivo(viajes)))
     || (accion === "csvViajes" && !viajes.lista.some((v) => v.gastos.length))
     || ((accion === "copiarTasa" || accion === "copiarTasaAlReves" || accion === "chuleta" || accion === "imprimirChuleta") && rate === null)
-    || (accion === "copiarSimbolo" && (rate === null || leerImporte(el.result.value) === null))) return;
+    || (accion === "copiarSimbolo" && (rate === null || leerImporte(el.result.value) === null))
+    || (accion === "copiarFraseSimbolo" && !fraseSimboloAhora())) return;
   event.preventDefault();
   hacerAtajo(accion);
   // El resumen, la chuleta y las otras divisas ya avisan ellos al copiar, y si falla dicen que ha fallado.
@@ -5011,13 +5013,14 @@ function onAtajo(event) {
     const tecla = conCmd ? (esMac ? "⌘Z" : "Ctrl+Z")
       : accion === "buscar" ? "/"
       : event.altKey ? textoAtajo(event.code, esMac) : event.code.replace(/^Key|^Digit/, "");
-    const prefijo = accion === "copiarFrase" || accion === "imprimirChuleta" || accion === "copiarTasaAlReves" || accion === "csvViajes" || accion === "apuntarEfectivo" || accion === "copiarHoy" || accion === "copiarMasCaro" ? (esMac ? "⇧" : "Shift+") : "";
+    const prefijo = accion === "copiarFrase" || accion === "imprimirChuleta" || accion === "copiarTasaAlReves" || accion === "csvViajes" || accion === "apuntarEfectivo" || accion === "copiarHoy" || accion === "copiarMasCaro" || accion === "copiarFraseSimbolo" ? (esMac ? "⇧" : "Shift+") : "";
     // El de pagar, el discreto y la tasa dicen cómo han quedado, que "cambiar" no te dice a qué.
     const dice = accion === "pago" ? tr("pago.ahora", { nombre: tr(`pago.${pagoNuevo}`) })
       : accion === "discreto" ? tr(discreto ? "discreto.puesto" : "discreto.quitado")
       : accion === "girarTasa" ? el.rateLine.textContent || queHace(accion)
       : accion === "copiarTasa" || accion === "copiarTasaAlReves" ? tr("copiado.tasa", { tasa: tasaParaCopiar(accion === "copiarTasaAlReves") })
       : accion === "copiarSimbolo" ? tr("copiado.tasa", { tasa: textoConSimbolo(leerImporte(el.result.value), el.to.value) })
+      : accion === "copiarFraseSimbolo" ? tr("copiado.tasa", { tasa: fraseSimboloAhora() })
       : accion === "copiarTotal" ? tr("copiado.tasa", { tasa: totalParaCopiar(viajeActivo(viajes)) })
       : accion === "copiarHoy" ? tr("copiado.tasa", { tasa: hoyParaCopiar(viajeActivo(viajes)) })
       : accion === "copiarGasto" ? tr("copiado.tasa", { tasa: gastoParaCopiar(ultimoGasto(gastos)) })
@@ -5531,15 +5534,19 @@ function onResultInput() {
 
 let avisoCopiado = null;
 
+const fraseSimboloAhora = () => (rate === null ? ""
+  : fraseConSimbolo({ cantidad: leerImporte(el.amount.value), from: el.from.value, valor: leerImporte(el.result.value), to: el.to.value }));
+
 // Con Shift la frase entera; con Alt, la cifra con su símbolo ("42,79 $"), que
-// es como se escribe en un mensaje. Si van los dos, gana la frase.
+// es como se escribe en un mensaje. Con los dos, la frase con símbolos.
 async function onCopiar(entera = false, conSimbolo = false) {
   const valor = leerImporte(el.result.value);
   if (valor === null || rate === null) return;
   // Si lo copias es que era esa: la apunto ya, sin esperar.
   tocado = true;
   apuntarAhora();
-  const frase = entera ? fraseParaCopiar({ cantidad: leerImporte(el.amount.value), from: el.from.value, valor, to: el.to.value }) : "";
+  const par = { cantidad: leerImporte(el.amount.value), from: el.from.value, valor, to: el.to.value };
+  const frase = !entera ? "" : conSimbolo ? fraseConSimbolo(par) : fraseParaCopiar(par);
   if (entera && !frase) return;
   const simbolo = !entera && conSimbolo ? textoConSimbolo(valor, el.to.value) : "";
   const bien = await copiar(frase || simbolo || textoParaCopiar(valor));

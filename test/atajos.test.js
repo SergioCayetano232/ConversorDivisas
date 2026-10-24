@@ -40,6 +40,7 @@ test("fuera de un campo basta la letra", () => {
   assert.equal(atajoPara(tecla("KeyQ", { shiftKey: true })), "copiarMasCaro");
   assert.equal(atajoPara(tecla("KeyL")), "extras");
   assert.equal(atajoPara(tecla("KeyY")), "copiarSimbolo");
+  assert.equal(atajoPara(tecla("KeyY", { shiftKey: true })), "copiarFraseSimbolo");
 });
 
 test("fuera de un campo también vale con Alt", () => {

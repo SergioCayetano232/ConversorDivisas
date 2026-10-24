@@ -2884,6 +2884,12 @@ function textoConSimbolo(valor, code) {
   return texto.replace(/^([A-Za-z]+)(\d)/, "$1\u00a0$2");
 }
 
+// "38,90 € = 42,79 $": la frase de Shift+C, con el símbolo de cada lado como en la Y.
+function fraseConSimbolo({ cantidad, from, valor, to }) {
+  if (![cantidad, valor].every(Number.isFinite) || !isValidCode(from) || !isValidCode(to)) return "";
+  return `${textoConSimbolo(cantidad, from)} = ${textoConSimbolo(valor, to)}`;
+}
+
 function destinoPara(divisa, par) {
   if (!divisa) return { from: par.from, to: par.to };
   return { from: divisa, to: divisa === par.to ? par.from : par.to };
@@ -4232,8 +4238,9 @@ const ATAJOS = {
 };
 
 // Con Shift, la otra versión: la frase entera, la chuleta en papel, la tasa al
-// revés, el CSV de todos los viajes, el gasto en efectivo, lo de hoy o el más caro.
-const CON_SHIFT = { copiar: "copiarFrase", chuleta: "imprimirChuleta", copiarTasa: "copiarTasaAlReves", csv: "csvViajes", apuntar: "apuntarEfectivo", copiarTotal: "copiarHoy", copiarGasto: "copiarMasCaro" };
+// revés, el CSV de todos los viajes, el gasto en efectivo, lo de hoy, el más
+// caro o la frase con símbolos.
+const CON_SHIFT = { copiar: "copiarFrase", copiarSimbolo: "copiarFraseSimbolo", chuleta: "imprimirChuleta", copiarTasa: "copiarTasaAlReves", csv: "csvViajes", apuntar: "apuntarEfectivo", copiarTotal: "copiarHoy", copiarGasto: "copiarMasCaro" };
 
 // Escribiendo en un campo las letras son letras (la x es "por" en las
 // cuentas), así que ahí hace falta Alt. Cmd y Ctrl no los toco nunca: son
@@ -4341,7 +4348,7 @@ if (typeof module !== "undefined") {
     SEMANAS_MINIMAS, mejorDiaSemana, nombreDiaSemana, textoDiaSemana, indiceCercano, extremos, fechaCorta, largoEnPantalla,
     leerNumero, divisaDe, leerSeleccion, destinoPara, leerPegado, buscarPrecios, precioEntero, leerOmnibox, precioUnidadBarra, leerGastoBarra, gastoDeBarra, escaparXml,
     divisaDeIdioma, parPorIdioma, banderaDe, banderaDivisa,
-    HISTORIAL_MAX, leerHistorial, apuntarConversion, quitarConversion, haceCuanto, ultimoDeHoy, textoParaCopiar, fraseParaCopiar, gastoParaCopiar, ultimoGasto, gastoMasCaro, totalParaCopiar, hoyParaCopiar, simboloDe, textoConSimbolo,
+    HISTORIAL_MAX, leerHistorial, apuntarConversion, quitarConversion, haceCuanto, ultimoDeHoy, textoParaCopiar, fraseParaCopiar, gastoParaCopiar, ultimoGasto, gastoMasCaro, totalParaCopiar, hoyParaCopiar, simboloDe, textoConSimbolo, fraseConSimbolo,
     celdaCsv, csvHistorial, csvGastos, csvViajes,
     GASTOS_MAX, CONCEPTO_MAX, crearGasto, leerGastos, apuntarGasto, NOCHES_MAX, repartirCentimos, repartirNoches, apuntarNoches, quitarGasto, cambiarConcepto, cambiarDia, buscarGastos, trozosResaltados, repetirGasto, devolverGasto, devolverTodos, sumarPorDivisa, gastosPorDia, huecoEntre, cifraEnMarcha, categoriaDelDia, pesoDeLosDias, ordenarPorImporte, masCarosDelDia, pesoDeLosGastos, RARO_VECES, mediana, gastoRaro, REPETIDO_MS, gastoRepetido, mediaPorDia, categoriasAlDia, mediaPorGasto, comisionesPagadas, cambioDelViaje, cifraCambio, textoCambio, pagadoEnEfectivo, ahorroEnEfectivo,
     RETIRADAS_MAX, leerRetiradas, crearRetirada, apuntarRetirada, quitarRetirada, efectivoQueda, EFECTIVO_POCO, tonoEfectivo, redondoDeCajero, cuantoSacar, loQueSobra, gastadoHoy, nombreDia,
