@@ -3408,16 +3408,19 @@ function textoPresion(leido) {
 }
 
 // "cd 2 cups", para las recetas americanas. La taza de allí, no la métrica de 250.
-const HAY_TAZAS = /^\s*(\d+(?:[.,]\d+)?)\s*(cups?|tazas?|ml|mililitros?|millilit(?:er|re)s?)\s*$/i;
+// Los dl, que salen en las recetas de aquí y en las nórdicas, van a tazas.
+const HAY_TAZAS = /^\s*(\d+(?:[.,]\d+)?)\s*(cups?|tazas?|ml|mililitros?|millilit(?:er|re)s?|dl|decilitros?|decilit(?:er|re)s?)\s*$/i;
 const ML_POR_TAZA = 236.5882365;
 
 function leerTazas(texto) {
   const m = String(texto ?? "").match(HAY_TAZAS);
   if (!m) return null;
-  return { valor: Number(m[1].replace(",", ".")), de: /^m/i.test(m[2]) ? "ml" : "cups" };
+  const de = /^m/i.test(m[2]) ? "ml" : /^d/i.test(m[2]) ? "dl" : "cups";
+  return { valor: Number(m[1].replace(",", ".")), de };
 }
 
 function convertirTazas({ valor, de }) {
+  if (de === "dl") return { valor: (valor * 100) / ML_POR_TAZA, a: "cups" };
   return de === "cups" ? { valor: valor * ML_POR_TAZA, a: "ml" } : { valor: valor / ML_POR_TAZA, a: "cups" };
 }
 

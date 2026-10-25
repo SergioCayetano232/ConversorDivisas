@@ -39,6 +39,15 @@ test("el texto: ml enteros, tazas con dos decimales y una en singular", () => {
   assert.equal(textoTazas(null), "");
 });
 
+test("los dl, a tazas", () => {
+  for (const t of ["2 dl", "2dl", "2 DL", "2 decilitros", "2 deciliters", "2 decilitres"]) assert.deepEqual(leerTazas(t), { valor: 2, de: "dl" }, t);
+  assert.equal(convertirTazas({ valor: 1, de: "dl" }).a, "cups");
+  assert.equal(texto("2 dl"), "2 dl = 0,85 cups");
+  assert.equal(texto("2,5 dl"), "2,5 dl = 1,06 cups");
+  assert.equal(leerVolumen("2 dl"), null);
+  assert.equal(leerOmnibox("2 dl", { from: "EUR", to: "USD" }), null);
+});
+
 test("en inglés, con punto", () => {
   ponerIdioma("en");
   try {
