@@ -27,6 +27,11 @@ test("con uk detrás, el galón inglés", () => {
   assert.equal(leerVolumen("10 gal usa"), null);
 });
 
+test("con us detrás, el americano de siempre", () => {
+  for (const t of ["10 gal us", "10 gal US", "10 gallons (US)", "10gal us"]) assert.deepEqual(leerVolumen(t), { valor: 10, de: "gal" }, t);
+  assert.equal(texto("10 gal us"), "10 gal = 37,9 l");
+});
+
 test("lo que no son volúmenes, no", () => {
   for (const t of ["gal", "10", "4,59/gal", "4,59 por galón", "10 lb", "20 usd", "-5 l", "", undefined]) assert.equal(leerVolumen(t), null, String(t));
 });

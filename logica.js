@@ -3243,7 +3243,8 @@ function textoVelocidad(leido) {
 
 // "cd 10gal", para la gasolina. Con barra delante ("4,59/gal") sigue siendo un
 // precio. Galón americano, que es el que te vas a encontrar; con "uk" detrás, el inglés.
-const HAY_VOLUMEN = /^\s*(\d+(?:[.,]\d+)?)\s*(gal(?:lons?|ones|[oó]n)?|l|litros?|liters?|litres?)\s*(\(?\s*(?:uk|imp(?:erial)?)\s*\)?)?\s*$/i;
+// Con "us" detrás, el americano igual, que hay quien lo escribe para dejarlo claro.
+const HAY_VOLUMEN = /^\s*(\d+(?:[.,]\d+)?)\s*(gal(?:lons?|ones|[oó]n)?|l|litros?|liters?|litres?)\s*(?:\(?\s*(?:(uk|imp(?:erial)?)|us)\s*\)?)?\s*$/i;
 const L_POR_GALON = 3.78541178;
 const L_POR_GALON_UK = 4.54609;
 
