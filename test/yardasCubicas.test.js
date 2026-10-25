@@ -27,6 +27,16 @@ test("una yarda cúbica son 0,76 m³", () => {
   assert.equal(textoYardasCubicas(null), "");
 });
 
+test("y los m³ al revés", () => {
+  for (const t of ["2 m³", "2m3", "2 metros cúbicos", "2 cubic meters", "2 cubic metres"]) assert.deepEqual(leerYardasCubicas(t), { valor: 2, de: "m³" }, t);
+  assert.equal(leerYardasCubicas("1 metro cúbico").valor, 1);
+  assert.equal(convertirYardasCubicas({ valor: 1, de: "m³" }).a, "cu yd");
+  assert.equal(texto("2 m³"), "2 m³ = 2,62 cu yd");
+  assert.equal(leerYardasCubicas("2 m"), null);
+  assert.equal(leerYardasCubicas("2 m²"), null);
+  assert.equal(leerOmnibox("2 m3", { from: "EUR", to: "USD" }), null);
+});
+
 test("en inglés, con punto", () => {
   ponerIdioma("en");
   try {

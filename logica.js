@@ -3853,18 +3853,19 @@ function textoQuilates(leido) {
 }
 
 // "cd 2 cu yd", la tierra, la grava y el hormigón de allí, que se piden por
-// yardas. A m³, que en litros salen cifras de cuatro números.
-const HAY_YARDAS_CUBICAS = /^\s*(\d+(?:[.,]\d+)?)\s*(?:cu\.?\s*y(?:ar)?ds?|yd³|cubic yards?|yardas? cúbicas?)\s*$/i;
+// yardas. A m³, que en litros salen cifras de cuatro números. Y "cd 2 m³" al
+// revés, para saber cuánto pedir allí.
+const HAY_YARDAS_CUBICAS = /^\s*(\d+(?:[.,]\d+)?)\s*(?:(cu\.?\s*y(?:ar)?ds?|yd³|cubic yards?|yardas? cúbicas?)|(m³|m3|metros? cúbicos?|cubic met(?:er|re)s?))\s*$/i;
 const M3_POR_YARDA3 = 0.764554857984;
 
 function leerYardasCubicas(texto) {
   const m = String(texto ?? "").match(HAY_YARDAS_CUBICAS);
   if (!m) return null;
-  return { valor: Number(m[1].replace(",", ".")), de: "cu yd" };
+  return { valor: Number(m[1].replace(",", ".")), de: m[2] ? "cu yd" : "m³" };
 }
 
-function convertirYardasCubicas({ valor }) {
-  return { valor: valor * M3_POR_YARDA3, a: "m³" };
+function convertirYardasCubicas({ valor, de }) {
+  return de === "m³" ? { valor: valor / M3_POR_YARDA3, a: "cu yd" } : { valor: valor * M3_POR_YARDA3, a: "m³" };
 }
 
 function textoYardasCubicas(leido) {
