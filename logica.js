@@ -3919,16 +3919,17 @@ function textoYardasCuadradas(leido) {
 }
 
 // "cd 2 sq in", las baldosas, los parches y las fotos. A cm², que en m² no se lee.
-const HAY_PULGADAS_CUADRADAS = /^\s*(\d+(?:[.,]\d+)?)\s*(?:sq\.?\s*in(?:ch(?:es)?)?|in²|in2|square inch(?:es)?|pulgadas? cuadradas?)\s*$/i;
+// Y "cd 100 cm²" al revés.
+const HAY_PULGADAS_CUADRADAS = /^\s*(\d+(?:[.,]\d+)?)\s*(?:(sq\.?\s*in(?:ch(?:es)?)?|in²|in2|square inch(?:es)?|pulgadas? cuadradas?)|(cm²|cm2|cent[ií]metros? cuadrados?|square centimet(?:er|re)s?))\s*$/i;
 
 function leerPulgadasCuadradas(texto) {
   const m = String(texto ?? "").match(HAY_PULGADAS_CUADRADAS);
   if (!m) return null;
-  return { valor: Number(m[1].replace(",", ".")), de: "sq in" };
+  return { valor: Number(m[1].replace(",", ".")), de: m[2] ? "sq in" : "cm²" };
 }
 
-function convertirPulgadasCuadradas({ valor }) {
-  return { valor: valor * CM_POR_PULGADA ** 2, a: "cm²" };
+function convertirPulgadasCuadradas({ valor, de }) {
+  return de === "cm²" ? { valor: valor / CM_POR_PULGADA ** 2, a: "sq in" } : { valor: valor * CM_POR_PULGADA ** 2, a: "cm²" };
 }
 
 function textoPulgadasCuadradas(leido) {

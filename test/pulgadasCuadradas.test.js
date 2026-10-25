@@ -25,6 +25,15 @@ test("una pulgada cuadrada son 6,45 cm²", () => {
   assert.equal(textoPulgadasCuadradas(null), "");
 });
 
+test("y los cm² al revés", () => {
+  for (const t of ["100 cm²", "100cm2", "100 centímetros cuadrados", "100 square centimeters", "100 square centimetres"]) assert.deepEqual(leerPulgadasCuadradas(t), { valor: 100, de: "cm²" }, t);
+  assert.equal(convertirPulgadasCuadradas({ valor: 1, de: "cm²" }).a, "sq in");
+  assert.equal(texto("100 cm²"), "100 cm² = 15,5 sq in");
+  assert.equal(leerPulgadasCuadradas("100 cm"), null);
+  assert.equal(leerLongitud("100 cm²"), null);
+  assert.equal(leerOmnibox("100 cm2", { from: "EUR", to: "USD" }), null);
+});
+
 test("en inglés, con punto", () => {
   ponerIdioma("en");
   try {
