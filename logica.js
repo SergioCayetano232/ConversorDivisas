@@ -3749,24 +3749,24 @@ function textoPiesCubicos(leido) {
 }
 
 // "cd 350 ci", la cilindrada de los coches americanos. Allí dicen "ci" o "cid"
-// y aquí, litros.
-const HAY_PULGADAS_CUBICAS = /^\s*(\d+(?:[.,]\d+)?)\s*(?:cid?|cu\.?\s*in\.?|in³|cubic inch(?:es)?|pulgadas? cúbicas?)\s*$/i;
+// y aquí, litros. Y "cd 1000 cc" al revés, para las motos.
+const HAY_PULGADAS_CUBICAS = /^\s*(\d+(?:[.,]\d+)?)\s*(?:(cid?|cu\.?\s*in\.?|in³|cubic inch(?:es)?|pulgadas? cúbicas?)|(cc|cm³|cm3|cent[ií]metros? cúbicos?|cubic centimet(?:er|re)s?))\s*$/i;
 const L_POR_PULGADA3 = 0.016387064;
 
 function leerPulgadasCubicas(texto) {
   const m = String(texto ?? "").match(HAY_PULGADAS_CUBICAS);
   if (!m) return null;
-  return { valor: Number(m[1].replace(",", ".")), de: "ci" };
+  return { valor: Number(m[1].replace(",", ".")), de: m[2] ? "ci" : "cc" };
 }
 
-function convertirPulgadasCubicas({ valor }) {
-  return { valor: valor * L_POR_PULGADA3, a: "l" };
+function convertirPulgadasCubicas({ valor, de }) {
+  return de === "cc" ? { valor: valor / 1000 / L_POR_PULGADA3, a: "ci" } : { valor: valor * L_POR_PULGADA3, a: "l" };
 }
 
 function textoPulgadasCubicas(leido) {
   if (!leido) return "";
   const otro = convertirPulgadasCubicas(leido);
-  return `${numeros({ maximumFractionDigits: 0 }).format(leido.valor)} ${leido.de} = ${numeros({ maximumFractionDigits: 1 }).format(otro.valor)} ${otro.a}`;
+  return `${numeros({ maximumFractionDigits: 0 }).format(leido.valor)} ${leido.de} = ${numeros({ maximumFractionDigits: otro.a === "l" ? 1 : 0 }).format(otro.valor)} ${otro.a}`;
 }
 
 // "cd 1 bbl", el barril de petróleo de las noticias. Es el de 42 galones; hay

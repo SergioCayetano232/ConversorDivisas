@@ -25,6 +25,16 @@ test("un 350 son 5,7 litros", () => {
   assert.equal(textoPulgadasCubicas(null), "");
 });
 
+test("y los cc al revés", () => {
+  for (const t of ["1000 cc", "1000cc", "1000 CC", "1000 cm³", "1000 cm3", "1000 centímetros cúbicos", "1000 cubic centimeters"]) assert.deepEqual(leerPulgadasCubicas(t), { valor: 1000, de: "cc" }, t);
+  assert.equal(convertirPulgadasCubicas({ valor: 1, de: "cc" }).a, "ci");
+  assert.equal(texto("1000 cc"), "1.000 cc = 61 ci");
+  assert.equal(texto("125 cc"), "125 cc = 8 ci");
+  assert.equal(leerPulgadasCubicas("1000 c"), null);
+  assert.equal(leerLongitud("1000 cm3"), null);
+  assert.equal(leerOmnibox("1000 cc", { from: "EUR", to: "USD" }), null);
+});
+
 test("en inglés, con punto", () => {
   ponerIdioma("en");
   try {
