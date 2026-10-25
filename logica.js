@@ -3505,7 +3505,8 @@ function textoOnzasLiquidas(leido) {
 // "cd 1 pint", la del pub. Va la británica (568 ml) y no la americana (473):
 // en Estados Unidos casi nadie la pide en pintas. Con "us" detrás, la de allí,
 // que sale en las recetas y en los helados.
-const HAY_PINTAS = /^\s*(\d+(?:[.,]\d+)?)\s*(pints?|pintas?|pt)\s*(\(?\s*us\s*\)?)?\s*$/i;
+// Con "uk" detrás, la británica igual, como en los galones.
+const HAY_PINTAS = /^\s*(\d+(?:[.,]\d+)?)\s*(pints?|pintas?|pt)\s*(?:\(?\s*(?:(us)|uk|imp(?:erial)?)\s*\)?)?\s*$/i;
 const ML_POR_PINTA = 568.26125;
 const ML_POR_PINTA_US = 473.176473;
 

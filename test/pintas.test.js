@@ -26,7 +26,12 @@ test("con us, la americana", () => {
   cerca(convertirPintas({ valor: 1, us: true }).valor, 473.176473);
   assert.equal(texto("1 pint us"), "1 pt US = 473 ml");
   assert.equal(texto("2 pt us"), "2 pt US = 946 ml");
-  assert.equal(leerPintas("1 pint uk"), null);
+});
+
+test("con uk, la británica de siempre", () => {
+  for (const t of ["1 pint uk", "1 pt UK", "1 pinta (uk)", "1 pint imperial"]) assert.deepEqual(leerPintas(t), { valor: 1, de: "pt" }, t);
+  assert.equal(texto("1 pint uk"), "1 pt = 568 ml");
+  assert.equal(leerPintas("1 pint usa"), null);
 });
 
 test("el texto, con los ml enteros", () => {
