@@ -1,6 +1,6 @@
 const { test } = require("node:test");
 const assert = require("node:assert");
-const { leerOnzasLiquidas, convertirOnzasLiquidas, textoOnzasLiquidas, leerOnzas, leerTazas } = require("../logica.js");
+const { leerOnzasLiquidas, convertirOnzasLiquidas, textoOnzasLiquidas, leerOnzas, leerTazas, leerOmnibox } = require("../logica.js");
 const { ponerIdioma } = require("../textos.js");
 
 const cerca = (a, b) => assert.ok(Math.abs(a - b) < 1e-9, `${a} ≠ ${b}`);
@@ -29,6 +29,15 @@ test("el texto, con un decimal", () => {
   assert.equal(texto("12 fl oz"), "12 fl oz = 354,9 ml");
   assert.equal(texto("16,9 fl oz"), "16,9 fl oz = 499,8 ml");
   assert.equal(textoOnzasLiquidas(null), "");
+});
+
+test("y los cl al revés", () => {
+  for (const t of ["75 cl", "75cl", "75 CL", "75 centilitros", "75 centiliters", "75 centilitres"]) assert.deepEqual(leerOnzasLiquidas(t), { valor: 75, de: "cl" }, t);
+  assert.equal(convertirOnzasLiquidas({ valor: 1, de: "cl" }).a, "fl oz");
+  assert.equal(texto("75 cl"), "75 cl = 25,4 fl oz");
+  assert.equal(texto("33 cl"), "33 cl = 11,2 fl oz");
+  assert.equal(leerTazas("75 cl"), null);
+  assert.equal(leerOmnibox("75 cl", { from: "EUR", to: "USD" }), null);
 });
 
 test("en inglés, con punto", () => {

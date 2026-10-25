@@ -3476,18 +3476,19 @@ function textoSticks(leido) {
 }
 
 // "cd 12 fl oz", lo que pone en las latas y las botellas de allí. Solo hacia
-// los ml, que los 250 ml ya los pasan las tazas.
-const HAY_ONZAS_LIQUIDAS = /^\s*(\d+(?:[.,]\d+)?)\s*(fl\.?\s*oz|fluid\s+ounces?|onzas?\s+l[ií]quidas?)\s*$/i;
+// los ml, que los 250 ml ya los pasan las tazas. Los cl sí van al revés: es lo
+// que pone en las botellas de vino de aquí ("75 cl").
+const HAY_ONZAS_LIQUIDAS = /^\s*(\d+(?:[.,]\d+)?)\s*(?:(fl\.?\s*oz|fluid\s+ounces?|onzas?\s+l[ií]quidas?)|(cl|centilitros?|centilit(?:er|re)s?))\s*$/i;
 const ML_POR_ONZA_LIQUIDA = 29.5735295625;
 
 function leerOnzasLiquidas(texto) {
   const m = String(texto ?? "").match(HAY_ONZAS_LIQUIDAS);
   if (!m) return null;
-  return { valor: Number(m[1].replace(",", ".")), de: "fl oz" };
+  return { valor: Number(m[1].replace(",", ".")), de: m[2] ? "fl oz" : "cl" };
 }
 
-function convertirOnzasLiquidas({ valor }) {
-  return { valor: valor * ML_POR_ONZA_LIQUIDA, a: "ml" };
+function convertirOnzasLiquidas({ valor, de }) {
+  return de === "cl" ? { valor: (valor * 10) / ML_POR_ONZA_LIQUIDA, a: "fl oz" } : { valor: valor * ML_POR_ONZA_LIQUIDA, a: "ml" };
 }
 
 function textoOnzasLiquidas(leido) {
