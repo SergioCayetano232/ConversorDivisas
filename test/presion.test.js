@@ -34,6 +34,14 @@ test("el texto: bar con un decimal, psi sin ninguno", () => {
   assert.equal(textoPresion(null), "");
 });
 
+test("los kPa, a psi", () => {
+  for (const t of ["250 kPa", "250kpa", "250 KPA"]) assert.deepEqual(leerPresion(t), { valor: 250, de: "kPa" }, t);
+  assert.equal(convertirPresion({ valor: 1, de: "kPa" }).a, "psi");
+  assert.equal(texto("250 kPa"), "250 kPa = 36 psi");
+  assert.equal(leerPresion("250 pa"), null);
+  assert.equal(leerOmnibox("250 kpa", { from: "EUR", to: "USD" }), null);
+});
+
 test("en inglés, con punto", () => {
   ponerIdioma("en");
   try {

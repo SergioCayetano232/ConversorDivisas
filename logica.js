@@ -3382,21 +3382,24 @@ function textoElectrico(leido) {
   return `${cuanto(leido.valor, leido.de)} = ${cuanto(otro.valor, otro.a)}`;
 }
 
-// "cd 35psi", para inflar las ruedas en la gasolinera.
-const HAY_PRESION = /^\s*(\d+(?:[.,]\d+)?)\s*(psi|bar|bares)\s*$/i;
+// "cd 35psi", para inflar las ruedas en la gasolinera. Algunos coches lo ponen
+// en kPa ("250 kPa"), y eso va a psi, que es lo que marca el inflador de allí.
+const HAY_PRESION = /^\s*(\d+(?:[.,]\d+)?)\s*(psi|bar|bares|kpa)\s*$/i;
 const BAR_POR_PSI = 0.0689475729;
 
 function leerPresion(texto) {
   const m = String(texto ?? "").match(HAY_PRESION);
   if (!m) return null;
-  return { valor: Number(m[1].replace(",", ".")), de: /^b/i.test(m[2]) ? "bar" : "psi" };
+  const de = /^b/i.test(m[2]) ? "bar" : /^k/i.test(m[2]) ? "kPa" : "psi";
+  return { valor: Number(m[1].replace(",", ".")), de };
 }
 
 function convertirPresion({ valor, de }) {
+  if (de === "kPa") return { valor: valor / 100 / BAR_POR_PSI, a: "psi" };
   return de === "psi" ? { valor: valor * BAR_POR_PSI, a: "bar" } : { valor: valor / BAR_POR_PSI, a: "psi" };
 }
 
-// Los psi, enteros: es lo que marca el inflador.
+// Los psi y los kPa, enteros: es lo que marca el inflador.
 function textoPresion(leido) {
   if (!leido) return "";
   const presion = (n, u) => `${numeros({ maximumFractionDigits: u === "bar" ? 1 : 0 }).format(n)} ${u}`;
