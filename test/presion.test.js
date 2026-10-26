@@ -42,6 +42,15 @@ test("los kPa, a psi", () => {
   assert.equal(leerOmnibox("250 kpa", { from: "EUR", to: "USD" }), null);
 });
 
+test("los kg/cm², a psi", () => {
+  for (const t of ["2,2 kg/cm²", "2,2kg/cm2", "2,2 KG/CM2", "2,2 kgf/cm²", "2,2 kg / cm²"]) assert.deepEqual(leerPresion(t), { valor: 2.2, de: "kg/cm²" }, t);
+  cerca(convertirPresion({ valor: 1, de: "kg/cm²" }).valor, 0.980665 / 0.0689475729);
+  assert.equal(texto("2,2 kg/cm2"), "2,2 kg/cm² = 31 psi");
+  assert.equal(texto("2 kg/cm²"), "2 kg/cm² = 28 psi");
+  for (const t of ["2 kg/cm", "2 kg/m²", "2 g/cm²"]) assert.equal(leerPresion(t), null, t);
+  assert.equal(leerOmnibox("2 kg/cm²", { from: "EUR", to: "USD" }), null);
+});
+
 test("en inglés, con punto", () => {
   ponerIdioma("en");
   try {
