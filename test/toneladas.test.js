@@ -33,6 +33,15 @@ test("y las de aquí al revés, a cortas", () => {
   assert.equal(leerOmnibox("2 t", { from: "EUR", to: "USD" }), null);
 });
 
+test("la larga, la de Reino Unido", () => {
+  for (const t of ["2 long ton", "2 long tons", "2 LONG TONS", "2 ton uk", "2 tons (UK)", "2 tons imperial"]) assert.deepEqual(leerToneladasCortas(t), { valor: 2, de: "long ton" }, t);
+  cerca(convertirToneladasCortas({ valor: 1, de: "long ton" }).valor, 1.0160469088);
+  assert.equal(texto("2 long tons"), "2 long ton = 2,03 t");
+  assert.equal(texto("40 ton uk"), "40 long ton = 40,64 t");
+  for (const t of ["2 long", "2 long t", "2 ton usa"]) assert.equal(leerToneladasCortas(t), null, t);
+  assert.equal(leerOmnibox("2 long ton", { from: "EUR", to: "USD" }), null);
+});
+
 test("en inglés, con punto", () => {
   ponerIdioma("en");
   try {

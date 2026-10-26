@@ -3832,17 +3832,20 @@ function textoParMotor(leido) {
 
 // "cd 2 ton", la tonelada corta de Estados Unidos, la de los puentes y los camiones.
 // "Toneladas" es la de 1.000 kg, así que esa va al revés, a las cortas.
-const HAY_TONELADAS_CORTAS = /^\s*(\d+(?:[.,]\d+)?)\s*(?:((?:short\s+)?tons?)|t|tonnes?|toneladas?)\s*$/i;
+// Y "cd 2 long ton", la inglesa, que es la que ponen los puentes de Reino Unido.
+const HAY_TONELADAS_CORTAS = /^\s*(\d+(?:[.,]\d+)?)\s*(?:((?:short\s+)?tons?)|(long\s+tons?|tons?\s*\(?\s*(?:uk|imp(?:erial)?)\s*\)?)|t|tonnes?|toneladas?)\s*$/i;
 const KG_POR_TONELADA_CORTA = 907.18474;
+const KG_POR_TONELADA_LARGA = 1016.0469088;
 
 function leerToneladasCortas(texto) {
   const m = String(texto ?? "").match(HAY_TONELADAS_CORTAS);
   if (!m) return null;
-  return { valor: Number(m[1].replace(",", ".")), de: m[2] ? "ton" : "t" };
+  return { valor: Number(m[1].replace(",", ".")), de: m[2] ? "ton" : m[3] ? "long ton" : "t" };
 }
 
 function convertirToneladasCortas({ valor, de }) {
   if (de === "t") return { valor: (valor * 1000) / KG_POR_TONELADA_CORTA, a: "ton" };
+  if (de === "long ton") return { valor: (valor * KG_POR_TONELADA_LARGA) / 1000, a: "t" };
   return { valor: (valor * KG_POR_TONELADA_CORTA) / 1000, a: "t" };
 }
 
