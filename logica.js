@@ -3481,23 +3481,27 @@ function textoSticks(leido) {
 
 // "cd 12 fl oz", lo que pone en las latas y las botellas de allí. Solo hacia
 // los ml, que los 250 ml ya los pasan las tazas. Los cl sí van al revés: es lo
-// que pone en las botellas de vino de aquí ("75 cl").
-const HAY_ONZAS_LIQUIDAS = /^\s*(\d+(?:[.,]\d+)?)\s*(?:(fl\.?\s*oz|fluid\s+ounces?|onzas?\s+l[ií]quidas?)|(cl|centilitros?|centilit(?:er|re)s?))\s*$/i;
+// que pone en las botellas de vino de aquí ("75 cl"). Con "uk" detrás, la
+// inglesa, que es un poco más pequeña y sale en las recetas de allí.
+const HAY_ONZAS_LIQUIDAS = /^\s*(\d+(?:[.,]\d+)?)\s*(?:(fl\.?\s*oz|fluid\s+ounces?|onzas?\s+l[ií]quidas?)\s*(?:\(?\s*(?:(uk|imp(?:erial)?)|us)\s*\)?)?|(cl|centilitros?|centilit(?:er|re)s?))\s*$/i;
 const ML_POR_ONZA_LIQUIDA = 29.5735295625;
+const ML_POR_ONZA_LIQUIDA_UK = 28.4130625;
 
 function leerOnzasLiquidas(texto) {
   const m = String(texto ?? "").match(HAY_ONZAS_LIQUIDAS);
   if (!m) return null;
+  if (m[3]) return { valor: Number(m[1].replace(",", ".")), de: "fl oz", uk: true };
   return { valor: Number(m[1].replace(",", ".")), de: m[2] ? "fl oz" : "cl" };
 }
 
-function convertirOnzasLiquidas({ valor, de }) {
+function convertirOnzasLiquidas({ valor, de, uk }) {
+  if (uk) return { valor: valor * ML_POR_ONZA_LIQUIDA_UK, a: "ml" };
   return de === "cl" ? { valor: (valor * 10) / ML_POR_ONZA_LIQUIDA, a: "fl oz" } : { valor: valor * ML_POR_ONZA_LIQUIDA, a: "ml" };
 }
 
 function textoOnzasLiquidas(leido) {
   if (!leido) return "";
-  const cuanto = (n, u) => `${numeros({ maximumFractionDigits: 1 }).format(n)} ${u}`;
+  const cuanto = (n, u) => `${numeros({ maximumFractionDigits: 1 }).format(n)} ${u === "fl oz" && leido.uk ? "fl oz UK" : u}`;
   const otro = convertirOnzasLiquidas(leido);
   return `${cuanto(leido.valor, leido.de)} = ${cuanto(otro.valor, otro.a)}`;
 }

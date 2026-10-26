@@ -25,6 +25,20 @@ test("una onza líquida americana son 29,57 ml", () => {
   assert.equal(convertirOnzasLiquidas({ valor: 1 }).a, "ml");
 });
 
+test("con uk, la inglesa", () => {
+  for (const t of ["1 fl oz uk", "1 fl oz UK", "1 floz (uk)", "1 fluid ounce imperial"]) assert.deepEqual(leerOnzasLiquidas(t), { valor: 1, de: "fl oz", uk: true }, t);
+  cerca(convertirOnzasLiquidas({ valor: 20, uk: true }).valor, 568.26125);
+  assert.equal(texto("1 fl oz uk"), "1 fl oz UK = 28,4 ml");
+  assert.equal(texto("10 fl oz uk"), "10 fl oz UK = 284,1 ml");
+});
+
+test("con us, la americana de siempre, y los cl sin nada detrás", () => {
+  assert.deepEqual(leerOnzasLiquidas("12 fl oz us"), { valor: 12, de: "fl oz" });
+  assert.equal(texto("12 fl oz us"), "12 fl oz = 354,9 ml");
+  for (const t of ["12 fl oz usa", "75 cl uk", "75 cl us"]) assert.equal(leerOnzasLiquidas(t), null, t);
+  assert.equal(leerOmnibox("1 fl oz uk", { from: "EUR", to: "USD" }), null);
+});
+
 test("el texto, con un decimal", () => {
   assert.equal(texto("12 fl oz"), "12 fl oz = 354,9 ml");
   assert.equal(texto("16,9 fl oz"), "16,9 fl oz = 499,8 ml");
