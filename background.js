@@ -467,6 +467,7 @@ async function sugerirEnBarra(texto, sugerir) {
   if (/^\s*\+/.test(texto)) return sugerirGasto(texto, sugerir, actual);
   if (esHoyBarra(texto)) return sugerirHoy(sugerir, actual);
   if (esAyerBarra(texto)) return sugerirHoy(sugerir, actual, resumenAyerBarra);
+  if (esAnteayerBarra(texto)) return sugerirHoy(sugerir, actual, resumenAnteayerBarra);
   if (esSemanaBarra(texto)) return sugerirHoy(sugerir, actual, resumenSemanaBarra);
   if (esMesBarra(texto)) return sugerirHoy(sugerir, actual, resumenMesBarra);
   if (esViajeBarra(texto)) return sugerirHoy(sugerir, actual, resumenViajeBarra);
@@ -774,7 +775,7 @@ async function abrirDesdeBarra(texto) {
     await apuntarDesdeBarra(texto);
     return;
   }
-  if (esHoyBarra(texto) || esAyerBarra(texto) || esSemanaBarra(texto) || esMesBarra(texto) || esViajeBarra(texto)) {
+  if (esHoyBarra(texto) || esAyerBarra(texto) || esAnteayerBarra(texto) || esSemanaBarra(texto) || esMesBarra(texto) || esViajeBarra(texto)) {
     await abrirConGastos();
     return;
   }

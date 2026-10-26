@@ -4039,21 +4039,26 @@ function resumenHoyBarra(viaje, hoyIso = hoy()) {
 // "cd ayer", para repasar por la mañana lo que se gastó el día anterior.
 const esAyerBarra = (texto) => /^\s*(ayer|yesterday)\s*$/i.test(String(texto ?? ""));
 
-function resumenAyerBarra(viaje, hoyIso = hoy()) {
+function resumenAyerBarra(viaje, hoyIso = hoy(), atras = 1) {
   if (!viaje) return null;
   const dinero = (n) => numeros({ minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(n);
+  const clave = atras === 2 ? "barra.anteayer" : "barra.ayer";
   const [y, m, d] = hoyIso.split("-").map(Number);
-  const ayerIso = isoLocal(new Date(y, m - 1, d - 1));
+  const ayerIso = isoLocal(new Date(y, m - 1, d - atras));
   const gastado = gastadoHoy(viaje.gastos, ayerIso);
-  if (!gastado) return { principal: tr("barra.ayerNada"), detalle: [] };
+  if (!gastado) return { principal: tr(`${clave}Nada`), detalle: [] };
   const deAyer = viaje.gastos.filter((g) => g.to === gastado.to && isoLocal(new Date(g.cuando)) === ayerIso);
   const caro = deAyer.reduce((a, b) => (b.valor > a.valor ? b : a));
-  const principal = tr(deAyer.length === 1 ? "barra.ayerUno" : "barra.ayer", { gastado: `${dinero(gastado.total)} ${gastado.to}`, n: deAyer.length });
+  const principal = tr(deAyer.length === 1 ? `${clave}Uno` : clave, { gastado: `${dinero(gastado.total)} ${gastado.to}`, n: deAyer.length });
   const detalle = deAyer.length > 1
     ? [tr("barra.ayerCaro", { gasto: `${caro.concepto || tr("barra.ayerSinConcepto")} ${dinero(caro.valor)}` })]
     : [];
   return { principal, detalle };
 }
+
+// "cd anteayer", lo mismo un día más atrás, para cuando ayer no lo miraste.
+const esAnteayerBarra = (texto) => /^\s*(anteayer|antier|day before yesterday)\s*$/i.test(String(texto ?? ""));
+const resumenAnteayerBarra = (viaje, hoyIso = hoy()) => resumenAyerBarra(viaje, hoyIso, 2);
 
 // "cd viaje": el viaje entero, lo mismo que copia la J, con la media al día y
 // cómo va el presupuesto.
@@ -4479,7 +4484,7 @@ if (typeof module !== "undefined") {
     MARGENES, tasaOfrecida, analizarCambio,
     domingoDePascua, hayTasaEl, tasaVieja, textoTasaVieja, horaBce, textoActualizado, proximaTasa, textoProximaTasa,
     FECHA_MINIMA, fechaLarga, fechaValida, diaDelGrafico, mesesAtras, FECHAS_RAPIDAS, leerFecha, cambioDesde, notaDiaHabil,
-    textoInsignia, cambioDiario, sentidoDe, cambioDelDia, textoCambioDia, ULTIMA_VEZ_MINIMO, desdeLaUltimaVez, ultimoVisto, tituloInsignia, tituloHoy, leerGrados, convertirGrados, textoGrados, leerGas, convertirGas, textoGas, leerDistancia, convertirDistancia, textoDistancia, leerRitmo, convertirRitmo, textoRitmo, leerPeso, convertirPeso, textoPeso, leerOnzas, convertirOnzas, textoOnzas, leerOnzasTroy, convertirOnzasTroy, textoOnzasTroy, leerAltura, convertirAltura, textoAltura, leerVelocidad, convertirVelocidad, textoVelocidad, leerVolumen, convertirVolumen, textoVolumen, leerLongitud, convertirLongitud, textoLongitud, leerSuperficie, convertirSuperficie, textoSuperficie, leerMillasCuadradas, convertirMillasCuadradas, textoMillasCuadradas, leerYardasCuadradas, convertirYardasCuadradas, textoYardasCuadradas, leerPulgadasCuadradas, convertirPulgadasCuadradas, textoPulgadasCuadradas, leerConsumo, convertirConsumo, textoConsumo, leerElectrico, convertirElectrico, textoElectrico, leerPresion, convertirPresion, textoPresion, leerTazas, convertirTazas, textoTazas, leerCucharadas, convertirCucharadas, textoCucharadas, leerSticks, convertirSticks, textoSticks, leerYardas, convertirYardas, textoYardas, leerStone, convertirStone, textoStone, leerLibrasYOnzas, convertirLibrasYOnzas, textoLibrasYOnzas, leerOnzasLiquidas, convertirOnzasLiquidas, textoOnzasLiquidas, leerPintas, convertirPintas, textoPintas, leerCuartos, convertirCuartos, textoCuartos, leerNudos, convertirNudos, textoNudos, leerMetrosPorSegundo, convertirMetrosPorSegundo, textoMetrosPorSegundo, leerMillasNauticas, convertirMillasNauticas, textoMillasNauticas, leerAcres, convertirAcres, textoAcres, leerCalorias, convertirCalorias, textoCalorias, leerPotencia, convertirPotencia, textoPotencia, leerBtu, convertirBtu, textoBtu, leerInHg, convertirInHg, textoInHg, leerPiesCubicos, convertirPiesCubicos, textoPiesCubicos, leerYardasCubicas, convertirYardasCubicas, textoYardasCubicas, leerQuilates, convertirQuilates, textoQuilates, leerPulgadasCubicas, convertirPulgadasCubicas, textoPulgadasCubicas, leerBarriles, convertirBarriles, textoBarriles, leerParMotor, convertirParMotor, textoParMotor, leerToneladasCortas, convertirToneladasCortas, textoToneladasCortas, esHoyBarra, resumenHoyBarra, esAyerBarra, resumenAyerBarra, esSemanaBarra, resumenSemanaBarra, esMesBarra, resumenMesBarra, esViajeBarra, resumenViajeBarra, lineaTasa,
+    textoInsignia, cambioDiario, sentidoDe, cambioDelDia, textoCambioDia, ULTIMA_VEZ_MINIMO, desdeLaUltimaVez, ultimoVisto, tituloInsignia, tituloHoy, leerGrados, convertirGrados, textoGrados, leerGas, convertirGas, textoGas, leerDistancia, convertirDistancia, textoDistancia, leerRitmo, convertirRitmo, textoRitmo, leerPeso, convertirPeso, textoPeso, leerOnzas, convertirOnzas, textoOnzas, leerOnzasTroy, convertirOnzasTroy, textoOnzasTroy, leerAltura, convertirAltura, textoAltura, leerVelocidad, convertirVelocidad, textoVelocidad, leerVolumen, convertirVolumen, textoVolumen, leerLongitud, convertirLongitud, textoLongitud, leerSuperficie, convertirSuperficie, textoSuperficie, leerMillasCuadradas, convertirMillasCuadradas, textoMillasCuadradas, leerYardasCuadradas, convertirYardasCuadradas, textoYardasCuadradas, leerPulgadasCuadradas, convertirPulgadasCuadradas, textoPulgadasCuadradas, leerConsumo, convertirConsumo, textoConsumo, leerElectrico, convertirElectrico, textoElectrico, leerPresion, convertirPresion, textoPresion, leerTazas, convertirTazas, textoTazas, leerCucharadas, convertirCucharadas, textoCucharadas, leerSticks, convertirSticks, textoSticks, leerYardas, convertirYardas, textoYardas, leerStone, convertirStone, textoStone, leerLibrasYOnzas, convertirLibrasYOnzas, textoLibrasYOnzas, leerOnzasLiquidas, convertirOnzasLiquidas, textoOnzasLiquidas, leerPintas, convertirPintas, textoPintas, leerCuartos, convertirCuartos, textoCuartos, leerNudos, convertirNudos, textoNudos, leerMetrosPorSegundo, convertirMetrosPorSegundo, textoMetrosPorSegundo, leerMillasNauticas, convertirMillasNauticas, textoMillasNauticas, leerAcres, convertirAcres, textoAcres, leerCalorias, convertirCalorias, textoCalorias, leerPotencia, convertirPotencia, textoPotencia, leerBtu, convertirBtu, textoBtu, leerInHg, convertirInHg, textoInHg, leerPiesCubicos, convertirPiesCubicos, textoPiesCubicos, leerYardasCubicas, convertirYardasCubicas, textoYardasCubicas, leerQuilates, convertirQuilates, textoQuilates, leerPulgadasCubicas, convertirPulgadasCubicas, textoPulgadasCubicas, leerBarriles, convertirBarriles, textoBarriles, leerParMotor, convertirParMotor, textoParMotor, leerToneladasCortas, convertirToneladasCortas, textoToneladasCortas, esHoyBarra, resumenHoyBarra, esAyerBarra, resumenAyerBarra, esAnteayerBarra, resumenAnteayerBarra, esSemanaBarra, resumenSemanaBarra, esMesBarra, resumenMesBarra, esViajeBarra, resumenViajeBarra, lineaTasa,
     AVISOS_MAX, AVISO_PCT_MAX, sentidoAviso, crearAviso, leerPorcentajeAviso, crearAvisoPorcentaje, leerAvisos, avisoCumplido, repartirAvisos, mensajeAviso, faltaParaAviso, cercaniaAviso, textoFalta,
     nivelPresupuesto, avisosPresupuesto, mensajePresupuesto,
     RECORDATORIO_HORA, RECORDATORIO_HORAS, leerHoraRecordatorio, viajesSinApuntar, tocaRecordar, mensajeRecordatorio,
