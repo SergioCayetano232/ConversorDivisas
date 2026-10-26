@@ -3831,17 +3831,18 @@ function textoParMotor(leido) {
 }
 
 // "cd 2 ton", la tonelada corta de Estados Unidos, la de los puentes y los camiones.
-// "Toneladas" no la cojo: en español es la de 1.000 kg.
-const HAY_TONELADAS_CORTAS = /^\s*(\d+(?:[.,]\d+)?)\s*(?:short\s+)?tons?\s*$/i;
+// "Toneladas" es la de 1.000 kg, así que esa va al revés, a las cortas.
+const HAY_TONELADAS_CORTAS = /^\s*(\d+(?:[.,]\d+)?)\s*(?:((?:short\s+)?tons?)|t|tonnes?|toneladas?)\s*$/i;
 const KG_POR_TONELADA_CORTA = 907.18474;
 
 function leerToneladasCortas(texto) {
   const m = String(texto ?? "").match(HAY_TONELADAS_CORTAS);
   if (!m) return null;
-  return { valor: Number(m[1].replace(",", ".")), de: "ton" };
+  return { valor: Number(m[1].replace(",", ".")), de: m[2] ? "ton" : "t" };
 }
 
-function convertirToneladasCortas({ valor }) {
+function convertirToneladasCortas({ valor, de }) {
+  if (de === "t") return { valor: (valor * 1000) / KG_POR_TONELADA_CORTA, a: "ton" };
   return { valor: (valor * KG_POR_TONELADA_CORTA) / 1000, a: "t" };
 }
 

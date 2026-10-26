@@ -12,7 +12,7 @@ test("lee las toneladas cortas", () => {
 });
 
 test("lo que no son toneladas cortas, no", () => {
-  for (const t of ["ton", "2", "-2 ton", "2 toneladas", "2 tonnes", "2 t", "", undefined]) assert.equal(leerToneladasCortas(t), null, String(t));
+  for (const t of ["ton", "2", "-2 ton", "2 tn", "2 short t", "", undefined]) assert.equal(leerToneladasCortas(t), null, String(t));
   assert.equal(leerOmnibox("2 ton", { from: "EUR", to: "USD" }), null);
 });
 
@@ -22,6 +22,15 @@ test("una tonelada corta son 907 kg", () => {
   assert.equal(texto("2 ton"), "2 ton = 1,81 t");
   assert.equal(texto("40 tons"), "40 ton = 36,29 t");
   assert.equal(textoToneladasCortas(null), "");
+});
+
+test("y las de aquí al revés, a cortas", () => {
+  for (const t of ["2 t", "2t", "2 T", "2 tonnes", "2 tonne", "2 toneladas", "1 tonelada"]) assert.equal(leerToneladasCortas(t).de, "t", t);
+  cerca(convertirToneladasCortas({ valor: 0.90718474, de: "t" }).valor, 1);
+  assert.equal(convertirToneladasCortas({ valor: 1, de: "t" }).a, "ton");
+  assert.equal(texto("2 t"), "2 t = 2,2 ton");
+  assert.equal(texto("10 toneladas"), "10 t = 11,02 ton");
+  assert.equal(leerOmnibox("2 t", { from: "EUR", to: "USD" }), null);
 });
 
 test("en inglés, con punto", () => {
