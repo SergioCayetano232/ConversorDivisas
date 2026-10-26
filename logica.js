@@ -3529,23 +3529,25 @@ function textoPintas(leido) {
 }
 
 // "cd 2 qt", la leche y los helados del súper americano. Un cuarto de galón.
-const HAY_CUARTOS = /^\s*(\d+(?:[.,]\d+)?)\s*(qt|quarts?|cuartos?\s+de\s+gal[oó]n)\s*$/i;
+// Con "uk" detrás, el inglés, que es un cuarto del galón de allí.
+const HAY_CUARTOS = /^\s*(\d+(?:[.,]\d+)?)\s*(qt|quarts?|cuartos?\s+de\s+gal[oó]n)\s*(?:\(?\s*(?:(uk|imp(?:erial)?)|us)\s*\)?)?\s*$/i;
 const L_POR_CUARTO = 0.946352946;
+const L_POR_CUARTO_UK = 1.1365225;
 
 function leerCuartos(texto) {
   const m = String(texto ?? "").match(HAY_CUARTOS);
   if (!m) return null;
-  return { valor: Number(m[1].replace(",", ".")), de: "qt" };
+  return m[3] ? { valor: Number(m[1].replace(",", ".")), de: "qt", uk: true } : { valor: Number(m[1].replace(",", ".")), de: "qt" };
 }
 
-function convertirCuartos({ valor }) {
-  return { valor: valor * L_POR_CUARTO, a: "l" };
+function convertirCuartos({ valor, uk }) {
+  return { valor: valor * (uk ? L_POR_CUARTO_UK : L_POR_CUARTO), a: "l" };
 }
 
 // En litros con dos decimales: "946 ml" se entiende, pero "1.893 ml" ya no.
 function textoCuartos(leido) {
   if (!leido) return "";
-  const cuanto = (n, u) => `${numeros({ maximumFractionDigits: u === "l" ? 2 : 1 }).format(n)} ${u}`;
+  const cuanto = (n, u) => `${numeros({ maximumFractionDigits: u === "l" ? 2 : 1 }).format(n)} ${u === "qt" && leido.uk ? "qt UK" : u}`;
   const otro = convertirCuartos(leido);
   return `${cuanto(leido.valor, leido.de)} = ${cuanto(otro.valor, otro.a)}`;
 }
