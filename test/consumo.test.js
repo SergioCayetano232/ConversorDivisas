@@ -1,6 +1,6 @@
 const { test } = require("node:test");
 const assert = require("node:assert");
-const { leerConsumo, convertirConsumo, textoConsumo, leerVolumen, leerVelocidad, leerDistancia } = require("../logica.js");
+const { leerConsumo, convertirConsumo, textoConsumo, leerVolumen, leerVelocidad, leerDistancia, leerOmnibox } = require("../logica.js");
 const { ponerIdioma } = require("../textos.js");
 
 const cerca = (a, b) => assert.ok(Math.abs(a - b) < 1e-9, `${a} ≠ ${b}`);
@@ -25,6 +25,17 @@ test("con uk detrás, el galón imperial", () => {
   assert.equal(texto("40 mpg uk"), "40 mpg UK = 7,1 l/100 km");
   assert.equal(texto("6,5 l/100km uk"), "6,5 l/100 km = 43,5 mpg UK");
   assert.equal(leerConsumo("40 mpg usa"), null);
+});
+
+test("los km/l, como en Japón, a l/100 km", () => {
+  for (const t of ["15 km/l", "15km/l", "15 KM/L", "15 kmpl", "15 km por litro", "15 kilómetros por litro", "15 kilometers per liter", "15 kilometres per litre"]) {
+    assert.deepEqual(leerConsumo(t), { valor: 15, de: "km/l" }, t);
+  }
+  cerca(convertirConsumo({ valor: 20, de: "km/l" }).valor, 5);
+  assert.equal(texto("15 km/l"), "15 km/l = 6,7 l/100 km");
+  assert.equal(texto("12,5 km/l"), "12,5 km/l = 8 l/100 km");
+  for (const t of ["0 km/l", "15 km/l uk", "km/l"]) assert.equal(leerConsumo(t), null, t);
+  assert.equal(leerOmnibox("15 km/l", { from: "EUR", to: "USD" }), null);
 });
 
 test("lo que no son consumos, no", () => {
