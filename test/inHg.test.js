@@ -36,6 +36,17 @@ test("y los hPa al revés", () => {
   assert.equal(leerOmnibox("1013 hpa", { from: "EUR", to: "USD" }), null);
 });
 
+test("los mmHg, a hPa", () => {
+  for (const t of ["760 mmhg", "760mmHg", "760 mm Hg", "760 MMHG", "760 milímetros de mercurio", "760 milimetros de mercurio", "760 millimeters of mercury"]) assert.deepEqual(leerInHg(t), { valor: 760, de: "mmHg" }, t);
+  cerca(convertirInHg({ valor: 1, de: "mmHg" }).valor, 1.33322387415);
+  assert.equal(convertirInHg({ valor: 1, de: "mmHg" }).a, "hPa");
+  assert.equal(texto("760 mmHg"), "760 mmHg = 1.013 hPa");
+  assert.equal(texto("745 mmhg"), "745 mmHg = 993 hPa");
+  assert.equal(leerLongitud("760 mmhg"), null);
+  assert.equal(leerInHg("760 mm"), null);
+  assert.equal(leerOmnibox("760 mmhg", { from: "EUR", to: "USD" }), null);
+});
+
 test("en inglés, con punto", () => {
   ponerIdioma("en");
   try {
