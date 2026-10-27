@@ -3613,7 +3613,7 @@ const HAY_MILLAS_NAUTICAS = /^\s*(\d+(?:[.,]\d+)?)\s*(nmi|nm|millas? n[aá]utica
 
 function leerMillasNauticas(texto) {
   const m = String(texto ?? "").match(HAY_MILLAS_NAUTICAS);
-  if (!m) return null;
+  if (!m || m[2] === "Nm") return null;
   return { valor: Number(m[1].replace(",", ".")), de: "nmi" };
 }
 
@@ -3834,16 +3834,20 @@ function textoBarriles(leido) {
 
 // "cd 300 lb-ft", el par del coche de alquiler. Allí lo escriben al derecho y
 // al revés (lb-ft, ft-lb) y es lo mismo.
-const HAY_PAR_MOTOR = /^\s*(\d+(?:[.,]\d+)?)\s*(?:lbs?\s*[-·.]?\s*ft|ft\s*[-·.]?\s*lbs?|pound[- ]f(?:ee|oo)t|foot[- ]pounds?|libras?[- ]pie)\s*$/i;
+// Y "cd 400 Nm", el de los coches de aquí, a lb-ft. Solo con esa N mayúscula:
+// "nm" a secas ya son millas náuticas.
+const HAY_PAR_MOTOR = /^\s*(\d+(?:[.,]\d+)?)\s*(?:lbs?\s*[-·.]?\s*ft|ft\s*[-·.]?\s*lbs?|pound[- ]f(?:ee|oo)t|foot[- ]pounds?|libras?[- ]pie|(n\s*[-·.]\s*m|nm|newton[- ]?met(?:ro|er|re)s?))\s*$/i;
 const NM_POR_LBFT = 1.3558179483;
 
 function leerParMotor(texto) {
   const m = String(texto ?? "").match(HAY_PAR_MOTOR);
   if (!m) return null;
-  return { valor: Number(m[1].replace(",", ".")), de: "lb-ft" };
+  if (/^nm$/i.test(m[2] ?? "") && m[2] !== "Nm") return null;
+  return { valor: Number(m[1].replace(",", ".")), de: m[2] ? "Nm" : "lb-ft" };
 }
 
-function convertirParMotor({ valor }) {
+function convertirParMotor({ valor, de }) {
+  if (de === "Nm") return { valor: valor / NM_POR_LBFT, a: "lb-ft" };
   return { valor: valor * NM_POR_LBFT, a: "Nm" };
 }
 

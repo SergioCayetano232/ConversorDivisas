@@ -1,6 +1,6 @@
 const { test } = require("node:test");
 const assert = require("node:assert");
-const { leerParMotor, convertirParMotor, textoParMotor, leerPeso, leerAltura, leerLibrasYOnzas, leerOmnibox } = require("../logica.js");
+const { leerParMotor, convertirParMotor, textoParMotor, leerPeso, leerAltura, leerLibrasYOnzas, leerMillasNauticas, leerOmnibox } = require("../logica.js");
 const { ponerIdioma } = require("../textos.js");
 
 const cerca = (a, b) => assert.ok(Math.abs(a - b) < 1e-9, `${a} ≠ ${b}`);
@@ -11,7 +11,7 @@ test("lee el par, al derecho y al revés", () => {
 });
 
 test("lo que no es par, no; y las libras y los pies siguen a lo suyo", () => {
-  for (const t of ["lb-ft", "300", "300 lb", "300 ft", "300 Nm", "-1 lb-ft", "", undefined]) assert.equal(leerParMotor(t), null, String(t));
+  for (const t of ["lb-ft", "300", "300 lb", "300 ft", "-1 lb-ft", "", undefined]) assert.equal(leerParMotor(t), null, String(t));
   assert.equal(leerPeso("300 lb-ft"), null);
   assert.equal(leerAltura("300 ft-lb"), null);
   assert.equal(leerLibrasYOnzas("300 lb ft"), null);
@@ -23,6 +23,22 @@ test("300 lb-ft son 407 Nm", () => {
   assert.equal(convertirParMotor({ valor: 1 }).a, "Nm");
   assert.equal(texto("300 lb-ft"), "300 lb-ft = 407 Nm");
   assert.equal(textoParMotor(null), "");
+});
+
+test("los Nm, a lb-ft", () => {
+  for (const t of ["400 Nm", "400Nm", "400 N·m", "400 N-m", "400 n.m", "400 newton-metros", "400 newton metre"]) assert.deepEqual(leerParMotor(t), { valor: 400, de: "Nm" }, t);
+  cerca(convertirParMotor({ valor: 1, de: "Nm" }).valor, 1 / 1.3558179483);
+  assert.equal(convertirParMotor({ valor: 1, de: "Nm" }).a, "lb-ft");
+  assert.equal(texto("400 Nm"), "400 Nm = 295 lb-ft");
+  assert.equal(leerOmnibox("400 Nm", { from: "EUR", to: "USD" }), null);
+});
+
+test("nm y NM siguen siendo millas náuticas", () => {
+  for (const t of ["400 nm", "400 NM", "400 nM"]) {
+    assert.equal(leerParMotor(t), null, t);
+    assert.deepEqual(leerMillasNauticas(t), { valor: 400, de: "nmi" }, t);
+  }
+  assert.equal(leerMillasNauticas("400 Nm"), null);
 });
 
 test("en inglés, con coma de miles", () => {
