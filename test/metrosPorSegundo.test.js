@@ -26,6 +26,16 @@ test("un metro por segundo son 3,6 km/h", () => {
   assert.equal(textoMetrosPorSegundo(null), "");
 });
 
+test("los pies por segundo, a m/s", () => {
+  for (const t of ["100 ft/s", "100ft/s", "100 FT/S", "100 feet per second", "100 pies por segundo"]) assert.deepEqual(leerMetrosPorSegundo(t), { valor: 100, de: "ft/s" }, t);
+  cerca(convertirMetrosPorSegundo({ valor: 1, de: "ft/s" }).valor, 0.3048);
+  assert.equal(convertirMetrosPorSegundo({ valor: 1, de: "ft/s" }).a, "m/s");
+  assert.equal(texto("100 ft/s"), "100 ft/s = 30,5 m/s");
+  for (const t of ["60 fps", "100 ft", "100 f/s"]) assert.equal(leerMetrosPorSegundo(t), null, t);
+  assert.equal(leerAltura("100 ft/s"), null);
+  assert.equal(leerOmnibox("100 ft/s", { from: "EUR", to: "USD" }), null);
+});
+
 test("en inglés, con punto", () => {
   ponerIdioma("en");
   try {

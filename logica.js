@@ -3590,15 +3590,17 @@ function textoNudos(leido) {
 }
 
 // "cd 10 m/s", que es como dan el viento muchos partes del tiempo.
-const HAY_METROS_POR_SEGUNDO = /^\s*(\d+(?:[.,]\d+)?)\s*(m\/s|mps|metros? por segundo|met(?:er|re)s? per second)\s*$/i;
+// Y "cd 100 ft/s", que sale en los vídeos de allí, a m/s. "fps" no: son fotogramas.
+const HAY_METROS_POR_SEGUNDO = /^\s*(\d+(?:[.,]\d+)?)\s*(m\/s|mps|metros? por segundo|met(?:er|re)s? per second|(ft\/s|feet per second|pies por segundo))\s*$/i;
 
 function leerMetrosPorSegundo(texto) {
   const m = String(texto ?? "").match(HAY_METROS_POR_SEGUNDO);
   if (!m) return null;
-  return { valor: Number(m[1].replace(",", ".")), de: "m/s" };
+  return { valor: Number(m[1].replace(",", ".")), de: m[3] ? "ft/s" : "m/s" };
 }
 
-function convertirMetrosPorSegundo({ valor }) {
+function convertirMetrosPorSegundo({ valor, de }) {
+  if (de === "ft/s") return { valor: valor * 0.3048, a: "m/s" };
   return { valor: valor * 3.6, a: "km/h" };
 }
 
