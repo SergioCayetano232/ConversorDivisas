@@ -60,6 +60,15 @@ test("las atmósferas, a psi", () => {
   assert.equal(leerOmnibox("2 atm", { from: "EUR", to: "USD" }), null);
 });
 
+test("los MPa, a psi", () => {
+  for (const t of ["20 MPa", "20mpa", "20 MPA", "20 megapascales", "20 megapascals"]) assert.deepEqual(leerPresion(t), { valor: 20, de: "MPa" }, t);
+  cerca(convertirPresion({ valor: 1, de: "MPa" }).valor, 10 / 0.0689475729);
+  assert.equal(texto("20 MPa"), "20 MPa = 2.901 psi");
+  assert.equal(texto("0,25 mpa"), "0,25 MPa = 36 psi");
+  for (const t of ["20 mp", "20 pa", "20 mpas"]) assert.equal(leerPresion(t), null, t);
+  assert.equal(leerOmnibox("20 mpa", { from: "EUR", to: "USD" }), null);
+});
+
 test("en inglés, con punto", () => {
   ponerIdioma("en");
   try {

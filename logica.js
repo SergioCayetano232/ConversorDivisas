@@ -3390,7 +3390,8 @@ function textoElectrico(leido) {
 // en kPa ("250 kPa"), y eso va a psi, que es lo que marca el inflador de allí.
 // En Asia y en Latinoamérica muchas gasolineras lo marcan en kg/cm², que también va a psi.
 // Las atm salen en las ollas exprés y en el buceo; también van a psi.
-const HAY_PRESION = /^\s*(\d+(?:[.,]\d+)?)\s*(psi|bar|bares|kpa|kgf?\s*\/\s*cm[²2]|atm|atm[oó]sferas?|atmospheres?)\s*$/i;
+// Los MPa, en las fichas de bombonas y de hidráulica.
+const HAY_PRESION = /^\s*(\d+(?:[.,]\d+)?)\s*(psi|bar|bares|kpa|mpa|megapascal(?:es|s)?|kgf?\s*\/\s*cm[²2]|atm|atm[oó]sferas?|atmospheres?)\s*$/i;
 const BAR_POR_PSI = 0.0689475729;
 const BAR_POR_KG_CM2 = 0.980665;
 const BAR_POR_ATM = 1.01325;
@@ -3398,13 +3399,14 @@ const BAR_POR_ATM = 1.01325;
 function leerPresion(texto) {
   const m = String(texto ?? "").match(HAY_PRESION);
   if (!m) return null;
-  const de = /^b/i.test(m[2]) ? "bar" : /^a/i.test(m[2]) ? "atm" : /^kg/i.test(m[2]) ? "kg/cm²" : /^k/i.test(m[2]) ? "kPa" : "psi";
+  const de = /^b/i.test(m[2]) ? "bar" : /^a/i.test(m[2]) ? "atm" : /^m/i.test(m[2]) ? "MPa" : /^kg/i.test(m[2]) ? "kg/cm²" : /^k/i.test(m[2]) ? "kPa" : "psi";
   return { valor: Number(m[1].replace(",", ".")), de };
 }
 
 function convertirPresion({ valor, de }) {
   if (de === "kPa") return { valor: valor / 100 / BAR_POR_PSI, a: "psi" };
   if (de === "kg/cm²") return { valor: (valor * BAR_POR_KG_CM2) / BAR_POR_PSI, a: "psi" };
+  if (de === "MPa") return { valor: (valor * 10) / BAR_POR_PSI, a: "psi" };
   if (de === "atm") return { valor: (valor * BAR_POR_ATM) / BAR_POR_PSI, a: "psi" };
   return de === "psi" ? { valor: valor * BAR_POR_PSI, a: "bar" } : { valor: valor / BAR_POR_PSI, a: "psi" };
 }
@@ -3412,7 +3414,7 @@ function convertirPresion({ valor, de }) {
 // Los psi y los kPa, enteros: es lo que marca el inflador.
 function textoPresion(leido) {
   if (!leido) return "";
-  const presion = (n, u) => `${numeros({ maximumFractionDigits: u === "bar" || u === "kg/cm²" || u === "atm" ? 1 : 0 }).format(n)} ${u}`;
+  const presion = (n, u) => `${numeros({ maximumFractionDigits: u === "MPa" ? 2 : u === "bar" || u === "kg/cm²" || u === "atm" ? 1 : 0 }).format(n)} ${u}`;
   const otro = convertirPresion(leido);
   return `${presion(leido.valor, leido.de)} = ${presion(otro.valor, otro.a)}`;
 }
