@@ -3121,16 +3121,19 @@ function textoRitmo(leido) {
 }
 
 // "cd 5lb", para la maleta. "libras" y "pounds" no, que esas son esterlinas.
-const HAY_PESO = /^\s*(\d+(?:[.,]\d+)?)\s*(lbs?|kg|kilos?|kilogramos?|kilograms?)\s*$/i;
+// El quintal depende de dónde: el métrico son 100 kg, pero en Centroamérica y en
+// los Andes (el café, el grano) son 100 libras. Saco los dos.
+const HAY_PESO = /^\s*(\d+(?:[.,]\d+)?)\s*(lbs?|kg|kilos?|kilogramos?|kilograms?|qq|quintal(?:es|s)?)\s*$/i;
 const KG_POR_LIBRA = 0.45359237;
 
 function leerPeso(texto) {
   const m = String(texto ?? "").match(HAY_PESO);
   if (!m) return null;
-  return { valor: Number(m[1].replace(",", ".")), de: /^k/i.test(m[2]) ? "kg" : "lb" };
+  return { valor: Number(m[1].replace(",", ".")), de: /^k/i.test(m[2]) ? "kg" : /^q/i.test(m[2]) ? "qq" : "lb" };
 }
 
 function convertirPeso({ valor, de }) {
+  if (de === "qq") return { valor: valor * 100, a: "kg", otra: valor * 100, en: "lb" };
   return de === "lb" ? { valor: valor * KG_POR_LIBRA, a: "kg" } : { valor: valor / KG_POR_LIBRA, a: "lb" };
 }
 
@@ -3138,7 +3141,8 @@ function textoPeso(leido) {
   if (!leido) return "";
   const peso = (n, u) => `${numeros({ maximumFractionDigits: 1 }).format(n)} ${u}`;
   const otro = convertirPeso(leido);
-  return `${peso(leido.valor, leido.de)} = ${peso(otro.valor, otro.a)}`;
+  const otra = otro.otra === undefined ? "" : ` · ${peso(otro.otra, otro.en)} (${peso(otro.otra * KG_POR_LIBRA, "kg")})`;
+  return `${peso(leido.valor, leido.de)} = ${peso(otro.valor, otro.a)}${otra}`;
 }
 
 // "cd 8oz", para la carne y el queso del súper. Las "fl oz" son volumen y no

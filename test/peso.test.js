@@ -38,6 +38,19 @@ test("el texto, con un decimal", () => {
   assert.equal(textoPeso(null), "");
 });
 
+test("los quintales, el métrico y el de 100 libras", () => {
+  for (const t of ["2 qq", "2qq", "2 QQ", "2 quintales", "2 quintal", "2 quintals"]) assert.deepEqual(leerPeso(t), { valor: 2, de: "qq" }, t);
+  const qq = convertirPeso({ valor: 1, de: "qq" });
+  assert.equal(qq.valor, 100);
+  assert.equal(qq.a, "kg");
+  cerca(qq.otra, 100);
+  assert.equal(qq.en, "lb");
+  assert.equal(texto("2 qq"), "2 qq = 200 kg · 200 lb (90,7 kg)");
+  assert.equal(texto("1 quintal"), "1 qq = 100 kg · 100 lb (45,4 kg)");
+  for (const t of ["2 q", "2 quintaless"]) assert.equal(leerPeso(t), null, t);
+  assert.equal(leerOmnibox("2 qq", { from: "EUR", to: "USD" }), null);
+});
+
 test("en inglés, con punto", () => {
   ponerIdioma("en");
   try {
