@@ -51,6 +51,15 @@ test("los kg/cm², a psi", () => {
   assert.equal(leerOmnibox("2 kg/cm²", { from: "EUR", to: "USD" }), null);
 });
 
+test("las atmósferas, a psi", () => {
+  for (const t of ["2 atm", "2atm", "2 ATM", "2 atmósferas", "2 atmosferas", "2 atmospheres"]) assert.deepEqual(leerPresion(t), { valor: 2, de: "atm" }, t);
+  cerca(convertirPresion({ valor: 1, de: "atm" }).valor, 1.01325 / 0.0689475729);
+  assert.equal(texto("1 atm"), "1 atm = 15 psi");
+  assert.equal(texto("2,5 atm"), "2,5 atm = 37 psi");
+  for (const t of ["2 at", "2 atms", "atm"]) assert.equal(leerPresion(t), null, t);
+  assert.equal(leerOmnibox("2 atm", { from: "EUR", to: "USD" }), null);
+});
+
 test("en inglés, con punto", () => {
   ponerIdioma("en");
   try {
