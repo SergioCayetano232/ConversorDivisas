@@ -33,6 +33,17 @@ test("los Nm, a lb-ft", () => {
   assert.equal(leerOmnibox("400 Nm", { from: "EUR", to: "USD" }), null);
 });
 
+test("los kgf·m, a Nm", () => {
+  for (const t of ["40 kgf·m", "40kgfm", "40 kgf-m", "40 kg·m", "40 kgm", "40 KGM", "40 kg-m", "40 kgf m"]) assert.deepEqual(leerParMotor(t), { valor: 40, de: "kgf·m" }, t);
+  cerca(convertirParMotor({ valor: 1, de: "kgf·m" }).valor, 9.80665);
+  assert.equal(convertirParMotor({ valor: 1, de: "kgf·m" }).a, "Nm");
+  assert.equal(texto("40 kgm"), "40 kgf·m = 392 Nm");
+  assert.equal(texto("4,5 kgf·m"), "4,5 kgf·m = 44 Nm");
+  for (const t of ["40 kg", "40 km", "40 kgf"]) assert.equal(leerParMotor(t), null, t);
+  assert.equal(leerPeso("40 kgm"), null);
+  assert.equal(leerOmnibox("40 kgm", { from: "EUR", to: "USD" }), null);
+});
+
 test("nm y NM siguen siendo millas náuticas", () => {
   for (const t of ["400 nm", "400 NM", "400 nM"]) {
     assert.equal(leerParMotor(t), null, t);

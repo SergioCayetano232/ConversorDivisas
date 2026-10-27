@@ -3844,24 +3844,27 @@ function textoBarriles(leido) {
 // al revés (lb-ft, ft-lb) y es lo mismo.
 // Y "cd 400 Nm", el de los coches de aquí, a lb-ft. Solo con esa N mayúscula:
 // "nm" a secas ya son millas náuticas.
-const HAY_PAR_MOTOR = /^\s*(\d+(?:[.,]\d+)?)\s*(?:lbs?\s*[-·.]?\s*ft|ft\s*[-·.]?\s*lbs?|pound[- ]f(?:ee|oo)t|foot[- ]pounds?|libras?[- ]pie|(n\s*[-·.]\s*m|nm|newton[- ]?met(?:ro|er|re)s?))\s*$/i;
+// Los kgf·m salen en las fichas de coches japoneses viejos y en las llaves dinamométricas.
+const HAY_PAR_MOTOR = /^\s*(\d+(?:[.,]\d+)?)\s*(?:lbs?\s*[-·.]?\s*ft|ft\s*[-·.]?\s*lbs?|pound[- ]f(?:ee|oo)t|foot[- ]pounds?|libras?[- ]pie|(n\s*[-·.]\s*m|nm|newton[- ]?met(?:ro|er|re)s?)|(kgf?\s*[-·.]?\s*m))\s*$/i;
 const NM_POR_LBFT = 1.3558179483;
+const NM_POR_KGFM = 9.80665;
 
 function leerParMotor(texto) {
   const m = String(texto ?? "").match(HAY_PAR_MOTOR);
   if (!m) return null;
   if (/^nm$/i.test(m[2] ?? "") && m[2] !== "Nm") return null;
-  return { valor: Number(m[1].replace(",", ".")), de: m[2] ? "Nm" : "lb-ft" };
+  return { valor: Number(m[1].replace(",", ".")), de: m[2] ? "Nm" : m[3] ? "kgf·m" : "lb-ft" };
 }
 
 function convertirParMotor({ valor, de }) {
   if (de === "Nm") return { valor: valor / NM_POR_LBFT, a: "lb-ft" };
+  if (de === "kgf·m") return { valor: valor * NM_POR_KGFM, a: "Nm" };
   return { valor: valor * NM_POR_LBFT, a: "Nm" };
 }
 
 function textoParMotor(leido) {
   if (!leido) return "";
-  const cuanto = (n, u) => `${numeros({ maximumFractionDigits: 0 }).format(n)} ${u}`;
+  const cuanto = (n, u) => `${numeros({ maximumFractionDigits: u === "kgf·m" ? 1 : 0 }).format(n)} ${u}`;
   const otro = convertirParMotor(leido);
   return `${cuanto(leido.valor, leido.de)} = ${cuanto(otro.valor, otro.a)}`;
 }
