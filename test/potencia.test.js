@@ -39,6 +39,16 @@ test("el texto, sin decimales", () => {
   assert.equal(textoPotencia(null), "");
 });
 
+test("los PS alemanes, que son CV", () => {
+  for (const t of ["150 PS", "150ps", "150 Ps", "150 pferdestärke", "150 Pferdestaerke"]) assert.deepEqual(leerPotencia(t), { valor: 150, de: "PS" }, t);
+  const ps = convertirPotencia({ valor: 1, de: "PS" });
+  cerca(ps.valor, 0.73549875);
+  assert.equal(ps.en, "hp");
+  assert.equal(texto("150 PS"), "150 PS = 110 kW · 148 hp");
+  for (const t of ["150 p", "150 pss"]) assert.equal(leerPotencia(t), null, t);
+  assert.equal(leerOmnibox("150 ps", { from: "EUR", to: "USD" }), null);
+});
+
 test("en inglés, con coma de miles", () => {
   ponerIdioma("en");
   try {

@@ -3700,14 +3700,15 @@ function textoCalorias(leido) {
 
 // "cd 150 hp", el coche de alquiler. Aquí la ficha va en kW y lo que se dice
 // son CV, que no son lo mismo: el hp inglés es un poco más grande.
-const HAY_POTENCIA = /^\s*(\d+(?:[.,]\d+)?)\s*(b?hp|horsepower|kw|kilovatios?|kilowatts?|cv|caballos?)\s*$/i;
+// Los PS de los coches alemanes son el mismo caballo que el CV.
+const HAY_POTENCIA = /^\s*(\d+(?:[.,]\d+)?)\s*(b?hp|horsepower|kw|kilovatios?|kilowatts?|cv|caballos?|ps|pferdest(?:ä|ae)rke)\s*$/i;
 const KW_POR_HP = 0.745699872;
 const KW_POR_CV = 0.73549875;
 
 function leerPotencia(texto) {
   const m = String(texto ?? "").match(HAY_POTENCIA);
   if (!m) return null;
-  const de = /^k/i.test(m[2]) ? "kW" : /^c/i.test(m[2]) ? "CV" : "hp";
+  const de = /^k/i.test(m[2]) ? "kW" : /^c/i.test(m[2]) ? "CV" : /^p/i.test(m[2]) ? "PS" : "hp";
   return { valor: Number(m[1].replace(",", ".")), de };
 }
 
