@@ -3368,18 +3368,20 @@ function textoConsumo(leido) {
 }
 
 // "cd 3,5 mi/kWh", para el eléctrico de alquiler en Estados Unidos. Como con los
-// mpg, va al revés y la misma cuenta sirve para volver.
-const HAY_ELECTRICO = /^\s*(\d+(?:[.,]\d+)?)\s*(mi\/kwh|miles? per kwh|millas? por kwh|kwh\/100\s*km)\s*$/i;
+// mpg, va al revés y la misma cuenta sirve para volver. Los Tesla de allí lo
+// dan en Wh/mi, que va derecho a kWh/100 km.
+const HAY_ELECTRICO = /^\s*(\d+(?:[.,]\d+)?)\s*(mi\/kwh|miles? per kwh|millas? por kwh|kwh\/100\s*km|wh\/mi(?:le)?|wh per mile)\s*$/i;
 
 function leerElectrico(texto) {
   const m = String(texto ?? "").match(HAY_ELECTRICO);
   if (!m) return null;
   const valor = Number(m[1].replace(",", "."));
   if (!valor) return null;
-  return { valor, de: /^k/i.test(m[2]) ? "kWh/100 km" : "mi/kWh" };
+  return { valor, de: /^k/i.test(m[2]) ? "kWh/100 km" : /^w/i.test(m[2]) ? "Wh/mi" : "mi/kWh" };
 }
 
 function convertirElectrico({ valor, de }) {
+  if (de === "Wh/mi") return { valor: valor / KM_POR_MILLA / 10, a: "kWh/100 km" };
   return { valor: 100 / (valor * KM_POR_MILLA), a: de === "mi/kWh" ? "kWh/100 km" : "mi/kWh" };
 }
 

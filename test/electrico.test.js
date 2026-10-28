@@ -35,6 +35,18 @@ test("el texto, con un decimal", () => {
   assert.equal(textoElectrico(null), "");
 });
 
+test("los Wh/mi de los Tesla, a kWh/100 km", () => {
+  for (const t of ["250 Wh/mi", "250wh/mi", "250 WH/MI", "250 Wh/mile", "250 Wh per mile"]) assert.deepEqual(leerElectrico(t), { valor: 250, de: "Wh/mi" }, t);
+  const ida = convertirElectrico({ valor: 250, de: "Wh/mi" });
+  assert.equal(ida.a, "kWh/100 km");
+  cerca(ida.valor, 250 / 1.609344 / 10);
+  assert.equal(texto("250 Wh/mi"), "250 Wh/mi = 15,5 kWh/100 km");
+  assert.equal(texto("300 wh/mi"), "300 Wh/mi = 18,6 kWh/100 km");
+  for (const t of ["0 Wh/mi", "250 Wh", "250 wh/km"]) assert.equal(leerElectrico(t), null, t);
+  assert.equal(leerOmnibox("250 Wh/mi", { from: "EUR", to: "USD" }), null);
+  assert.equal(leerDistancia("250 Wh/mi"), null);
+});
+
 test("en inglés, con punto", () => {
   ponerIdioma("en");
   try {
