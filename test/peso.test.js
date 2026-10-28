@@ -51,6 +51,19 @@ test("los quintales, el métrico y el de 100 libras", () => {
   assert.equal(leerOmnibox("2 qq", { from: "EUR", to: "USD" }), null);
 });
 
+test("las arrobas, la de aquí y la de Brasil", () => {
+  for (const t of ["2 @", "2@", "2 arrobas", "2 arroba", "2 ARROBAS"]) assert.deepEqual(leerPeso(t), { valor: 2, de: "@" }, t);
+  const arroba = convertirPeso({ valor: 1, de: "@" });
+  assert.equal(arroba.valor, 11.5);
+  assert.equal(arroba.a, "kg");
+  assert.equal(arroba.brasil, 15);
+  assert.equal(texto("2 @"), "2 @ = 23 kg · 🇧🇷 30 kg");
+  assert.equal(texto("1,5 arrobas"), "1,5 @ = 17,3 kg · 🇧🇷 22,5 kg");
+  for (const t of ["2 @@", "2 arrob", "@ 2"]) assert.equal(leerPeso(t), null, t);
+  assert.equal(leerOmnibox("2 @", { from: "EUR", to: "USD" }), null);
+  assert.equal(leerOmnibox("2 arrobas", { from: "EUR", to: "USD" }), null);
+});
+
 test("en inglés, con punto", () => {
   ponerIdioma("en");
   try {
