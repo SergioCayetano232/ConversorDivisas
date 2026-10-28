@@ -3757,19 +3757,23 @@ function textoBtu(leido) {
 
 // "cd 30 inhg", la presión del parte del tiempo en Estados Unidos, a los hPa,
 // que son los milibares de aquí. Y "cd 1013 hpa" al revés, para el barómetro de allí.
-// Los mmHg, que es como da el tiempo Rusia y medio Este, también van a hPa.
-const HAY_INHG = /^\s*(\d+(?:[.,]\d+)?)\s*(?:(in\.?\s*hg|"\s*hg|pulgadas? de mercurio|inch(?:es)? of mercury)|(mm\s*hg|mil[ií]metros? de mercurio|millimet(?:er|re)s? of mercury)|(hpa|mbar|milibares?|millibars?))\s*$/i;
+// Los mmHg, que es como da el tiempo Rusia y medio Este, también van a hPa, y
+// los torr de las bombas de vacío.
+const HAY_INHG = /^\s*(\d+(?:[.,]\d+)?)\s*(?:(in\.?\s*hg|"\s*hg|pulgadas? de mercurio|inch(?:es)? of mercury)|(mm\s*hg|mil[ií]metros? de mercurio|millimet(?:er|re)s? of mercury)|(torrs?)|(hpa|mbar|milibares?|millibars?))\s*$/i;
 const HPA_POR_INHG = 33.8638866667;
 const HPA_POR_MMHG = 1.33322387415;
+// El torr es la atmósfera entre 760, que no es exactamente un mmHg aunque casi.
+const HPA_POR_TORR = 1013.25 / 760;
 
 function leerInHg(texto) {
   const m = String(texto ?? "").match(HAY_INHG);
   if (!m) return null;
-  return { valor: Number(m[1].replace(",", ".")), de: m[2] ? "inHg" : m[3] ? "mmHg" : "hPa" };
+  return { valor: Number(m[1].replace(",", ".")), de: m[2] ? "inHg" : m[3] ? "mmHg" : m[4] ? "Torr" : "hPa" };
 }
 
 function convertirInHg({ valor, de }) {
   if (de === "mmHg") return { valor: valor * HPA_POR_MMHG, a: "hPa" };
+  if (de === "Torr") return { valor: valor * HPA_POR_TORR, a: "hPa" };
   return de === "hPa" ? { valor: valor / HPA_POR_INHG, a: "inHg" } : { valor: valor * HPA_POR_INHG, a: "hPa" };
 }
 

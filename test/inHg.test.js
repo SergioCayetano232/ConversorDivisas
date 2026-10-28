@@ -47,6 +47,16 @@ test("los mmHg, a hPa", () => {
   assert.equal(leerOmnibox("760 mmhg", { from: "EUR", to: "USD" }), null);
 });
 
+test("los torr, a hPa", () => {
+  for (const t of ["760 torr", "760torr", "760 Torr", "760 TORR", "1 torrs"]) assert.equal(leerInHg(t)?.de, "Torr", t);
+  cerca(convertirInHg({ valor: 760, de: "Torr" }).valor, 1013.25);
+  assert.equal(convertirInHg({ valor: 1, de: "Torr" }).a, "hPa");
+  assert.equal(texto("760 torr"), "760 Torr = 1.013 hPa");
+  assert.equal(texto("750 torr"), "750 Torr = 1.000 hPa");
+  assert.equal(leerInHg("760 tor"), null);
+  assert.equal(leerOmnibox("760 torr", { from: "EUR", to: "USD" }), null);
+});
+
 test("en inglés, con punto", () => {
   ponerIdioma("en");
   try {
