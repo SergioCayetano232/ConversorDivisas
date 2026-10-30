@@ -698,6 +698,8 @@ const TEXTOS = {
     "error.sinRed": "Sin conexión a internet.",
     "error.servicio": "El servicio de tasas no responde.",
     "error.otro": "No se han podido obtener las tasas.",
+
+    "tael.oro": "oro {g} g",
   },
 
   en: {
@@ -1396,6 +1398,8 @@ const TEXTOS = {
     "error.sinRed": "No internet connection.",
     "error.servicio": "The rates service isn't responding.",
     "error.otro": "Couldn't get the rates.",
+
+    "tael.oro": "gold {g} g",
   },
 };
 
