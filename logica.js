@@ -266,6 +266,14 @@ function pasoCantidad(valor, sentido, grande = false) {
   return Math.max(nuevo, 0);
 }
 
+// Con Alt, de diez en diez veces: de 50 a 500, para pasar de un café a una
+// cena sin teclear. Desde cero, multiplicar no haría nada, así que empieza en 10.
+function pasoPorDiez(valor, sentido) {
+  const base = Number.isFinite(valor) && valor > 0 ? valor : 0;
+  if (base === 0) return sentido > 0 ? 10 : 0;
+  return Math.round((sentido > 0 ? base * 10 : base / 10) * 100) / 100;
+}
+
 // La rueda del ratón da unos 100 por muesca, pero el trackpad manda montones de
 // 2 o 3: los voy juntando y cada 100 es un paso. Hacia arriba sube. Si cambias
 // de sentido, lo que llevabas hacia el otro lado no cuenta.
@@ -5368,7 +5376,7 @@ function resumenCopia(datos) {
 if (typeof module !== "undefined") {
   module.exports = {
     CURRENCIES, isValidCode, nombreDe, parseAmount, isoLocal, hoy, isFresh,
-    evaluar, completar, leerImporte, UNIDADES, quitarUnidad, nombreUnidad, porUnidadMetrica, esOperacion, pasoCantidad, RUEDA_PASO, pasosRueda, cifraCompleta, leerCantidad,
+    evaluar, completar, leerImporte, UNIDADES, quitarUnidad, nombreUnidad, porUnidadMetrica, esOperacion, pasoCantidad, pasoPorDiez, RUEDA_PASO, pasosRueda, cifraCompleta, leerCantidad,
     normalizar, filtrarDivisas, buildPaths, startDateFor, errorMessageFor,
     RECIENTES_MAX, FIJOS_MAX, apuntarReciente, fijarReciente, leerRecientes, recientesVisibles,
     RANGOS, RANGO_POR_DEFECTO, leerRango, siguienteRango, coordenadas, alturaEn, MOMENTO_UMBRAL, momento, textoMomento,

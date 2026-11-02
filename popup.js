@@ -5522,13 +5522,14 @@ function soltarEtiqueta(campo, divisa) {
 
 function onFlechaCantidad(event) {
   if (event.key !== "ArrowUp" && event.key !== "ArrowDown") return;
-  if (event.altKey || event.metaKey || event.ctrlKey) return;
+  if (event.metaKey || event.ctrlKey) return;
   event.preventDefault();
-  moverCantidad(event.key === "ArrowUp" ? 1 : -1, event.shiftKey);
+  moverCantidad(event.key === "ArrowUp" ? 1 : -1, event.shiftKey, event.altKey);
 }
 
-function moverCantidad(sentido, grande) {
-  const valor = pasoCantidad(leerImporte(el.amount.value), sentido, grande);
+function moverCantidad(sentido, grande, porDiez = false) {
+  const antes = leerImporte(el.amount.value);
+  const valor = porDiez ? pasoPorDiez(antes, sentido) : pasoCantidad(antes, sentido, grande);
   el.amount.value = Number.isInteger(valor) ? nfEntero.format(valor) : nf.format(valor);
   el.amount.classList.remove(sentido > 0 ? "is-baja" : "is-sube");
   restartAnimation(el.amount, sentido > 0 ? "is-sube" : "is-baja");
