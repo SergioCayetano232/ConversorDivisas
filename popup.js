@@ -2718,6 +2718,15 @@ function crearDiaGastos({ dia, gastos: suyos, totales }, peso, d) {
   fila.className = "gastos__dia";
   const nombre = document.createElement("span");
   nombre.textContent = nombreDia(dia);
+  // Con uno solo sobra: ya lo ves debajo.
+  if (suyos.length > 1) {
+    const n = document.createElement("span");
+    n.className = "gastos__dia-n";
+    n.textContent = suyos.length;
+    n.title = tr("gastos.diaN", { n: suyos.length });
+    if (suyos.some((g) => g.id === gastoNuevo)) n.classList.add("is-nueva");
+    nombre.append(n);
+  }
   const ultimo = dia === hoy() ? ultimoDeHoy(suyos) : null;
   if (ultimo) {
     const hace = document.createElement("span");

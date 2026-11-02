@@ -3925,6 +3925,28 @@ body::after {
   cursor: default;
 }
 
+/* Cuántos gastos lleva el día, en una pastillita al lado del nombre. */
+.gastos__dia-n {
+  display: inline-block;
+  min-width: 14px;
+  margin-left: 5px;
+  padding: 0 4px;
+  border-radius: 999px;
+  background: var(--brass-ghost);
+  color: var(--brass);
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0;
+  text-align: center;
+  vertical-align: 1px;
+  line-height: 13px;
+  cursor: default;
+}
+
+.gastos__dia-n.is-nueva {
+  animation: pop var(--slow) var(--ease-spring);
+}
+
 .gastos__ultimo {
   font-weight: 400;
   letter-spacing: 0;
