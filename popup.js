@@ -5239,6 +5239,8 @@ function renderResult() {
   if (valor === null) {
     pintarBotonGasto();
     destino.value = "—";
+    destino.title = "";
+    origen.title = "";
     ajustarAncho();
     el.resultMeta.textContent = "";
     pintarComision();
@@ -5260,6 +5262,8 @@ function renderResult() {
 
   const convertido = escribiendoAbajo ? valor / rate : valor * rate;
   destino.value = nf.format(convertido);
+  pintarCifraCompleta(destino, convertido, escribiendoAbajo ? from : to);
+  origen.title = "";
   ajustarAncho();
 
   const enviados = escribiendoAbajo ? convertido : valor;
@@ -5282,6 +5286,13 @@ function renderResult() {
 
   // El latido solo cuando cambia la cifra grande, que si no parpadea al teclear.
   if (!escribiendoAbajo) restartAnimation(el.result, "is-updating");
+}
+
+function pintarCifraCompleta(campo, valor, divisa) {
+  const completa = cifraCompleta(valor);
+  campo.title = completa
+    ? `${formatoNumero({ minimumFractionDigits: 2, maximumFractionDigits: completa.decimales }).format(completa.valor)} ${divisa}`
+    : "";
 }
 
 async function refresh() {
@@ -5363,6 +5374,7 @@ async function refresh() {
     rate = null;
     rateDate = null;
     el.result.value = "—";
+    el.result.title = "";
     el.resultCode.textContent = "";
     el.resultMeta.textContent = "";
     el.rateLine.textContent = "";

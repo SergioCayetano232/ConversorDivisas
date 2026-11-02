@@ -276,6 +276,17 @@ function pasosRueda(acumulado, delta) {
   return { pasos: -pasos, resto: total - pasos * RUEDA_PASO };
 }
 
+// Con 100 yenes salen 0,57 EUR y el redondeo se come media cifra. Seis cifras
+// de verdad bastan; si con dos decimales ya está, no hay nada que enseñar.
+function cifraCompleta(valor) {
+  if (!Number.isFinite(valor) || valor === 0) return null;
+  const enteras = Math.max(Math.floor(Math.log10(Math.abs(valor))) + 1, 0);
+  const completa = Number(valor.toPrecision(Math.max(6, enteras + 2)));
+  if (completa === Math.round(valor * 100) / 100) return null;
+  const decimales = Math.min(Math.max(String(completa).split(".")[1]?.length ?? 0, 2), 10);
+  return { valor: completa, decimales };
+}
+
 // La cantidad que dejaste puesta, para encontrarla al volver. Redondeada al
 // céntimo: escribiendo abajo sale de dividir por la tasa y trae mil decimales.
 function leerCantidad(guardado) {
@@ -5357,7 +5368,7 @@ function resumenCopia(datos) {
 if (typeof module !== "undefined") {
   module.exports = {
     CURRENCIES, isValidCode, nombreDe, parseAmount, isoLocal, hoy, isFresh,
-    evaluar, completar, leerImporte, UNIDADES, quitarUnidad, nombreUnidad, porUnidadMetrica, esOperacion, pasoCantidad, RUEDA_PASO, pasosRueda, leerCantidad,
+    evaluar, completar, leerImporte, UNIDADES, quitarUnidad, nombreUnidad, porUnidadMetrica, esOperacion, pasoCantidad, RUEDA_PASO, pasosRueda, cifraCompleta, leerCantidad,
     normalizar, filtrarDivisas, buildPaths, startDateFor, errorMessageFor,
     RECIENTES_MAX, FIJOS_MAX, apuntarReciente, fijarReciente, leerRecientes, recientesVisibles,
     RANGOS, RANGO_POR_DEFECTO, leerRango, siguienteRango, coordenadas, alturaEn, MOMENTO_UMBRAL, momento, textoMomento,

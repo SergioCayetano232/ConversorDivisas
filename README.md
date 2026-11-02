@@ -10,7 +10,9 @@ que necesitaba una conversión rápida. Ahora es un clic en la barra del navegad
 ## Qué hace
 
 - Convierte entre las 30 divisas que publica el Banco Central Europeo
-- Escribes en cualquiera de las dos cantidades y calcula la otra
+- Escribes en cualquiera de las dos cantidades y calcula la otra. Si el
+  redondeo a dos decimales se come algo (100 yenes son 0,57 EUR), pasando el
+  ratón por la cifra la ves entera: 0,565012 EUR
 - Puedes escribir una cuenta en vez de un número: `20+15`, `3*12,50`,
   `(40+60)/4` o `100-15%`. Mientras escribes te enseña el total, y al darle a
   Enter se queda con él. `2k` son dos mil y `1,5m`, millón y medio
