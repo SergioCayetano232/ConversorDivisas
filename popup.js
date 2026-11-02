@@ -5487,13 +5487,29 @@ function onFlechaCantidad(event) {
   if (event.key !== "ArrowUp" && event.key !== "ArrowDown") return;
   if (event.altKey || event.metaKey || event.ctrlKey) return;
   event.preventDefault();
-  const sentido = event.key === "ArrowUp" ? 1 : -1;
-  const valor = pasoCantidad(leerImporte(el.amount.value), sentido, event.shiftKey);
+  moverCantidad(event.key === "ArrowUp" ? 1 : -1, event.shiftKey);
+}
+
+function moverCantidad(sentido, grande) {
+  const valor = pasoCantidad(leerImporte(el.amount.value), sentido, grande);
   el.amount.value = Number.isInteger(valor) ? nfEntero.format(valor) : nf.format(valor);
   el.amount.classList.remove(sentido > 0 ? "is-baja" : "is-sube");
   restartAnimation(el.amount, sentido > 0 ? "is-sube" : "is-baja");
   onAmountInput();
   marcarTocado();
+}
+
+// Solo con el foco puesto, como los campos numéricos de Chrome: si no, al bajar
+// por el popup con el ratón encima te cambiaría la cantidad sin querer.
+let ruedaAcumulada = 0;
+function onRuedaCantidad(event) {
+  if (document.activeElement !== el.amount || event.ctrlKey || event.metaKey) return;
+  event.preventDefault();
+  // Con Shift, el Mac convierte la rueda en horizontal.
+  const delta = event.deltaY || event.deltaX;
+  const { pasos, resto } = pasosRueda(ruedaAcumulada, event.deltaMode === 0 ? delta : delta * RUEDA_PASO);
+  ruedaAcumulada = resto;
+  for (let i = 0; i < Math.abs(pasos); i++) moverCantidad(Math.sign(pasos), event.shiftKey);
 }
 
 function onAmountInput() {
@@ -5803,6 +5819,7 @@ function bindEvents() {
   el.result.addEventListener("input", marcarTocado);
   el.amount.addEventListener("paste", onPegar);
   el.amount.addEventListener("keydown", onFlechaCantidad);
+  el.amount.addEventListener("wheel", onRuedaCantidad, { passive: false });
   el.amount.addEventListener("animationend", () => el.amount.classList.remove("is-sube", "is-baja", "is-recuperada"));
   el.result.addEventListener("paste", onPegar);
   el.result.addEventListener("focus", () => el.result.select());

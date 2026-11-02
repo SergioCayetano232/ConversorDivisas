@@ -276,7 +276,7 @@ que necesitaba una conversión rápida. Ahora es un clic en la barra del navegad
   los desplegables, `G` los gastos, `U` apunta la cantidad en ellos (con Shift, en efectivo), `/` busca en ellos, `E` cambia entre tarjeta y efectivo, `V` abre la lista de viajes, `N` empieza uno nuevo, `P` dividir la cuenta, `B` la balanza, `R` las últimas conversiones, `O` el modo discreto, `M` cambia el periodo del gráfico, `X` baja los gastos en CSV (con Shift, los de todos los viajes), `W` copia el resumen del viaje para WhatsApp, `J` copia el total del viaje ("Japón: 40,46 EUR en 3 días"; con Shift, lo de hoy: "Japón, hoy: 42,00 EUR en 3 gastos"), `Q` el último gasto ("Cena · 27,60 EUR (4.500,00 JPY)"; con Shift, el más caro del viaje), `K` la chuleta (con Shift, la imprime), `L` las otras divisas, `F` fija el par que tienes puesto, `Z` (o `Cmd+Z`, `Ctrl+Z`) deshace lo último que
   has quitado de los gastos y del `1` al `6` cambian de pestaña. Si estás escribiendo en
   un campo, con `Alt` delante (`⌥` en Mac). En la cantidad, `↑` y `↓` suben o
-  bajan 1, y con Shift, 10. Con `?` salen todos
+  bajan 1, y con Shift, 10. La rueda del ratón hace lo mismo, con el cursor puesto en ella. Con `?` salen todos
 - Tiene modo claro y oscuro, según cómo tengas el sistema
 - En español o en inglés, según el idioma de Chrome o el que elijas con clic
   derecho en el icono → **Idioma**. En inglés los números van a la inglesa

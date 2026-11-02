@@ -266,6 +266,16 @@ function pasoCantidad(valor, sentido, grande = false) {
   return Math.max(nuevo, 0);
 }
 
+// La rueda del ratón da unos 100 por muesca, pero el trackpad manda montones de
+// 2 o 3: los voy juntando y cada 100 es un paso. Hacia arriba sube. Si cambias
+// de sentido, lo que llevabas hacia el otro lado no cuenta.
+const RUEDA_PASO = 100;
+function pasosRueda(acumulado, delta) {
+  const total = Math.sign(acumulado) === -Math.sign(delta) ? delta : acumulado + delta;
+  const pasos = Math.trunc(total / RUEDA_PASO);
+  return { pasos: -pasos, resto: total - pasos * RUEDA_PASO };
+}
+
 // La cantidad que dejaste puesta, para encontrarla al volver. Redondeada al
 // céntimo: escribiendo abajo sale de dividir por la tasa y trae mil decimales.
 function leerCantidad(guardado) {
@@ -5337,7 +5347,7 @@ function resumenCopia(datos) {
 if (typeof module !== "undefined") {
   module.exports = {
     CURRENCIES, isValidCode, nombreDe, parseAmount, isoLocal, hoy, isFresh,
-    evaluar, completar, leerImporte, UNIDADES, quitarUnidad, nombreUnidad, porUnidadMetrica, esOperacion, pasoCantidad, leerCantidad,
+    evaluar, completar, leerImporte, UNIDADES, quitarUnidad, nombreUnidad, porUnidadMetrica, esOperacion, pasoCantidad, RUEDA_PASO, pasosRueda, leerCantidad,
     normalizar, filtrarDivisas, buildPaths, startDateFor, errorMessageFor,
     RECIENTES_MAX, FIJOS_MAX, apuntarReciente, fijarReciente, leerRecientes, recientesVisibles,
     RANGOS, RANGO_POR_DEFECTO, leerRango, siguienteRango, coordenadas, alturaEn, MOMENTO_UMBRAL, momento, textoMomento,
