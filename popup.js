@@ -5447,7 +5447,23 @@ function onPegar(event) {
   const pegado = leerPegado(event.clipboardData?.getData("text") ?? "", lado, antes);
   if (!pegado) return;
   event.preventDefault();
+  ponerPegado(campo, pegado);
+}
 
+// Cmd+V sin estar en ningún campo: a la cantidad, y te deja el cursor en ella.
+function onPegarFuera(event) {
+  const t = event.target;
+  if (t instanceof HTMLInputElement || t instanceof HTMLTextAreaElement || t.isContentEditable) return;
+  const pegado = leerPegadoSuelto(event.clipboardData?.getData("text") ?? "", { from: el.from.value, to: el.to.value });
+  if (!pegado) return;
+  event.preventDefault();
+  ponerPegado(el.amount, pegado);
+  el.amount.focus();
+}
+
+function ponerPegado(campo, pegado) {
+  const lado = campo === el.result ? "result" : "amount";
+  const antes = { from: el.from.value, to: el.to.value };
   const cambia = pegado.from !== antes.from || pegado.to !== antes.to;
   const vuelta = pegado.from === antes.to && pegado.to === antes.from;
   // Con la vuelta la tasa vale al revés; con otra divisa no vale de nada y
@@ -5820,6 +5836,7 @@ function bindEvents() {
   el.amount.addEventListener("paste", onPegar);
   el.amount.addEventListener("keydown", onFlechaCantidad);
   el.amount.addEventListener("wheel", onRuedaCantidad, { passive: false });
+  document.addEventListener("paste", onPegarFuera);
   el.amount.addEventListener("animationend", () => el.amount.classList.remove("is-sube", "is-baja", "is-recuperada"));
   el.result.addEventListener("paste", onPegar);
   el.result.addEventListener("focus", () => el.result.select());

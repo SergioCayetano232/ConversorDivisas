@@ -2910,6 +2910,16 @@ function destinoPara(divisa, par) {
   return { from: divisa, to: divisa === par.to ? par.from : par.to };
 }
 
+// Pegando con el foco fuera de los campos no hay nada que pegar "como siempre":
+// ahí también vale un número a secas, y va a la cantidad.
+function leerPegadoSuelto(texto, par) {
+  const conDivisa = leerPegado(texto, "amount", par);
+  if (conDivisa) return conDivisa;
+  const cantidad = leerImporte(String(texto ?? ""));
+  if (!Number.isFinite(cantidad) || cantidad < 0) return null;
+  return { cantidad, from: par.from, to: par.to };
+}
+
 // La insignia del icono corta a partir de unos cuatro caracteres, así que los
 // decimales se van quitando según crece la tasa: 1,14 · 20,3 · 178 · 20k.
 // Al pegar solo me meto si es un precio entero con su divisa. "20+15" o un
@@ -5352,7 +5362,7 @@ if (typeof module !== "undefined") {
     RECIENTES_MAX, FIJOS_MAX, apuntarReciente, fijarReciente, leerRecientes, recientesVisibles,
     RANGOS, RANGO_POR_DEFECTO, leerRango, siguienteRango, coordenadas, alturaEn, MOMENTO_UMBRAL, momento, textoMomento,
     SEMANAS_MINIMAS, mejorDiaSemana, nombreDiaSemana, textoDiaSemana, indiceCercano, extremos, fechaCorta, largoEnPantalla,
-    leerNumero, divisaDe, leerSeleccion, destinoPara, leerPegado, buscarPrecios, precioEntero, leerOmnibox, precioUnidadBarra, leerGastoBarra, gastoDeBarra, escaparXml,
+    leerNumero, divisaDe, leerSeleccion, destinoPara, leerPegado, leerPegadoSuelto, buscarPrecios, precioEntero, leerOmnibox, precioUnidadBarra, leerGastoBarra, gastoDeBarra, escaparXml,
     divisaDeIdioma, parPorIdioma, banderaDe, banderaDivisa,
     HISTORIAL_MAX, leerHistorial, apuntarConversion, quitarConversion, haceCuanto, ultimoDeHoy, textoParaCopiar, fraseParaCopiar, gastoParaCopiar, ultimoGasto, gastoMasCaro, totalParaCopiar, hoyParaCopiar, simboloDe, textoConSimbolo, fraseConSimbolo,
     celdaCsv, csvHistorial, csvGastos, csvViajes,

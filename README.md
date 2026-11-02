@@ -18,7 +18,8 @@ que necesitaba una conversión rápida. Ahora es un clic en la barra del navegad
   `1,99 fl oz`, o `6,50/gal uk` para el galón inglés) y debajo del resultado sale lo que vale el kilo o el litro, en
   tu divisa ("≈ 7,82 EUR/kg"). Para todo lo demás cuenta como 3,99
 - Si pegas un precio con su divisa ("1.299,00 £", "$49.99"), pone la cantidad
-  y cambia la divisa a la vez. Pegado abajo, cambia la de destino
+  y cambia la divisa a la vez. Pegado abajo, cambia la de destino. Y si
+  pegas sin estar en ningún campo, va a la cantidad, sea un precio o un número a secas
 - Buscas la divisa escribiendo: pones "mex" y sale el peso mexicano
 - Un botón para dar la vuelta al par sin tocar los dos desplegables
 - Un botón para copiar el resultado. Con Shift (clic o `Shift+C`) copia la
