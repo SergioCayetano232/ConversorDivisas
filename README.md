@@ -280,7 +280,7 @@ que necesitaba una conversión rápida. Ahora es un clic en la barra del navegad
   has quitado de los gastos y del `1` al `6` cambian de pestaña. Si estás escribiendo en
   un campo, con `Alt` delante (`⌥` en Mac). En la cantidad, `↑` y `↓` suben o
   bajan 1, y con Shift, 10. La rueda del ratón hace lo mismo, con el cursor puesto en ella. Con
-  Alt, por diez o entre diez: de 50 a 500 Con `?` salen todos
+  Alt, por diez o entre diez: de 50 a 500. Y `Esc` la vacía; con ella vacía, otro `Esc` cierra el popup Con `?` salen todos
 - Tiene modo claro y oscuro, según cómo tengas el sistema
 - En español o en inglés, según el idioma de Chrome o el que elijas con clic
   derecho en el icono → **Idioma**. En inglés los números van a la inglesa

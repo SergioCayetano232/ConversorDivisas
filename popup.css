@@ -637,6 +637,21 @@ body::after {
   animation: paso-baja 260ms var(--ease-spring);
 }
 
+/* Al vaciarla con Escape, el hueco da un respingo hacia la izquierda. */
+.field__input.is-vaciada {
+  animation: vaciada 320ms var(--ease-spring);
+}
+
+@keyframes vaciada {
+  0% {
+    border-color: var(--brass);
+    transform: translateX(4px);
+  }
+  45% {
+    transform: translateX(-2px);
+  }
+}
+
 @keyframes paso-sube {
   0% {
     color: var(--brass);

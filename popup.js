@@ -5527,6 +5527,19 @@ function onFlechaCantidad(event) {
   moverCantidad(event.key === "ArrowUp" ? 1 : -1, event.shiftKey, event.altKey);
 }
 
+// Escape cierra el popup, y con una cantidad escrita casi siempre querías
+// borrarla. Con algo abierto encima manda eso, que tiene su propio Escape.
+function onEscapeCantidad(event) {
+  if (event.key !== "Escape" || el.amount.value === "") return;
+  const abierto = [el.bandeja, el.burbuja, el.historial, el.cuenta, el.comparar, el.gastos].some((panel) => !panel.hidden);
+  if (abierto) return;
+  event.preventDefault();
+  el.amount.value = "";
+  restartAnimation(el.amount, "is-vaciada");
+  onAmountInput();
+  marcarTocado();
+}
+
 function moverCantidad(sentido, grande, porDiez = false) {
   const antes = leerImporte(el.amount.value);
   const valor = porDiez ? pasoPorDiez(antes, sentido) : pasoCantidad(antes, sentido, grande);
@@ -5857,6 +5870,7 @@ function bindEvents() {
   el.result.addEventListener("input", marcarTocado);
   el.amount.addEventListener("paste", onPegar);
   el.amount.addEventListener("keydown", onFlechaCantidad);
+  el.amount.addEventListener("keydown", onEscapeCantidad);
   el.amount.addEventListener("wheel", onRuedaCantidad, { passive: false });
   document.addEventListener("paste", onPegarFuera);
   el.amount.addEventListener("animationend", () => el.amount.classList.remove("is-sube", "is-baja", "is-recuperada"));
