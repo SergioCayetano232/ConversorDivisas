@@ -5238,6 +5238,8 @@ const ATAJOS = {
   Digit4: "vista:chuleta",
   Digit5: "vista:fecha",
   Digit6: "vista:timo",
+  // El 0 no tenía pestaña: la cantidad a 1, que es como se mira la tasa.
+  Digit0: "cantidadUno",
   KeyG: "gastos",
   // La A ya es el destino: U de apUntar.
   KeyU: "apuntar",

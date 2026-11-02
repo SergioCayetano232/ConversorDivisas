@@ -4926,6 +4926,7 @@ function hacerAtajo(accion) {
   else if (accion === "imprimirChuleta") onImprimirChuleta();
   else if (accion === "extras") extrasDesdeAtajo();
   else if (accion === "fijar") fijarDice = fijarActual();
+  else if (accion === "cantidadUno") cantidadAUno();
   else if (accion === "deshacer") onDeshacer();
   else if (accion.startsWith("vista:")) cambiarVista(accion.slice(6));
 }
@@ -5536,6 +5537,14 @@ function onEscapeCantidad(event) {
   event.preventDefault();
   el.amount.value = "";
   restartAnimation(el.amount, "is-vaciada");
+  onAmountInput();
+  marcarTocado();
+}
+
+function cantidadAUno() {
+  ladoActivo = "amount";
+  el.amount.value = "1";
+  restartAnimation(el.amount, "is-resuelto");
   onAmountInput();
   marcarTocado();
 }
