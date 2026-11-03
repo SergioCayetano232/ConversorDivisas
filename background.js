@@ -784,6 +784,16 @@ async function sugerirEnBarra(texto, sugerir) {
     chrome.omnibox.setDefaultSuggestion({ description: `<match>${escaparXml(textoShaku(shaku))}</match>` });
     return;
   }
+  const enchufe = leerEnchufe(texto);
+  if (enchufe) {
+    sugerir([]);
+    // Sin divisa, la de arriba, que es la de allí; la tuya es la de abajo.
+    const par = await leerPar();
+    if (actual !== barraId) return;
+    const linea = textoEnchufe(enchufeDe(enchufe.code ?? par.from, par.to));
+    chrome.omnibox.setDefaultSuggestion({ description: `<match>${escaparXml(linea)}</match>` });
+    return;
+  }
   const talla = leerTalla(texto);
   if (talla) {
     sugerir([]);
@@ -1015,7 +1025,7 @@ async function abrirDesdeBarra(texto) {
     return;
   }
   // Las medidas ya están en la sugerencia: no hay nada que abrir.
-  if (leerGrados(texto) || leerGas(texto) || leerDistancia(texto) || leerRitmo(texto) || leerPeso(texto) || leerOnzas(texto) || leerOnzasTroy(texto) || leerAltura(texto) || leerVelocidad(texto) || leerVolumen(texto) || leerLongitud(texto) || leerSuperficie(texto) || leerMillasCuadradas(texto) || leerYardasCuadradas(texto) || leerConsumo(texto) || leerElectrico(texto) || leerPresion(texto) || leerTazas(texto) || leerCucharadas(texto) || leerSticks(texto) || leerYardas(texto) || leerStone(texto) || leerLibrasYOnzas(texto) || leerOnzasLiquidas(texto) || leerPintas(texto) || leerGills(texto) || leerCuartos(texto) || leerNudos(texto) || leerMetrosPorSegundo(texto) || leerMillasNauticas(texto) || leerBrazas(texto) || leerLeguas(texto) || leerManos(texto) || leerFurlongs(texto) || leerChains(texto) || leerRods(texto) || leerJin(texto) || leerTsubo(texto) || leerLakh(texto) || leerTola(texto) || leerTael(texto) || leerMach(texto) || leerThou(texto) || leerAcrePie(texto) || leerBigha(texto) || leerMu(texto) || leerMaund(texto) || leerPicul(texto) || leerShaku(texto) || leerTalla(texto) || leerMbps(texto) || leerGlucosa(texto) || leerGo(texto) || leerVara(texto) || leerRi(texto) || leerDram(texto) || leerFanega(texto) || leerCodo(texto) || leerAcres(texto) || leerCalorias(texto) || leerPotencia(texto) || leerBtu(texto) || leerTherms(texto) || leerInHg(texto) || leerPiesCubicos(texto) || leerPulgadasCubicas(texto) || leerBarriles(texto) || leerParMotor(texto) || leerToneladasCortas(texto) || leerYardasCubicas(texto) || leerQuilates(texto) || leerGrains(texto) || leerPennyweight(texto) || leerCwt(texto) || leerCuerdas(texto) || leerBushels(texto) || leerPecks(texto) || leerPulgadasCuadradas(texto)) return;
+  if (leerEnchufe(texto) || leerGrados(texto) || leerGas(texto) || leerDistancia(texto) || leerRitmo(texto) || leerPeso(texto) || leerOnzas(texto) || leerOnzasTroy(texto) || leerAltura(texto) || leerVelocidad(texto) || leerVolumen(texto) || leerLongitud(texto) || leerSuperficie(texto) || leerMillasCuadradas(texto) || leerYardasCuadradas(texto) || leerConsumo(texto) || leerElectrico(texto) || leerPresion(texto) || leerTazas(texto) || leerCucharadas(texto) || leerSticks(texto) || leerYardas(texto) || leerStone(texto) || leerLibrasYOnzas(texto) || leerOnzasLiquidas(texto) || leerPintas(texto) || leerGills(texto) || leerCuartos(texto) || leerNudos(texto) || leerMetrosPorSegundo(texto) || leerMillasNauticas(texto) || leerBrazas(texto) || leerLeguas(texto) || leerManos(texto) || leerFurlongs(texto) || leerChains(texto) || leerRods(texto) || leerJin(texto) || leerTsubo(texto) || leerLakh(texto) || leerTola(texto) || leerTael(texto) || leerMach(texto) || leerThou(texto) || leerAcrePie(texto) || leerBigha(texto) || leerMu(texto) || leerMaund(texto) || leerPicul(texto) || leerShaku(texto) || leerTalla(texto) || leerMbps(texto) || leerGlucosa(texto) || leerGo(texto) || leerVara(texto) || leerRi(texto) || leerDram(texto) || leerFanega(texto) || leerCodo(texto) || leerAcres(texto) || leerCalorias(texto) || leerPotencia(texto) || leerBtu(texto) || leerTherms(texto) || leerInHg(texto) || leerPiesCubicos(texto) || leerPulgadasCubicas(texto) || leerBarriles(texto) || leerParMotor(texto) || leerToneladasCortas(texto) || leerYardasCubicas(texto) || leerQuilates(texto) || leerGrains(texto) || leerPennyweight(texto) || leerCwt(texto) || leerCuerdas(texto) || leerBushels(texto) || leerPecks(texto) || leerPulgadasCuadradas(texto)) return;
   const leido = leerOmnibox(texto, await leerPar());
   if (leido) await chrome.storage.session.set({ pendiente: leido });
   try {

@@ -1128,6 +1128,54 @@ const PROPINA_HABITUAL = {
 
 const propinaHabitual = (code) => PROPINA_HABITUAL[code] ?? null;
 
+// "cd enchufe jpy": qué enchufe hay allí y si entra el tuyo. Por la divisa, así
+// que el euro va con el de casi toda la zona y aviso aparte de los de la G.
+// Pongo la C donde el europeo entra aunque no sea el oficial (Suiza, Israel…).
+const ENCHUFES = {
+  EUR: ["CF", [230]], USD: ["AB", [120]], GBP: ["G", [230]], JPY: ["AB", [100]], CHF: ["CJ", [230]],
+  CAD: ["AB", [120]], AUD: ["I", [230]], CNY: ["ACI", [220]], MXN: ["AB", [127]], BRL: ["CN", [127, 220]],
+  SEK: ["CF", [230]], NOK: ["CF", [230]], DKK: ["CFK", [230]], PLN: ["CE", [230]], TRY: ["CF", [230]],
+  CZK: ["CE", [230]], HKD: ["G", [220]], HUF: ["CF", [230]], IDR: ["CF", [230]], ILS: ["CH", [230]],
+  INR: ["CDM", [230]], ISK: ["CF", [230]], KRW: ["CF", [220]], MYR: ["G", [240]], NZD: ["I", [230]],
+  PHP: ["ABC", [220]], RON: ["CF", [230]], SGD: ["G", [230]], THB: ["ABCO", [230]], ZAR: ["CMN", [230]],
+};
+
+const HAY_ENCHUFE = /^\s*(?:enchufes?|plugs?)(?:\s+([a-z]{3}))?\s*$/i;
+
+function leerEnchufe(texto) {
+  const m = String(texto ?? "").match(HAY_ENCHUFE);
+  if (!m) return null;
+  const code = m[1]?.toUpperCase() ?? null;
+  return code && !ENCHUFES[code] ? null : { code };
+}
+
+// De 100 a 127 V y de 220 a 240 son dos mundos: un secador de aquí allí se quema.
+const voltajeBajo = (v) => v < 200;
+
+function enchufeDe(alli, aqui) {
+  const [tipos, voltios] = ENCHUFES[alli] ?? [];
+  if (!tipos) return null;
+  const casa = alli === aqui ? null : ENCHUFES[aqui];
+  return {
+    code: alli,
+    tipos: [...tipos],
+    voltios,
+    entra: casa ? [...casa[0]].some((t) => tipos.includes(t)) : null,
+    otroVoltaje: casa ? !voltios.some((v) => casa[1].some((c) => voltajeBajo(c) === voltajeBajo(v))) : false,
+  };
+}
+
+function textoEnchufe(e) {
+  if (!e) return "";
+  const partes = [
+    `${banderaDivisa(e.code)} ${tr("enchufe.tipo", { tipos: e.tipos.join("/") })} · ${e.voltios.join("/")} V`,
+  ];
+  if (e.code === "EUR") partes.push(tr("enchufe.euro"));
+  if (e.entra !== null) partes.push(tr(e.entra ? "enchufe.entra" : "enchufe.adaptador"));
+  if (e.otroVoltaje) partes.push(tr("enchufe.voltaje"));
+  return partes.join(" · ");
+}
+
 // Los billetes que de verdad se ven por la calle. Los de 500 € o 2.000 yenes
 // existen, pero nadie paga con ellos.
 const BILLETES = {
@@ -5415,7 +5463,7 @@ if (typeof module !== "undefined") {
     COMISION_MAX, COMISIONES_RAPIDAS, leerComision, leerPorcentaje, conComision,
     IMPUESTO_MAX, IMPUESTOS_RAPIDOS, leerImpuesto, leerImpuestoEscrito, loQuePagas,
     COMPARAR_IGUAL, compararPrecios, inclinacion, ZONAS, desfase, esNoche, horaAlli, textoDiferencia, relojDe, tituloHoraAlli, leerCafe, enCafes, textoCafes, HORAS_JORNADA, enHoras, textoHoras,
-    PROPINAS_RAPIDAS, PROPINA_HABITUAL, propinaHabitual, PROPINA_MAX, PERSONAS_MAX, CUENTA_POR_DEFECTO, leerCuenta, redondoHaciaArriba, repartirCuenta, cuentaParaCompartir, gastoDeLaCuenta, BILLETES, PAGOS_MAX, pagosPosibles, vuelta, pagoJusto,
+    PROPINAS_RAPIDAS, PROPINA_HABITUAL, propinaHabitual, ENCHUFES, leerEnchufe, enchufeDe, textoEnchufe, PROPINA_MAX, PERSONAS_MAX, CUENTA_POR_DEFECTO, leerCuenta, redondoHaciaArriba, repartirCuenta, cuentaParaCompartir, gastoDeLaCuenta, BILLETES, PAGOS_MAX, pagosPosibles, vuelta, pagoJusto,
     MARGENES, tasaOfrecida, analizarCambio,
     domingoDePascua, hayTasaEl, tasaVieja, textoTasaVieja, horaBce, textoActualizado, proximaTasa, textoProximaTasa,
     FECHA_MINIMA, fechaLarga, fechaValida, diaDelGrafico, mesesAtras, FECHAS_RAPIDAS, leerFecha, cambioDesde, notaDiaHabil,
