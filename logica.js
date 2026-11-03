@@ -1165,6 +1165,43 @@ function enchufeDe(alli, aqui) {
   };
 }
 
+// "cd emergencias jpy": a qué número llamar allí. Con el euro, el 112 vale en
+// toda la zona. En Australia y Sudáfrica el 112 solo va desde el móvil.
+const EMERGENCIAS = {
+  EUR: [["112", "todo"]], USD: [["911", "todo"]], GBP: [["999", "todo"]], CAD: [["911", "todo"]],
+  MXN: [["911", "todo"]], PHP: [["911", "todo"]], HKD: [["999", "todo"]], MYR: [["999", "todo"]],
+  NZD: [["111", "todo"]], SEK: [["112", "todo"]], DKK: [["112", "todo"]], PLN: [["112", "todo"]],
+  TRY: [["112", "todo"]], CZK: [["112", "todo"]], HUF: [["112", "todo"]], IDR: [["112", "todo"]],
+  INR: [["112", "todo"]], ISK: [["112", "todo"]], RON: [["112", "todo"]],
+  AUD: [["000", "todo"], ["112", "movil"]],
+  JPY: [["110", "policia"], ["119", "ambulanciaBomberos"]],
+  KRW: [["112", "policia"], ["119", "ambulanciaBomberos"]],
+  SGD: [["999", "policia"], ["995", "ambulanciaBomberos"]],
+  CNY: [["110", "policia"], ["120", "ambulancia"], ["119", "bomberos"]],
+  BRL: [["190", "policia"], ["192", "ambulancia"], ["193", "bomberos"]],
+  NOK: [["112", "policia"], ["113", "ambulancia"], ["110", "bomberos"]],
+  ILS: [["100", "policia"], ["101", "ambulancia"], ["102", "bomberos"]],
+  THB: [["191", "policia"], ["1669", "ambulancia"], ["199", "bomberos"]],
+  CHF: [["112", "todo"], ["144", "ambulancia"]],
+  ZAR: [["10111", "policia"], ["10177", "ambulancia"], ["112", "movil"]],
+};
+
+const HAY_EMERGENCIAS = /^\s*(?:emergencias?|emergency|sos)(?:\s+([a-z]{3}))?\s*$/i;
+
+function leerEmergencias(texto) {
+  const m = String(texto ?? "").match(HAY_EMERGENCIAS);
+  if (!m) return null;
+  const code = m[1]?.toUpperCase() ?? null;
+  return code && !EMERGENCIAS[code] ? null : { code };
+}
+
+function textoEmergencias(code) {
+  const telefonos = EMERGENCIAS[code];
+  if (!telefonos) return "";
+  const lista = telefonos.map(([n, para]) => `${n} ${tr(`emergencias.${para}`)}`).join(" · ");
+  return `${banderaDivisa(code)} 🚨 ${lista}`;
+}
+
 function textoEnchufe(e) {
   if (!e) return "";
   const partes = [
@@ -5463,7 +5500,7 @@ if (typeof module !== "undefined") {
     COMISION_MAX, COMISIONES_RAPIDAS, leerComision, leerPorcentaje, conComision,
     IMPUESTO_MAX, IMPUESTOS_RAPIDOS, leerImpuesto, leerImpuestoEscrito, loQuePagas,
     COMPARAR_IGUAL, compararPrecios, inclinacion, ZONAS, desfase, esNoche, horaAlli, textoDiferencia, relojDe, tituloHoraAlli, leerCafe, enCafes, textoCafes, HORAS_JORNADA, enHoras, textoHoras,
-    PROPINAS_RAPIDAS, PROPINA_HABITUAL, propinaHabitual, ENCHUFES, leerEnchufe, enchufeDe, textoEnchufe, PROPINA_MAX, PERSONAS_MAX, CUENTA_POR_DEFECTO, leerCuenta, redondoHaciaArriba, repartirCuenta, cuentaParaCompartir, gastoDeLaCuenta, BILLETES, PAGOS_MAX, pagosPosibles, vuelta, pagoJusto,
+    PROPINAS_RAPIDAS, PROPINA_HABITUAL, propinaHabitual, ENCHUFES, leerEnchufe, enchufeDe, textoEnchufe, EMERGENCIAS, leerEmergencias, textoEmergencias, PROPINA_MAX, PERSONAS_MAX, CUENTA_POR_DEFECTO, leerCuenta, redondoHaciaArriba, repartirCuenta, cuentaParaCompartir, gastoDeLaCuenta, BILLETES, PAGOS_MAX, pagosPosibles, vuelta, pagoJusto,
     MARGENES, tasaOfrecida, analizarCambio,
     domingoDePascua, hayTasaEl, tasaVieja, textoTasaVieja, horaBce, textoActualizado, proximaTasa, textoProximaTasa,
     FECHA_MINIMA, fechaLarga, fechaValida, diaDelGrafico, mesesAtras, FECHAS_RAPIDAS, leerFecha, cambioDesde, notaDiaHabil,
