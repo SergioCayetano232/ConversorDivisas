@@ -461,10 +461,28 @@ async function sugerirHoy(sugerir, actual, resumir = resumenHoyBarra, elegir = v
   });
 }
 
+async function sugerirTasa(sugerir, actual) {
+  sugerir([]);
+  try {
+    const par = await leerPar();
+    // Con el mismo par la API da error, y no hay tasa que enseñar.
+    if (par.from === par.to) return;
+    const r = resumenTasaBarra(par, await serieCorta(par.from, par.to));
+    if (actual !== barraId || !r) return;
+    chrome.omnibox.setDefaultSuggestion({
+      description: `<match>${escaparXml(r.principal)}</match> <dim>${escaparXml([...r.detalle, tr("barra.tasaEnter")].map((t) => `· ${t}`).join(" "))}</dim>`,
+    });
+  } catch (error) {
+    if (actual !== barraId) return;
+    pistaBarra(errorMessageFor(error));
+  }
+}
+
 async function sugerirEnBarra(texto, sugerir) {
   const actual = ++barraId;
   await idiomaListo;
   if (/^\s*\+/.test(texto)) return sugerirGasto(texto, sugerir, actual);
+  if (esTasaBarra(texto)) return sugerirTasa(sugerir, actual);
   if (esHoyBarra(texto)) return sugerirHoy(sugerir, actual);
   if (esAyerBarra(texto)) return sugerirHoy(sugerir, actual, resumenAyerBarra);
   if (esAnteayerBarra(texto)) return sugerirHoy(sugerir, actual, resumenAnteayerBarra);
