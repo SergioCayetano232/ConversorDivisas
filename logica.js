@@ -632,6 +632,56 @@ function horaAlli(code, ahora = new Date(), local = -new Date(ahora).getTimezone
   };
 }
 
+// "cd 15:00 pst": la hora de una llamada o un vuelo, en la tuya. Las siglas que
+// se ven en los correos y en las webs. CST y IST son de varios sitios: me quedo
+// con Chicago y con India, que son las que más salen.
+const SIGLAS_ZONA = {
+  pst: "America/Los_Angeles", pdt: "America/Los_Angeles", pt: "America/Los_Angeles",
+  mst: "America/Denver", mdt: "America/Denver", mt: "America/Denver",
+  cst: "America/Chicago", cdt: "America/Chicago", ct: "America/Chicago",
+  est: "America/New_York", edt: "America/New_York", et: "America/New_York",
+  gmt: "UTC", utc: "UTC", bst: "Europe/London", cet: "Europe/Paris", cest: "Europe/Paris",
+  eet: "Europe/Athens", eest: "Europe/Athens", jst: "Asia/Tokyo", kst: "Asia/Seoul",
+  ist: "Asia/Kolkata", hkt: "Asia/Hong_Kong", sgt: "Asia/Singapore", ict: "Asia/Bangkok",
+  wib: "Asia/Jakarta", aest: "Australia/Sydney", aedt: "Australia/Sydney",
+  nzst: "Pacific/Auckland", nzdt: "Pacific/Auckland", brt: "America/Sao_Paulo",
+};
+
+// Con dos puntos, am/pm o la h: "15 usd" es dinero, no las tres de la tarde.
+const HAY_HORA_ZONA = /^\s*(\d{1,2})(?:(?::|h)(\d{2})|(h))?\s*(am|pm)?\s+([a-z]{2,4})\s*$/i;
+
+function leerHoraZona(texto) {
+  const m = String(texto ?? "").match(HAY_HORA_ZONA);
+  if (!m || (m[2] === undefined && !m[3] && !m[4])) return null;
+  let h = Number(m[1]);
+  const min = Number(m[2] ?? 0);
+  const ampm = m[4]?.toLowerCase();
+  if (ampm && (h < 1 || h > 12)) return null;
+  if (ampm) h = (h % 12) + (ampm === "pm" ? 12 : 0);
+  if (h > 23 || min > 59) return null;
+  const sigla = m[5].toLowerCase();
+  const code = sigla.toUpperCase();
+  if (SIGLAS_ZONA[sigla]) return { h, min, zona: SIGLAS_ZONA[sigla], nombre: code };
+  if (ZONAS[code]) return { h, min, zona: ZONAS[code][0], nombre: ZONAS[code][idiomaActual() === "en" ? 2 : 1] };
+  return null;
+}
+
+// Con el horario de verano de hoy allí; si justo cambia esa noche, puede bailar una hora.
+function convertirHoraZona({ h, min, zona }, ahora = new Date(), local = -new Date(ahora).getTimezoneOffset()) {
+  const total = h * 60 + min - desfase(zona, ahora) + local;
+  const dia = Math.floor(total / 1440);
+  const resto = total - dia * 1440;
+  return { h: Math.floor(resto / 60), min: resto % 60, dia };
+}
+
+function textoHoraZona(leido, ahora = new Date(), local = -new Date(ahora).getTimezoneOffset()) {
+  if (!leido) return "";
+  const hhmm = (h, m) => `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}`;
+  const aqui = convertirHoraZona(leido, ahora, local);
+  const dia = aqui.dia === 0 ? "" : ` (${tr(aqui.dia > 0 ? "horaZona.manana" : "horaZona.ayer")})`;
+  return `${hhmm(leido.h, leido.min)} ${leido.nombre} = 🕐 ${hhmm(aqui.h, aqui.min)} ${tr("horaZona.tuya")}${dia}`;
+}
+
 // "+7 h", "−6 h", "+5 h 30". El menos es el de verdad, no un guion.
 function textoDiferencia(min) {
   const signo = min < 0 ? "−" : "+";
@@ -5620,7 +5670,7 @@ if (typeof module !== "undefined") {
     urlImpresion, leerImpresion, chuletaParaImprimir,
     COMISION_MAX, COMISIONES_RAPIDAS, leerComision, leerPorcentaje, conComision,
     IMPUESTO_MAX, IMPUESTOS_RAPIDOS, leerImpuesto, leerImpuestoEscrito, loQuePagas,
-    COMPARAR_IGUAL, compararPrecios, inclinacion, ZONAS, desfase, esNoche, horaAlli, textoDiferencia, relojDe, tituloHoraAlli, leerCafe, enCafes, textoCafes, HORAS_JORNADA, enHoras, textoHoras,
+    COMPARAR_IGUAL, compararPrecios, inclinacion, ZONAS, desfase, esNoche, horaAlli, SIGLAS_ZONA, leerHoraZona, convertirHoraZona, textoHoraZona, textoDiferencia, relojDe, tituloHoraAlli, leerCafe, enCafes, textoCafes, HORAS_JORNADA, enHoras, textoHoras,
     PROPINAS_RAPIDAS, PROPINA_HABITUAL, propinaHabitual, ENCHUFES, leerEnchufe, enchufeDe, textoEnchufe, EMERGENCIAS, leerEmergencias, textoEmergencias, PROPINA_MAX, PERSONAS_MAX, CUENTA_POR_DEFECTO, leerCuenta, redondoHaciaArriba, repartirCuenta, cuentaParaCompartir, gastoDeLaCuenta, BILLETES, PAGOS_MAX, pagosPosibles, vuelta, pagoJusto,
     MARGENES, tasaOfrecida, analizarCambio,
     domingoDePascua, hayTasaEl, tasaVieja, textoTasaVieja, horaBce, textoActualizado, proximaTasa, textoProximaTasa,
