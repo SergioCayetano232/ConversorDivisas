@@ -305,6 +305,12 @@ que necesitaba una conversión rápida. Ahora es un clic en la barra del navegad
   restaurarlos arrastrándolo. Antes de restaurar te enseña qué trae la copia,
   porque sustituye lo que tienes. Como la extensión se carga a mano, si borras
   la carpeta lo perderías todo
+- Los gastos del banco, en esa misma página: sueltas el CSV de movimientos de
+  tu banco (BBVA, Santander, CaixaBank, ING… el que da los importes en euros)
+  y los cargos de las fechas del viaje pasan a sus gastos, con la cantidad en
+  la divisa de allí a la tasa del BCE de cada día y la categoría adivinada por
+  el concepto. Antes de importar los ves y quitas los que no son del viaje; lo
+  que ya tenías apuntado ese día con ese importe no se repite. Y se puede deshacer
 - Si algo falla te dice qué ha pasado, no se queda en blanco
 
 Pide lo justo: guardar tus preferencias, hablar con la API de las tasas, una

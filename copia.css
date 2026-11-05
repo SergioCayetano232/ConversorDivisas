@@ -20,6 +20,7 @@
   --mancha-2: rgba(78, 169, 107, 0.12);
   --mancha-3: rgba(229, 83, 75, 0.08);
   --grano: 0.05;
+  --esquema: dark;
 
   --sombra: 0 12px 40px rgba(0, 0, 0, 0.55);
   --sombra-boton: 0 4px 16px rgba(0, 0, 0, 0.45);
@@ -57,6 +58,7 @@
     --mancha-2: rgba(78, 169, 107, 0.16);
     --mancha-3: rgba(229, 83, 75, 0.1);
     --grano: 0.035;
+    --esquema: light;
 
     --sombra: 0 12px 40px rgba(60, 50, 30, 0.12);
     --sombra-boton: 0 4px 16px rgba(60, 50, 30, 0.12);
@@ -120,6 +122,7 @@ body::before {
 .pagina > :nth-child(3) { animation-delay: 120ms; }
 .pagina > :nth-child(4) { animation-delay: 180ms; }
 .pagina > :nth-child(5) { animation-delay: 240ms; }
+.pagina > :nth-child(6) { animation-delay: 300ms; }
 
 @keyframes entrar {
   from {
@@ -439,6 +442,139 @@ body::before {
   stroke-linejoin: round;
 }
 
+.tarjeta__nota {
+  margin-top: -8px;
+  font-size: 13px;
+  color: var(--tenue);
+}
+
+.boton--pequeno {
+  padding: 4px 12px;
+  font-size: 12px;
+}
+
+.banco__ajustes {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px 12px;
+}
+
+.campo {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.campo__nombre {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  color: var(--tenue);
+}
+
+.campo__control {
+  width: 100%;
+  min-width: 0;
+  height: 34px;
+  padding: 0 10px;
+  background: var(--losa);
+  border: 1px solid var(--borde-fuerte);
+  border-radius: var(--radio-sm);
+  color: var(--texto);
+  font: inherit;
+  font-size: 13px;
+  color-scheme: var(--esquema);
+  transition: border-color var(--rapido) var(--suave), box-shadow var(--rapido) var(--suave);
+}
+
+.campo__control:focus {
+  outline: none;
+  border-color: var(--dorado);
+  box-shadow: 0 0 0 3px var(--dorado-fantasma);
+}
+
+.banco__lista {
+  display: flex;
+  flex-direction: column;
+  max-height: 320px;
+  overflow-y: auto;
+  border: 1px solid var(--borde);
+  border-radius: var(--radio-sm);
+  background: var(--losa);
+  list-style: none;
+}
+
+.banco__fila {
+  display: grid;
+  grid-template-columns: auto auto auto 1fr auto;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--borde);
+  font-size: 13px;
+  animation: entrar var(--medio) var(--suave) backwards;
+  animation-delay: calc(var(--i, 0) * 25ms);
+  transition: opacity var(--rapido) var(--suave);
+}
+
+.banco__fila:last-child {
+  border-bottom: none;
+}
+
+.banco__fila input {
+  width: 15px;
+  height: 15px;
+  accent-color: var(--dorado);
+  cursor: pointer;
+}
+
+.banco__fila:has(input:not(:checked)) {
+  opacity: 0.45;
+}
+
+.banco__fila.is-repetido {
+  opacity: 0.4;
+}
+
+.banco__fecha {
+  min-width: 44px;
+  font-family: var(--mono);
+  font-size: 12px;
+  color: var(--tenue);
+  font-variant-numeric: tabular-nums;
+}
+
+.banco__concepto {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.banco__importe {
+  font-family: var(--mono);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.banco__resumen {
+  font-family: var(--mono);
+  font-size: 13px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.banco__resumen.is-mal {
+  font-family: inherit;
+  font-weight: 400;
+  color: var(--cinabrio);
+}
+
+.banco__hecho {
+  flex-wrap: wrap;
+}
+
 .pie {
   display: flex;
   align-items: center;
@@ -471,6 +607,15 @@ body::before {
 
   .cifras {
     grid-template-columns: repeat(2, 1fr);
+  }
+
+  .banco__fila {
+    gap: 8px;
+    padding: 8px 10px;
+  }
+
+  .banco__fecha {
+    min-width: 0;
   }
 
   .boton {

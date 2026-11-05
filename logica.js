@@ -5976,6 +5976,165 @@ function taxFree(gastos) {
     .sort((a, b) => b.pasan - a.pasan || (b.tuya?.valor ?? 0) - (a.tuya?.valor ?? 0));
 }
 
+// El CSV del banco. Los españoles lo dan en euros, con punto y coma, la coma
+// para los decimales y unas líneas de cabecera con la cuenta antes de la tabla.
+function partirCsv(texto, sep) {
+  const filas = [];
+  let fila = [];
+  let campo = "";
+  let comillas = false;
+  for (let i = 0; i < texto.length; i++) {
+    const c = texto[i];
+    if (comillas) {
+      if (c === '"' && texto[i + 1] === '"') {
+        campo += '"';
+        i += 1;
+      } else if (c === '"') comillas = false;
+      else campo += c;
+    } else if (c === '"') comillas = true;
+    else if (c === sep) {
+      fila.push(campo);
+      campo = "";
+    } else if (c === "\n" || c === "\r") {
+      if (c === "\r" && texto[i + 1] === "\n") i += 1;
+      fila.push(campo);
+      filas.push(fila);
+      fila = [];
+      campo = "";
+    } else campo += c;
+  }
+  if (campo || fila.length) filas.push([...fila, campo]);
+  return filas.map((f) => f.map((x) => x.trim())).filter((f) => f.some(Boolean));
+}
+
+// "1.234,56", "-12,50 €", "-12.50" y "1,234.56": el último signo es el decimal.
+// Un punto solo con tres cifras detrás son miles, que así lo pone el banco.
+function numeroBanco(texto) {
+  let t = String(texto ?? "").replace(/[€\s ]|EUR/gi, "").replace(/^\+/, "").replace(/^−/, "-");
+  if (!/^-?[\d.,]+$/.test(t)) return null;
+  const coma = t.lastIndexOf(",");
+  const punto = t.lastIndexOf(".");
+  if (coma > -1 && punto > -1) t = coma > punto ? t.replace(/\./g, "").replace(",", ".") : t.replace(/,/g, "");
+  else if (coma > -1) t = t.replace(",", ".");
+  else if (/^-?\d{1,3}(\.\d{3})+$/.test(t)) t = t.replace(/\./g, "");
+  const n = Number(t);
+  return Number.isFinite(n) ? n : null;
+}
+
+// 03/11/2026, 3-11-26 o 2026-11-03. Siempre día antes que mes: es un banco español.
+function fechaBanco(texto) {
+  const t = String(texto ?? "").trim();
+  let m = t.match(/^(\d{4})-(\d{1,2})-(\d{1,2})/);
+  let a, mes, d;
+  if (m) [, a, mes, d] = m.map(Number);
+  else {
+    m = t.match(/^(\d{1,2})[/.-](\d{1,2})[/.-](\d{2}|\d{4})\b/);
+    if (!m) return null;
+    [, d, mes, a] = m.map(Number);
+    if (a < 100) a += 2000;
+  }
+  const fecha = new Date(a, mes - 1, d);
+  if (fecha.getFullYear() !== a || fecha.getMonth() !== mes - 1 || fecha.getDate() !== d) return null;
+  return isoLocal(fecha);
+}
+
+const COLUMNAS_BANCO = {
+  fecha: [/^f(echa)?\.? ?(de )?operacion/, /^fecha$/, /^fecha/],
+  concepto: [/^concepto/, /^descripcion/, /^movimiento/, /^detalle/],
+  importe: [/^importe/, /^cantidad/],
+  cargo: [/^cargo/, /^debe$/],
+};
+
+// La primera columna que case, por orden de preferencia: "fecha operación"
+// antes que "fecha valor", que es cuando lo cobra el banco y no cuando pagaste.
+function columnaBanco(cabecera, patrones) {
+  for (const patron of patrones) {
+    const i = cabecera.findIndex((c) => patron.test(normalizar(c)) && !/valor/.test(normalizar(c)));
+    if (i > -1) return i;
+  }
+  return -1;
+}
+
+function leerCsvBanco(texto) {
+  const limpio = String(texto ?? "").replace(/^﻿/, "");
+  const primeras = limpio.split(/\r?\n/).slice(0, 20).join("\n");
+  const sep = [";", "\t", ","].map((c) => [c, primeras.split(c).length]).sort((a, b) => b[1] - a[1])[0][0];
+  const filas = partirCsv(limpio, sep);
+  const donde = filas.slice(0, 20).findIndex((f) => columnaBanco(f, COLUMNAS_BANCO.fecha) > -1
+    && (columnaBanco(f, COLUMNAS_BANCO.importe) > -1 || columnaBanco(f, COLUMNAS_BANCO.cargo) > -1));
+  if (donde === -1) return { error: "columnas" };
+  const cabecera = filas[donde];
+  const col = Object.fromEntries(Object.entries(COLUMNAS_BANCO).map(([k, p]) => [k, columnaBanco(cabecera, p)]));
+  const movimientos = [];
+  for (const f of filas.slice(donde + 1)) {
+    const fecha = fechaBanco(f[col.fecha]);
+    if (!fecha) continue;
+    // Con "Importe", lo que sale va en negativo; con "Cargo", en positivo.
+    const bruto = col.importe > -1 ? numeroBanco(f[col.importe]) : numeroBanco(f[col.cargo]);
+    const importe = col.importe > -1 ? -bruto : bruto;
+    if (!(importe > 0)) continue;
+    movimientos.push({ fecha, concepto: col.concepto > -1 ? f[col.concepto] : "", importe: Math.round(importe * 100) / 100 });
+  }
+  if (movimientos.length === 0) return { error: "vacio" };
+  return { movimientos: movimientos.sort((a, b) => a.fecha.localeCompare(b.fecha)) };
+}
+
+// "COMPRA TARJ. 5402XXXXXXXX1234 LAWSON SHIBUYA" → "Lawson Shibuya". Sin quitar
+// el "COMPRA" de delante, todo acababa en la categoría de compras.
+const PREFIJOS_BANCO = /^(compra|pago|cargo|adeudo|operacion)( con)?( en)?( tarj(eta|\.)?( de credito| de debito| credito| debito)?)?( en)?[\s.:-]*/i;
+
+function conceptoBanco(texto) {
+  const t = String(texto ?? "")
+    .replace(/\s+/g, " ")
+    .trim()
+    .replace(PREFIJOS_BANCO, "")
+    .replace(/[:*]*\b\d{4,}[\dX*]*\b/gi, "")
+    .replace(/\s+/g, " ")
+    .trim();
+  const bonito = t.toLocaleLowerCase(localeActual()).replace(/(^|\s)(\p{L})/gu, (_, sp, l) => sp + l.toLocaleUpperCase(localeActual()));
+  return limpiarConcepto(bonito);
+}
+
+// Fines de semana y festivos el BCE no publica: vale la del último día que sí.
+function tasaDelDia(tasas, fecha) {
+  const dias = Object.keys(tasas ?? {}).sort();
+  if (!dias.length) return null;
+  const antes = dias.filter((d) => d <= fecha).at(-1) ?? dias[0];
+  return tasas[antes];
+}
+
+// Lo de un mismo día con el mismo importe ya está: lo apuntaste a mano o lo
+// importaste antes. El concepto no lo miro, que el del banco nunca es el tuyo.
+const yaApuntado = (gastos, fecha, importe, to) => gastos.some((g) => g.to === to
+  && isoLocal(new Date(g.cuando)) === fecha && Math.abs(g.valor - importe) < 0.005);
+
+function gastosDelBanco(movimientos, { from, to = "EUR", tasas, existentes = [], idBase = "b" }) {
+  const nuevos = [];
+  let repetidos = 0;
+  movimientos.forEach((m, i) => {
+    if (yaApuntado([...existentes, ...nuevos], m.fecha, m.importe, to)) {
+      repetidos += 1;
+      return;
+    }
+    const tasa = tasaDelDia(tasas, m.fecha);
+    if (!(tasa > 0)) return;
+    const [a, mes, d] = m.fecha.split("-").map(Number);
+    const concepto = conceptoBanco(m.concepto);
+    const gasto = crearGasto({
+      id: `${idBase}${i.toString(36)}`, from, to, cuando: new Date(a, mes - 1, d, 12).getTime(),
+      cantidad: Math.round((m.importe / tasa) * 100) / 100,
+      valor: m.importe,
+      concepto,
+      categoria: adivinarCategoria(concepto) ?? CATEGORIA_POR_DEFECTO,
+      pago: "tarjeta",
+      // Lo del banco ya lleva su comisión dentro y no sé cuánta.
+      comision: 0,
+    });
+    if (gasto) nuevos.push(gasto);
+  });
+  return { nuevos, repetidos };
+}
+
 // La copia de seguridad guarda lo tuyo: viajes, avisos, historial y
 // preferencias. Las tasas guardadas no, que caducan en un día.
 const COPIA_APP = "ConversorDivisas";
@@ -6045,6 +6204,7 @@ function resumenCopia(datos) {
 // el export. Sin esto habría que montar un build, y aquí no hay ninguno.
 if (typeof module !== "undefined") {
   module.exports = {
+    numeroBanco, fechaBanco, leerCsvBanco, conceptoBanco, tasaDelDia, gastosDelBanco,
     TAX_FREE, taxFree,
     CURRENCIES, isValidCode, nombreDe, parseAmount, isoLocal, hoy, isFresh,
     evaluar, completar, leerImporte, UNIDADES, quitarUnidad, nombreUnidad, porUnidadMetrica, esOperacion, pasoCantidad, pasoPorDiez, RUEDA_PASO, pasosRueda, cifraCompleta, leerCantidad,

@@ -14,7 +14,24 @@ const el = {
   restaurar: document.getElementById("restaurar"),
   cancelar: document.getElementById("cancelar"),
   hecho: document.getElementById("hecho"),
+  bancoSoltar: document.getElementById("banco-soltar"),
+  bancoArchivo: document.getElementById("banco-archivo"),
+  bancoError: document.getElementById("banco-error"),
+  banco: document.getElementById("banco"),
+  bancoViaje: document.getElementById("banco-viaje"),
+  bancoDivisa: document.getElementById("banco-divisa"),
+  bancoDesde: document.getElementById("banco-desde"),
+  bancoHasta: document.getElementById("banco-hasta"),
+  bancoLista: document.getElementById("banco-lista"),
+  bancoResumen: document.getElementById("banco-resumen"),
+  bancoImportar: document.getElementById("banco-importar"),
+  bancoCancelar: document.getElementById("banco-cancelar"),
+  bancoHecho: document.getElementById("banco-hecho"),
+  bancoHechoTexto: document.getElementById("banco-hecho-texto"),
+  bancoDeshacer: document.getElementById("banco-deshacer"),
 };
+
+const API_HISTORY = "https://api.frankfurter.dev/v1";
 
 let pendiente = null;
 
@@ -29,6 +46,7 @@ async function ponerIdiomaGuardado() {
   ponerIdioma(idiomaElegido(idioma, chrome.i18n.getUILanguage()));
   document.documentElement.lang = idiomaActual();
   for (const nodo of document.querySelectorAll("[data-t]")) nodo.textContent = tr(nodo.dataset.t);
+  for (const nodo of document.querySelectorAll("[data-t-aria-label]")) nodo.setAttribute("aria-label", tr(nodo.dataset.tAriaLabel));
   document.title = `ConversorDivisas · ${tr("copia")}`;
   el.descargar.title = tr("copia.abrir");
 }
@@ -146,7 +164,210 @@ function onCancelar() {
   el.soltar.focus();
 }
 
+// Lo del banco: los cargos leídos, los que has quitado a mano y lo último que
+// se importó, para poder deshacerlo.
+let movimientos = [];
+const quitados = new Set();
+let importado = null;
+
+const dineroBanco = (n) => `${numeros({ minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(n)} EUR`;
+
+async function cargarViajesGuardados() {
+  const { viajes, gastosViaje, presupuestoViaje } = await chrome.storage.local.get(["viajes", "gastosViaje", "presupuestoViaje"]);
+  return leerViajes(viajes, gastosViaje, presupuestoViaje);
+}
+
+// La divisa que más sale en el viaje; si no tiene gastos, la de arriba del popup.
+// Con el euro no vale: lo del banco ya está en euros.
+function divisaDelViaje(viaje, lastPair) {
+  const cuentas = new Map();
+  for (const g of viaje.gastos) if (g.from !== "EUR") cuentas.set(g.from, (cuentas.get(g.from) ?? 0) + 1);
+  const masUsada = [...cuentas].sort((a, b) => b[1] - a[1])[0]?.[0];
+  return masUsada ?? (lastPair?.from !== "EUR" && isValidCode(lastPair?.from) ? lastPair.from : "USD");
+}
+
+
+
+function visibles() {
+  const desde = el.bancoDesde.value || "0000";
+  const hasta = el.bancoHasta.value || "9999";
+  return movimientos.map((m, i) => ({ ...m, clave: String(i) })).filter((m) => m.fecha >= desde && m.fecha <= hasta);
+}
+
+async function pintarBanco() {
+  const viajes = await cargarViajesGuardados();
+  const viaje = viajes.lista.find((v) => v.id === el.bancoViaje.value) ?? viajes.lista[0];
+  const lista = visibles();
+  // Lo repetido lo miro con el viaje elegido: ese día, ese importe, ya estaba.
+  const yaEsta = (m) => viaje.gastos.some((g) => g.to === "EUR" && isoLocal(new Date(g.cuando)) === m.fecha && Math.abs(g.valor - m.importe) < 0.005);
+  el.bancoLista.replaceChildren(...lista.map((m, i) => {
+    const li = document.createElement("li");
+    li.className = "banco__fila";
+    li.style.setProperty("--i", Math.min(i, 12));
+    const repetido = yaEsta(m);
+    li.classList.toggle("is-repetido", repetido);
+    const marca = document.createElement("input");
+    marca.type = "checkbox";
+    marca.checked = !repetido && !quitados.has(m.clave);
+    marca.disabled = repetido;
+    const concepto = conceptoBanco(m.concepto) || tr("gastos.sinConcepto");
+    marca.setAttribute("aria-label", tr("banco.incluir", { concepto, importe: dineroBanco(m.importe) }));
+    marca.addEventListener("change", () => {
+      if (marca.checked) quitados.delete(m.clave);
+      else quitados.add(m.clave);
+      pintarBanco();
+    });
+    const categoria = adivinarCategoria(concepto) ?? "otros";
+    li.innerHTML = '<span class="banco__fecha"></span><span class="banco__cat" aria-hidden="true"></span><span class="banco__concepto"></span><span class="banco__importe"></span>';
+    li.prepend(marca);
+    li.querySelector(".banco__fecha").textContent = fechaCorta(m.fecha);
+    li.querySelector(".banco__cat").textContent = EMOJI_CATEGORIA[categoria] ?? EMOJI_CATEGORIA.otros;
+    li.querySelector(".banco__concepto").textContent = repetido ? `${concepto} · ${tr("banco.yaEsta")}` : concepto;
+    li.querySelector(".banco__concepto").title = m.concepto;
+    li.querySelector(".banco__importe").textContent = dineroBanco(m.importe);
+    return li;
+  }));
+  const elegidos = lista.filter((m) => !yaEsta(m) && !quitados.has(m.clave));
+  const total = elegidos.reduce((s, m) => s + m.importe, 0);
+  const libres = GASTOS_MAX - viaje.gastos.length;
+  el.bancoResumen.textContent = elegidos.length > libres
+    ? tr("banco.noCaben", { libres, max: GASTOS_MAX })
+    : tr("banco.resumen", { n: elegidos.length, de: lista.length, total: dineroBanco(total) });
+  el.bancoResumen.classList.toggle("is-mal", elegidos.length > libres);
+  el.bancoImportar.disabled = elegidos.length === 0 || elegidos.length > libres;
+  el.bancoImportar.textContent = tr(elegidos.length === 1 ? "banco.importarUno" : "banco.importar", { n: elegidos.length });
+}
+
+function errorBanco(clave) {
+  el.banco.hidden = true;
+  el.bancoError.textContent = tr(clave);
+  el.bancoError.hidden = false;
+  reiniciar(el.bancoSoltar, "is-mal");
+}
+
+async function leerBanco(archivo) {
+  if (!archivo) return;
+  el.bancoHecho.hidden = true;
+  const leido = leerCsvBanco(await archivo.text());
+  if (leido.error) return errorBanco(`banco.error.${leido.error}`);
+  movimientos = leido.movimientos;
+  quitados.clear();
+  el.bancoError.hidden = true;
+
+  const [viajes, { lastPair }] = await Promise.all([cargarViajesGuardados(), chrome.storage.local.get("lastPair")]);
+  el.bancoViaje.replaceChildren(...viajes.lista.map((v) => new Option(v.nombre || tr("gastos"), v.id, false, v.id === viajes.activo)));
+  el.bancoDivisa.replaceChildren(...CURRENCIES.filter((c) => c.code !== "EUR")
+    .map((c) => new Option(`${c.code} · ${nombreDe(c.code)}`, c.code)));
+  ponerViaje(viajes, viajes.activo, lastPair);
+  el.banco.hidden = false;
+  reiniciar(el.banco, "is-nueva");
+  await pintarBanco();
+  el.bancoImportar.focus();
+}
+
+// Las fechas del presupuesto si las tiene, que son las del viaje; si no, las del archivo.
+function ponerViaje(viajes, id, lastPair) {
+  const viaje = viajes.lista.find((v) => v.id === id) ?? viajes.lista[0];
+  el.bancoDivisa.value = divisaDelViaje(viaje, lastPair);
+  el.bancoDesde.value = viaje.presupuesto?.desde ?? movimientos[0].fecha;
+  el.bancoHasta.value = viaje.presupuesto?.hasta ?? movimientos.at(-1).fecha;
+}
+
+// Una semana antes de la primera fecha: si el viaje empieza en sábado, la
+// tasa que vale es la del viernes.
+async function tasasDelBanco(from, desde, hasta) {
+  const [a, m, d] = desde.split("-").map(Number);
+  const antes = isoLocal(new Date(a, m - 1, d - 7));
+  const respuesta = await fetch(`${API_HISTORY}/${antes}..${hasta}?base=${from}&symbols=EUR`);
+  if (!respuesta.ok) throw new Error(`HTTP ${respuesta.status}`);
+  const datos = await respuesta.json();
+  return Object.fromEntries(Object.entries(datos.rates ?? {}).map(([dia, r]) => [dia, r.EUR]));
+}
+
+async function onImportarBanco() {
+  const from = el.bancoDivisa.value;
+  const id = el.bancoViaje.value;
+  el.bancoImportar.disabled = true;
+  try {
+    const viajes = await cargarViajesGuardados();
+    const viaje = viajes.lista.find((v) => v.id === id);
+    const elegidos = visibles().filter((m) => !quitados.has(m.clave));
+    const tasas = await tasasDelBanco(from, elegidos[0].fecha, elegidos.at(-1).fecha);
+    const { nuevos } = gastosDelBanco(elegidos, {
+      from, tasas, existentes: viaje.gastos, idBase: `b${Date.now().toString(36)}`,
+    });
+    if (!nuevos.length) throw new Error("sin gastos");
+    // Los nuevos delante, del más reciente al más viejo, como al apuntarlos.
+    const gastos = [...[...nuevos].sort((a, b) => b.cuando - a.cuando), ...viaje.gastos].slice(0, GASTOS_MAX);
+    await chrome.storage.local.set({ viajes: cambiarViaje(viajes, id, { gastos }) });
+    importado = { viaje: id, ids: nuevos.map((g) => g.id) };
+    el.banco.hidden = true;
+    el.bancoArchivo.value = "";
+    el.bancoHechoTexto.textContent = tr(nuevos.length === 1 ? "banco.hechoUno" : "banco.hecho", {
+      n: nuevos.length, viaje: viaje.nombre || tr("gastos"),
+    });
+    el.bancoDeshacer.hidden = false;
+    el.bancoHecho.hidden = false;
+    reiniciar(el.bancoHecho, "is-nueva");
+  } catch (error) {
+    console.warn("No se pudo importar del banco", error);
+    errorBanco("banco.error.tasas");
+    el.banco.hidden = false;
+    el.bancoImportar.disabled = false;
+  }
+}
+
+async function onDeshacerBanco() {
+  if (!importado) return;
+  const viajes = await cargarViajesGuardados();
+  const viaje = viajes.lista.find((v) => v.id === importado.viaje);
+  if (viaje) {
+    const fuera = new Set(importado.ids);
+    await chrome.storage.local.set({ viajes: cambiarViaje(viajes, viaje.id, { gastos: viaje.gastos.filter((g) => !fuera.has(g.id)) }) });
+  }
+  importado = null;
+  el.bancoHechoTexto.textContent = tr("banco.deshecho");
+  el.bancoDeshacer.hidden = true;
+  reiniciar(el.bancoHecho, "is-nueva");
+}
+
+function onCancelarBanco() {
+  movimientos = [];
+  el.bancoArchivo.value = "";
+  el.banco.hidden = true;
+  el.bancoSoltar.focus();
+}
+
+// Las dos cajas para soltar se portan igual.
+function zonaDeSoltar(zona, alSoltar) {
+  for (const tipo of ["dragenter", "dragover"]) {
+    zona.addEventListener(tipo, (event) => {
+      event.preventDefault();
+      zona.classList.add("is-encima");
+    });
+  }
+  zona.addEventListener("dragleave", (event) => {
+    if (!zona.contains(event.relatedTarget)) zona.classList.remove("is-encima");
+  });
+  zona.addEventListener("drop", (event) => {
+    event.preventDefault();
+    zona.classList.remove("is-encima");
+    alSoltar(event.dataTransfer.files[0]);
+  });
+  zona.addEventListener("animationend", () => zona.classList.remove("is-mal"));
+}
+
 function bindEvents() {
+  zonaDeSoltar(el.bancoSoltar, leerBanco);
+  el.bancoArchivo.addEventListener("change", () => leerBanco(el.bancoArchivo.files[0]));
+  el.bancoViaje.addEventListener("change", async () => {
+    ponerViaje(await cargarViajesGuardados(), el.bancoViaje.value, (await chrome.storage.local.get("lastPair")).lastPair);
+    pintarBanco();
+  });
+  for (const campo of [el.bancoDesde, el.bancoHasta]) campo.addEventListener("change", pintarBanco);
+  el.bancoImportar.addEventListener("click", onImportarBanco);
+  el.bancoCancelar.addEventListener("click", onCancelarBanco);
+  el.bancoDeshacer.addEventListener("click", onDeshacerBanco);
   el.descargar.addEventListener("click", onDescargar);
   el.archivo.addEventListener("change", () => leerArchivo(el.archivo.files[0]));
   el.restaurar.addEventListener("click", onRestaurar);
