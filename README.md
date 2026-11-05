@@ -144,6 +144,11 @@ que necesitaba una conversión rápida. Ahora es un clic en la barra del navegad
   gastando lo que toca o menos ("🔥 3"), y un aro que se va cerrando con lo que
   llevas hoy contra lo que te toca hoy. Antes de salir, en vez del día del
   viaje, cuántos faltan ("✈ 12 días")
+- Lo pagado aparte: el vuelo, el hotel reservado meses antes o el seguro. Al
+  pulsar el concepto, con el 📌 de la tira de días lo sacas del día a día: sale
+  arriba, en "Pagado aparte", y cuenta en el total, en las categorías y en el
+  presupuesto, pero no en la media al día, en lo de hoy, en la corona ni en
+  hasta cuándo te llega el presupuesto. En el resumen va en su propia línea
 - El hotel por noches: si apuntas algo de alojamiento sale una fila con las
   noches, y con 5 se apunta un gasto por noche desde ese día ("1/5 · Hotel"),
   para que el día que pagas no parezca el más caro del viaje

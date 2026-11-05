@@ -1,7 +1,7 @@
 const { test } = require("node:test");
 const assert = require("node:assert");
 const {
-  numeroBanco, fechaBanco, leerCsvBanco, conceptoBanco, tasaDelDia, gastosDelBanco,
+  numeroBanco, fechaBanco, leerCsvBanco, conceptoBanco, tasaDeEseDia, gastosDelBanco,
 } = require("../logica.js");
 
 // Con líneas de la cuenta delante, como los exporta un banco de aquí.
@@ -65,10 +65,10 @@ test("el concepto del banco, limpio y con la categoría bien", () => {
 
 test("los fines de semana van con la tasa del viernes", () => {
   const tasas = { "2026-11-06": 0.0062, "2026-11-09": 0.0061 };
-  assert.equal(tasaDelDia(tasas, "2026-11-08"), 0.0062);
-  assert.equal(tasaDelDia(tasas, "2026-11-09"), 0.0061);
-  assert.equal(tasaDelDia(tasas, "2026-11-01"), 0.0062, "antes de la primera, la primera");
-  assert.equal(tasaDelDia({}, "2026-11-01"), null);
+  assert.equal(tasaDeEseDia(tasas, "2026-11-08"), 0.0062);
+  assert.equal(tasaDeEseDia(tasas, "2026-11-09"), 0.0061);
+  assert.equal(tasaDeEseDia(tasas, "2026-11-01"), 0.0062, "antes de la primera, la primera");
+  assert.equal(tasaDeEseDia({}, "2026-11-01"), null);
 });
 
 test("los movimientos se vuelven gastos con la cantidad de allí", () => {

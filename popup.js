@@ -2724,6 +2724,26 @@ function crearHueco({ dias, desde, hasta }, d) {
   return fila;
 }
 
+// Como la cabecera de un día, pero sin barra: no se comparan con los días.
+function crearCabezaFijos(fijos) {
+  const fila = document.createElement("li");
+  fila.className = "gastos__dia gastos__dia--fijos";
+  fila.title = tr("fijos.cabezaTitulo");
+  const nombre = document.createElement("span");
+  nombre.textContent = tr("fijos.cabeza");
+  if (fijos.length > 1) {
+    const n = document.createElement("span");
+    n.className = "gastos__dia-n";
+    n.textContent = fijos.length;
+    nombre.append(n);
+  }
+  const suma = document.createElement("span");
+  suma.className = "gastos__dia-suma";
+  suma.textContent = textoTotales(sumarPorDivisa(fijos));
+  fila.append(nombre, suma);
+  return fila;
+}
+
 function crearDiaGastos({ dia, gastos: suyos, totales }, peso, d) {
   const fila = document.createElement("li");
   fila.className = "gastos__dia";
@@ -2785,6 +2805,7 @@ function crearFilaGasto(gasto, i, peso, rey = false) {
     fila.style.setProperty("--peso", peso);
   }
   fila.dataset.id = gasto.id;
+  fila.classList.toggle("is-fijo", esFijo(gasto));
   if (cascadaGastos || gasto.id === gastoNuevo) {
     fila.classList.add("is-nueva");
     fila.style.setProperty("--i", cascadaGastos ? Math.min(i, 12) : 0);
@@ -3415,14 +3436,16 @@ function pintarGastos() {
     el.gastosLista.replaceChildren(cabeza, ...lista.map((gasto, i) => crearFilaGasto(gasto, i, pesos[i])));
   } else {
     let i = 0;
-    const dias = gastosPorDia(visibles);
+    const fijos = visibles.filter(esFijo);
+    const dias = gastosPorDia(delDiaADia(visibles));
     const pesos = pesoDeLosDias(dias);
     // Con todos los del día, no solo los que se ven: filtrando por comida, la
     // cena sigue sin ser lo más caro si ese día estuvo el hotel.
     const reyes = masCarosDelDia(gastos);
     // Filtrando o buscando, un día sin taxis no es un día sin gastos.
     const conHuecos = !filtroCategoria && !busqueda.trim();
-    el.gastosLista.replaceChildren(...dias.flatMap((dia, d) => {
+    const arriba = fijos.length ? [crearCabezaFijos(fijos), ...fijos.map((gasto) => crearFilaGasto(gasto, i++))] : [];
+    el.gastosLista.replaceChildren(...arriba, ...dias.flatMap((dia, d) => {
       const hueco = conHuecos && d > 0 ? huecoEntre(dias[d - 1].dia, dia.dia) : null;
       return [
         ...(hueco ? [crearHueco(hueco, d)] : []),
@@ -4594,11 +4617,13 @@ function editarConcepto(gasto, que) {
   campo.setAttribute("aria-label", tr("gastos.concepto"));
   const fila = que.closest(".gastos__fila");
   let hecho = false;
-  const acabar = (guardar, dia) => {
+  const acabar = (guardar, dia, fijo) => {
     if (hecho) return;
     hecho = true;
     const renombrados = guardar ? cambiarConcepto(gastos, gasto.id, campo.value) : gastos;
-    const nuevos = dia ? cambiarDia(renombrados, gasto.id, dia) : renombrados;
+    const fechados = dia ? cambiarDia(renombrados, gasto.id, dia) : renombrados;
+    const nuevos = fijo === undefined ? fechados : marcarFijo(fechados, gasto.id, fijo);
+    // Pasar a fijos o volver de ahí también es moverse de sitio en la lista.
     const movido = nuevos !== renombrados;
     if (nuevos !== gastos) {
       gastos = nuevos;
@@ -4612,7 +4637,7 @@ function editarConcepto(gasto, que) {
     if (movido) otro?.closest(".gastos__fila").scrollIntoView({ block: "nearest", behavior: sinMovimiento.matches ? "auto" : "smooth" });
     otro?.focus();
   };
-  const tira = tiraDeDias(gasto, (dia) => acabar(true, dia));
+  const tira = tiraDeDias(gasto, (dia) => acabar(true, dia), () => acabar(true, undefined, !esFijo(gasto)));
   campo.addEventListener("keydown", (event) => {
     if (event.key === "Enter") {
       event.preventDefault();
@@ -4638,7 +4663,7 @@ function editarConcepto(gasto, que) {
   campo.select();
 }
 
-function tiraDeDias(gasto, elegir) {
+function tiraDeDias(gasto, elegir, alternarFijo) {
   const tira = document.createElement("li");
   tira.className = "gastos__dias";
   const actual = isoLocal(new Date(gasto.cuando));
@@ -4671,7 +4696,18 @@ function tiraDeDias(gasto, elegir) {
   fecha.addEventListener("change", () => {
     if (fecha.value) elegir(fecha.value);
   });
-  tira.append(nombre, ...rapidos, fecha);
+  const fijo = document.createElement("button");
+  fijo.type = "button";
+  fijo.className = "gastos__dia-rapido gastos__fijo";
+  // Solo el alfiler: con la palabra, el calendario de al lado se quedaba sin sitio.
+  fijo.textContent = "📌";
+  fijo.title = tr("fijos.titulo");
+  fijo.setAttribute("aria-label", tr("fijos.boton"));
+  fijo.style.setProperty("--i", 3);
+  fijo.classList.toggle("is-elegido", esFijo(gasto));
+  fijo.setAttribute("aria-pressed", String(esFijo(gasto)));
+  fijo.addEventListener("click", alternarFijo);
+  tira.append(nombre, ...rapidos, fecha, fijo);
   return tira;
 }
 

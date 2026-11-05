@@ -1858,7 +1858,7 @@ const limpiarConcepto = (concepto) => String(concepto ?? "").replace(/\s+/g, " "
 // no lo guardo: así los gastos de antes y los tuyos quedan como estaban.
 const leerPagador = (p) => (Number.isInteger(p) && p > 0 && p < PERSONAS_MAX ? p : 0);
 
-function crearGasto({ id, from, to, cantidad, valor, concepto = "", cuando, categoria, pago, comision, pagador }) {
+function crearGasto({ id, from, to, cantidad, valor, concepto = "", cuando, categoria, pago, comision, pagador, fijo }) {
   // Al céntimo: con la comisión salía 90,5148 y en el CSV se veía la cola.
   const gasto = {
     id, from, to, cantidad, cuando,
@@ -1869,6 +1869,7 @@ function crearGasto({ id, from, to, cantidad, valor, concepto = "", cuando, cate
     comision: leerComision(comision),
   };
   if (leerPagador(pagador)) gasto.pagador = leerPagador(pagador);
+  if (fijo === true) gasto.fijo = true;
   return esGastoBueno(gasto) && from !== to ? gasto : null;
 }
 
@@ -1876,13 +1877,14 @@ function leerGastos(guardado) {
   if (!Array.isArray(guardado)) return [];
   // Los de antes de las categorías no traen ninguna: la saco del concepto, como
   // al apuntarlos, y si no dice nada van a "otros".
-  return guardado.filter(esGastoBueno).slice(0, GASTOS_MAX).map(({ pagador, ...g }) => ({
+  return guardado.filter(esGastoBueno).slice(0, GASTOS_MAX).map(({ pagador, fijo, ...g }) => ({
     ...g,
     categoria: CATEGORIAS.includes(g.categoria) ? g.categoria : adivinarCategoria(g.concepto) ?? CATEGORIA_POR_DEFECTO,
     pago: leerPago(g.pago),
     // Los de antes no la guardaban: ya va dentro del valor y no sé cuánta era.
     comision: leerComision(g.comision),
     ...(leerPagador(pagador) ? { pagador: leerPagador(pagador) } : {}),
+    ...(fijo === true ? { fijo: true } : {}),
   }));
 }
 
@@ -1960,6 +1962,19 @@ function repetirGasto(gasto, { id, cuando, tasa = null, comision = 0 }) {
 
 // La categoría solo la cambio si estaba en "otros": si ya era otra, puede que
 // la eligieras tú, y corregir una falta no debería deshacértela.
+// El vuelo, el hotel pagado antes de salir, el seguro: cuentan en el total y
+// en el presupuesto, pero no son lo que gastas al día y no deben subir la media.
+const esFijo = (g) => g.fijo === true;
+const delDiaADia = (gastos) => gastos.filter((g) => !esFijo(g));
+
+function marcarFijo(lista, id, fijo) {
+  return lista.map((g) => {
+    if (g.id !== id || esFijo(g) === fijo) return g;
+    const { fijo: _, ...resto } = g;
+    return fijo ? { ...resto, fijo: true } : resto;
+  });
+}
+
 function cambiarConcepto(lista, id, concepto) {
   const limpio = limpiarConcepto(concepto);
   const gasto = lista.find((g) => g.id === id);
@@ -2262,9 +2277,10 @@ function resumenViaje(viaje) {
 // Solo se comparan los de la divisa más repetida; con otra no tengo con qué.
 function compararViajes(lista) {
   const filas = lista.map((viaje) => {
-    const total = sumarPorDivisa(viaje.gastos)[0];
+    const diarios = delDiaADia(viaje.gastos);
+    const total = sumarPorDivisa(diarios)[0];
     if (!total) return { id: viaje.id, media: null };
-    const dias = gastosPorDia(viaje.gastos).map((d) => d.dia).sort();
+    const dias = gastosPorDia(diarios).map((d) => d.dia).sort();
     const n = diasHasta(dias[dias.length - 1], dias[0]);
     const [top] = desglose(viaje.gastos);
     return { id: viaje.id, media: total.total / n, to: total.to, dias: n, categoria: top ?? null };
@@ -2293,7 +2309,8 @@ const EMOJI_CATEGORIA = {
 
 // Lo que se comenta en el grupo. Con un gasto, el más caro es el total; y con
 // dos días, el que más se ve a simple vista en la lista de días.
-function destacados(gastos, hoyIso = hoy()) {
+function destacados(todos, hoyIso = hoy()) {
+  const gastos = delDiaADia(todos);
   const [principal] = sumarPorDivisa(gastos);
   if (!principal || gastos.length < 2) return { caro: null, dia: null, barato: null };
   const suyos = gastos.filter((g) => g.to === principal.to);
@@ -2312,7 +2329,8 @@ function destacados(gastos, hoyIso = hoy()) {
 // Por debajo de un 10 % de diferencia no lo cuento: es lo mismo.
 const FINDE_MINIMO = 0.1;
 
-function findeContraSemana(gastos, hoyIso = hoy()) {
+function findeContraSemana(todos, hoyIso = hoy()) {
+  const gastos = delDiaADia(todos);
   const [principal] = sumarPorDivisa(gastos);
   if (!principal) return null;
   const porDia = new Map();
@@ -2427,7 +2445,9 @@ function resumenParaCompartir({ nombre, gastos, presupuesto, personas, gente }, 
     }
   }
 
-  const dias = gastosPorDia(gastos);
+  const fijos = gastos.filter(esFijo);
+  if (fijos.length) lineas.push("", tr("compartir.fijos", { total: sumas(sumarPorDivisa(fijos)) }));
+  const dias = gastosPorDia(delDiaADia(gastos));
   if (dias.length > 1) {
     lineas.push("", `*${tr("compartir.dias")}*`);
     for (const { dia, totales } of [...dias].reverse()) lineas.push(`${nombreDia(dia, hoyIso)}: ${sumas(totales)}`);
@@ -2475,7 +2495,8 @@ function gastosPorDia(gastos) {
 // El más caro de cada día, en la divisa que más suma en el viaje. Con uno solo
 // no hay con qué compararlo, y si empatan los dos primeros no marco ninguno:
 // dos cafés iguales no tienen rey.
-function masCarosDelDia(gastos) {
+function masCarosDelDia(todos) {
+  const gastos = delDiaADia(todos);
   const principal = sumarPorDivisa(gastos)[0]?.to;
   const ids = new Set();
   for (const { gastos: delDia } of gastosPorDia(gastos)) {
@@ -2525,9 +2546,10 @@ function mediana(valores) {
   return orden.length % 2 ? orden[mitad] : (orden[mitad - 1] + orden[mitad]) / 2;
 }
 
+// Un fijo siempre parecería raro al lado de los cafés: el vuelo es caro y ya está.
 function gastoRaro(gastos, gasto) {
-  if (!gasto) return null;
-  const suyos = gastos.filter((g) => g.to === gasto.to);
+  if (!gasto || esFijo(gasto)) return null;
+  const suyos = delDiaADia(gastos).filter((g) => g.to === gasto.to);
   const deSuCategoria = suyos.filter((g) => g.categoria === gasto.categoria);
   // Con pocos de su categoría tiro de todo el viaje, menos el alojamiento: el
   // primer hotel siempre sería "raro" al lado de los cafés.
@@ -2634,7 +2656,8 @@ function ahorroEnEfectivo(gastos, comision) {
   return total >= 0.005 ? { total, to: pagado.to } : null;
 }
 
-function gastadoHoy(gastos, hoyIso = hoy()) {
+function gastadoHoy(todos, hoyIso = hoy()) {
+  const gastos = delDiaADia(todos);
   const principal = sumarPorDivisa(gastos)[0];
   if (!principal) return null;
   const total = gastos
@@ -2747,7 +2770,8 @@ function mediaPorGasto(gastos) {
   return { media: principal.total / suyos.length, to: principal.to };
 }
 
-function mediaPorDia(gastos) {
+function mediaPorDia(todos) {
+  const gastos = delDiaADia(todos);
   const principal = sumarPorDivisa(gastos)[0];
   if (!principal) return null;
   const dias = gastosPorDia(gastos);
@@ -2761,7 +2785,7 @@ function mediaPorDia(gastos) {
 function categoriasAlDia(gastos) {
   const media = mediaPorDia(gastos);
   if (!media) return new Map();
-  return new Map(desglose(gastos).map((t) => [t.categoria, t.total / media.dias]));
+  return new Map(desglose(delDiaADia(gastos)).map((t) => [t.categoria, t.total / media.dias]));
 }
 
 // Días que quedan contando hoy: el último día del viaje también se gasta.
@@ -2825,7 +2849,9 @@ function alDiaAlli(porDia, tasa) {
 // aún no hay ninguno, hoy.
 function inicioDelViaje(presupuesto, gastos, hoyIso = hoy()) {
   if (presupuesto?.desde) return presupuesto.desde;
-  const primero = gastos.reduce((min, g) => Math.min(min, g.cuando), Infinity);
+  // El vuelo se compra meses antes: el viaje empieza con el primero del día a día.
+  const diarios = delDiaADia(gastos);
+  const primero = (diarios.length ? diarios : gastos).reduce((min, g) => Math.min(min, g.cuando), Infinity);
   return Number.isFinite(primero) ? isoLocal(new Date(primero)) : hoyIso;
 }
 
@@ -2848,7 +2874,7 @@ function loDeHoy(presupuesto, gastos, hoyIso = hoy()) {
   let antes = 0;
   for (const g of gastos) {
     if (g.to !== presupuesto.to) continue;
-    if (isoLocal(new Date(g.cuando)) === hoyIso) deHoy += g.valor;
+    if (isoLocal(new Date(g.cuando)) === hoyIso && !esFijo(g)) deHoy += g.valor;
     else antes += g.valor;
   }
   const toca = Math.max(presupuesto.importe - antes, 0) / diasHasta(presupuesto.hasta, hoyIso);
@@ -2910,9 +2936,11 @@ function rachaPresupuesto(presupuesto, gastos, hoyIso = hoy()) {
   const inicio = inicioDelViaje(presupuesto, gastos, hoyIso);
   const total = diasHasta(presupuesto.hasta, inicio);
   if (total < 1) return null;
-  const toca = presupuesto.importe / total;
+  // Lo fijo sale del presupuesto antes de repartirlo: lo que toca al día es lo que queda.
+  const fijo = gastos.filter((g) => esFijo(g) && g.to === presupuesto.to).reduce((s, g) => s + g.valor, 0);
+  const toca = Math.max(presupuesto.importe - fijo, 0) / total;
   const porDia = new Map();
-  for (const g of gastos) {
+  for (const g of delDiaADia(gastos)) {
     if (g.to !== presupuesto.to) continue;
     const dia = isoLocal(new Date(g.cuando));
     porDia.set(dia, (porDia.get(dia) ?? 0) + g.valor);
@@ -2937,7 +2965,10 @@ function hastaCuandoLlega(presupuesto, gastos, hoyIso = hoy()) {
   const estado = estadoPresupuesto(presupuesto, gastos, hoyIso);
   const dia = diaDelViaje(presupuesto, gastos, hoyIso);
   if (!estado || !dia || dia.dia < 2 || estado.queda <= 0) return null;
-  const ritmo = estado.gastado / dia.dia;
+  // Lo fijo ya está pagado y no se repite: el ritmo es solo lo del día a día.
+  const fijo = gastos.filter((g) => esFijo(g) && g.to === presupuesto.to).reduce((s, g) => s + g.valor, 0);
+  const ritmo = (estado.gastado - fijo) / dia.dia;
+  if (!(ritmo > 0)) return null;
   const llega = Math.floor(estado.queda / ritmo);
   if (llega >= dia.total - dia.dia) return null;
   const [a, m, d] = hoyIso.split("-").map(Number);
@@ -2958,7 +2989,7 @@ function previsionViaje(presupuesto, gastos, hoyIso = hoy()) {
   let ritmo = 0;
   for (const g of suyos) {
     gastado += g.valor;
-    if (!esFuturo(g) && !yaPagadas.has(g.categoria)) ritmo += g.valor / dia.dia;
+    if (!esFuturo(g) && !esFijo(g) && !yaPagadas.has(g.categoria)) ritmo += g.valor / dia.dia;
   }
   const total = gastado + ritmo * (dia.total - dia.dia);
   return { total, sobra: presupuesto.importe - total, fraccion: total / presupuesto.importe, to: presupuesto.to };
@@ -3106,7 +3137,7 @@ function totalParaCopiar(viaje) {
 function hoyParaCopiar(viaje, hoyIso = hoy()) {
   const gastado = gastadoHoy(viaje?.gastos ?? [], hoyIso);
   if (!gastado) return "";
-  const n = viaje.gastos.filter((g) => g.to === gastado.to && isoLocal(new Date(g.cuando)) === hoyIso).length;
+  const n = delDiaADia(viaje.gastos).filter((g) => g.to === gastado.to && isoLocal(new Date(g.cuando)) === hoyIso).length;
   return tr(n === 1 ? "copiar.hoyUno" : "copiar.hoy", {
     viaje: viaje.nombre || tr("viajes.sinNombre"),
     gastado: `${numeros({ minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(gastado.total)} ${gastado.to}`,
@@ -5509,7 +5540,7 @@ function resumenAyerBarra(viaje, hoyIso = hoy(), atras = 1) {
   const ayerIso = isoLocal(new Date(y, m - 1, d - atras));
   const gastado = gastadoHoy(viaje.gastos, ayerIso);
   if (!gastado) return { principal: tr(`${clave}Nada`), detalle: [] };
-  const deAyer = viaje.gastos.filter((g) => g.to === gastado.to && isoLocal(new Date(g.cuando)) === ayerIso);
+  const deAyer = delDiaADia(viaje.gastos).filter((g) => g.to === gastado.to && isoLocal(new Date(g.cuando)) === ayerIso);
   const caro = deAyer.reduce((a, b) => (b.valor > a.valor ? b : a));
   const principal = tr(deAyer.length === 1 ? `${clave}Uno` : clave, { gastado: `${dinero(gastado.total)} ${gastado.to}`, n: deAyer.length });
   const detalle = deAyer.length > 1
@@ -6096,7 +6127,7 @@ function conceptoBanco(texto) {
 }
 
 // Fines de semana y festivos el BCE no publica: vale la del último día que sí.
-function tasaDelDia(tasas, fecha) {
+function tasaDeEseDia(tasas, fecha) {
   const dias = Object.keys(tasas ?? {}).sort();
   if (!dias.length) return null;
   const antes = dias.filter((d) => d <= fecha).at(-1) ?? dias[0];
@@ -6116,7 +6147,7 @@ function gastosDelBanco(movimientos, { from, to = "EUR", tasas, existentes = [],
       repetidos += 1;
       return;
     }
-    const tasa = tasaDelDia(tasas, m.fecha);
+    const tasa = tasaDeEseDia(tasas, m.fecha);
     if (!(tasa > 0)) return;
     const [a, mes, d] = m.fecha.split("-").map(Number);
     const concepto = conceptoBanco(m.concepto);
@@ -6204,7 +6235,8 @@ function resumenCopia(datos) {
 // el export. Sin esto habría que montar un build, y aquí no hay ninguno.
 if (typeof module !== "undefined") {
   module.exports = {
-    numeroBanco, fechaBanco, leerCsvBanco, conceptoBanco, tasaDelDia, gastosDelBanco,
+    esFijo, delDiaADia, marcarFijo,
+    numeroBanco, fechaBanco, leerCsvBanco, conceptoBanco, tasaDeEseDia, gastosDelBanco,
     TAX_FREE, taxFree,
     CURRENCIES, isValidCode, nombreDe, parseAmount, isoLocal, hoy, isFresh,
     evaluar, completar, leerImporte, UNIDADES, quitarUnidad, nombreUnidad, porUnidadMetrica, esOperacion, pasoCantidad, pasoPorDiez, RUEDA_PASO, pasosRueda, cifraCompleta, leerCantidad,

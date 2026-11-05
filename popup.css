@@ -4108,6 +4108,20 @@ body::after {
   padding-top: 0;
 }
 
+/* Lo pagado aparte, arriba y en otro tono: no es un día más. */
+.gastos__dia--fijos {
+  color: color-mix(in srgb, var(--viaje-lila) 70%, var(--muted));
+}
+
+.gastos__fila.is-fijo .gastos__texto {
+  border-color: color-mix(in srgb, var(--viaje-lila) 35%, var(--hairline));
+}
+
+/* Al final de la tira, que es otra cosa que el día. */
+.gastos__fijo {
+  margin-left: auto;
+}
+
 /* Un día (o varios) sin nada entre dos con gastos: una línea a rayas, en
    bajito, y el que medita respirando despacio. */
 .gastos__hueco {
