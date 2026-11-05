@@ -185,6 +185,7 @@ const el = {
   presupuestoHasta: document.getElementById("presupuesto-hasta"),
   presupuestoDesde: document.getElementById("presupuesto-desde"),
   presupuestoQuitar: document.getElementById("presupuesto-quitar"),
+  presupuestoTopes: document.getElementById("presupuesto-topes"),
   historialCuenta: document.getElementById("historial-cuenta"),
   historial: document.getElementById("historial"),
   historialLista: document.getElementById("historial-lista"),
@@ -2598,10 +2599,16 @@ function cerrarCategorias() {
   return true;
 }
 
+// El tono de cada tope la última vez, para que tiemble al pasarte y no cada
+// vez que se repinta.
+const tonosTope = new Map();
+
 function pintarDesglose() {
   const trozos = desglose(gastos);
-  // Con una sola categoría el desglose no dice nada: un 100 % y ya.
-  el.desglose.hidden = trozos.length < 2;
+  const topes = estadoTopes(presupuesto, gastos);
+  // Con una sola categoría el desglose no dice nada: un 100 % y ya. Salvo que
+  // le hayas puesto tope, que entonces dice cómo vas.
+  el.desglose.hidden = trozos.length < 2 && !trozos.some((t) => topes.has(t.categoria) && t.to === presupuesto.to);
   if (filtroCategoria && !trozos.some((t) => t.categoria === filtroCategoria)) filtroCategoria = null;
   if (el.desglose.hidden) {
     filtroCategoria = null;
@@ -2623,6 +2630,8 @@ function pintarDesglose() {
     boton.title = alDia.has(categoria)
       ? tr("cat.filtrarDia", { ...datos, dia: nf.format(alDia.get(categoria)) })
       : tr("cat.filtrar", datos);
+    const tope = to === presupuesto?.to ? topes.get(categoria) : null;
+    if (tope) pintarTope(boton, tope);
     boton.setAttribute("aria-label", boton.title);
     boton.setAttribute("aria-pressed", String(categoria === filtroCategoria));
     boton.addEventListener("click", () => {
@@ -2633,6 +2642,18 @@ function pintarDesglose() {
     });
     return boton;
   }));
+}
+
+function pintarTope(boton, { categoria, tope, gastado, queda, fraccion, tono, to }) {
+  boton.dataset.tono = tono;
+  boton.style.setProperty("--tope", Math.min(fraccion, 1));
+  boton.title += `\n${tono === "pasado"
+    ? tr("cat.topePasado", { pasado: `${nf.format(-queda)} ${to}`, tope: nf.format(tope) })
+    : tr("cat.tope", { gastado: nf.format(gastado), tope: nf.format(tope), queda: `${nf.format(queda)} ${to}` })}`;
+  const clave = `${viajes.activo}:${categoria}`;
+  const antes = tonosTope.get(clave);
+  tonosTope.set(clave, tono);
+  if (antes && antes !== "pasado" && tono === "pasado") restartAnimation(boton, "is-alarma");
 }
 
 const porCientoEntero = (fraccion) => tr("pct", { n: Math.round(fraccion * 100) });
@@ -3673,6 +3694,7 @@ function editarPresupuesto() {
   const [a, m, d] = el.presupuestoHasta.min.split("-").map(Number);
   el.presupuestoHasta.value = presupuesto?.hasta ?? isoLocal(new Date(a, m - 1, d + 6));
   el.presupuestoQuitar.hidden = !presupuesto;
+  pintarCamposTopes();
   el.presupuestoForm.hidden = false;
   el.presupuesto.hidden = true;
   el.gastosForm.hidden = true;
@@ -3693,9 +3715,41 @@ function ponerPresupuesto(nuevo) {
   presupuesto = nuevo;
   dejarDeEditarPresupuesto();
   pintarPresupuesto();
+  pintarDesglose();
   (presupuesto ? el.presupuestoVer : el.presupuestoAnadir).focus();
   if (presupuesto) restartAnimation(el.presupuestoVer, "is-nuevo");
   guardarViajes();
+}
+
+function pintarCamposTopes() {
+  el.presupuestoTopes.replaceChildren(...CATEGORIAS.map((categoria) => {
+    const caja = document.createElement("label");
+    caja.className = "presupuesto__tope";
+    caja.innerHTML = iconoCategoria(categoria);
+    const campo = Object.assign(document.createElement("input"), {
+      type: "text", inputMode: "decimal", autocomplete: "off", spellcheck: false, placeholder: "—",
+      className: "presupuesto__tope-campo",
+      value: presupuesto?.categorias?.[categoria] ? nf.format(presupuesto.categorias[categoria]) : "",
+    });
+    campo.dataset.categoria = categoria;
+    campo.setAttribute("aria-label", tr("presupuesto.tope", { nombre: tr(`cat.${categoria}`).toLowerCase() }));
+    caja.title = campo.getAttribute("aria-label");
+    caja.append(campo);
+    return caja;
+  }));
+}
+
+// Vacío es sin tope; lo que no sea un número de verdad, error, que un "2o" no
+// se tiene que quedar en nada sin avisar.
+function leerCamposTopes() {
+  const topes = {};
+  for (const campo of el.presupuestoTopes.querySelectorAll("input")) {
+    if (!campo.value.trim()) continue;
+    const n = leerImporte(campo.value);
+    if (!(n > 0)) return { mal: campo };
+    topes[campo.dataset.categoria] = n;
+  }
+  return { topes };
 }
 
 // La vuelta no puede ser antes de hoy ni antes de salir.
@@ -3708,11 +3762,18 @@ function onGuardarPresupuesto(event) {
   event.preventDefault();
   const desde = el.presupuestoDesde.value;
   const hasta = el.presupuestoHasta.value;
+  const { topes, mal: topeMal } = leerCamposTopes();
+  if (topeMal) {
+    restartAnimation(topeMal, "is-mal");
+    topeMal.focus();
+    return;
+  }
   const nuevo = leerPresupuesto({
     importe: leerImporte(el.presupuestoImporte.value),
     to: el.presupuestoCodigo.textContent,
     hasta,
     desde: desde || null,
+    categorias: topes,
   });
   if (!nuevo) {
     const mal = !(leerImporte(el.presupuestoImporte.value) > 0) ? el.presupuestoImporte

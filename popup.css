@@ -5139,6 +5139,62 @@ body::after {
   animation: enter var(--mid) var(--ease-out) 60ms both;
 }
 
+/* Los topes, tres por fila, que seis en una no caben con su cifra. */
+.presupuesto__topes {
+  display: grid;
+  flex-basis: 100%;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 4px;
+  animation: enter var(--mid) var(--ease-out) 120ms both;
+}
+
+.presupuesto__tope {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  min-width: 0;
+  color: var(--brass);
+}
+
+.presupuesto__tope svg {
+  flex-shrink: 0;
+  width: 12px;
+  height: 12px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.4;
+  stroke-linecap: round;
+}
+
+.presupuesto__tope-campo {
+  flex: 1;
+  min-width: 0;
+  height: 22px;
+  padding: 0 5px;
+  background: var(--slate);
+  border: 1px solid var(--hairline-strong);
+  border-radius: 6px;
+  color: var(--mist);
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-variant-numeric: tabular-nums;
+  transition: border-color var(--fast) var(--ease);
+}
+
+.presupuesto__tope-campo:focus {
+  border-color: var(--brass);
+}
+
+.presupuesto__tope-campo:focus-visible {
+  outline: 2px solid var(--brass);
+  outline-offset: 1px;
+}
+
+.presupuesto__tope-campo.is-mal {
+  border-color: var(--cinnabar);
+  animation: shake 400ms var(--ease);
+}
+
 .presupuesto__del {
   flex-shrink: 0;
   font-size: 10px;
@@ -5792,6 +5848,42 @@ body::after {
 
 .desglose__trozo[aria-pressed="true"] svg {
   color: var(--graphite);
+}
+
+/* Con tope, una rayita abajo con lo que llevas de él, en el color de la barra
+   del presupuesto: verde, dorado pasado el 80 % y rojo al pasarte. */
+.desglose__trozo[data-tono] {
+  --tono: var(--jade);
+  position: relative;
+  overflow: hidden;
+}
+
+.desglose__trozo[data-tono="justo"] {
+  --tono: var(--brass);
+}
+
+.desglose__trozo[data-tono="pasado"] {
+  --tono: var(--cinnabar);
+  border-color: color-mix(in srgb, var(--cinnabar) 45%, transparent);
+}
+
+.desglose__trozo[data-tono]::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  width: calc(var(--tope, 0) * 100%);
+  height: 2px;
+  background: var(--tono);
+  transition: width var(--mid) var(--ease-out);
+}
+
+.desglose__trozo[data-tono="pasado"] svg {
+  color: var(--cinnabar);
+}
+
+.desglose__trozo.is-alarma {
+  animation: shake 400ms var(--ease);
 }
 
 .gastos__categoria:focus-visible,
@@ -8599,7 +8691,8 @@ kbd {
     animation: none;
   }
 
-  .presupuesto__fechas {
+  .presupuesto__fechas,
+  .presupuesto__topes {
     animation-delay: 0s;
   }
 

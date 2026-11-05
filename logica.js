@@ -2245,6 +2245,7 @@ function duplicarViaje(viajes, id, nuevoId, { nombre = "", hoyIso = hoy() } = {}
     const dias = Math.max(diasHasta(origen.presupuesto.hasta, inicioDelViaje(origen.presupuesto, origen.gastos, hoyIso)), 1);
     const [a, m, d] = hoyIso.split("-").map(Number);
     presupuesto = { importe: origen.presupuesto.importe, to: origen.presupuesto.to, desde: hoyIso, hasta: isoLocal(new Date(a, m - 1, d + dias - 1)) };
+    if (origen.presupuesto.categorias) presupuesto.categorias = { ...origen.presupuesto.categorias };
   }
   const copia = {
     ...viajeVacio(nuevoId, limpiarNombreViaje(nombre) || nombreCopia(origen.nombre, viajes.lista), colorLibre(viajes.lista)),
@@ -2823,9 +2824,21 @@ function leerPresupuesto(guardado) {
   if (!esIso(hasta)) return null;
   // Los de antes no traen el día de salida: entonces cuenta desde el primer gasto.
   const { desde } = guardado;
-  if (desde === undefined || desde === null) return { importe, to, hasta };
+  const topes = leerTopes(guardado.categorias);
+  const extra = topes ? { categorias: topes } : {};
+  if (desde === undefined || desde === null) return { importe, to, hasta, ...extra };
   if (!esIso(desde) || desde > hasta) return null;
-  return { importe, to, hasta, desde };
+  return { importe, to, hasta, desde, ...extra };
+}
+
+// Lo que quieres gastar como mucho en comida, en ocio…, en la divisa del
+// presupuesto. Son opcionales: si no pones ninguno, ni se guarda el campo.
+function leerTopes(guardado) {
+  if (!guardado || typeof guardado !== "object") return null;
+  const topes = Object.fromEntries(CATEGORIAS
+    .filter((c) => Number.isFinite(guardado[c]) && guardado[c] > 0)
+    .map((c) => [c, Math.round(guardado[c] * 100) / 100]));
+  return Object.keys(topes).length ? topes : null;
 }
 
 const esIso = (texto) => typeof texto === "string" && /^\d{4}-\d{2}-\d{2}$/.test(texto);
@@ -2851,6 +2864,20 @@ function estadoPresupuesto(presupuesto, gastos, hoyIso = hoy()) {
     porDia: dias > 0 && queda > 0 ? queda / dias : null,
     tono: fraccion > 1 ? "pasado" : fraccion >= PRESUPUESTO_JUSTO ? "justo" : "bien",
   };
+}
+
+// Cómo va cada categoría con tope, con los mismos tonos que la barra de arriba.
+// Lo pagado aparte cuenta, como en el presupuesto: el hotel es alojamiento.
+function estadoTopes(presupuesto, gastos) {
+  if (!presupuesto?.categorias) return new Map();
+  return new Map(Object.entries(presupuesto.categorias).map(([categoria, tope]) => {
+    const gastado = gastos.filter((g) => g.to === presupuesto.to && g.categoria === categoria).reduce((suma, g) => suma + g.valor, 0);
+    const fraccion = gastado / tope;
+    return [categoria, {
+      categoria, tope, gastado, queda: tope - gastado, fraccion, to: presupuesto.to,
+      tono: fraccion > 1 ? "pasado" : fraccion >= PRESUPUESTO_JUSTO ? "justo" : "bien",
+    }];
+  }));
 }
 
 // Lo de al día en la divisa de allí, que es la de los precios que ves. A dos
@@ -6308,7 +6335,7 @@ if (typeof module !== "undefined") {
     EMOJI_CATEGORIA, destacados, resumenParaCompartir, FINDE_MINIMO, findeContraSemana, ESTRELLA_MINIMO, conceptoEstrella,
     COPIA_APP, COPIA_VERSION, CLAVES_COPIA, limpiarCopia, crearCopia, leerCopia, resumenCopia,
     VIAJES_MAX, NOMBRE_VIAJE_MAX, leerViajes, leerPersonas, porPersona, leerPagador, leerGente, ponerNombre, nombrePersona, inicialPersona, cuentasViaje, frasePago, hayOtrosPagadores, NOMBRE_PERSONA_MAX, compararViajes, COLORES_VIAJE, leerColorViaje, colorLibre, siguienteColor, viajeActivo, crearViaje, nombreCopia, nombreDeDestino, duplicarViaje, renombrarViaje, elegirViaje, borrarViaje, cambiarViaje, resumenViaje, archivoGastos,
-    diasHasta, leerPresupuesto, PRESUPUESTO_JUSTO, estadoPresupuesto, alDiaAlli, inicioDelViaje, diaDelViaje, cuentaAtras, textoCuentaAtras, loDeHoy, CELEBRADOS_MAX, leerCelebrados, anadirCelebrado, viajeParaCelebrar, textoCelebrar, RACHA_MINIMA, rachaPresupuesto, hastaCuandoLlega, previsionViaje, PREVISION_JUSTA, textoPrevision, loQueSeLleva, redondearDias,
+    diasHasta, leerPresupuesto, leerTopes, PRESUPUESTO_JUSTO, estadoPresupuesto, estadoTopes, alDiaAlli, inicioDelViaje, diaDelViaje, cuentaAtras, textoCuentaAtras, loDeHoy, CELEBRADOS_MAX, leerCelebrados, anadirCelebrado, viajeParaCelebrar, textoCelebrar, RACHA_MINIMA, rachaPresupuesto, hastaCuandoLlega, previsionViaje, PREVISION_JUSTA, textoPrevision, loQueSeLleva, redondearDias,
     EXTRAS_MAX, EXTRAS_POR_DEFECTO, leerExtras, anadirExtra, quitarExtra,
     extrasVisibles, disponiblesParaAnadir, convertirExtras, semanaDe, trazoMini, CHULETA, escalaChuleta, chuleta, TRUCO_TOLERANCIA, trucoDeCabeza, textoTruco, tituloTruco, chuletaParaCompartir, extrasParaCompartir,
     urlImpresion, leerImpresion, chuletaParaImprimir,

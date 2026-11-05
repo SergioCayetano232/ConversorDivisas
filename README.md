@@ -144,6 +144,11 @@ que necesitaba una conversión rápida. Ahora es un clic en la barra del navegad
   gastando lo que toca o menos ("🔥 3"), y un aro que se va cerrando con lo que
   llevas hoy contra lo que te toca hoy. Antes de salir, en vez del día del
   viaje, cuántos faltan ("✈ 12 días")
+- Un tope por categoría, en el mismo sitio que el presupuesto: debajo de las
+  fechas pones lo máximo para comida, ocio… (los que quieras, vacío es sin
+  tope). En las pastillas de las categorías sale una rayita con lo que llevas
+  de él, verde, dorada pasado el 80 % y roja si te pasas, y pasando el ratón,
+  cuánto te queda ("85,00 de 100,00: te quedan 15,00 EUR")
 - Notas en los gastos: al pulsar el concepto, debajo de la tira de días hay
   un campo para lo que no cabe en él ("pedir factura", "pagó Ana"). Sale en
   pequeño debajo del gasto y la lupa también busca ahí. Al volver a apuntarlo
