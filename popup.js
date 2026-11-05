@@ -126,6 +126,7 @@ const el = {
   viajesNuevo: document.getElementById("viajes-nuevo"),
   viajesNombre: document.getElementById("viajes-nombre"),
   viajesDuplicar: document.getElementById("viajes-duplicar"),
+  viajesTarjeta: document.getElementById("viajes-tarjeta"),
   viajesLleno: document.getElementById("viajes-lleno"),
   viajesPie: document.getElementById("viajes-pie"),
   viajesCsv: document.getElementById("viajes-csv"),
@@ -4291,6 +4292,11 @@ function pintarViajes() {
   el.viajesLleno.textContent = tr("viajes.lleno", { n: VIAJES_MAX });
   el.viajesDuplicar.title = tr("viajes.duplicar", { nombre: nombreViaje(viajeActivo(viajes)) });
   el.viajesDuplicar.setAttribute("aria-label", el.viajesDuplicar.title);
+  // La tarjeta del viaje en el que estás, al lado de duplicarlo. En la fila de
+  // cada viaje no cabía: el nombre se quedaba en puntos suspensivos.
+  el.viajesTarjeta.hidden = viajeActivo(viajes).gastos.length === 0;
+  el.viajesTarjeta.title = tr("resumen.abrirDe", { nombre: nombreViaje(viajeActivo(viajes)) });
+  el.viajesTarjeta.setAttribute("aria-label", el.viajesTarjeta.title);
   // Lo de arriba suele ser la divisa de allí: el nombre ya lo tengo.
   const sugerido = nombreDeDestino(el.from.value, viajes.lista);
   el.viajesNombre.placeholder = sugerido ? tr("viajes.nuevoDe", { nombre: sugerido }) : tr("viajes.nuevo");
@@ -6307,6 +6313,7 @@ function bindEvents() {
   el.gastosTitulo.addEventListener("animationend", () => el.gastosTitulo.classList.remove("is-cambiado"));
   el.viajesNuevo.addEventListener("submit", onCrearViaje);
   el.viajesDuplicar.addEventListener("click", onDuplicarViaje);
+  el.viajesTarjeta.addEventListener("click", () => chrome.tabs.create({ url: `resumen.html?viaje=${encodeURIComponent(viajes.activo)}` }));
   el.viajesNombre.addEventListener("animationend", () => el.viajesNombre.classList.remove("is-mal"));
   el.viajesLista.addEventListener("animationend", (event) => event.target.classList.remove("is-renombrado"));
   el.abrirCuenta.addEventListener("click", () => (el.cuenta.hidden ? abrirCuenta() : cerrarCuenta()));

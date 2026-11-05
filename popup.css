@@ -3057,6 +3057,10 @@ body::after {
   transform: translate(0.8px, 0.8px);
 }
 
+.viajes__tarjeta[hidden] {
+  display: none;
+}
+
 .viajes__duplicar.is-mal {
   animation: shake 400ms var(--ease);
 }

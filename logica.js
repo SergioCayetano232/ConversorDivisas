@@ -6184,6 +6184,40 @@ function gastosDelBanco(movimientos, { from, to = "EUR", tasas, existentes = [],
   return { nuevos, repetidos };
 }
 
+// La tarjeta del viaje, para enseñarla al volver: lo que cuenta de un vistazo.
+// Los días son los del presupuesto si los tiene; si no, del primer gasto del día
+// a día al último, como la media.
+function datosTarjeta(viaje, hoyIso = hoy()) {
+  const { gastos = [], presupuesto = null } = viaje ?? {};
+  const [total] = sumarPorDivisa(gastos);
+  if (!total) return null;
+  const diarios = delDiaADia(gastos);
+  const fechas = gastosPorDia(diarios.length ? diarios : gastos).map((d) => d.dia).sort();
+  const desde = presupuesto?.desde ?? fechas[0];
+  const hasta = presupuesto?.hasta ?? fechas.at(-1);
+  const { caro, dia } = destacados(gastos, hoyIso);
+  const estado = estadoPresupuesto(presupuesto, gastos, hoyIso);
+  const media = mediaPorDia(gastos);
+  return {
+    nombre: viaje.nombre || tr("viajes.sinNombre"),
+    color: viaje.color ?? COLOR_POR_DEFECTO,
+    desde,
+    hasta,
+    dias: Math.max(diasHasta(hasta, desde), 1),
+    n: gastos.length,
+    total,
+    otras: sumarPorDivisa(gastos).slice(1),
+    media: media ? { valor: media.media, to: media.to } : null,
+    caro: caro ? { concepto: caro.concepto || tr(`cat.${caro.categoria}`), valor: caro.valor, to: caro.to, categoria: caro.categoria } : null,
+    diaMas: dia ? { dia: dia.dia, total: dia.total, to: dia.to } : null,
+    categorias: desglose(gastos).slice(0, 3),
+    presupuesto: estado ? { importe: presupuesto.importe, to: presupuesto.to, queda: estado.queda } : null,
+    comisiones: comisionesPagadas(gastos),
+    cambio: cambioDelViaje(gastos),
+    cabeza: porPersona(gastos, viaje.personas),
+  };
+}
+
 // La copia de seguridad guarda lo tuyo: viajes, avisos, historial y
 // preferencias. Las tasas guardadas no, que caducan en un día.
 const COPIA_APP = "ConversorDivisas";
@@ -6253,6 +6287,7 @@ function resumenCopia(datos) {
 // el export. Sin esto habría que montar un build, y aquí no hay ninguno.
 if (typeof module !== "undefined") {
   module.exports = {
+    datosTarjeta,
     NOTA_MAX, limpiarNota, cambiarNota,
     esFijo, delDiaADia, marcarFijo,
     numeroBanco, fechaBanco, leerCsvBanco, conceptoBanco, tasaDeEseDia, gastosDelBanco,

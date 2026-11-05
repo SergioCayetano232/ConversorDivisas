@@ -158,6 +158,11 @@ que necesitaba una conversión rápida. Ahora es un clic en la barra del navegad
   para que el día que pagas no parezca el más caro del viaje
 - Al acabar un viaje sin pasarte del presupuesto, la primera vez que abres sus
   gastos sale confeti y lo que te ha sobrado
+- La tarjeta del viaje: en la lista de viajes, al lado de duplicar, el botón
+  del cuadro abre el viaje en una imagen para mandarla al grupo: el total, lo
+  de cada día, lo más caro, el día que más, en qué se fue, si sobró
+  presupuesto y el cambio medio, con el color del viaje. Se descarga en JPG o
+  se copia para pegarla directamente en el chat
 - Si estás de viaje y a las nueve de la noche no has apuntado nada, te lo
   recuerda con una notificación, una vez al día. Pulsándola se abren los gastos
   de ese viaje. Con clic derecho en el icono lo pasas a las ocho o a las diez,
