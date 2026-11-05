@@ -4253,6 +4253,64 @@ body::after {
   white-space: nowrap;
 }
 
+/* Con nota, la pastilla crece una línea por abajo. */
+.gastos__texto.con-nota {
+  flex-wrap: wrap;
+  row-gap: 0;
+  height: auto;
+  min-height: 24px;
+  padding-block: 3px;
+}
+
+.gastos__nota {
+  flex-basis: 100%;
+  overflow: hidden;
+  padding-left: 20px;
+  text-overflow: ellipsis;
+  font-size: 9.5px;
+  font-style: italic;
+  line-height: 1.35;
+  color: var(--muted);
+}
+
+.gastos__nota::before {
+  content: "↳ ";
+  font-style: normal;
+  opacity: 0.7;
+}
+
+.gastos__nota-fila {
+  display: flex;
+  flex-shrink: 0;
+  margin: -2px 54px 2px 0;
+  animation: dias-baja 260ms var(--ease-out);
+}
+
+.gastos__nota-campo {
+  flex: 1;
+  min-width: 0;
+  height: 22px;
+  padding: 0 8px;
+  background: var(--slate);
+  border: 1px solid color-mix(in srgb, var(--brass) 30%, transparent);
+  border-top: 0;
+  border-radius: 0 0 6px 6px;
+  color: var(--mist);
+  font-family: inherit;
+  font-size: 10.5px;
+  font-style: italic;
+}
+
+.gastos__nota-campo::placeholder {
+  color: var(--muted);
+}
+
+.gastos__nota-campo:focus {
+  outline: none;
+  border-color: var(--brass);
+  box-shadow: 0 0 0 3px var(--brass-ghost);
+}
+
 .gastos__que {
   flex: 1;
   min-width: 0;

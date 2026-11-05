@@ -1858,7 +1858,11 @@ const limpiarConcepto = (concepto) => String(concepto ?? "").replace(/\s+/g, " "
 // no lo guardo: así los gastos de antes y los tuyos quedan como estaban.
 const leerPagador = (p) => (Number.isInteger(p) && p > 0 && p < PERSONAS_MAX ? p : 0);
 
-function crearGasto({ id, from, to, cantidad, valor, concepto = "", cuando, categoria, pago, comision, pagador, fijo }) {
+// Lo que no cabe en el concepto: "pagó Ana", "pedir factura". Una línea.
+const NOTA_MAX = 80;
+const limpiarNota = (nota) => String(nota ?? "").replace(/\s+/g, " ").trim().slice(0, NOTA_MAX);
+
+function crearGasto({ id, from, to, cantidad, valor, concepto = "", cuando, categoria, pago, comision, pagador, fijo, nota }) {
   // Al céntimo: con la comisión salía 90,5148 y en el CSV se veía la cola.
   const gasto = {
     id, from, to, cantidad, cuando,
@@ -1870,6 +1874,7 @@ function crearGasto({ id, from, to, cantidad, valor, concepto = "", cuando, cate
   };
   if (leerPagador(pagador)) gasto.pagador = leerPagador(pagador);
   if (fijo === true) gasto.fijo = true;
+  if (limpiarNota(nota)) gasto.nota = limpiarNota(nota);
   return esGastoBueno(gasto) && from !== to ? gasto : null;
 }
 
@@ -1877,7 +1882,7 @@ function leerGastos(guardado) {
   if (!Array.isArray(guardado)) return [];
   // Los de antes de las categorías no traen ninguna: la saco del concepto, como
   // al apuntarlos, y si no dice nada van a "otros".
-  return guardado.filter(esGastoBueno).slice(0, GASTOS_MAX).map(({ pagador, fijo, ...g }) => ({
+  return guardado.filter(esGastoBueno).slice(0, GASTOS_MAX).map(({ pagador, fijo, nota, ...g }) => ({
     ...g,
     categoria: CATEGORIAS.includes(g.categoria) ? g.categoria : adivinarCategoria(g.concepto) ?? CATEGORIA_POR_DEFECTO,
     pago: leerPago(g.pago),
@@ -1885,6 +1890,7 @@ function leerGastos(guardado) {
     comision: leerComision(g.comision),
     ...(leerPagador(pagador) ? { pagador: leerPagador(pagador) } : {}),
     ...(fijo === true ? { fijo: true } : {}),
+    ...(typeof nota === "string" && limpiarNota(nota) ? { nota: limpiarNota(nota) } : {}),
   }));
 }
 
@@ -1953,7 +1959,8 @@ function quitarGasto(lista, id) {
 
 // El metro de cada mañana: la misma cantidad, pero con la tasa y la comisión de
 // hoy. Si no tengo la de hoy para ese par, uso la que tuvo, que es lo más cerca.
-function repetirGasto(gasto, { id, cuando, tasa = null, comision = 0 }) {
+// La nota no viaja: "pedir factura" era de aquel, no del de hoy.
+function repetirGasto({ nota, ...gasto }, { id, cuando, tasa = null, comision = 0 }) {
   if (!(Number.isFinite(tasa) && tasa > 0)) return crearGasto({ ...gasto, id, cuando });
   const pct = comisionDelPago(gasto.pago, comision);
   const valor = Math.round(conComision(gasto.cantidad * tasa, pct) * 100) / 100;
@@ -1972,6 +1979,17 @@ function marcarFijo(lista, id, fijo) {
     if (g.id !== id || esFijo(g) === fijo) return g;
     const { fijo: _, ...resto } = g;
     return fijo ? { ...resto, fijo: true } : resto;
+  });
+}
+
+function cambiarNota(lista, id, nota) {
+  const limpia = limpiarNota(nota);
+  const gasto = lista.find((g) => g.id === id);
+  if (!gasto || (gasto.nota ?? "") === limpia) return lista;
+  return lista.map((g) => {
+    if (g.id !== id) return g;
+    const { nota: _, ...resto } = g;
+    return limpia ? { ...resto, nota: limpia } : resto;
   });
 }
 
@@ -2004,7 +2022,7 @@ function buscarGastos(gastos, consulta) {
   const palabras = normalizar(String(consulta ?? "")).split(/\s+/).filter(Boolean);
   if (palabras.length === 0) return gastos;
   return gastos.filter((g) => {
-    const texto = normalizar(`${g.concepto} ${tr(`cat.${g.categoria}`)}`);
+    const texto = normalizar(`${g.concepto} ${tr(`cat.${g.categoria}`)} ${g.nota ?? ""}`);
     return palabras.every((p) => texto.includes(p));
   });
 }
@@ -6235,6 +6253,7 @@ function resumenCopia(datos) {
 // el export. Sin esto habría que montar un build, y aquí no hay ninguno.
 if (typeof module !== "undefined") {
   module.exports = {
+    NOTA_MAX, limpiarNota, cambiarNota,
     esFijo, delDiaADia, marcarFijo,
     numeroBanco, fechaBanco, leerCsvBanco, conceptoBanco, tasaDeEseDia, gastosDelBanco,
     TAX_FREE, taxFree,

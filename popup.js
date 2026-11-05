@@ -2879,6 +2879,21 @@ function crearFilaGasto(gasto, i, peso, rey = false) {
     icono.append(cara);
   }
   texto.append(icono, que, de, cuanto);
+  if (gasto.nota) {
+    const nota = document.createElement("span");
+    nota.className = "gastos__nota";
+    nota.title = gasto.nota;
+    nota.replaceChildren(...(busqueda ? trozosResaltados(gasto.nota, busqueda) : [{ texto: gasto.nota }]).map(({ texto: trozo, resaltado }) => {
+      if (!resaltado) return trozo;
+      const marca = document.createElement("mark");
+      marca.className = "gastos__marca";
+      marca.textContent = trozo;
+      return marca;
+    }));
+    texto.classList.add("con-nota");
+    texto.append(nota);
+    texto.setAttribute("aria-label", `${texto.getAttribute("aria-label")}. ${tr("notas.aria", { nota: gasto.nota })}`);
+  }
 
   const quitar = document.createElement("button");
   quitar.type = "button";
@@ -4620,7 +4635,8 @@ function editarConcepto(gasto, que) {
   const acabar = (guardar, dia, fijo) => {
     if (hecho) return;
     hecho = true;
-    const renombrados = guardar ? cambiarConcepto(gastos, gasto.id, campo.value) : gastos;
+    const conNota = guardar ? cambiarNota(gastos, gasto.id, notaCampo.value) : gastos;
+    const renombrados = guardar ? cambiarConcepto(conNota, gasto.id, campo.value) : gastos;
     const fechados = dia ? cambiarDia(renombrados, gasto.id, dia) : renombrados;
     const nuevos = fijo === undefined ? fechados : marcarFijo(fechados, gasto.id, fijo);
     // Pasar a fijos o volver de ahí también es moverse de sitio en la lista.
@@ -4638,17 +4654,29 @@ function editarConcepto(gasto, que) {
     otro?.focus();
   };
   const tira = tiraDeDias(gasto, (dia) => acabar(true, dia), () => acabar(true, undefined, !esFijo(gasto)));
-  campo.addEventListener("keydown", (event) => {
-    if (event.key === "Enter") {
-      event.preventDefault();
-      acabar(true);
-    }
-  });
-  // Pasar del concepto a los días no es acabar; irse a otro sitio, sí.
+  const notaFila = document.createElement("li");
+  notaFila.className = "gastos__nota-fila";
+  const notaCampo = document.createElement("input");
+  notaCampo.type = "text";
+  notaCampo.className = "gastos__nota-campo";
+  notaCampo.maxLength = NOTA_MAX;
+  notaCampo.value = gasto.nota ?? "";
+  notaCampo.placeholder = tr("notas.pista");
+  notaCampo.setAttribute("aria-label", tr("notas.campo"));
+  notaFila.append(notaCampo);
+  for (const caja of [campo, notaCampo]) {
+    caja.addEventListener("keydown", (event) => {
+      if (event.key === "Enter") {
+        event.preventDefault();
+        acabar(true);
+      }
+    });
+  }
+  // Pasar del concepto a los días o a la nota no es acabar; irse a otro sitio, sí.
   const fuera = (event) => {
-    if (!fila.contains(event.relatedTarget) && !tira.contains(event.relatedTarget)) acabar(true);
+    if (![fila, tira, notaFila].some((parte) => parte.contains(event.relatedTarget))) acabar(true);
   };
-  for (const parte of [campo, tira]) {
+  for (const parte of [campo, tira, notaFila]) {
     parte.addEventListener("focusout", fuera);
     parte.addEventListener("keydown", (event) => {
       if (event.key !== "Escape") return;
@@ -4658,7 +4686,7 @@ function editarConcepto(gasto, que) {
     });
   }
   que.replaceWith(campo);
-  fila.after(tira);
+  fila.after(tira, notaFila);
   campo.focus();
   campo.select();
 }

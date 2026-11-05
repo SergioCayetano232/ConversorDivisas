@@ -144,6 +144,10 @@ que necesitaba una conversión rápida. Ahora es un clic en la barra del navegad
   gastando lo que toca o menos ("🔥 3"), y un aro que se va cerrando con lo que
   llevas hoy contra lo que te toca hoy. Antes de salir, en vez del día del
   viaje, cuántos faltan ("✈ 12 días")
+- Notas en los gastos: al pulsar el concepto, debajo de la tira de días hay
+  un campo para lo que no cabe en él ("pedir factura", "pagó Ana"). Sale en
+  pequeño debajo del gasto y la lupa también busca ahí. Al volver a apuntarlo
+  hoy la nota no se copia, que era de aquel
 - Lo pagado aparte: el vuelo, el hotel reservado meses antes o el seguro. Al
   pulsar el concepto, con el 📌 de la tira de días lo sacas del día a día: sale
   arriba, en "Pagado aparte", y cuenta en el total, en las categorías y en el
