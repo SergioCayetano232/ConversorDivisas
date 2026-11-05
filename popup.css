@@ -3429,6 +3429,214 @@ body::after {
   animation: beat var(--mid) var(--ease-spring);
 }
 
+/* Ahora es un botón que abre las cuentas; que siga pareciendo el texto de antes. */
+.gastos__cabeza {
+  padding: 1px 4px;
+  background: transparent;
+  border: none;
+  border-radius: 5px;
+  font: inherit;
+  color: inherit;
+  cursor: pointer;
+  transition: background-color var(--fast) var(--ease);
+}
+
+.gastos__cabeza:disabled {
+  cursor: default;
+}
+
+.gastos__cabeza:hover:not(:disabled),
+.gastos__cabeza[aria-expanded="true"] {
+  background: var(--brass-ghost);
+}
+
+.gastos__cabeza:focus-visible {
+  outline: 2px solid var(--brass);
+  outline-offset: 1px;
+}
+
+/* Cada persona con su color, los mismos de los viajes. Tú, en el dorado. */
+.gastos__quien,
+.gastos__pagador {
+  --tono: var(--viaje-oro);
+}
+
+:is(.gastos__quien, .gastos__pagador)[data-n="1"] { --tono: var(--viaje-azul); }
+:is(.gastos__quien, .gastos__pagador)[data-n="2"] { --tono: var(--viaje-coral); }
+:is(.gastos__quien, .gastos__pagador)[data-n="3"] { --tono: var(--viaje-jade); }
+:is(.gastos__quien, .gastos__pagador)[data-n="4"] { --tono: var(--viaje-lila); }
+:is(.gastos__quien, .gastos__pagador)[data-n="5"] { --tono: var(--viaje-rosa); }
+
+.gastos__quien {
+  display: inline-grid;
+  place-items: center;
+  flex-shrink: 0;
+  min-width: 14px;
+  height: 14px;
+  padding: 0 3px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--tono) 18%, transparent);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--tono) 50%, transparent);
+  color: var(--tono);
+  font-family: var(--font-mono);
+  font-size: 8px;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.gastos__pagador {
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  min-width: 24px;
+  height: 24px;
+  padding: 0 4px;
+  background: var(--slate);
+  border: 1px solid var(--hairline-strong);
+  border-radius: 999px;
+  color: var(--mist);
+  font-family: var(--font-mono);
+  font-size: 9px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: transform var(--fast) var(--ease-spring), color var(--fast) var(--ease),
+    background-color var(--fast) var(--ease), border-color var(--fast) var(--ease);
+}
+
+.gastos__pagador[hidden] {
+  display: none;
+}
+
+.gastos__pagador:hover {
+  border-color: var(--brass-dim);
+}
+
+.gastos__pagador:active {
+  transform: scale(0.9);
+}
+
+.gastos__pagador.is-otro {
+  background: color-mix(in srgb, var(--tono) 16%, transparent);
+  border-color: color-mix(in srgb, var(--tono) 55%, transparent);
+  color: var(--tono);
+}
+
+.gastos__pagador.is-tic {
+  animation: pop var(--mid) var(--ease-spring);
+}
+
+.gastos__pagador:focus-visible {
+  outline: 2px solid var(--brass);
+  outline-offset: 1px;
+}
+
+.gastos__icono.is-de-otro {
+  position: relative;
+}
+
+.gastos__icono .gastos__quien {
+  position: absolute;
+  left: -4px;
+  bottom: -3px;
+  min-width: 11px;
+  height: 11px;
+  padding: 0 2px;
+  background: color-mix(in srgb, var(--tono) 22%, var(--graphite));
+  box-shadow: 0 0 0 1.5px var(--graphite), inset 0 0 0 1px color-mix(in srgb, var(--tono) 60%, transparent);
+  font-size: 7px;
+  animation: pop var(--mid) var(--ease-spring);
+}
+
+.gente__lista {
+  display: grid;
+  gap: 4px;
+  margin: 0 0 8px;
+  padding: 0;
+  list-style: none;
+}
+
+.gente__fila {
+  display: grid;
+  grid-template-columns: auto 1fr auto auto;
+  align-items: center;
+  gap: 6px;
+}
+
+.gente__fila .gastos__quien {
+  min-width: 18px;
+  height: 18px;
+  font-size: 9px;
+}
+
+.gente__nombre {
+  min-width: 0;
+  height: 22px;
+  padding: 0 6px;
+  background: var(--slate);
+  border: 1px solid var(--hairline);
+  border-radius: 6px;
+  color: var(--mist);
+  font-family: inherit;
+  font-size: 11px;
+  transition: border-color var(--fast) var(--ease), box-shadow var(--fast) var(--ease);
+}
+
+.gente__nombre::placeholder {
+  color: var(--muted);
+}
+
+.gente__nombre:focus {
+  outline: none;
+  border-color: var(--brass);
+  box-shadow: 0 0 0 3px var(--brass-ghost);
+}
+
+.gente__pagado {
+  min-width: 96px;
+  text-align: right;
+  font-family: var(--font-mono);
+  font-size: 9.5px;
+  font-variant-numeric: tabular-nums;
+  color: var(--muted);
+  white-space: nowrap;
+}
+
+.gente__saldo {
+  min-width: 48px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+  color: var(--muted);
+}
+
+.gente__saldo[data-tono="cobra"] {
+  color: var(--jade);
+}
+
+.gente__saldo[data-tono="debe"] {
+  color: var(--cinnabar);
+}
+
+.gente__pagos {
+  display: grid;
+  gap: 3px;
+  margin: 0;
+  padding: 7px 0 0;
+  border-top: 1px solid var(--hairline);
+  list-style: none;
+}
+
+.gente__pago {
+  font-size: 11px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  color: var(--mist);
+  animation: enter var(--mid) var(--ease-out) backwards;
+  animation-delay: calc(var(--i, 0) * 50ms);
+}
+
 /* Sin nada sacado ni pagado, es una invitación: más discreta. */
 .gastos__efectivo.is-vacio {
   color: var(--muted);
@@ -8254,6 +8462,7 @@ kbd {
   .viajes__peso::after,
   .semana__barra,
   .aviso.is-nueva,
+  .gente__pago,
   .burbuja__rapida,
   .billete,
   .cuenta__monedas,

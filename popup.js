@@ -118,6 +118,9 @@ const el = {
   personasN: document.getElementById("personas-n"),
   personasMas: document.getElementById("personas-mas"),
   personasCabeza: document.getElementById("personas-cabeza"),
+  gente: document.getElementById("gente"),
+  genteLista: document.getElementById("gente-lista"),
+  gentePagos: document.getElementById("gente-pagos"),
   cajeroLista: document.getElementById("cajero-lista"),
   viajesLista: document.getElementById("viajes-lista"),
   viajesNuevo: document.getElementById("viajes-nuevo"),
@@ -138,6 +141,7 @@ const el = {
   gastosForm: document.getElementById("gastos-form"),
   gastosConcepto: document.getElementById("gastos-concepto"),
   gastosPago: document.getElementById("gastos-pago"),
+  gastosPagador: document.getElementById("gastos-pagador"),
   presupuestoEsto: document.getElementById("presupuesto-esto"),
   presupuestoEstoTexto: document.getElementById("presupuesto-esto-texto"),
   gastosSugerencia: document.getElementById("gastos-sugerencia"),
@@ -332,6 +336,9 @@ let busqueda = "";
 // false, "caro" o "barato": el botón va pasando por los tres.
 let ordenado = false;
 let cajero = [];
+// Quién paga lo que vas a apuntar. No lo guardo: cada vez que abres eres tú,
+// que es lo normal, y si no lo cambias con un clic.
+let pagadorNuevo = 0;
 // El precio de aquí va en la divisa de destino: si cambia, el de antes ya no vale.
 let compararDivisa = null;
 let pidiendoTasa = false;
@@ -2422,6 +2429,7 @@ function gastoDePantalla() {
     pago: pagoNuevo,
     comision: comisionDelPago(pagoNuevo, comision),
     cuando: Date.now(),
+    pagador: pagadorNuevo < viajeActivo(viajes).personas ? pagadorNuevo : 0,
   });
 }
 
@@ -2835,6 +2843,19 @@ function crearFilaGasto(gasto, i, peso, rey = false) {
     texto.setAttribute("aria-label", `${texto.getAttribute("aria-label")}. ${tr("gastos.rey")}`);
     if (cascadaGastos || !reyesAntes.has(gasto.id)) icono.classList.add("is-coronado");
   }
+  const { personas, gente } = viajeActivo(viajes);
+  const quien = leerPagador(gasto.pagador);
+  if (quien && quien < personas) {
+    const cara = document.createElement("span");
+    cara.className = "gastos__quien";
+    cara.dataset.n = quien % 6;
+    cara.textContent = inicialPersona(gente, quien);
+    cara.title = tr("gente.pago", { nombre: nombrePersona(gente, quien) });
+    texto.setAttribute("aria-label", `${texto.getAttribute("aria-label")}. ${cara.title}`);
+    // En la esquina del icono, como el punto del efectivo: en la fila el concepto se quedaba en "T…".
+    icono.classList.add("is-de-otro");
+    icono.append(cara);
+  }
   texto.append(icono, que, de, cuanto);
 
   const quitar = document.createElement("button");
@@ -3102,6 +3123,8 @@ function pintarPersonas(conSalto = false) {
   el.personasCabeza.title = !cabeza ? ""
     : cabeza.alDia ? tr("personas.cadaAlDia", { valor: `${nf.format(cabeza.total)} ${cabeza.to}`, dia: `${nf.format(cabeza.alDia)} ${cabeza.to}` })
     : tr("personas.cada", { valor: `${nf.format(cabeza.total)} ${cabeza.to}` });
+  if (cabeza) el.personasCabeza.title += `. ${tr("gente.abrir")}`;
+  el.personasCabeza.disabled = !cabeza;
   if (conSalto) restartAnimation(cabeza ? el.personasCabeza : el.personasN, "is-tic");
 }
 
@@ -3111,6 +3134,106 @@ function onPersonas(paso) {
   viajes = cambiarViaje(viajes, viajes.activo, { personas });
   guardarViajes();
   pintarPersonas(true);
+  // Las iniciales de la lista dependen de cuántos sois: el que se va deja de salir.
+  pintarGastos();
+}
+
+function pintarPagador(conSalto = false) {
+  const { personas, gente } = viajeActivo(viajes);
+  if (pagadorNuevo >= personas) pagadorNuevo = 0;
+  const boton = el.gastosPagador;
+  boton.hidden = personas < 2;
+  boton.textContent = inicialPersona(gente, pagadorNuevo);
+  boton.dataset.n = pagadorNuevo % 6;
+  boton.classList.toggle("is-otro", pagadorNuevo > 0);
+  const nombre = nombrePersona(gente, pagadorNuevo);
+  const tuyo = pagadorNuevo === 0;
+  boton.title = tuyo ? tr("gente.pagasTitulo") : tr("gente.pagaTitulo", { nombre });
+  boton.setAttribute("aria-label", tuyo ? tr("gente.pagas") : tr("gente.paga", { nombre }));
+  if (conSalto) restartAnimation(boton, "is-tic");
+}
+
+function onCambiarPagador() {
+  pagadorNuevo = (pagadorNuevo + 1) % viajeActivo(viajes).personas;
+  pintarPagador(true);
+}
+
+function pintarCuentasGente() {
+  const { personas, gente } = viajeActivo(viajes);
+  const cuentas = cuentasViaje(gastos, personas);
+  if (!cuentas) return cerrarGente();
+  const dinero = (n) => `${nf.format(n)} ${cuentas.to}`;
+  // Los campos se quedan si ya están: si los rehiciera, al escribir un nombre perderías el foco.
+  const filas = [...el.genteLista.children];
+  while (filas.length > personas) filas.pop().remove();
+  cuentas.gente.forEach((p, i) => {
+    let fila = filas[i];
+    if (!fila) {
+      fila = document.createElement("li");
+      fila.className = "gente__fila";
+      fila.innerHTML = '<span class="gastos__quien"></span><input class="gente__nombre" type="text" autocomplete="off" spellcheck="false"><span class="gente__pagado"></span><span class="gente__saldo"></span>';
+      const campo = fila.querySelector("input");
+      campo.maxLength = NOMBRE_PERSONA_MAX;
+      campo.addEventListener("input", () => onNombrePersona(i, campo.value));
+      campo.addEventListener("keydown", (event) => {
+        if (event.key === "Enter") campo.blur();
+      });
+      el.genteLista.append(fila);
+    }
+    const cara = fila.querySelector(".gastos__quien");
+    cara.dataset.n = i % 6;
+    cara.textContent = inicialPersona(gente, i);
+    const campo = fila.querySelector("input");
+    campo.placeholder = nombrePersona([], i);
+    campo.setAttribute("aria-label", tr("gente.nombre", { n: i + 1 }));
+    if (document.activeElement !== campo) campo.value = gente?.[i] ?? "";
+    fila.querySelector(".gente__pagado").textContent = tr("gente.puso", { valor: dinero(p.pagado) });
+    const saldo = fila.querySelector(".gente__saldo");
+    const centimos = Math.round(p.saldo * 100);
+    saldo.dataset.tono = centimos > 0 ? "cobra" : centimos < 0 ? "debe" : "";
+    saldo.textContent = centimos === 0 ? "✓" : `${centimos > 0 ? "+" : "−"}${nf.format(Math.abs(p.saldo))}`;
+  });
+  const lineas = cuentas.pagos.length
+    ? cuentas.pagos.map((pago) => frasePago(pago, gente, cuentas.to))
+    : [tr("gente.enPaz")];
+  el.gentePagos.replaceChildren(...lineas.map((texto, i) => {
+    const li = document.createElement("li");
+    li.className = "gente__pago";
+    li.style.setProperty("--i", i);
+    li.textContent = texto;
+    return li;
+  }));
+}
+
+function onNombrePersona(i, nombre) {
+  const { gente } = viajeActivo(viajes);
+  viajes = cambiarViaje(viajes, viajes.activo, { gente: ponerNombre(gente, i, nombre) });
+  guardarViajes();
+  pintarCuentasGente();
+  pintarPagador();
+  pintarGastos();
+}
+
+function abrirGente() {
+  if (!cuentasViaje(gastos, viajeActivo(viajes).personas)) return;
+  cerrarViajes();
+  cerrarCajero();
+  cerrarCategorias();
+  dejarDeEditarPresupuesto();
+  const arriba = el.gastosPersonas.getBoundingClientRect().bottom - el.gastos.getBoundingClientRect().top;
+  el.gente.style.setProperty("--cajero-arriba", `${Math.round(arriba) + 4}px`);
+  el.genteLista.replaceChildren();
+  el.gente.hidden = false;
+  el.personasCabeza.setAttribute("aria-expanded", "true");
+  pintarCuentasGente();
+  el.genteLista.querySelector("input")?.focus();
+}
+
+function cerrarGente() {
+  if (el.gente.hidden) return false;
+  el.gente.hidden = true;
+  el.personasCabeza.setAttribute("aria-expanded", "false");
+  return true;
 }
 
 // La tasa de arriba solo vale si va a la divisa del presupuesto.
@@ -3138,6 +3261,7 @@ function onSugerencia() {
 
 function abrirCajero() {
   cerrarViajes();
+  cerrarGente();
   cerrarCategorias();
   dejarDeEditarPresupuesto();
   const arriba = el.gastosSuma.getBoundingClientRect().bottom - el.gastos.getBoundingClientRect().top;
@@ -3224,6 +3348,8 @@ function pintarGastos() {
   pintarComisiones();
   pintarEfectivo();
   pintarPersonas();
+  pintarPagador();
+  if (!el.gente.hidden) pintarCuentasGente();
 
   pintarDesglose();
   // Buscando, las categorías se esconden: busco en todos.
@@ -4098,6 +4224,7 @@ function pintarViajes() {
 
 function abrirViajes() {
   cerrarCajero();
+  cerrarGente();
   cerrarCategorias();
   dejarDeEditarPresupuesto();
   noVaciar();
@@ -4130,6 +4257,7 @@ function ponerViaje(nuevos) {
   ordenado = false;
   cerrarBusqueda();
   cerrarCajero();
+  cerrarGente();
   dejarDeEditarPresupuesto();
   delete el.presupuestoVer.dataset.tono;
   cascadaGastos = true;
@@ -4338,6 +4466,7 @@ function cerrarGastos() {
   if (el.gastos.hidden) return;
   cerrarViajes();
   cerrarCajero();
+  cerrarGente();
   dejarDeEditarPresupuesto();
   cerrarCategorias();
   cerrarBusqueda();
@@ -6070,6 +6199,8 @@ function bindEvents() {
   el.cajeroSugerencia.addEventListener("click", onSugerencia);
   el.personasMenos.addEventListener("click", () => onPersonas(-1));
   el.personasMas.addEventListener("click", () => onPersonas(1));
+  el.personasCabeza.addEventListener("click", () => (el.gente.hidden ? abrirGente() : cerrarGente()));
+  el.gastosPagador.addEventListener("click", onCambiarPagador);
   el.viaje.addEventListener("animationend", () => el.viaje.classList.remove("is-estreno"));
   el.gastosTitulo.addEventListener("animationend", () => el.gastosTitulo.classList.remove("is-cambiado"));
   el.viajesNuevo.addEventListener("submit", onCrearViaje);
@@ -6214,6 +6345,7 @@ function bindEvents() {
       // Primero se cierra lo de dentro (categorías, presupuesto), y con otro Escape el panel.
       if (cerrarViajes()) el.viaje.focus();
       else if (cerrarCajero()) el.gastosEfectivo.focus();
+      else if (cerrarGente()) el.personasCabeza.focus();
       else if (cerrarCategorias()) el.gastosCategoria.focus();
       else if (dejarDeEditarPresupuesto()) el.presupuestoVer.hidden ? el.presupuestoAnadir.focus() : el.presupuestoVer.focus();
       else cerrarGastos()?.focus();
@@ -6247,6 +6379,9 @@ function bindEvents() {
     }
     if (!el.cajero.hidden && !el.cajero.contains(event.target) && !el.gastosEfectivo.contains(event.target)) {
       cerrarCajero();
+    }
+    if (!el.gente.hidden && !el.gente.contains(event.target) && !el.personasCabeza.contains(event.target)) {
+      cerrarGente();
     }
     if (!el.categorias.hidden && !el.categorias.contains(event.target) && !el.gastosCategoria.contains(event.target)) {
       cerrarCategorias();

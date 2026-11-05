@@ -79,6 +79,11 @@ que necesitaba una conversión rápida. Ahora es un clic en la barra del navegad
   cambia pulsando el puntito de delante del nombre, y el nuevo coge uno libre
 - Cuántos sois: debajo del total, con el − y el +, y te dice lo que sale por
   cabeza. Va también en el resumen para WhatsApp ("Entre 3: 40,00 EUR cada uno")
+- Quién ha pagado: siendo varios, al lado de tarjeta/efectivo sale un botón
+  con tu inicial; pulsándolo apuntas el gasto a otro. Y pulsando lo de cada
+  uno se abren las cuentas: lo que ha puesto cada cual, con sus nombres, y
+  quién le debe a quién ("Ana te debe 32,75 EUR"), con los mínimos pagos para
+  quedar en paz. Si alguien más ha pagado algo, va también en el resumen
 - Si un gasto es cinco veces lo normal de su categoría, te avisa antes de
   apuntarlo ("11 veces lo normal en comida"), que un cero de más se cuela
   fácil. Para apuntarlo igual, le das otra vez. Lo mismo si apuntas otra vez

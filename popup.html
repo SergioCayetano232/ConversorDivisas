@@ -693,7 +693,7 @@
             <button class="gastos__paso" type="button" id="personas-menos" aria-label="Uno menos" data-t-aria-label="cuenta.menos">−</button>
             <span class="gastos__gente" id="personas-n" aria-live="polite"></span>
             <button class="gastos__paso" type="button" id="personas-mas" aria-label="Uno más" data-t-aria-label="cuenta.mas">+</button>
-            <span class="gastos__cabeza" id="personas-cabeza"></span>
+            <button class="gastos__cabeza" type="button" id="personas-cabeza" aria-expanded="false" aria-controls="gente"></button>
           </span>
         </div>
         <div class="gastos__lado">
@@ -772,6 +772,11 @@
         <button class="cajero__sugerencia" type="button" id="cajero-sugerencia" hidden></button>
         <ul class="cajero__lista" id="cajero-lista"></ul>
       </div>
+      <div class="cajero gente" id="gente" role="group" aria-labelledby="gente-titulo" hidden>
+        <p class="cajero__titulo" id="gente-titulo" data-t="gente.titulo">Quién ha pagado</p>
+        <ul class="gente__lista" id="gente-lista"></ul>
+        <ul class="gente__pagos" id="gente-pagos" aria-live="polite"></ul>
+      </div>
       <div class="presupuesto" id="presupuesto">
         <button class="presupuesto__anadir" type="button" id="presupuesto-anadir" data-t="presupuesto.anadir" title="Ponte un presupuesto y te digo cuánto te queda al día" data-t-title="presupuesto.anadirTitulo">+ presupuesto</button>
         <button class="presupuesto__ver" type="button" id="presupuesto-ver" hidden>
@@ -823,6 +828,7 @@
       <form class="gastos__nuevo" id="gastos-form" novalidate>
         <button class="gastos__categoria" type="button" id="gastos-categoria" aria-haspopup="true" aria-expanded="false" aria-controls="categorias"></button>
         <button class="gastos__pago" type="button" id="gastos-pago"></button>
+        <button class="gastos__pagador" type="button" id="gastos-pagador" hidden></button>
         <div class="categorias" id="categorias" role="group" aria-label="Elige la categoría" data-t-aria-label="cat.lista" hidden></div>
         <span class="gastos__caja">
           <input
