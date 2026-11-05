@@ -1847,7 +1847,8 @@ const comisionDelPago = (pago, comision) => (pago === "efectivo" ? 0 : comision)
 const categoriaBuena = (c) => (CATEGORIAS.includes(c) ? c : CATEGORIA_POR_DEFECTO);
 
 const esGastoBueno = (g) => Boolean(g) && typeof g.id === "string" && isValidCode(g.from) && isValidCode(g.to)
-  && Number.isFinite(g.cantidad) && g.cantidad > 0 && Number.isFinite(g.valor) && g.valor >= 0
+  // Las devoluciones van en negativo, las dos cifras a la vez.
+  && Number.isFinite(g.cantidad) && Number.isFinite(g.valor) && (g.cantidad > 0 ? g.valor >= 0 : g.cantidad < 0 && g.valor <= 0)
   && Number.isFinite(g.cuando) && typeof g.concepto === "string";
 
 // El valor se guarda ya convertido, con la tasa y la comisión de ese día. Si lo
@@ -1876,6 +1877,20 @@ function crearGasto({ id, from, to, cantidad, valor, concepto = "", cuando, cate
   if (fijo === true) gasto.fijo = true;
   if (limpiarNota(nota)) gasto.nota = limpiarNota(nota);
   return esGastoBueno(gasto) && from !== to ? gasto : null;
+}
+
+const esDevolucion = (g) => g.cantidad < 0;
+
+// Lo que te devuelven: la compra que llevas a la tienda, la fianza del piso. Va
+// en negativo, así resta del total, del día y de su categoría sin tocar nada
+// más. Al cambio de aquel día pero sin la comisión, que el banco no la devuelve.
+function devolucionDe(gasto, { id, cuando }) {
+  if (!esGastoBueno(gasto) || !(gasto.cantidad > 0)) return null;
+  const sinComision = gasto.valor / (1 + leerComision(gasto.comision) / 100);
+  return crearGasto({
+    id, cuando, from: gasto.from, to: gasto.to, cantidad: -gasto.cantidad, valor: -sinComision,
+    concepto: gasto.concepto, categoria: gasto.categoria, pago: gasto.pago, comision: 0, pagador: gasto.pagador,
+  });
 }
 
 function leerGastos(guardado) {
@@ -1927,7 +1942,7 @@ function repartirCentimos(total, n) {
 }
 
 function repartirNoches(gasto, noches) {
-  if (!esGastoBueno(gasto) || !Number.isInteger(noches) || noches < 2 || noches > NOCHES_MAX) return [gasto];
+  if (!esGastoBueno(gasto) || esDevolucion(gasto) || !Number.isInteger(noches) || noches < 2 || noches > NOCHES_MAX) return [gasto];
   const cantidades = repartirCentimos(gasto.cantidad, noches);
   const valores = repartirCentimos(gasto.valor, noches);
   const antes = new Date(gasto.cuando);
@@ -2387,7 +2402,7 @@ function conceptoEstrella(gastos) {
   const grupos = new Map();
   for (const g of [...gastos].sort((a, b) => a.cuando - b.cuando)) {
     const clave = normalizar(g.concepto);
-    if (!clave || g.to !== principal.to) continue;
+    if (!clave || g.to !== principal.to || esDevolucion(g)) continue;
     const grupo = grupos.get(clave) ?? { veces: 0, total: 0 };
     grupos.set(clave, { veces: grupo.veces + 1, total: grupo.total + g.valor, concepto: g.concepto, categoria: g.categoria });
   }
@@ -2567,8 +2582,8 @@ function mediana(valores) {
 
 // Un fijo siempre parecería raro al lado de los cafés: el vuelo es caro y ya está.
 function gastoRaro(gastos, gasto) {
-  if (!gasto || esFijo(gasto)) return null;
-  const suyos = delDiaADia(gastos).filter((g) => g.to === gasto.to);
+  if (!gasto || esFijo(gasto) || esDevolucion(gasto)) return null;
+  const suyos = delDiaADia(gastos).filter((g) => g.to === gasto.to && !esDevolucion(g));
   const deSuCategoria = suyos.filter((g) => g.categoria === gasto.categoria);
   // Con pocos de su categoría tiro de todo el viaje, menos el alojamiento: el
   // primer hotel siempre sería "raro" al lado de los cafés.
@@ -2602,7 +2617,7 @@ function gastoRepetido(gastos, gasto, ahora = Date.now()) {
 function pesoDeLosGastos(gastos) {
   const maximos = new Map();
   for (const g of gastos) maximos.set(g.to, Math.max(maximos.get(g.to) ?? 0, g.valor));
-  return gastos.map((g) => (maximos.get(g.to) > 0 ? g.valor / maximos.get(g.to) : 0));
+  return gastos.map((g) => (maximos.get(g.to) > 0 ? Math.max(g.valor, 0) / maximos.get(g.to) : 0));
 }
 
 // Lo que pesa cada día al lado del que más, en la divisa que más suma. Un día
@@ -6329,7 +6344,7 @@ if (typeof module !== "undefined") {
     divisaDeIdioma, parPorIdioma, banderaDe, banderaDivisa,
     HISTORIAL_MAX, leerHistorial, apuntarConversion, quitarConversion, haceCuanto, ultimoDeHoy, textoParaCopiar, fraseParaCopiar, gastoParaCopiar, ultimoGasto, gastoMasCaro, totalParaCopiar, hoyParaCopiar, simboloDe, textoConSimbolo, fraseConSimbolo,
     celdaCsv, csvHistorial, csvGastos, csvViajes,
-    GASTOS_MAX, CONCEPTO_MAX, crearGasto, leerGastos, apuntarGasto, NOCHES_MAX, repartirCentimos, repartirNoches, apuntarNoches, quitarGasto, cambiarConcepto, cambiarDia, buscarGastos, trozosResaltados, repetirGasto, devolverGasto, devolverTodos, sumarPorDivisa, gastosPorDia, huecoEntre, cifraEnMarcha, categoriaDelDia, pesoDeLosDias, ordenarPorImporte, masCarosDelDia, pesoDeLosGastos, RARO_VECES, mediana, gastoRaro, REPETIDO_MS, gastoRepetido, mediaPorDia, categoriasAlDia, mediaPorGasto, comisionesPagadas, cambioDelViaje, cifraCambio, textoCambio, pagadoEnEfectivo, ahorroEnEfectivo,
+    GASTOS_MAX, CONCEPTO_MAX, crearGasto, leerGastos, esDevolucion, devolucionDe, apuntarGasto, NOCHES_MAX, repartirCentimos, repartirNoches, apuntarNoches, quitarGasto, cambiarConcepto, cambiarDia, buscarGastos, trozosResaltados, repetirGasto, devolverGasto, devolverTodos, sumarPorDivisa, gastosPorDia, huecoEntre, cifraEnMarcha, categoriaDelDia, pesoDeLosDias, ordenarPorImporte, masCarosDelDia, pesoDeLosGastos, RARO_VECES, mediana, gastoRaro, REPETIDO_MS, gastoRepetido, mediaPorDia, categoriasAlDia, mediaPorGasto, comisionesPagadas, cambioDelViaje, cifraCambio, textoCambio, pagadoEnEfectivo, ahorroEnEfectivo,
     RETIRADAS_MAX, leerRetiradas, crearRetirada, apuntarRetirada, quitarRetirada, efectivoQueda, EFECTIVO_POCO, tonoEfectivo, redondoDeCajero, cuantoSacar, loQueSobra, gastadoHoy, nombreDia,
     CATEGORIAS, CATEGORIA_POR_DEFECTO, adivinarCategoria, PAGOS, PAGO_POR_DEFECTO, leerPago, comisionDelPago, desglose, conceptosUsados, completarConcepto,
     EMOJI_CATEGORIA, destacados, resumenParaCompartir, FINDE_MINIMO, findeContraSemana, ESTRELLA_MINIMO, conceptoEstrella,

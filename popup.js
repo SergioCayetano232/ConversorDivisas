@@ -2828,6 +2828,7 @@ function crearFilaGasto(gasto, i, peso, rey = false) {
   }
   fila.dataset.id = gasto.id;
   fila.classList.toggle("is-fijo", esFijo(gasto));
+  fila.classList.toggle("is-devolucion", esDevolucion(gasto));
   if (cascadaGastos || gasto.id === gastoNuevo) {
     fila.classList.add("is-nueva");
     fila.style.setProperty("--i", cascadaGastos ? Math.min(i, 12) : 0);
@@ -2931,6 +2932,12 @@ function crearFilaGasto(gasto, i, peso, rey = false) {
   repetir.title = tr("gastos.repetir");
   repetir.setAttribute("aria-label", tr("gastos.repetirDe", { concepto, cantidad: `${nf.format(gasto.cantidad)} ${gasto.from}` }));
   repetir.addEventListener("click", () => onRepetirGasto(gasto));
+  // Volver a apuntar hoy una devolución no tiene sentido: te devuelven una vez.
+  if (esDevolucion(gasto)) {
+    repetir.disabled = true;
+    repetir.classList.add("is-nada");
+    texto.setAttribute("aria-label", `${texto.getAttribute("aria-label")}. ${tr("devolver.aria")}`);
+  }
 
   fila.append(texto, repetir, quitar);
   fila.addEventListener("animationend", (event) => {
@@ -4731,6 +4738,20 @@ function editarConcepto(gasto, que) {
   notaCampo.placeholder = tr("notas.pista");
   notaCampo.setAttribute("aria-label", tr("notas.campo"));
   notaFila.append(notaCampo);
+  // Al lado de la nota y no en la tira de días, que ahí el calendario ya no cabía.
+  if (!esDevolucion(gasto)) {
+    const vuelta = document.createElement("button");
+    vuelta.type = "button";
+    vuelta.className = "gastos__devolver";
+    vuelta.textContent = `↩ ${tr("devolver.corto")}`;
+    vuelta.title = tr("devolver.titulo", { cantidad: `${nf.format(gasto.cantidad)} ${gasto.from}` });
+    vuelta.setAttribute("aria-label", tr("devolver.boton"));
+    vuelta.addEventListener("click", () => {
+      acabar(true);
+      onDevolverGasto(gastos.find((g) => g.id === gasto.id) ?? gasto);
+    });
+    notaFila.append(vuelta);
+  }
   for (const caja of [campo, notaCampo]) {
     caja.addEventListener("keydown", (event) => {
       if (event.key === "Enter") {
@@ -4756,6 +4777,20 @@ function editarConcepto(gasto, que) {
   fila.after(tira, notaFila);
   campo.focus();
   campo.select();
+}
+
+function onDevolverGasto(original) {
+  const gasto = devolucionDe(original, {
+    id: `${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`,
+    cuando: Date.now(),
+  });
+  if (!gasto) return;
+  gastos = apuntarGasto(gastos, gasto);
+  gastoNuevo = gasto.id;
+  guardarViajes();
+  pintarGastos();
+  el.gastosLista.scrollTop = 0;
+  el.gastosLista.querySelector(`[data-id="${gasto.id}"] .gastos__que`)?.focus();
 }
 
 function tiraDeDias(gasto, elegir, alternarFijo) {

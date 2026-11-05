@@ -153,6 +153,11 @@ que necesitaba una conversión rápida. Ahora es un clic en la barra del navegad
   un campo para lo que no cabe en él ("pedir factura", "pagó Ana"). Sale en
   pequeño debajo del gasto y la lupa también busca ahí. Al volver a apuntarlo
   hoy la nota no se copia, que era de aquel
+- Las devoluciones: al pulsar el concepto, al lado de la nota, con **↩
+  Devuelto** apuntas que te han devuelto ese gasto (la compra que llevas a la
+  tienda, la fianza del piso). Sale en verde y en negativo, y resta del total,
+  del día, de su categoría y del presupuesto. Va al cambio de aquel día pero sin
+  la comisión, que el banco no la devuelve. Si fue en efectivo, vuelve a la cartera
 - Lo pagado aparte: el vuelo, el hotel reservado meses antes o el seguro. Al
   pulsar el concepto, con el 📌 de la tira de días lo sacas del día a día: sale
   arriba, en "Pagado aparte", y cuenta en el total, en las categorías y en el

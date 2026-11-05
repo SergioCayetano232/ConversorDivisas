@@ -4126,6 +4126,46 @@ body::after {
   margin-left: auto;
 }
 
+/* Lo devuelto, en verde y con su flecha: es dinero que vuelve. Sin repetir,
+   pero el hueco se queda para que las cifras sigan en columna. */
+.gastos__fila.is-devolucion .gastos__valor {
+  color: var(--jade);
+}
+
+.gastos__devolver {
+  flex-shrink: 0;
+  height: 22px;
+  margin-left: 4px;
+  padding: 0 7px;
+  background: var(--slate);
+  border: 1px solid color-mix(in srgb, var(--jade) 35%, transparent);
+  border-top: 0;
+  border-radius: 0 0 6px 6px;
+  color: var(--jade);
+  font-family: var(--font-mono);
+  font-size: 10px;
+  cursor: pointer;
+  animation: pop var(--mid) var(--ease-spring) 120ms backwards;
+  transition: background-color var(--fast) var(--ease), transform var(--fast) var(--ease-spring);
+}
+
+.gastos__devolver:hover {
+  background: color-mix(in srgb, var(--jade) 14%, transparent);
+}
+
+.gastos__devolver:active {
+  transform: scale(0.94);
+}
+
+.gastos__devolver:focus-visible {
+  outline: 2px solid var(--jade);
+  outline-offset: 1px;
+}
+
+.gastos__repetir.is-nada {
+  visibility: hidden;
+}
+
 /* Un día (o varios) sin nada entre dos con gastos: una línea a rayas, en
    bajito, y el que medita respirando despacio. */
 .gastos__hueco {
