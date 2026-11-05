@@ -250,7 +250,10 @@ que necesitaba una conversión rápida. Ahora es un clic en la barra del navegad
   de 1,15") y te salta una notificación cuando pase, aunque tengas el popup
   cerrado. Hasta cuatro a la vez. También vale un porcentaje: con "2 %" te
   avisa si se mueve eso para cualquier lado, y con "+2 %" o "-1 %", solo
-  hacia ese. Debajo te dice en qué tasa saltará
+  hacia ese. Debajo te dice en qué tasa saltará. Con la bolsa 🛍 de al lado
+  el aviso es por precio: pones arriba lo que cuesta (180 USD) y lo máximo que
+  quieres pagar (152 EUR), y te avisa cuando el cambio lo deje ahí. Pulsando
+  la pastilla vuelves a ver lo que cuesta hoy
 - Se abre con `Ctrl+Shift+U` (en Mac, `Cmd+Shift+U`). Con clic derecho en el
   icono → **Gastos del viaje**, se abre directamente en los gastos
 - Desde la barra de direcciones, sin abrir nada: escribes `cd`, espacio, y

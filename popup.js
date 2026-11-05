@@ -41,6 +41,7 @@ const el = {
   bandejaCerrar: document.getElementById("bandeja-cerrar"),
   avisos: document.getElementById("avisos"),
   avisoForm: document.getElementById("aviso-form"),
+  avisoModo: document.getElementById("aviso-modo"),
   avisoSentido: document.getElementById("aviso-sentido"),
   avisoUmbral: document.getElementById("aviso-umbral"),
   avisoCodigo: document.getElementById("aviso-codigo"),
@@ -275,6 +276,7 @@ let avisos = [];
 // De qué par es lo que hay en el campo del aviso: al cambiar de par le pongo
 // la tasa nueva, pero mientras sea el mismo no le toco lo que hayas escrito.
 let parDelUmbral = null;
+let modoCompra = false;
 let comision = 0;
 let impuesto = 0;
 let cafe = null;
@@ -4624,6 +4626,8 @@ async function guardarAvisos() {
 function pintarSentidoAviso() {
   const from = el.from.value;
   const to = el.to.value;
+  el.avisoBoton.disabled = from === to || rate === null;
+  if (modoCompra) return pintarCompra(from, to);
   const par = `${from}${to}`;
   if (par !== parDelUmbral && rate !== null && from !== to) {
     el.avisoUmbral.value = nfRate.format(rate);
@@ -4641,13 +4645,54 @@ function pintarSentidoAviso() {
     el.avisoSentido.textContent = tr(sentido === "sube" ? "avisos.sube" : sentido === "baja" ? "avisos.baja" : "avisos.llega", { from });
     el.avisoSentido.dataset.sentido = sentido ?? "";
   }
-  el.avisoBoton.disabled = from === to || rate === null;
   pintarNota();
 }
 
-// Con un porcentaje no se ve a qué tasa saltará, así que lo digo debajo.
+// Te propongo un 5 % menos de lo que cuesta ahora, que es lo que se suele
+// esperar. Solo lo cambio si cambia el precio o el par, no lo que escribas.
+function pintarCompra(from, to) {
+  const precio = cantidadOrigen();
+  const clave = `compra:${from}${to}${precio}`;
+  if (clave !== parDelUmbral && precio && rate !== null && from !== to) {
+    const coste = precio * rate;
+    el.avisoUmbral.value = nf.format(coste >= 20 ? Math.floor(coste * 0.95) : Math.floor(coste * 95) / 100);
+    parDelUmbral = clave;
+  }
+  const texto = precio ? `${nfComision.format(precio)} ${from}` : from;
+  el.avisoSentido.textContent = tr("avisos.compra", { precio: texto });
+  el.avisoSentido.title = tr("avisos.compraTitulo", { precio: texto });
+  el.avisoSentido.dataset.sentido = "baja";
+  el.avisoCodigo.textContent = to;
+  pintarNota();
+}
+
+function onModoAviso() {
+  modoCompra = !modoCompra;
+  el.avisoModo.setAttribute("aria-pressed", String(modoCompra));
+  const clave = modoCompra ? "avisos.tasaModo" : "avisos.compraModo";
+  el.avisoModo.title = tr(clave);
+  el.avisoModo.setAttribute("aria-label", tr(clave));
+  el.avisoSentido.title = "";
+  el.avisoUmbral.title = "";
+  parDelUmbral = null;
+  pintarSentidoAviso();
+  restartAnimation(el.avisoSentido, "is-cambiado");
+  el.avisoUmbral.focus();
+  el.avisoUmbral.select();
+}
+
+// Con un porcentaje no se ve a qué tasa saltará, así que lo digo debajo. Con
+// una compra, tampoco.
 function previaAviso() {
   const to = el.to.value;
+  if (modoCompra) {
+    const precio = cantidadOrigen();
+    const maximo = leerImporte(el.avisoUmbral.value);
+    const vale = precio && maximo > 0 && rate !== null && el.from.value !== to && maximo < precio * rate;
+    const previa = vale ? tr("avisos.previa", { tasa: `${nfRate.format(maximo / precio)} ${to}` }) : null;
+    el.avisoUmbral.title = previa ?? "";
+    return avisos.length ? null : previa;
+  }
   const p = el.from.value === to || rate === null ? null : leerPorcentajeAviso(el.avisoUmbral.value);
   if (!p) return null;
   const tasa = (signo) => nfRate.format(rate * (1 + (signo * p.pct) / 100));
@@ -4706,6 +4751,15 @@ function crearPastillaAviso(aviso) {
   cifra.className = "aviso__umbral";
   cifra.textContent = mueve ? `±${pct}` : umbral;
   if (mueve) cifra.title = umbral;
+  if (aviso.precio) {
+    const precio = `${nfComision.format(aviso.precio)} ${aviso.from}`;
+    const maximo = `${nfComision.format(aviso.maximo)} ${aviso.to}`;
+    ir.setAttribute("aria-label", tr("avisos.pastillaCompra", { precio, maximo }));
+    ir.classList.add("is-compra");
+    par.textContent = precio;
+    cifra.textContent = maximo;
+    cifra.title = umbral;
+  }
   ir.append(par, flecha, cifra);
   ir.addEventListener("click", () => onIrAviso(aviso));
 
@@ -4753,6 +4807,8 @@ function onCrearAviso(event) {
   event.preventDefault();
   const from = el.from.value;
   const to = el.to.value;
+  const id = `${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`;
+  if (modoCompra) return crearCompraDesdeForm(from, to, id);
   const porcentaje = leerPorcentajeAviso(el.avisoUmbral.value);
   const umbral = porcentaje ? null : leerImporte(el.avisoUmbral.value);
 
@@ -4761,7 +4817,6 @@ function onCrearAviso(event) {
   else if (avisos.length >= AVISOS_MAX) problema = tr("avisos.lleno", { max: AVISOS_MAX });
   else if (!porcentaje && sentidoAviso(umbral, rate) === null) problema = tr("avisos.igual");
 
-  const id = `${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`;
   const aviso = problema ? null
     : porcentaje ? crearAvisoPorcentaje(from, to, porcentaje, rate, id)
     : crearAviso(from, to, umbral, rate, id);
@@ -4781,7 +4836,35 @@ function onCrearAviso(event) {
   decir(tr("avisos.hecho"), "ok");
 }
 
+function crearCompraDesdeForm(from, to, id) {
+  const precio = cantidadOrigen();
+  const maximo = leerImporte(el.avisoUmbral.value);
+  let problema = null;
+  if (!precio) problema = tr("avisos.compraSinPrecio");
+  else if (!(maximo > 0)) problema = tr("avisos.compraEscribe", { to });
+  else if (avisos.length >= AVISOS_MAX) problema = tr("avisos.lleno", { max: AVISOS_MAX });
+  else if (maximo >= Math.round(precio * rate * 100) / 100) problema = tr("avisos.yaCuesta", { cuesta: `${nf.format(precio * rate)} ${to}` });
+
+  const compra = problema ? null : crearCompra(from, to, precio, maximo, rate, id);
+  if (!compra) {
+    decir(problema ?? tr("avisos.noSe"), "error");
+    restartAnimation(el.avisoUmbral, "is-mal");
+    return;
+  }
+  avisos = [...avisos, compra];
+  guardarAvisos();
+  pintarAvisos();
+  restartAnimation(el.campana, "is-sonando");
+  decir(tr("avisos.hecho"), "ok");
+}
+
+// Si es una compra, pongo también el precio: así ves lo que cuesta hoy.
 function onIrAviso(aviso) {
+  if (aviso.precio) {
+    el.amount.value = nf.format(aviso.precio);
+    ladoActivo = "amount";
+    guardarCantidad();
+  }
   buscadores.from.poner(aviso.from);
   buscadores.to.poner(aviso.to);
   restartAnimation(el.from, "is-cambiado");
@@ -6088,6 +6171,8 @@ function bindEvents() {
   el.impuestoCampo.addEventListener("animationend", () => el.impuestoCampo.classList.remove("is-mal"));
   el.comisionImp.addEventListener("animationend", () => el.comisionImp.classList.remove("is-tic"));
   el.avisoForm.addEventListener("submit", onCrearAviso);
+  el.avisoModo.addEventListener("click", onModoAviso);
+  el.avisoSentido.addEventListener("animationend", () => el.avisoSentido.classList.remove("is-cambiado"));
   el.avisoUmbral.addEventListener("input", pintarSentidoAviso);
   el.avisoUmbral.addEventListener("animationend", () => el.avisoUmbral.classList.remove("is-mal"));
   // Solo al acabar el vaivén: el punto verde tiene su propia animación, más

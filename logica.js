@@ -5572,13 +5572,28 @@ function crearAvisoPorcentaje(from, to, { pct, signo }, rate, id) {
   return { id, from, to, sentido: "mueve", umbral: rate, pct };
 }
 
+// Una compra es un aviso que baja: "180 USD por menos de 160 EUR" es que la
+// tasa baje de 160/180. Guardo el precio y el máximo para el mensaje, que
+// dividido y vuelto a multiplicar salía 159,99.
+function crearCompra(from, to, precio, maximo, rate, id) {
+  if (!isValidCode(from) || !isValidCode(to) || from === to) return null;
+  if (!(precio > 0) || !(maximo > 0) || !(rate > 0)) return null;
+  if (maximo >= Math.round(precio * rate * 100) / 100) return null;
+  return { id, from, to, sentido: "baja", umbral: maximo / precio, precio, maximo };
+}
+
 const esAvisoMueve = (a) => a.sentido === "mueve" && typeof a.pct === "number" && a.pct > 0 && a.pct <= AVISO_PCT_MAX;
+
+// Los avisos de antes no traen precio; si lo traen, que esté entero.
+const compraBien = (a) => !("precio" in a)
+  || (a.sentido === "baja" && typeof a.precio === "number" && a.precio > 0 && typeof a.maximo === "number" && a.maximo > 0);
 
 function leerAvisos(guardado) {
   if (!Array.isArray(guardado)) return [];
   return guardado
     .filter((a) => a && typeof a.id === "string" && isValidCode(a.from) && isValidCode(a.to)
-      && (a.sentido === "sube" || a.sentido === "baja" || esAvisoMueve(a)) && typeof a.umbral === "number" && a.umbral > 0)
+      && (a.sentido === "sube" || a.sentido === "baja" || esAvisoMueve(a)) && typeof a.umbral === "number" && a.umbral > 0
+      && compraBien(a))
     .slice(0, AVISOS_MAX);
 }
 
@@ -5628,6 +5643,13 @@ function textoFalta(falta) {
 }
 
 function mensajeAviso(aviso, rate) {
+  if (aviso.precio) {
+    const dinero = (n, code) => `${numeros({ minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(n)} ${code}`;
+    return {
+      titulo: tr("avisos.notiCompraTitulo", { precio: dinero(aviso.precio, aviso.from), cuesta: dinero(aviso.precio * rate, aviso.to) }),
+      cuerpo: tr("avisos.notiCompra", { maximo: dinero(aviso.maximo, aviso.to) }),
+    };
+  }
   if (aviso.sentido === "mueve") {
     const cambio = movimiento(aviso, rate);
     const pct = numeros({ style: "percent", minimumFractionDigits: 1, maximumFractionDigits: 1 }).format(Math.abs(cambio));
@@ -5902,7 +5924,7 @@ if (typeof module !== "undefined") {
     domingoDePascua, hayTasaEl, tasaVieja, textoTasaVieja, horaBce, textoActualizado, proximaTasa, textoProximaTasa,
     FECHA_MINIMA, fechaLarga, fechaValida, diaDelGrafico, mesesAtras, FECHAS_RAPIDAS, leerFecha, cambioDesde, notaDiaHabil,
     textoInsignia, cambioDiario, sentidoDe, cambioDelDia, textoCambioDia, ULTIMA_VEZ_MINIMO, desdeLaUltimaVez, ultimoVisto, tituloInsignia, tituloHoy, leerGrados, convertirGrados, textoGrados, leerGas, convertirGas, textoGas, leerDistancia, convertirDistancia, textoDistancia, leerRitmo, convertirRitmo, textoRitmo, leerPeso, convertirPeso, textoPeso, leerOnzas, convertirOnzas, textoOnzas, leerOnzasTroy, convertirOnzasTroy, textoOnzasTroy, leerAltura, convertirAltura, textoAltura, leerVelocidad, convertirVelocidad, textoVelocidad, leerVolumen, convertirVolumen, textoVolumen, leerLongitud, convertirLongitud, textoLongitud, leerSuperficie, convertirSuperficie, textoSuperficie, leerMillasCuadradas, convertirMillasCuadradas, textoMillasCuadradas, leerYardasCuadradas, convertirYardasCuadradas, textoYardasCuadradas, leerPulgadasCuadradas, convertirPulgadasCuadradas, textoPulgadasCuadradas, leerConsumo, convertirConsumo, textoConsumo, leerElectrico, convertirElectrico, textoElectrico, leerPresion, convertirPresion, textoPresion, leerTazas, convertirTazas, textoTazas, TAZA_DE, leerTazaDe, textoTazaDe, leerCucharadas, convertirCucharadas, textoCucharadas, leerSticks, convertirSticks, textoSticks, leerYardas, convertirYardas, textoYardas, leerStone, convertirStone, textoStone, leerLibrasYOnzas, convertirLibrasYOnzas, textoLibrasYOnzas, leerOnzasLiquidas, convertirOnzasLiquidas, textoOnzasLiquidas, leerPintas, convertirPintas, textoPintas, leerGills, convertirGills, textoGills, leerCuartos, convertirCuartos, textoCuartos, leerNudos, convertirNudos, textoNudos, leerMetrosPorSegundo, convertirMetrosPorSegundo, textoMetrosPorSegundo, leerMillasNauticas, convertirMillasNauticas, textoMillasNauticas, leerBrazas, convertirBrazas, textoBrazas, leerLeguas, convertirLeguas, textoLeguas, leerManos, convertirManos, textoManos, leerFurlongs, convertirFurlongs, textoFurlongs, leerChains, convertirChains, textoChains, leerRods, convertirRods, textoRods, leerJin, convertirJin, textoJin, leerTsubo, convertirTsubo, textoTsubo, leerJo, convertirJo, textoJo, leerLakh, convertirLakh, textoLakh, leerTola, convertirTola, textoTola, leerTael, convertirTael, textoTael, leerMach, convertirMach, textoMach, leerThou, convertirThou, textoThou, leerGramaje, convertirGramaje, textoGramaje, leerMomme, convertirMomme, textoMomme, leerPood, convertirPood, textoPood, leerVersta, convertirVersta, textoVersta, leerAnioLuz, convertirAnioLuz, textoAnioLuz, leerAcrePie, convertirAcrePie, textoAcrePie, leerBigha, convertirBigha, textoBigha, leerMu, convertirMu, textoMu, leerMaund, convertirMaund, textoMaund, leerPicul, convertirPicul, textoPicul, leerShaku, convertirShaku, textoShaku, leerTalla, convertirTalla, textoTalla, leerAnillo, convertirAnillo, textoAnillo, CAMISAS, leerCamisa, textoCamisa, leerMah, convertirMah, textoMah, leerMbps, convertirMbps, textoMbps, leerGlucosa, convertirGlucosa, textoGlucosa, leerGo, convertirGo, textoGo, leerVara, convertirVara, textoVara, leerManzana, convertirManzana, textoManzana, leerRi, convertirRi, textoRi, leerDram, convertirDram, textoDram, leerFanega, convertirFanega, textoFanega, leerCodo, convertirCodo, textoCodo, leerAcres, convertirAcres, textoAcres, leerArpent, convertirArpent, textoArpent, leerCalorias, convertirCalorias, textoCalorias, leerPotencia, convertirPotencia, textoPotencia, leerBtu, convertirBtu, textoBtu, leerTherms, convertirTherms, textoTherms, leerInHg, convertirInHg, textoInHg, leerPiesCubicos, convertirPiesCubicos, textoPiesCubicos, leerYardasCubicas, convertirYardasCubicas, textoYardasCubicas, leerQuilates, convertirQuilates, textoQuilates, leerGrains, convertirGrains, textoGrains, leerPennyweight, convertirPennyweight, textoPennyweight, leerCwt, convertirCwt, textoCwt, leerCuerdas, convertirCuerdas, textoCuerdas, leerBushels, convertirBushels, textoBushels, leerPecks, convertirPecks, textoPecks, leerPulgadasCubicas, convertirPulgadasCubicas, textoPulgadasCubicas, leerBarriles, convertirBarriles, textoBarriles, leerParMotor, convertirParMotor, textoParMotor, leerToneladasCortas, convertirToneladasCortas, textoToneladasCortas, esHoyBarra, resumenHoyBarra, esAyerBarra, resumenAyerBarra, esAnteayerBarra, resumenAnteayerBarra, esSemanaBarra, resumenSemanaBarra, esMesBarra, resumenMesBarra, esTodosBarra, resumenTodosBarra, esViajeBarra, resumenViajeBarra, esTasaBarra, resumenTasaBarra, lineaTasa,
-    AVISOS_MAX, AVISO_PCT_MAX, sentidoAviso, crearAviso, leerPorcentajeAviso, crearAvisoPorcentaje, leerAvisos, avisoCumplido, repartirAvisos, mensajeAviso, faltaParaAviso, cercaniaAviso, textoFalta,
+    AVISOS_MAX, AVISO_PCT_MAX, sentidoAviso, crearAviso, leerPorcentajeAviso, crearAvisoPorcentaje, crearCompra, leerAvisos, avisoCumplido, repartirAvisos, mensajeAviso, faltaParaAviso, cercaniaAviso, textoFalta,
     nivelPresupuesto, avisosPresupuesto, mensajePresupuesto,
     RECORDATORIO_HORA, RECORDATORIO_HORAS, leerHoraRecordatorio, viajesSinApuntar, tocaRecordar, mensajeRecordatorio,
     ATAJOS, atajoPara, textoAtajo,
