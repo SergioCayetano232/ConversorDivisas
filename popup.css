@@ -3271,6 +3271,29 @@ body::after {
   display: none;
 }
 
+.gastos__taxfree {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 10px;
+  font-variant-numeric: tabular-nums;
+  color: color-mix(in srgb, var(--viaje-azul) 80%, var(--muted));
+  cursor: help;
+}
+
+.gastos__taxfree.is-nada {
+  color: var(--muted);
+}
+
+.gastos__taxfree[hidden] {
+  display: none;
+}
+
+.gastos__taxfree.is-tic {
+  animation: beat var(--mid) var(--ease-spring);
+}
+
 .gastos__ahorro.is-tic {
   animation: ahorro-sube 600ms var(--ease-spring);
 }
@@ -5482,20 +5505,20 @@ body::after {
 
 /* Las cifras se difuminan pero no se van: se sigue viendo cuántos gastos hay
    y en qué. Pasando el ratón por encima, se asoma esa. */
-.gastos :is(.gastos__suma, .gastos__media, .gastos__comisiones, .gastos__ahorro, .gastos__efectivo,
+.gastos :is(.gastos__suma, .gastos__media, .gastos__comisiones, .gastos__ahorro, .gastos__taxfree, .gastos__efectivo,
   .gastos__cabeza, .presupuesto__texto, .presupuesto__dia, .buscar__total,
   .gastos__dia-suma, .gastos__de, .gastos__valor) {
   transition: filter var(--mid) var(--ease-out);
 }
 
-.gastos.is-discreto :is(.gastos__suma, .gastos__media, .gastos__comisiones, .gastos__ahorro, .gastos__efectivo,
+.gastos.is-discreto :is(.gastos__suma, .gastos__media, .gastos__comisiones, .gastos__ahorro, .gastos__taxfree, .gastos__efectivo,
   .gastos__cabeza, .presupuesto__texto, .presupuesto__dia, .buscar__total,
   .gastos__dia-suma, .gastos__de, .gastos__valor) {
   filter: blur(5px);
   user-select: none;
 }
 
-.gastos.is-discreto :is(.gastos__suma, .gastos__media, .gastos__comisiones, .gastos__ahorro, .gastos__efectivo,
+.gastos.is-discreto :is(.gastos__suma, .gastos__media, .gastos__comisiones, .gastos__ahorro, .gastos__taxfree, .gastos__efectivo,
   .gastos__cabeza, .presupuesto__texto, .presupuesto__dia, .buscar__total,
   .gastos__dia-suma, .gastos__de, .gastos__valor):hover {
   filter: none;

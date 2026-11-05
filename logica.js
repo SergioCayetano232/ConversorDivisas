@@ -5919,6 +5919,63 @@ function errorMessageFor(error) {
   return tr("error.otro");
 }
 
+// Lo mínimo por tique para pedir la devolución del IVA y el IVA de allí, de las
+// guías de agosto de 2026. Solo las divisas de un país: con el euro no sé si
+// estás en España (sin mínimo) o en Bélgica (125 €). Sin Reino Unido, que lo
+// quitó en 2021, ni Estados Unidos, que no tiene.
+const TAX_FREE = {
+  JPY: { minimo: 5000, iva: 10 },
+  CHF: { minimo: 300, iva: 8.1 },
+  NOK: { minimo: 315, iva: 25 },
+  ISK: { minimo: 12000, iva: 24 },
+  TRY: { minimo: 1000, iva: 20 },
+  KRW: { minimo: 15000, iva: 10 },
+  SGD: { minimo: 100, iva: 9 },
+  THB: { minimo: 2000, iva: 7 },
+  AUD: { minimo: 300, iva: 10 },
+  DKK: { minimo: 300.01, iva: 25 },
+  CZK: { minimo: 2001, iva: 21 },
+  HUF: { minimo: 70000, iva: 27 },
+  PLN: { minimo: 200, iva: 23 },
+  SEK: { minimo: 200, iva: 25 },
+};
+
+// Si lo pasas a una divisa de la UE es que vives en la UE, y dentro de la UE
+// no te lo devuelven.
+const DIVISAS_UE = new Set(["EUR", "DKK", "SEK", "CZK", "HUF", "PLN", "RON", "BGN"]);
+const sinTaxFree = (from, to) => !TAX_FREE[from] || (DIVISAS_UE.has(from) && DIVISAS_UE.has(to));
+
+// El IVA va dentro del precio: de 110 con un 10 %, 10 son impuesto. Es lo más
+// que te pueden devolver; las agencias se quedan una parte.
+const ivaDentro = (importe, iva) => (importe * iva) / (100 + iva);
+
+// Las compras, una por tique: no sé en qué tienda fue cada una, así que no las
+// junto aunque sean del mismo día. Mejor quedarme corto que prometer de más.
+function taxFree(gastos) {
+  const porDivisa = new Map();
+  for (const g of gastos) {
+    if (g.categoria !== "compras" || sinTaxFree(g.from, g.to)) continue;
+    const { minimo, iva } = TAX_FREE[g.from];
+    const d = porDivisa.get(g.from) ?? { divisa: g.from, minimo, iva, pasan: 0, cerca: 0, total: 0, devolucion: 0, tuya: new Map() };
+    if (g.cantidad >= minimo) {
+      d.pasan += 1;
+      d.total += g.cantidad;
+      d.devolucion += ivaDentro(g.cantidad, iva);
+      d.tuya.set(g.to, (d.tuya.get(g.to) ?? 0) + ivaDentro(g.valor, iva));
+    } else {
+      d.cerca += 1;
+    }
+    porDivisa.set(g.from, d);
+  }
+  return [...porDivisa.values()]
+    .map(({ tuya, ...d }) => {
+      const [to, valor] = [...tuya].sort((a, b) => b[1] - a[1])[0] ?? [null, 0];
+      const redondo = (n) => Math.round(n * 100) / 100;
+      return { ...d, devolucion: redondo(d.devolucion), tuya: to ? { to, valor: redondo(valor) } : null };
+    })
+    .sort((a, b) => b.pasan - a.pasan || (b.tuya?.valor ?? 0) - (a.tuya?.valor ?? 0));
+}
+
 // La copia de seguridad guarda lo tuyo: viajes, avisos, historial y
 // preferencias. Las tasas guardadas no, que caducan en un día.
 const COPIA_APP = "ConversorDivisas";
@@ -5988,6 +6045,7 @@ function resumenCopia(datos) {
 // el export. Sin esto habría que montar un build, y aquí no hay ninguno.
 if (typeof module !== "undefined") {
   module.exports = {
+    TAX_FREE, taxFree,
     CURRENCIES, isValidCode, nombreDe, parseAmount, isoLocal, hoy, isFresh,
     evaluar, completar, leerImporte, UNIDADES, quitarUnidad, nombreUnidad, porUnidadMetrica, esOperacion, pasoCantidad, pasoPorDiez, RUEDA_PASO, pasosRueda, cifraCompleta, leerCantidad,
     normalizar, filtrarDivisas, buildPaths, startDateFor, errorMessageFor,

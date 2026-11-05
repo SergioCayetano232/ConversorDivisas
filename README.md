@@ -102,6 +102,12 @@ que necesitaba una conversión rápida. Ahora es un clic en la barra del navegad
   la lista lleva un puntito verde. Se queda como lo dejes. Arriba, con un
   puntito rojo, lo que llevas pagado en comisiones en el viaje, y con uno verde
   lo que te has ahorrado pagando en efectivo, con la comisión que tengas puesta
+- La devolución del IVA (tax free): con compras en Japón, Suiza, Noruega,
+  Corea, Singapur, Tailandia, Australia, Turquía, Islandia o los países de la
+  UE sin euro, debajo del total sale lo que te pueden devolver ("🧾 9,07 de tax
+  free"). Cuenta solo las compras que llegan al mínimo de allí por tique, y
+  pasando el ratón te dice cuántas son y cuántas se quedan cerca. Si vives en la
+  UE, dentro de la UE no te lo devuelven, así que esos no los cuenta
 - A cuánto te ha salido el cambio en el viaje: debajo de las comisiones,
   "⇄ Cambio: 162,9 JPY", lo que te ha dado cada euro de media con la comisión
   dentro. Pasando el ratón, a cuánto te saldría hoy ("un 6 % más barato"), y

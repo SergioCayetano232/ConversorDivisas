@@ -137,6 +137,7 @@ const el = {
   gastosComisiones: document.getElementById("gastos-comisiones"),
   gastosCambio: document.getElementById("gastos-cambio"),
   gastosAhorro: document.getElementById("gastos-ahorro"),
+  gastosTaxFree: document.getElementById("gastos-taxfree"),
   gastosEfectivo: document.getElementById("gastos-efectivo"),
   gastosForm: document.getElementById("gastos-form"),
   gastosConcepto: document.getElementById("gastos-concepto"),
@@ -3013,6 +3014,43 @@ function pintarAhorro() {
     ? `${tr("gastos.ahorro", { importe: `${nf.format(ahorro.total)} ${ahorro.to}` })}. ${tr("gastos.ahorroTitulo", { pct: tr("pct", { n: nfComision.format(comision) }) })}`
     : "";
   if (habia && texto && habia !== texto) restartAnimation(el.gastosAhorro, "is-tic");
+  pintarTaxFree();
+}
+
+// Solo el país que más da; si el viaje pasa por varios, los otros van en el title.
+function pintarTaxFree() {
+  const lista = taxFree(gastos);
+  const nodo = el.gastosTaxFree;
+  const habia = nodo.textContent;
+  nodo.hidden = lista.length === 0;
+  if (!lista.length) {
+    nodo.textContent = "";
+    nodo.title = "";
+    return;
+  }
+  const minimo = (d) => `${nfComision.format(d.minimo)} ${d.divisa}`;
+  const [primero] = lista;
+  const texto = primero.tuya
+    ? tr("taxfree.linea", { importe: nf.format(primero.tuya.valor) })
+    : tr("taxfree.lineaNada", { minimo: minimo(primero) });
+  nodo.textContent = texto;
+  nodo.classList.toggle("is-nada", !primero.tuya);
+  nodo.title = [
+    ...lista.map((d) => {
+      if (!d.pasan) return tr("taxfree.nada", { minimo: minimo(d) });
+      const partes = [
+        tr(d.pasan === 1 ? "taxfree.pasaUna" : "taxfree.pasan", { n: d.pasan, minimo: minimo(d) }),
+        tr("taxfree.hasta", {
+          valor: `${nf.format(d.devolucion)} ${d.divisa}${d.tuya ? ` (${nf.format(d.tuya.valor)} ${d.tuya.to})` : ""}`,
+          iva: tr("pct", { n: nfComision.format(d.iva) }),
+        }),
+      ];
+      if (d.cerca) partes.push(tr(d.cerca === 1 ? "taxfree.cercaUna" : "taxfree.cerca", { n: d.cerca }));
+      return partes.join(" ");
+    }),
+    tr("taxfree.como"),
+  ].join("\n");
+  if (habia && habia !== texto) restartAnimation(nodo, "is-tic");
 }
 
 // Los yenes sin decimales, que "18.000,00 JPY" no lo dice nadie.
