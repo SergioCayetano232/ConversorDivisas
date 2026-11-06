@@ -690,6 +690,7 @@
           <span class="gastos__taxfree" id="gastos-taxfree" hidden></span>
           <span class="gastos__cambio" id="gastos-cambio" hidden></span>
           <button class="gastos__efectivo" type="button" id="gastos-efectivo" aria-expanded="false" aria-controls="cajero" hidden></button>
+          <button class="gastos__efectivo gastos__tramo" type="button" id="gastos-tramo" aria-expanded="false" aria-controls="tramos" hidden></button>
           <span class="gastos__personas" id="gastos-personas" hidden>
             <button class="gastos__paso" type="button" id="personas-menos" aria-label="Uno menos" data-t-aria-label="cuenta.menos">−</button>
             <span class="gastos__gente" id="personas-n" aria-live="polite"></span>
@@ -775,6 +776,24 @@
         </form>
         <button class="cajero__sugerencia" type="button" id="cajero-sugerencia" hidden></button>
         <ul class="cajero__lista" id="cajero-lista"></ul>
+      </div>
+      <div class="cajero tramos" id="tramos" role="group" aria-labelledby="tramos-titulo" hidden>
+        <p class="cajero__titulo" id="tramos-titulo" data-t="tramos.titulo">Tramos del viaje</p>
+        <ul class="tramos__lista" id="tramos-lista"></ul>
+        <form class="cajero__nuevo tramos__nuevo" id="tramos-form" novalidate>
+          <input
+            class="gastos__concepto"
+            type="text"
+            id="tramos-nombre"
+            maxlength="20"
+            autocomplete="off"
+            placeholder="Kioto, Oporto…"
+            aria-label="Dónde estás desde ese día"
+            data-t-placeholder="tramos.nombre"
+            data-t-aria-label="tramos.nombreAria">
+          <input class="tramos__desde" type="date" id="tramos-desde" aria-label="Desde qué día" data-t-aria-label="tramos.desde">
+          <button class="gastos__apuntar" type="submit" aria-label="Añadir el tramo" data-t-aria-label="tramos.anadir">+</button>
+        </form>
       </div>
       <div class="cajero gente" id="gente" role="group" aria-labelledby="gente-titulo" hidden>
         <p class="cajero__titulo" id="gente-titulo" data-t="gente.titulo">Quién ha pagado</p>

@@ -3331,6 +3331,19 @@ body::after {
   transition: color var(--fast) var(--ease), text-decoration-color var(--fast) var(--ease);
 }
 
+.gastos__tramo {
+  --tono: var(--viaje-azul);
+}
+
+.gastos__tramo.is-vacio {
+  color: var(--muted);
+}
+
+/* Sin el puntito del efectivo: ya lleva la chincheta. */
+.gastos__tramo::before {
+  display: none;
+}
+
 .gastos__efectivo:hover,
 .gastos__efectivo[aria-expanded="true"] {
   color: var(--tono);
@@ -4524,7 +4537,8 @@ body::after {
 }
 
 @media (prefers-color-scheme: light) {
-  .gastos__dias {
+  .gastos__dias,
+  .tramos__desde {
     color-scheme: light;
   }
 }
@@ -4592,6 +4606,136 @@ body::after {
 .gastos__entre::before {
   content: "👥 ";
   font-style: normal;
+}
+
+.gastos__dia-tramo {
+  margin-left: 6px;
+  padding: 0 5px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--viaje-azul) 14%, transparent);
+  color: var(--viaje-azul);
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: 0;
+  text-transform: none;
+}
+
+.tramos__lista {
+  display: grid;
+  gap: 3px;
+  margin: 0 0 8px;
+  padding: 0;
+  list-style: none;
+}
+
+/* Una barrita de fondo que dice cuánto pesa cada tramo al día, como en los viajes. */
+.tramos__fila {
+  position: relative;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  grid-template-areas: "nombre cifras quitar" "cuando cifras quitar";
+  align-items: center;
+  column-gap: 6px;
+  padding: 4px 4px 4px 8px;
+  border-radius: 6px;
+  overflow: hidden;
+  isolation: isolate;
+  animation: enter var(--mid) var(--ease-out) backwards;
+  animation-delay: calc(var(--i, 0) * 45ms);
+}
+
+.tramos__fila::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background: color-mix(in srgb, var(--viaje-azul) 12%, transparent);
+  transform: scaleX(var(--peso, 0));
+  transform-origin: left center;
+  transition: transform var(--slow) var(--ease-out);
+}
+
+.tramos__fila.is-actual {
+  box-shadow: inset 2px 0 0 var(--viaje-azul);
+}
+
+.tramos__fila.is-nueva {
+  animation: pop var(--mid) var(--ease-spring);
+}
+
+.tramos__nombre {
+  grid-area: nombre;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--mist);
+}
+
+.tramos__fila.is-antes .tramos__nombre {
+  font-weight: 500;
+  font-style: italic;
+  color: var(--muted);
+}
+
+.tramos__caro {
+  margin-left: 4px;
+  font-size: 9px;
+}
+
+.tramos__cuando {
+  grid-area: cuando;
+  font-size: 9px;
+  color: var(--muted);
+}
+
+.tramos__cifras {
+  grid-area: cifras;
+  display: grid;
+  justify-items: end;
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+}
+
+.tramos__total {
+  font-size: 10.5px;
+  font-weight: 700;
+  color: var(--mist);
+}
+
+.tramos__dia {
+  font-size: 9px;
+  color: var(--viaje-azul);
+}
+
+.tramos__fila > :last-child {
+  grid-area: quitar;
+}
+
+.tramos__desde {
+  flex-shrink: 0;
+  width: 104px;
+  height: 26px;
+  padding: 0 4px;
+  background: var(--slate);
+  border: 1px solid var(--hairline);
+  border-radius: 6px;
+  color: var(--mist);
+  font: inherit;
+  font-size: 10px;
+  font-variant-numeric: tabular-nums;
+  color-scheme: dark;
+}
+
+.tramos__desde:focus {
+  outline: none;
+  border-color: var(--brass);
+  box-shadow: 0 0 0 3px var(--brass-ghost);
+}
+
+.tramos__nuevo .gastos__concepto {
+  font-family: inherit;
 }
 
 .gastos__dias-nombre {

@@ -159,6 +159,13 @@ que necesitaba una conversión rápida. Ahora es un clic en la barra del navegad
   un campo para lo que no cabe en él ("pedir factura", "pagó Ana"). Sale en
   pequeño debajo del gasto y la lupa también busca ahí. Al volver a apuntarlo
   hoy la nota no se copia, que era de aquel
+- Tramos dentro del viaje (Tokio, Kioto, Osaka): con **📍 Tramos**, debajo
+  del total, pones dónde estás desde qué día. Cada tramo dura hasta que
+  empieza el siguiente, así los gastos caen solos en el suyo por la fecha.
+  Sale lo de cada uno, sus días y lo que gastas al día allí, con 🔥 en el
+  más caro, y en la lista una marca en el día que empieza cada uno. Arriba
+  se queda el de ahora ("📍 Kioto · 46,67/día"). Lo pagado aparte no cuenta,
+  que el vuelo no es de ninguna ciudad
 - Mover un gasto a otro viaje, si lo apuntaste con el que no era abierto: al
   pulsar el concepto, con las flechas ⇄ que hay al lado de **↩ Devuelto**,
   eliges a cuál. Se va con su tasa, su fecha y su nota, y con **Deshacer**

@@ -2298,6 +2298,7 @@ function leerViajes(guardado, gastosSueltos, presupuestoSuelto) {
       cajero: leerRetiradas(v.cajero), personas: leerPersonas(v.personas), color: leerColorViaje(v.color),
       ...(leerGente(v.gente).length ? { gente: leerGente(v.gente) } : {}),
       ...(leerSaldados(v.saldados).length ? { saldados: leerSaldados(v.saldados) } : {}),
+      ...(leerTramos(v.tramos).length ? { tramos: leerTramos(v.tramos) } : {}),
     }));
   if (lista.length === 0) {
     lista.push({ ...viajeVacio("primero"), gastos: leerGastos(gastosSueltos), presupuesto: leerPresupuesto(presupuestoSuelto) });
@@ -2923,6 +2924,86 @@ function mediaPorDia(todos) {
   const total = diasHasta(dias[0].dia, dias[dias.length - 1].dia);
   if (total < 2) return null;
   return { media: principal.total / total, to: principal.to, dias: total };
+}
+
+// Los tramos del viaje: "desde el 4 estoy en Kioto". Cada uno dura hasta que
+// empieza el siguiente, así los gastos caen solos en el suyo por la fecha y no
+// hay que marcar nada al apuntar.
+const TRAMOS_MAX = 12;
+const NOMBRE_TRAMO_MAX = 20;
+const limpiarNombreTramo = (nombre) => String(nombre ?? "").replace(/\s+/g, " ").trim().slice(0, NOMBRE_TRAMO_MAX);
+
+// Dos el mismo día no tienen sentido: se queda el último que pusiste.
+function leerTramos(guardado) {
+  if (!Array.isArray(guardado)) return [];
+  const porDia = new Map();
+  for (const t of guardado) {
+    if (!t || typeof t.id !== "string" || !t.id || !esIso(t.desde) || !limpiarNombreTramo(t.nombre)) continue;
+    porDia.set(t.desde, { id: t.id, nombre: limpiarNombreTramo(t.nombre), desde: t.desde });
+  }
+  return [...porDia.values()].sort((a, b) => a.desde.localeCompare(b.desde)).slice(0, TRAMOS_MAX);
+}
+
+// Si ya hay uno ese día, le cambia el nombre: es que te equivocaste al ponerlo.
+function ponerTramo(tramos, { id, nombre, desde }) {
+  const lista = leerTramos(tramos);
+  const limpio = limpiarNombreTramo(nombre);
+  if (!limpio || !esIso(desde) || typeof id !== "string" || !id) return lista;
+  if (lista.some((t) => t.desde === desde)) return lista.map((t) => (t.desde === desde ? { ...t, nombre: limpio } : t));
+  if (lista.length >= TRAMOS_MAX) return lista;
+  return leerTramos([...lista, { id, nombre: limpio, desde }]);
+}
+
+const quitarTramo = (tramos, id) => leerTramos(tramos).filter((t) => t.id !== id);
+
+function tramoDelDia(tramos, dia) {
+  return leerTramos(tramos).filter((t) => t.desde <= dia).at(-1) ?? null;
+}
+
+// Lo de cada tramo, sin lo pagado aparte: el vuelo que reservaste hace meses
+// no es de Tokio ni de Kioto. El último llega hasta hoy (o hasta la vuelta, si
+// ya pasó), que en Kioto llevas los días que llevas aunque hoy no gastes.
+// Lo de antes del primero va aparte, sin nombre.
+function resumenTramos(gastos, tramos, { hoyIso = hoy(), hasta = null } = {}) {
+  const lista = leerTramos(tramos);
+  if (lista.length === 0) return [];
+  const delDia = delDiaADia(gastos);
+  const to = sumarPorDivisa(delDia)[0]?.to ?? null;
+  const grupos = [{ id: null, nombre: null, desde: null }, ...lista].map((t) => ({ ...t, total: 0, n: 0, ultimo: null }));
+  for (const g of delDia) {
+    if (g.to !== to) continue;
+    const dia = isoLocal(new Date(g.cuando));
+    const grupo = grupos[lista.filter((t) => t.desde <= dia).length];
+    grupo.total += g.valor;
+    grupo.n += 1;
+    if (!grupo.ultimo || dia > grupo.ultimo) grupo.ultimo = dia;
+  }
+  const antesDe = (iso) => {
+    const [a, m, d] = iso.split("-").map(Number);
+    return isoLocal(new Date(a, m - 1, d - 1));
+  };
+  const tope = hasta && hasta < hoyIso ? hasta : hoyIso;
+  const salen = grupos.map((g, i) => {
+    let fin = null;
+    if (i > 0) {
+      const siguiente = grupos[i + 1];
+      fin = siguiente ? antesDe(siguiente.desde) : [tope, g.ultimo].filter((d) => d && d >= g.desde).sort().at(-1) ?? null;
+    }
+    const dias = fin && fin >= g.desde ? diasHasta(fin, g.desde) : 0;
+    return {
+      id: g.id, nombre: g.nombre, desde: g.desde, fin, dias, n: g.n, to,
+      total: Math.round(g.total * 100) / 100,
+      alDia: dias > 0 && g.n > 0 ? g.total / dias : null,
+      actual: i > 0 && g.desde <= hoyIso && (!fin || hoyIso <= fin),
+    };
+  }).filter((g) => g.id !== null || g.n > 0);
+  // El más caro al día lleva su marca, como en los viajes; con uno solo no.
+  const conMedia = salen.filter((g) => g.id && g.alDia !== null);
+  if (conMedia.length >= 2) {
+    const caro = conMedia.reduce((a, b) => (b.alDia > a.alDia ? b : a));
+    caro.caro = true;
+  }
+  return salen;
 }
 
 // Lo de cada categoría al día, con los mismos días que la media de arriba: así
@@ -6460,7 +6541,7 @@ if (typeof module !== "undefined") {
     CATEGORIAS, CATEGORIA_POR_DEFECTO, adivinarCategoria, PAGOS, PAGO_POR_DEFECTO, leerPago, comisionDelPago, desglose, conceptosUsados, completarConcepto,
     EMOJI_CATEGORIA, destacados, resumenParaCompartir, FINDE_MINIMO, findeContraSemana, ESTRELLA_MINIMO, conceptoEstrella,
     COPIA_APP, COPIA_VERSION, CLAVES_COPIA, limpiarCopia, crearCopia, leerCopia, resumenCopia,
-    VIAJES_MAX, NOMBRE_VIAJE_MAX, leerViajes, leerPersonas, porPersona, leerPagador, leerGente, ponerNombre, nombrePersona, inicialPersona, cuentasViaje, frasePago, leerEntre, entreDe, fraseEntre, cambiarEntre, leerSaldados, saldarPago, quitarSaldado, fraseSaldado, hayOtrosPagadores, NOMBRE_PERSONA_MAX, compararViajes, COLORES_VIAJE, leerColorViaje, colorLibre, siguienteColor, viajeActivo, crearViaje, nombreCopia, nombreDeDestino, duplicarViaje, renombrarViaje, elegirViaje, borrarViaje, moverGasto, cambiarViaje, resumenViaje, archivoGastos,
+    VIAJES_MAX, NOMBRE_VIAJE_MAX, leerViajes, leerPersonas, porPersona, leerPagador, leerGente, ponerNombre, nombrePersona, inicialPersona, cuentasViaje, frasePago, leerEntre, entreDe, fraseEntre, cambiarEntre, leerSaldados, saldarPago, quitarSaldado, fraseSaldado, hayOtrosPagadores, NOMBRE_PERSONA_MAX, compararViajes, COLORES_VIAJE, leerColorViaje, colorLibre, siguienteColor, viajeActivo, crearViaje, nombreCopia, nombreDeDestino, duplicarViaje, renombrarViaje, elegirViaje, borrarViaje, moverGasto, cambiarViaje, TRAMOS_MAX, NOMBRE_TRAMO_MAX, leerTramos, ponerTramo, quitarTramo, tramoDelDia, resumenTramos, resumenViaje, archivoGastos,
     diasHasta, leerPresupuesto, leerTopes, PRESUPUESTO_JUSTO, estadoPresupuesto, estadoTopes, alDiaAlli, inicioDelViaje, diaDelViaje, cuentaAtras, textoCuentaAtras, loDeHoy, CELEBRADOS_MAX, leerCelebrados, anadirCelebrado, viajeParaCelebrar, textoCelebrar, RACHA_MINIMA, rachaPresupuesto, hastaCuandoLlega, previsionViaje, PREVISION_JUSTA, textoPrevision, loQueSeLleva, redondearDias,
     EXTRAS_MAX, EXTRAS_POR_DEFECTO, leerExtras, anadirExtra, quitarExtra,
     extrasVisibles, disponiblesParaAnadir, convertirExtras, semanaDe, trazoMini, CHULETA, escalaChuleta, chuleta, TRUCO_TOLERANCIA, trucoDeCabeza, textoTruco, tituloTruco, chuletaParaCompartir, extrasParaCompartir,

@@ -121,6 +121,12 @@ const el = {
   gente: document.getElementById("gente"),
   genteLista: document.getElementById("gente-lista"),
   gentePagos: document.getElementById("gente-pagos"),
+  gastosTramo: document.getElementById("gastos-tramo"),
+  tramos: document.getElementById("tramos"),
+  tramosLista: document.getElementById("tramos-lista"),
+  tramosForm: document.getElementById("tramos-form"),
+  tramosNombre: document.getElementById("tramos-nombre"),
+  tramosDesde: document.getElementById("tramos-desde"),
   genteDevuelto: document.getElementById("gente-devuelto"),
   cajeroLista: document.getElementById("cajero-lista"),
   viajesLista: document.getElementById("viajes-lista"),
@@ -348,6 +354,7 @@ let compararDivisa = null;
 let pidiendoTasa = false;
 let retiradaNueva = null;
 let saldadoNuevo = null;
+let tramoNuevo = null;
 
 // Con el mismo trazo que los iconos de las pestañas.
 const ICONOS_CATEGORIA = {
@@ -2801,6 +2808,14 @@ function crearDiaGastos({ dia, gastos: suyos, totales }, peso, d) {
     emoji.title = tr("gastos.diaCategoria", { cat: tr(`cat.${manda.categoria}`).toLocaleLowerCase(), pct: tr("pct", { n: Math.round(manda.fraccion * 100) }) });
     suma.prepend(emoji);
   }
+  const empieza = leerTramos(viajeActivo(viajes).tramos).find((t) => t.desde === dia);
+  if (empieza) {
+    const marca = document.createElement("span");
+    marca.className = "gastos__dia-tramo";
+    marca.textContent = `📍 ${empieza.nombre}`;
+    marca.title = tr("tramos.empieza", { nombre: empieza.nombre });
+    nombre.append(marca);
+  }
   fila.append(nombre, suma);
 
   if (peso > 0) {
@@ -3421,8 +3436,139 @@ function onSugerencia() {
   el.cajeroCantidad.focus();
 }
 
+// Donde estás hoy, con lo que llevas al día allí. Sin tramos, una invitación
+// discreta, y solo cuando ya hay gastos: antes no hay nada que partir.
+function pintarTramo() {
+  const { tramos } = viajeActivo(viajes);
+  const boton = el.gastosTramo;
+  boton.hidden = gastos.length === 0 && leerTramos(tramos).length === 0;
+  if (boton.hidden) return;
+  const hoyIso = hoy();
+  const resumen = resumenTramos(gastos, tramos, { hoyIso, hasta: presupuesto?.hasta });
+  const ahora = resumen.find((t) => t.actual) ?? resumen.filter((t) => t.id).at(-1);
+  boton.classList.toggle("is-vacio", !ahora);
+  if (!ahora) {
+    boton.textContent = tr("tramos.invitar");
+    boton.title = tr("tramos.invitarTitulo");
+  } else {
+    boton.textContent = ahora.alDia === null ? tr("tramos.boton", { nombre: ahora.nombre })
+      : tr("tramos.botonDia", { nombre: ahora.nombre, valor: nf.format(ahora.alDia) });
+    boton.title = tr("tramos.botonTitulo", { nombre: ahora.nombre, desde: nombreDia(ahora.desde, hoyIso).toLocaleLowerCase(localeActual()) });
+  }
+  if (!el.tramos.hidden) pintarTramos();
+}
+
+function pintarTramos() {
+  const { tramos } = viajeActivo(viajes);
+  const hoyIso = hoy();
+  const resumen = resumenTramos(gastos, tramos, { hoyIso, hasta: presupuesto?.hasta });
+  const maximo = Math.max(...resumen.map((t) => t.alDia ?? 0), 0);
+  el.tramosLista.replaceChildren(...resumen.map((t, i) => {
+    const fila = document.createElement("li");
+    fila.className = "tramos__fila";
+    fila.style.setProperty("--i", i);
+    fila.style.setProperty("--peso", maximo > 0 && t.alDia ? t.alDia / maximo : 0);
+    fila.classList.toggle("is-actual", t.actual);
+    fila.classList.toggle("is-antes", !t.id);
+    if (t.id && t.id === tramoNuevo) fila.classList.add("is-nueva");
+    const nombre = document.createElement("span");
+    nombre.className = "tramos__nombre";
+    nombre.textContent = t.id ? t.nombre : tr("tramos.antes");
+    if (t.caro) {
+      const fuego = document.createElement("span");
+      fuego.className = "tramos__caro";
+      fuego.textContent = "🔥";
+      fuego.title = tr("tramos.caro");
+      nombre.append(fuego);
+    }
+    const cuando = document.createElement("span");
+    cuando.className = "tramos__cuando";
+    if (t.id) {
+      const desde = nombreDia(t.desde, hoyIso).toLocaleLowerCase(localeActual());
+      cuando.textContent = t.dias > 0
+        ? tr("tramos.dias", { desde, dias: t.dias === 1 ? tr("tramos.dia1") : tr("tramos.diasN", { n: t.dias }) })
+        : tr("tramos.aun", { desde });
+    }
+    const cifras = document.createElement("span");
+    cifras.className = "tramos__cifras";
+    const total = document.createElement("span");
+    total.className = "tramos__total";
+    total.textContent = t.to ? `${nf.format(t.total)} ${t.to}` : "";
+    const dia = document.createElement("span");
+    dia.className = "tramos__dia";
+    dia.textContent = t.alDia === null ? "" : tr("tramos.alDia", { valor: nf.format(t.alDia) });
+    cifras.append(total, dia);
+    fila.append(nombre, cuando, cifras);
+    if (t.id) {
+      const quitar = document.createElement("button");
+      quitar.type = "button";
+      quitar.className = "gastos__quitar historial__quitar";
+      quitar.textContent = "✕";
+      quitar.setAttribute("aria-label", tr("tramos.quitar", { nombre: t.nombre }));
+      quitar.addEventListener("click", () => onQuitarTramo(t.id));
+      fila.append(quitar);
+    } else {
+      fila.append(document.createElement("span"));
+    }
+    return fila;
+  }));
+  tramoNuevo = null;
+  el.tramosForm.title = tr("tramos.pista");
+}
+
+function abrirTramos() {
+  cerrarViajes();
+  cerrarCajero();
+  cerrarGente();
+  cerrarCategorias();
+  dejarDeEditarPresupuesto();
+  const arriba = el.gastosSuma.getBoundingClientRect().bottom - el.gastos.getBoundingClientRect().top;
+  el.tramos.style.setProperty("--cajero-arriba", `${Math.round(arriba) + 4}px`);
+  el.tramosNombre.value = "";
+  el.tramosDesde.value = hoy();
+  el.tramos.hidden = false;
+  el.gastosTramo.setAttribute("aria-expanded", "true");
+  pintarTramos();
+  el.tramosNombre.focus();
+}
+
+function cerrarTramos() {
+  if (el.tramos.hidden) return false;
+  el.tramos.hidden = true;
+  el.gastosTramo.setAttribute("aria-expanded", "false");
+  return true;
+}
+
+function onPonerTramo(event) {
+  event.preventDefault();
+  const id = `${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`;
+  const { tramos } = viajeActivo(viajes);
+  const desde = el.tramosDesde.value || hoy();
+  const nuevos = ponerTramo(tramos, { id, nombre: el.tramosNombre.value, desde });
+  if (JSON.stringify(nuevos) === JSON.stringify(leerTramos(tramos))) {
+    restartAnimation(el.tramosNombre, "is-mal");
+    el.tramosNombre.focus();
+    return;
+  }
+  tramoNuevo = nuevos.find((t) => t.desde === desde)?.id ?? null;
+  viajes = cambiarViaje(viajes, viajes.activo, { tramos: nuevos });
+  el.tramosNombre.value = "";
+  guardarViajes();
+  pintarGastos();
+  el.tramosNombre.focus();
+}
+
+function onQuitarTramo(id) {
+  const { tramos } = viajeActivo(viajes);
+  viajes = cambiarViaje(viajes, viajes.activo, { tramos: quitarTramo(tramos, id) });
+  guardarViajes();
+  pintarGastos();
+  (el.tramosLista.querySelector(".gastos__quitar") ?? el.tramosNombre).focus();
+}
+
 function abrirCajero() {
   cerrarViajes();
+  cerrarTramos();
   cerrarGente();
   cerrarCategorias();
   dejarDeEditarPresupuesto();
@@ -3509,6 +3655,7 @@ function pintarGastos() {
   }
   pintarComisiones();
   pintarEfectivo();
+  pintarTramo();
   pintarPersonas();
   pintarPagador();
   if (!el.gente.hidden) pintarCuentasGente();
@@ -4433,6 +4580,7 @@ function pintarViajes() {
 
 function abrirViajes() {
   cerrarCajero();
+  cerrarTramos();
   cerrarGente();
   cerrarCategorias();
   dejarDeEditarPresupuesto();
@@ -4466,6 +4614,7 @@ function ponerViaje(nuevos) {
   ordenado = false;
   cerrarBusqueda();
   cerrarCajero();
+  cerrarTramos();
   cerrarGente();
   dejarDeEditarPresupuesto();
   delete el.presupuestoVer.dataset.tono;
@@ -4675,6 +4824,7 @@ function cerrarGastos() {
   if (el.gastos.hidden) return;
   cerrarViajes();
   cerrarCajero();
+  cerrarTramos();
   cerrarGente();
   dejarDeEditarPresupuesto();
   cerrarCategorias();
@@ -6563,6 +6713,9 @@ function bindEvents() {
   el.gastosCerrar.addEventListener("click", () => cerrarGastos()?.focus());
   el.viaje.addEventListener("click", () => (el.viajes.hidden ? abrirViajes() : cerrarViajes()));
   el.gastosEfectivo.addEventListener("click", () => (el.cajero.hidden ? abrirCajero() : cerrarCajero()));
+  el.gastosTramo.addEventListener("click", () => (el.tramos.hidden ? abrirTramos() : cerrarTramos()));
+  el.tramosForm.addEventListener("submit", onPonerTramo);
+  el.tramosNombre.addEventListener("animationend", () => el.tramosNombre.classList.remove("is-mal"));
   el.gastosEfectivo.addEventListener("animationend", () => el.gastosEfectivo.classList.remove("is-tic"));
   el.cajeroForm.addEventListener("submit", onSacar);
   el.cajeroCantidad.addEventListener("animationend", () => el.cajeroCantidad.classList.remove("is-mal", "is-cambiado"));
@@ -6716,6 +6869,7 @@ function bindEvents() {
       // Primero se cierra lo de dentro (categorías, presupuesto), y con otro Escape el panel.
       if (cerrarViajes()) el.viaje.focus();
       else if (cerrarCajero()) el.gastosEfectivo.focus();
+      else if (cerrarTramos()) el.gastosTramo.focus();
       else if (cerrarGente()) el.personasCabeza.focus();
       else if (cerrarCategorias()) el.gastosCategoria.focus();
       else if (dejarDeEditarPresupuesto()) el.presupuestoVer.hidden ? el.presupuestoAnadir.focus() : el.presupuestoVer.focus();
@@ -6750,6 +6904,9 @@ function bindEvents() {
     }
     if (!el.cajero.hidden && !el.cajero.contains(event.target) && !el.gastosEfectivo.contains(event.target)) {
       cerrarCajero();
+    }
+    if (!el.tramos.hidden && !el.tramos.contains(event.target) && !el.gastosTramo.contains(event.target)) {
+      cerrarTramos();
     }
     if (!el.gente.hidden && !el.gente.contains(event.target) && !el.personasCabeza.contains(event.target)) {
       cerrarGente();
