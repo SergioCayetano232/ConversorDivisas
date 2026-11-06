@@ -841,6 +841,23 @@
             <span class="presupuesto__dia" id="presupuesto-dia" hidden></span>
           </span>
         </button>
+        <button class="presupuesto__curva-abrir" type="button" id="curva-abrir" aria-expanded="false" aria-controls="curva" title="Ver cómo va el gasto día a día" aria-label="Ver cómo va el gasto día a día" data-t-title="curva.abrir" data-t-aria-label="curva.abrir" hidden>
+          <svg viewBox="0 0 12 12" aria-hidden="true"><path d="M1.5 10.5h9"/><path class="curva__icono-ideal" d="M1.5 9L10.5 3"/><path d="M1.5 9.5l3-2 2 .5 4-5"/></svg>
+        </button>
+      </div>
+      <div class="cajero curva" id="curva" role="group" aria-labelledby="curva-titulo" hidden>
+        <p class="cajero__titulo" id="curva-titulo" data-t="curva.titulo">Cómo va el gasto</p>
+        <div class="curva__lienzo" id="curva-lienzo">
+          <svg class="curva__svg" id="curva-svg" role="img" tabindex="0" aria-describedby="curva-texto"></svg>
+          <div class="curva__tip" id="curva-tip" hidden></div>
+        </div>
+        <div class="curva__ejes"><span id="curva-desde"></span><span id="curva-hasta"></span></div>
+        <ul class="curva__leyenda" aria-hidden="true">
+          <li class="curva__clave curva__clave--gastado" data-t="curva.gastado">Gastado</li>
+          <li class="curva__clave curva__clave--ideal" data-t="curva.ideal">Yendo parejo</li>
+          <li class="curva__clave curva__clave--prevision" id="curva-clave-prevision" data-t="curva.prevision">A este ritmo</li>
+        </ul>
+        <p class="curva__texto" id="curva-texto" aria-live="polite"></p>
       </div>
       <div class="buscar" id="buscar" hidden>
         <svg class="buscar__icono" viewBox="0 0 12 12" aria-hidden="true"><circle cx="5.2" cy="5.2" r="3.3"/><path d="M7.7 7.7L10.3 10.3"/></svg>

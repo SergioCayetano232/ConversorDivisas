@@ -3315,6 +3315,43 @@ function previsionViaje(presupuesto, gastos, hoyIso = hoy(), pendientes = []) {
   return { total, sobra: presupuesto.importe - total, fraccion: total / presupuesto.importe, to: presupuesto.to };
 }
 
+// Lo gastado día a día contra lo que tocaría yendo parejo, para ver cuándo se
+// torció la cosa. Lo comprado antes de salir (el vuelo) va en el primer día, y
+// lo apuntado para días que vienen (las noches del hotel), en el suyo, aunque
+// la línea solo llega hasta hoy. "Torció" es desde cuándo vas por encima sin
+// volver a bajar: un día malo suelto no es que se haya torcido.
+function curvaPresupuesto(presupuesto, gastos, hoyIso = hoy(), pendientes = []) {
+  if (!presupuesto) return null;
+  const inicio = inicioDelViaje(presupuesto, gastos, hoyIso);
+  const total = diasHasta(presupuesto.hasta, inicio);
+  if (total < 2) return null;
+  const [a, m, d] = inicio.split("-").map(Number);
+  const dias = Array.from({ length: total }, (_, i) => isoLocal(new Date(a, m - 1, d + i)));
+  const porDia = new Array(total).fill(0);
+  for (const g of gastos) {
+    if (g.to !== presupuesto.to) continue;
+    const i = Math.min(Math.max(diasHasta(isoLocal(new Date(g.cuando)), inicio) - 1, 0), total - 1);
+    porDia[i] += g.valor;
+  }
+  const hasta = hoyIso < inicio ? -1 : Math.min(diasHasta(hoyIso, inicio), total) - 1;
+  let suma = 0;
+  const puntos = dias.map((dia, i) => {
+    suma += porDia[i];
+    return { dia, gastado: i <= hasta ? Math.round(suma * 100) / 100 : null, ideal: (presupuesto.importe * (i + 1)) / total };
+  });
+  let torcio = null;
+  for (let i = hasta; i >= 0 && puntos[i].gastado > puntos[i].ideal + 0.005; i -= 1) torcio = i;
+  const prevision = previsionViaje(presupuesto, gastos, hoyIso, pendientes);
+  return {
+    to: presupuesto.to,
+    importe: presupuesto.importe,
+    puntos,
+    hoy: hasta >= 0 && hoyIso <= presupuesto.hasta ? hasta : null,
+    torcio: torcio === null ? null : puntos[torcio].dia,
+    prevision: prevision ? prevision.total : null,
+  };
+}
+
 // Por debajo de un 2 % del presupuesto lo doy por clavado: es una previsión, no
 // una cuenta.
 const PREVISION_JUSTA = 0.02;
@@ -6609,7 +6646,7 @@ if (typeof module !== "undefined") {
     CATEGORIAS, CATEGORIA_POR_DEFECTO, adivinarCategoria, PAGOS, PAGO_POR_DEFECTO, leerPago, comisionDelPago, desglose, conceptosUsados, completarConcepto,
     EMOJI_CATEGORIA, destacados, resumenParaCompartir, FINDE_MINIMO, findeContraSemana, ESTRELLA_MINIMO, conceptoEstrella,
     COPIA_APP, COPIA_VERSION, CLAVES_COPIA, limpiarCopia, crearCopia, leerCopia, resumenCopia,
-    VIAJES_MAX, NOMBRE_VIAJE_MAX, leerViajes, leerPersonas, porPersona, consumoGente, leerPagador, leerGente, ponerNombre, nombrePersona, inicialPersona, cuentasViaje, frasePago, leerEntre, entreDe, fraseEntre, cambiarEntre, leerSaldados, saldarPago, quitarSaldado, fraseSaldado, hayOtrosPagadores, NOMBRE_PERSONA_MAX, compararViajes, COLORES_VIAJE, leerColorViaje, colorLibre, siguienteColor, viajeActivo, crearViaje, nombreCopia, nombreDeDestino, duplicarViaje, renombrarViaje, elegirViaje, borrarViaje, moverGasto, cambiarViaje, TRAMOS_MAX, NOMBRE_TRAMO_MAX, leerTramos, ponerTramo, quitarTramo, tramoDelDia, resumenTramos, PENDIENTES_MAX, leerPendientes, crearPendiente, apuntarPendiente, quitarPendiente, totalPendiente, pagarPendiente, resumenViaje, archivoGastos,
+    VIAJES_MAX, NOMBRE_VIAJE_MAX, leerViajes, leerPersonas, porPersona, consumoGente, leerPagador, leerGente, ponerNombre, nombrePersona, inicialPersona, cuentasViaje, frasePago, leerEntre, entreDe, fraseEntre, cambiarEntre, leerSaldados, saldarPago, quitarSaldado, fraseSaldado, hayOtrosPagadores, NOMBRE_PERSONA_MAX, compararViajes, COLORES_VIAJE, leerColorViaje, colorLibre, siguienteColor, viajeActivo, crearViaje, nombreCopia, nombreDeDestino, duplicarViaje, renombrarViaje, elegirViaje, borrarViaje, moverGasto, cambiarViaje, TRAMOS_MAX, NOMBRE_TRAMO_MAX, leerTramos, ponerTramo, quitarTramo, tramoDelDia, resumenTramos, curvaPresupuesto, PENDIENTES_MAX, leerPendientes, crearPendiente, apuntarPendiente, quitarPendiente, totalPendiente, pagarPendiente, resumenViaje, archivoGastos,
     diasHasta, leerPresupuesto, leerTopes, PRESUPUESTO_JUSTO, estadoPresupuesto, estadoTopes, alDiaAlli, inicioDelViaje, diaDelViaje, cuentaAtras, textoCuentaAtras, loDeHoy, CELEBRADOS_MAX, leerCelebrados, anadirCelebrado, viajeParaCelebrar, textoCelebrar, RACHA_MINIMA, rachaPresupuesto, hastaCuandoLlega, previsionViaje, PREVISION_JUSTA, textoPrevision, loQueSeLleva, redondearDias,
     EXTRAS_MAX, EXTRAS_POR_DEFECTO, leerExtras, anadirExtra, quitarExtra,
     extrasVisibles, disponiblesParaAnadir, convertirExtras, semanaDe, trazoMini, CHULETA, escalaChuleta, chuleta, TRUCO_TOLERANCIA, trucoDeCabeza, textoTruco, tituloTruco, chuletaParaCompartir, extrasParaCompartir,

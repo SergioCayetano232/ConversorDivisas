@@ -153,6 +153,12 @@ que necesitaba una conversión rápida. Ahora es un clic en la barra del navegad
   gastando lo que toca o menos ("🔥 3"), y un aro que se va cerrando con lo que
   llevas hoy contra lo que te toca hoy. Antes de salir, en vez del día del
   viaje, cuántos faltan ("✈ 12 días")
+- Cómo va el gasto día a día: con la curva que hay al lado de la barra del
+  presupuesto se abre un gráfico con lo que llevas gastado, la línea de ir
+  parejo hasta el último día y, a puntos, adónde llegas a este ritmo (en rojo
+  si te pasas). Pasando el ratón, o con las flechas, cada día te dice lo que
+  llevabas y lo que tocaba. Debajo, desde cuándo vas por encima ("Desde el 5
+  nov vas por encima de lo justo: 80,00 EUR de más") o cuánto margen te queda
 - Un tope por categoría, en el mismo sitio que el presupuesto: debajo de las
   fechas pones lo máximo para comida, ocio… (los que quieras, vacío es sin
   tope). En las pastillas de las categorías sale una rayita con lo que llevas

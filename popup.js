@@ -130,6 +130,15 @@ const el = {
   pendientesCantidad: document.getElementById("pendientes-cantidad"),
   pendientesDivisa: document.getElementById("pendientes-divisa"),
   presupuestoPendiente: document.getElementById("presupuesto-pendiente"),
+  curvaAbrir: document.getElementById("curva-abrir"),
+  curva: document.getElementById("curva"),
+  curvaLienzo: document.getElementById("curva-lienzo"),
+  curvaSvg: document.getElementById("curva-svg"),
+  curvaTip: document.getElementById("curva-tip"),
+  curvaDesde: document.getElementById("curva-desde"),
+  curvaHasta: document.getElementById("curva-hasta"),
+  curvaTexto: document.getElementById("curva-texto"),
+  curvaClavePrevision: document.getElementById("curva-clave-prevision"),
   tramos: document.getElementById("tramos"),
   tramosLista: document.getElementById("tramos-lista"),
   tramosForm: document.getElementById("tramos-form"),
@@ -364,6 +373,7 @@ let retiradaNueva = null;
 let saldadoNuevo = null;
 let tramoNuevo = null;
 let pendienteNuevo = null;
+let curvaMirando = null;
 
 // Con el mismo trazo que los iconos de las pestañas.
 const ICONOS_CATEGORIA = {
@@ -3587,6 +3597,7 @@ function abrirPendientes() {
   cerrarViajes();
   cerrarCajero();
   cerrarTramos();
+  cerrarCurva();
   cerrarGente();
   cerrarCategorias();
   dejarDeEditarPresupuesto();
@@ -3673,10 +3684,150 @@ function onPagarPendiente(id) {
   (el.pendientesLista.querySelector(".gente__saldar") ?? el.pendientesConcepto).focus();
 }
 
+// El botón solo tiene sentido con un presupuesto de varios días.
+function pintarCurvaBoton() {
+  const curva = curvaPresupuesto(presupuesto, gastos, hoy(), viajeActivo(viajes).pendientes);
+  el.curvaAbrir.hidden = !curva;
+  if (!curva) cerrarCurva();
+  else if (!el.curva.hidden) pintarCurva();
+}
+
+function abrirCurva() {
+  cerrarViajes();
+  cerrarCajero();
+  cerrarTramos();
+  cerrarPendientes();
+  cerrarGente();
+  cerrarCategorias();
+  dejarDeEditarPresupuesto();
+  const arriba = el.gastosSuma.getBoundingClientRect().bottom - el.gastos.getBoundingClientRect().top;
+  el.curva.style.setProperty("--cajero-arriba", `${Math.round(arriba) + 4}px`);
+  el.curva.hidden = false;
+  el.curvaAbrir.setAttribute("aria-expanded", "true");
+  pintarCurva(true);
+  el.curvaSvg.focus();
+}
+
+function cerrarCurva() {
+  if (el.curva.hidden) return false;
+  el.curva.hidden = true;
+  el.curvaAbrir.setAttribute("aria-expanded", "false");
+  curvaMirando = null;
+  return true;
+}
+
+const SVG_NS = "http://www.w3.org/2000/svg";
+const trazo = (tipo, atributos) => {
+  const nodo = document.createElementNS(SVG_NS, tipo);
+  for (const [k, v] of Object.entries(atributos)) nodo.setAttribute(k, v);
+  return nodo;
+};
+
+// En píxeles de verdad y no con un viewBox estirado: así las líneas son de 2px
+// y los puntos, redondos, mida lo que mida el panel.
+function pintarCurva(entrando = false) {
+  const curva = curvaPresupuesto(presupuesto, gastos, hoy(), viajeActivo(viajes).pendientes);
+  if (!curva) return;
+  const ancho = Math.max(el.curvaLienzo.clientWidth, 120);
+  const alto = 96;
+  const margen = { arriba: 8, abajo: 4, lados: 5 };
+  const { puntos, importe, prevision } = curva;
+  const n = puntos.length;
+  const maximo = Math.max(importe, prevision ?? 0, ...puntos.map((p) => p.gastado ?? 0)) * 1.04;
+  // De la salida (0) al final de cada día (1…n): todo arranca de cero.
+  const x = (k) => margen.lados + (k / n) * (ancho - 2 * margen.lados);
+  const y = (v) => alto - margen.abajo - (v / maximo) * (alto - margen.arriba - margen.abajo);
+  const svg = el.curvaSvg;
+  svg.setAttribute("viewBox", `0 0 ${ancho} ${alto}`);
+  svg.setAttribute("width", ancho);
+  svg.setAttribute("height", alto);
+  const linea = (lista) => lista.map(([i, v], k) => `${k ? "L" : "M"}${x(i).toFixed(1)},${y(v).toFixed(1)}`).join("");
+  const partes = [
+    trazo("line", { class: "curva__base", x1: 0, x2: ancho, y1: y(0), y2: y(0) }),
+    trazo("line", { class: "curva__tope", x1: 0, x2: ancho, y1: y(importe), y2: y(importe) }),
+    trazo("path", { class: "curva__ideal", d: linea([[0, 0], ...puntos.map((p, i) => [i + 1, p.ideal])]) }),
+  ];
+  const hechos = puntos.map((p, i) => [i + 1, p.gastado]).filter(([, v]) => v !== null);
+  const ultimo = hechos.at(-1);
+  if (ultimo && prevision !== null && curva.hoy !== null && ultimo[0] < n) {
+    partes.push(trazo("path", {
+      class: `curva__prevision${prevision > importe ? " is-pasa" : ""}`,
+      d: linea([ultimo, [n, prevision]]),
+    }));
+  }
+  if (hechos.length) {
+    const torcio = curva.torcio ? puntos.findIndex((p) => p.dia === curva.torcio) : -1;
+    if (torcio >= 0) partes.push(trazo("line", { class: "curva__torcio", x1: x(torcio + 1), x2: x(torcio + 1), y1: margen.arriba, y2: y(0) }));
+    partes.push(trazo("path", { class: `curva__gastado${entrando ? " is-dibujando" : ""}`, d: linea([[0, 0], ...hechos]), pathLength: 100 }));
+    partes.push(trazo("circle", { class: "curva__punto", cx: x(ultimo[0]), cy: y(ultimo[1]), r: 4 }));
+  }
+  partes.push(trazo("line", { class: "curva__cruz", id: "curva-cruz", x1: 0, x2: 0, y1: margen.arriba, y2: y(0), visibility: "hidden" }));
+  svg.replaceChildren(...partes);
+  svg.dataset.n = n;
+  svg.dataset.ancho = ancho;
+
+  el.curvaClavePrevision.hidden = !(prevision !== null && curva.hoy !== null);
+  el.curvaDesde.textContent = nombreDia(puntos[0].dia).toLocaleLowerCase(localeActual());
+  el.curvaHasta.textContent = nombreDia(puntos[n - 1].dia).toLocaleLowerCase(localeActual());
+  const dinero = (v) => `${nf.format(v)} ${curva.to}`;
+  let texto = "";
+  if (!ultimo) texto = tr("curva.antes");
+  else if (curva.hoy === null) texto = tr("curva.acabado", { gastado: dinero(ultimo[1]), importe: dinero(importe) });
+  else if (curva.torcio) {
+    const hoyPunto = puntos[ultimo[0] - 1];
+    // Con la fecha y no "ayer": "desde el ayer" no se dice.
+    texto = tr("curva.torcio", { dia: fechaCorta(curva.torcio), sobra: dinero(hoyPunto.gastado - hoyPunto.ideal) });
+  } else texto = tr("curva.debajo", { margen: dinero(puntos[ultimo[0] - 1].ideal - ultimo[1]) });
+  el.curvaTexto.textContent = texto;
+  svg.setAttribute("aria-label", tr("curva.aria", { texto }));
+  if (curvaMirando !== null) mirarCurva(null, curvaMirando);
+}
+
+// El día más cerca del ratón (o de las flechas), con su raya y su cuenta.
+function mirarCurva(fraccion, indice = null) {
+  const curva = curvaPresupuesto(presupuesto, gastos, hoy(), viajeActivo(viajes).pendientes);
+  const cruz = el.curvaSvg.querySelector("#curva-cruz");
+  if (!curva || !cruz || (fraccion === null && indice === null)) {
+    curvaMirando = null;
+    el.curvaTip.hidden = true;
+    cruz?.setAttribute("visibility", "hidden");
+    return;
+  }
+  const n = curva.puntos.length;
+  const i = indice ?? Math.min(Math.max(Math.round(fraccion * n) - 1, 0), n - 1);
+  curvaMirando = i;
+  const p = curva.puntos[i];
+  const ancho = Number(el.curvaSvg.dataset.ancho);
+  const cx = 5 + ((i + 1) / n) * (ancho - 10);
+  cruz.setAttribute("x1", cx);
+  cruz.setAttribute("x2", cx);
+  cruz.setAttribute("visibility", "visible");
+  const dinero = (v) => `${nf.format(v)} ${curva.to}`;
+  const dia = nombreDia(p.dia);
+  el.curvaTip.textContent = p.gastado === null
+    ? tr("curva.tipFuturo", { dia, ideal: dinero(p.ideal) })
+    : tr("curva.tip", { dia, gastado: dinero(p.gastado), ideal: dinero(p.ideal) });
+  el.curvaTip.hidden = false;
+  // Pegado a la raya, pero sin salirse del panel por ningún lado.
+  const tip = el.curvaTip.offsetWidth;
+  el.curvaTip.style.left = `${Math.min(Math.max(cx - tip / 2, 0), ancho - tip)}px`;
+}
+
+function onTeclaCurva(event) {
+  const n = curvaPresupuesto(presupuesto, gastos, hoy(), viajeActivo(viajes).pendientes)?.puntos.length ?? 0;
+  if (!n || !["ArrowLeft", "ArrowRight", "Home", "End"].includes(event.key)) return;
+  event.preventDefault();
+  const ahora = curvaMirando ?? (event.key === "ArrowLeft" ? n : -1);
+  const siguiente = event.key === "Home" ? 0 : event.key === "End" ? n - 1
+    : Math.min(Math.max(ahora + (event.key === "ArrowRight" ? 1 : -1), 0), n - 1);
+  mirarCurva(null, siguiente);
+}
+
 function abrirTramos() {
   cerrarViajes();
   cerrarCajero();
   cerrarPendientes();
+  cerrarCurva();
   cerrarGente();
   cerrarCategorias();
   dejarDeEditarPresupuesto();
@@ -3728,6 +3879,7 @@ function abrirCajero() {
   cerrarViajes();
   cerrarTramos();
   cerrarPendientes();
+  cerrarCurva();
   cerrarGente();
   cerrarCategorias();
   dejarDeEditarPresupuesto();
@@ -3934,6 +4086,7 @@ function pintarPresupuesto() {
   const estado = estadoPresupuesto(presupuesto, gastos, hoy(), pendientes);
   el.presupuestoAnadir.hidden = Boolean(estado);
   el.presupuestoVer.hidden = !estado;
+  pintarCurvaBoton();
   if (!estado) {
     delete el.presupuestoVer.dataset.tono;
     return;
@@ -4749,6 +4902,7 @@ function abrirViajes() {
   cerrarCajero();
   cerrarTramos();
   cerrarPendientes();
+  cerrarCurva();
   cerrarGente();
   cerrarCategorias();
   dejarDeEditarPresupuesto();
@@ -4784,6 +4938,7 @@ function ponerViaje(nuevos) {
   cerrarCajero();
   cerrarTramos();
   cerrarPendientes();
+  cerrarCurva();
   cerrarGente();
   dejarDeEditarPresupuesto();
   delete el.presupuestoVer.dataset.tono;
@@ -4995,6 +5150,7 @@ function cerrarGastos() {
   cerrarCajero();
   cerrarTramos();
   cerrarPendientes();
+  cerrarCurva();
   cerrarGente();
   dejarDeEditarPresupuesto();
   cerrarCategorias();
@@ -6885,6 +7041,14 @@ function bindEvents() {
   el.gastosEfectivo.addEventListener("click", () => (el.cajero.hidden ? abrirCajero() : cerrarCajero()));
   el.gastosTramo.addEventListener("click", () => (el.tramos.hidden ? abrirTramos() : cerrarTramos()));
   el.tramosForm.addEventListener("submit", onPonerTramo);
+  el.curvaAbrir.addEventListener("click", () => (el.curva.hidden ? abrirCurva() : cerrarCurva()));
+  el.curvaSvg.addEventListener("pointermove", (event) => {
+    const caja = el.curvaSvg.getBoundingClientRect();
+    mirarCurva((event.clientX - caja.left) / caja.width);
+  });
+  el.curvaSvg.addEventListener("pointerleave", () => mirarCurva(null));
+  el.curvaSvg.addEventListener("blur", () => mirarCurva(null));
+  el.curvaSvg.addEventListener("keydown", onTeclaCurva);
   el.gastosPendiente.addEventListener("click", () => (el.pendientes.hidden ? abrirPendientes() : cerrarPendientes()));
   el.pendientesForm.addEventListener("submit", onApuntarPendiente);
   for (const campo of [el.pendientesConcepto, el.pendientesCantidad]) {
@@ -7046,6 +7210,7 @@ function bindEvents() {
       else if (cerrarCajero()) el.gastosEfectivo.focus();
       else if (cerrarTramos()) el.gastosTramo.focus();
       else if (cerrarPendientes()) el.gastosPendiente.focus();
+      else if (cerrarCurva()) el.curvaAbrir.focus();
       else if (cerrarGente()) el.personasCabeza.focus();
       else if (cerrarCategorias()) el.gastosCategoria.focus();
       else if (dejarDeEditarPresupuesto()) el.presupuestoVer.hidden ? el.presupuestoAnadir.focus() : el.presupuestoVer.focus();
@@ -7080,6 +7245,9 @@ function bindEvents() {
     }
     if (!el.cajero.hidden && !el.cajero.contains(event.target) && !el.gastosEfectivo.contains(event.target)) {
       cerrarCajero();
+    }
+    if (!el.curva.hidden && !el.curva.contains(event.target) && !el.curvaAbrir.contains(event.target)) {
+      cerrarCurva();
     }
     if (!el.pendientes.hidden && !el.pendientes.contains(event.target) && !el.gastosPendiente.contains(event.target)) {
       cerrarPendientes();
