@@ -2904,6 +2904,15 @@ function crearFilaGasto(gasto, i, peso, rey = false) {
     icono.append(cara);
   }
   texto.append(icono, que, de, cuanto);
+  const entre = entreDe(gasto, personas);
+  if (entre) {
+    const linea = document.createElement("span");
+    linea.className = "gastos__nota gastos__entre";
+    linea.textContent = fraseEntre(entre, gente);
+    texto.classList.add("con-nota");
+    texto.append(linea);
+    texto.setAttribute("aria-label", `${texto.getAttribute("aria-label")}. ${linea.textContent}`);
+  }
   if (gasto.nota) {
     const nota = document.createElement("span");
     nota.className = "gastos__nota";
@@ -4760,7 +4769,8 @@ function editarConcepto(gasto, que) {
     if (hecho) return;
     hecho = true;
     const conNota = guardar ? cambiarNota(gastos, gasto.id, notaCampo.value) : gastos;
-    const renombrados = guardar ? cambiarConcepto(conNota, gasto.id, campo.value) : gastos;
+    const conEntre = guardar && entreFila ? cambiarEntre(conNota, gasto.id, [...elegidos], personas) : conNota;
+    const renombrados = guardar ? cambiarConcepto(conEntre, gasto.id, campo.value) : gastos;
     const fechados = dia ? cambiarDia(renombrados, gasto.id, dia) : renombrados;
     const nuevos = fijo === undefined ? fechados : marcarFijo(fechados, gasto.id, fijo);
     // Pasar a fijos o volver de ahí también es moverse de sitio en la lista.
@@ -4802,6 +4812,48 @@ function editarConcepto(gasto, que) {
     });
     notaFila.append(vuelta);
   }
+  // Siendo varios, quién entra. Al menos uno: un gasto de nadie no cuadra.
+  const { personas, gente } = viajeActivo(viajes);
+  const elegidos = new Set(entreDe(gasto, personas) ?? [...Array(personas).keys()]);
+  let entreFila = null;
+  if (personas > 1) {
+    entreFila = document.createElement("li");
+    entreFila.className = "gastos__entre-fila";
+    const nombre = document.createElement("span");
+    nombre.className = "gastos__dias-nombre";
+    nombre.textContent = tr("entre.titulo");
+    const cadaUno = document.createElement("span");
+    cadaUno.className = "gastos__entre-cada";
+    const pintarCada = () => {
+      cadaUno.textContent = elegidos.size < personas
+        ? tr("entre.cadaUno", { valor: `${nf.format(gasto.valor / elegidos.size)} ${gasto.to}` })
+        : "";
+    };
+    const caras = [...Array(personas).keys()].map((i) => {
+      const cara = document.createElement("button");
+      cara.type = "button";
+      cara.className = "gastos__quien gastos__entre-cara";
+      cara.dataset.n = i % 6;
+      cara.textContent = inicialPersona(gente, i);
+      cara.title = nombrePersona(gente, i);
+      cara.setAttribute("aria-label", tr("entre.persona", { nombre: nombrePersona(gente, i) }));
+      cara.setAttribute("aria-pressed", String(elegidos.has(i)));
+      cara.addEventListener("click", () => {
+        if (elegidos.has(i)) {
+          if (elegidos.size === 1) return restartAnimation(cara, "is-mal");
+          elegidos.delete(i);
+        } else {
+          elegidos.add(i);
+        }
+        cara.setAttribute("aria-pressed", String(elegidos.has(i)));
+        restartAnimation(cara, "is-tic");
+        pintarCada();
+      });
+      return cara;
+    });
+    pintarCada();
+    entreFila.append(nombre, ...caras, cadaUno);
+  }
   for (const caja of [campo, notaCampo]) {
     caja.addEventListener("keydown", (event) => {
       if (event.key === "Enter") {
@@ -4812,9 +4864,9 @@ function editarConcepto(gasto, que) {
   }
   // Pasar del concepto a los días o a la nota no es acabar; irse a otro sitio, sí.
   const fuera = (event) => {
-    if (![fila, tira, notaFila].some((parte) => parte.contains(event.relatedTarget))) acabar(true);
+    if (![fila, tira, notaFila, entreFila].some((parte) => parte?.contains(event.relatedTarget))) acabar(true);
   };
-  for (const parte of [campo, tira, notaFila]) {
+  for (const parte of [campo, tira, notaFila, entreFila].filter(Boolean)) {
     parte.addEventListener("focusout", fuera);
     parte.addEventListener("keydown", (event) => {
       if (event.key !== "Escape") return;
@@ -4824,7 +4876,7 @@ function editarConcepto(gasto, que) {
     });
   }
   que.replaceWith(campo);
-  fila.after(tira, notaFila);
+  fila.after(tira, notaFila, ...(entreFila ? [entreFila] : []));
   campo.focus();
   campo.select();
 }

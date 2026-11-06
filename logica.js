@@ -1859,11 +1859,49 @@ const limpiarConcepto = (concepto) => String(concepto ?? "").replace(/\s+/g, " "
 // no lo guardo: así los gastos de antes y los tuyos quedan como estaban.
 const leerPagador = (p) => (Number.isInteger(p) && p > 0 && p < PERSONAS_MAX ? p : 0);
 
+// Quiénes entran en un gasto, cuando no sois todos: el museo de dos de los
+// cuatro. Sin esto, entran todos, que es lo que traen los de antes.
+function leerEntre(entre) {
+  if (!Array.isArray(entre)) return null;
+  const buenos = [...new Set(entre.filter((i) => Number.isInteger(i) && i >= 0 && i < PERSONAS_MAX))].sort((a, b) => a - b);
+  return buenos.length ? buenos : null;
+}
+
+// Con la gente de ahora. Igual que con el pagador, el que ya no está cuenta
+// como tú, y si al final entran todos es como no decir nada.
+function entreDe(gasto, personas) {
+  const n = leerPersonas(personas);
+  const entre = leerEntre(gasto.entre);
+  if (!entre) return null;
+  const ahora = [...new Set(entre.map((i) => (i < n ? i : 0)))];
+  return ahora.length < n ? ahora : null;
+}
+
+// "Solo Ana y tú": tú al final, que es como se dice.
+function fraseEntre(entre, gente) {
+  const nombres = entre.filter((i) => i !== 0).map((i) => nombrePersona(gente, i));
+  if (entre.includes(0)) nombres.push(tr("entre.tu"));
+  return tr("entre.solo", { nombres: new Intl.ListFormat(localeActual(), { type: "conjunction" }).format(nombres) });
+}
+
+function cambiarEntre(gastos, id, entre, personas) {
+  const gasto = gastos.find((g) => g.id === id);
+  if (!gasto) return gastos;
+  const nuevo = entreDe({ entre }, personas);
+  const antes = entreDe(gasto, personas);
+  if (String(nuevo) === String(antes)) return gastos;
+  return gastos.map((g) => {
+    if (g.id !== id) return g;
+    const { entre: _, ...resto } = g;
+    return nuevo ? { ...resto, entre: nuevo } : resto;
+  });
+}
+
 // Lo que no cabe en el concepto: "pagó Ana", "pedir factura". Una línea.
 const NOTA_MAX = 80;
 const limpiarNota = (nota) => String(nota ?? "").replace(/\s+/g, " ").trim().slice(0, NOTA_MAX);
 
-function crearGasto({ id, from, to, cantidad, valor, concepto = "", cuando, categoria, pago, comision, pagador, fijo, nota }) {
+function crearGasto({ id, from, to, cantidad, valor, concepto = "", cuando, categoria, pago, comision, pagador, fijo, nota, entre }) {
   // Al céntimo: con la comisión salía 90,5148 y en el CSV se veía la cola.
   const gasto = {
     id, from, to, cantidad, cuando,
@@ -1876,6 +1914,7 @@ function crearGasto({ id, from, to, cantidad, valor, concepto = "", cuando, cate
   if (leerPagador(pagador)) gasto.pagador = leerPagador(pagador);
   if (fijo === true) gasto.fijo = true;
   if (limpiarNota(nota)) gasto.nota = limpiarNota(nota);
+  if (leerEntre(entre)) gasto.entre = leerEntre(entre);
   return esGastoBueno(gasto) && from !== to ? gasto : null;
 }
 
@@ -1889,7 +1928,7 @@ function devolucionDe(gasto, { id, cuando }) {
   const sinComision = gasto.valor / (1 + leerComision(gasto.comision) / 100);
   return crearGasto({
     id, cuando, from: gasto.from, to: gasto.to, cantidad: -gasto.cantidad, valor: -sinComision,
-    concepto: gasto.concepto, categoria: gasto.categoria, pago: gasto.pago, comision: 0, pagador: gasto.pagador,
+    concepto: gasto.concepto, categoria: gasto.categoria, pago: gasto.pago, comision: 0, pagador: gasto.pagador, entre: gasto.entre,
   });
 }
 
@@ -1897,7 +1936,7 @@ function leerGastos(guardado) {
   if (!Array.isArray(guardado)) return [];
   // Los de antes de las categorías no traen ninguna: la saco del concepto, como
   // al apuntarlos, y si no dice nada van a "otros".
-  return guardado.filter(esGastoBueno).slice(0, GASTOS_MAX).map(({ pagador, fijo, nota, ...g }) => ({
+  return guardado.filter(esGastoBueno).slice(0, GASTOS_MAX).map(({ pagador, fijo, nota, entre, ...g }) => ({
     ...g,
     categoria: CATEGORIAS.includes(g.categoria) ? g.categoria : adivinarCategoria(g.concepto) ?? CATEGORIA_POR_DEFECTO,
     pago: leerPago(g.pago),
@@ -1906,6 +1945,7 @@ function leerGastos(guardado) {
     ...(leerPagador(pagador) ? { pagador: leerPagador(pagador) } : {}),
     ...(fijo === true ? { fijo: true } : {}),
     ...(typeof nota === "string" && limpiarNota(nota) ? { nota: limpiarNota(nota) } : {}),
+    ...(leerEntre(entre) ? { entre: leerEntre(entre) } : {}),
   }));
 }
 
@@ -2153,13 +2193,22 @@ function cuentasViaje(gastos, personas, saldados = []) {
   const principal = sumarPorDivisa(gastos)[0];
   if (!principal || n < 2) return null;
   const pagado = Array(n).fill(0);
+  // Los de todos se reparten juntos, como siempre; los de unos pocos, cada
+  // grupo por su lado. Así los viajes de antes salen al céntimo igual.
+  const grupos = new Map();
   for (const g of gastos) {
     if (g.to !== principal.to) continue;
     const quien = leerPagador(g.pagador);
-    pagado[quien < n ? quien : 0] += Math.round(g.valor * 100);
+    const centimos = Math.round(g.valor * 100);
+    pagado[quien < n ? quien : 0] += centimos;
+    const entre = entreDe(g, n) ?? [...Array(n).keys()];
+    const clave = entre.join(",");
+    grupos.set(clave, { entre, centimos: (grupos.get(clave)?.centimos ?? 0) + centimos });
   }
-  const total = pagado.reduce((a, b) => a + b, 0);
-  const partes = repartirCentimos(total / 100, n).map((p) => Math.round(p * 100));
+  const partes = Array(n).fill(0);
+  for (const { entre, centimos } of grupos.values()) {
+    repartirCentimos(centimos / 100, entre.length).forEach((p, k) => { partes[entre[k]] += Math.round(p * 100); });
+  }
   const saldo = pagado.map((p, i) => p - partes[i]);
 
   // Lo ya devuelto mueve el saldo de los dos y nada más, así que si luego
@@ -6392,7 +6441,7 @@ if (typeof module !== "undefined") {
     CATEGORIAS, CATEGORIA_POR_DEFECTO, adivinarCategoria, PAGOS, PAGO_POR_DEFECTO, leerPago, comisionDelPago, desglose, conceptosUsados, completarConcepto,
     EMOJI_CATEGORIA, destacados, resumenParaCompartir, FINDE_MINIMO, findeContraSemana, ESTRELLA_MINIMO, conceptoEstrella,
     COPIA_APP, COPIA_VERSION, CLAVES_COPIA, limpiarCopia, crearCopia, leerCopia, resumenCopia,
-    VIAJES_MAX, NOMBRE_VIAJE_MAX, leerViajes, leerPersonas, porPersona, leerPagador, leerGente, ponerNombre, nombrePersona, inicialPersona, cuentasViaje, frasePago, leerSaldados, saldarPago, quitarSaldado, fraseSaldado, hayOtrosPagadores, NOMBRE_PERSONA_MAX, compararViajes, COLORES_VIAJE, leerColorViaje, colorLibre, siguienteColor, viajeActivo, crearViaje, nombreCopia, nombreDeDestino, duplicarViaje, renombrarViaje, elegirViaje, borrarViaje, cambiarViaje, resumenViaje, archivoGastos,
+    VIAJES_MAX, NOMBRE_VIAJE_MAX, leerViajes, leerPersonas, porPersona, leerPagador, leerGente, ponerNombre, nombrePersona, inicialPersona, cuentasViaje, frasePago, leerEntre, entreDe, fraseEntre, cambiarEntre, leerSaldados, saldarPago, quitarSaldado, fraseSaldado, hayOtrosPagadores, NOMBRE_PERSONA_MAX, compararViajes, COLORES_VIAJE, leerColorViaje, colorLibre, siguienteColor, viajeActivo, crearViaje, nombreCopia, nombreDeDestino, duplicarViaje, renombrarViaje, elegirViaje, borrarViaje, cambiarViaje, resumenViaje, archivoGastos,
     diasHasta, leerPresupuesto, leerTopes, PRESUPUESTO_JUSTO, estadoPresupuesto, estadoTopes, alDiaAlli, inicioDelViaje, diaDelViaje, cuentaAtras, textoCuentaAtras, loDeHoy, CELEBRADOS_MAX, leerCelebrados, anadirCelebrado, viajeParaCelebrar, textoCelebrar, RACHA_MINIMA, rachaPresupuesto, hastaCuandoLlega, previsionViaje, PREVISION_JUSTA, textoPrevision, loQueSeLleva, redondearDias,
     EXTRAS_MAX, EXTRAS_POR_DEFECTO, leerExtras, anadirExtra, quitarExtra,
     extrasVisibles, disponiblesParaAnadir, convertirExtras, semanaDe, trazoMini, CHULETA, escalaChuleta, chuleta, TRUCO_TOLERANCIA, trucoDeCabeza, textoTruco, tituloTruco, chuletaParaCompartir, extrasParaCompartir,

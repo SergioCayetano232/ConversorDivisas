@@ -83,7 +83,10 @@ que necesitaba una conversión rápida. Ahora es un clic en la barra del navegad
   con tu inicial; pulsándolo apuntas el gasto a otro. Y pulsando lo de cada
   uno se abren las cuentas: lo que ha puesto cada cual, con sus nombres, y
   quién le debe a quién ("Ana te debe 32,75 EUR"), con los mínimos pagos para
-  quedar en paz. Cuando alguien te lo da, le pulsas **Pagado** y deja de
+  quedar en paz. Si un gasto no es de todos (el museo de Ana y tuyo), al
+  pulsar su concepto sale la fila **Entre** con las caras: quitas a los que no
+  entran, te dice lo que sale cada uno y en la lista se queda "👥 Solo Ana y
+  tú". Las cuentas lo reparten solo entre ellos. Cuando alguien te lo da, le pulsas **Pagado** y deja de
   contar ("✓ Ana te pagó 32,75 EUR"), con lo que lleváis pagado y lo que
   queda debajo. Si luego cambia un gasto, sale solo la diferencia, y con la ✕
   lo desmarcas. Si alguien más ha pagado algo, va también en el resumen
