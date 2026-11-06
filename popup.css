@@ -4206,6 +4206,41 @@ body::after {
   transition: background-color var(--fast) var(--ease), transform var(--fast) var(--ease-spring);
 }
 
+/* Un select a pelo, para que la lista de viajes sea la del sistema; solo se ve la flecha. */
+.gastos__mover {
+  flex-shrink: 0;
+  width: 26px;
+  height: 22px;
+  margin-left: 4px;
+  padding: 0;
+  appearance: none;
+  -webkit-appearance: none;
+  background: var(--slate);
+  border: 1px solid var(--hairline-strong);
+  border-top: 0;
+  border-radius: 0 0 6px 6px;
+  color: var(--mist);
+  font: inherit;
+  font-size: 11px;
+  text-align: center;
+  text-align-last: center;
+  cursor: pointer;
+  animation: pop var(--mid) var(--ease-spring) 160ms backwards;
+  transition: background-color var(--fast) var(--ease), border-color var(--fast) var(--ease);
+}
+
+.gastos__mover:hover,
+.gastos__mover:focus-visible {
+  outline: none;
+  background: var(--brass-ghost);
+  border-color: color-mix(in srgb, var(--brass) 45%, transparent);
+}
+
+.gastos__mover option {
+  color: initial;
+  background: initial;
+}
+
 .gastos__devolver:hover {
   background: color-mix(in srgb, var(--jade) 14%, transparent);
 }

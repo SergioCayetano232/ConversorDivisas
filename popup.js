@@ -4812,6 +4812,27 @@ function editarConcepto(gasto, que) {
     });
     notaFila.append(vuelta);
   }
+  const otros = viajes.lista.filter((v) => v.id !== viajes.activo);
+  if (otros.length) {
+    const mover = document.createElement("select");
+    mover.className = "gastos__mover";
+    mover.title = tr("mover.titulo");
+    mover.setAttribute("aria-label", tr("mover.titulo"));
+    const pista = new Option("⇄", "", true, true);
+    pista.disabled = true;
+    mover.append(pista, ...otros.map((v) => {
+      const lleno = v.gastos.length >= GASTOS_MAX;
+      const opcion = new Option(lleno ? tr("mover.lleno", { viaje: nombreViaje(v) }) : nombreViaje(v), v.id);
+      opcion.disabled = lleno;
+      return opcion;
+    }));
+    mover.addEventListener("change", () => {
+      const destino = mover.value;
+      acabar(true);
+      onMoverGasto(gasto.id, destino);
+    });
+    notaFila.append(mover);
+  }
   // Siendo varios, quién entra. Al menos uno: un gasto de nadie no cuadra.
   const { personas, gente } = viajeActivo(viajes);
   const elegidos = new Set(entreDe(gasto, personas) ?? [...Array(personas).keys()]);
@@ -4879,6 +4900,28 @@ function editarConcepto(gasto, que) {
   fila.after(tira, notaFila, ...(entreFila ? [entreFila] : []));
   campo.focus();
   campo.select();
+}
+
+// Se va como uno que quitas, y el deshacer de siempre lo trae de vuelta a su sitio.
+function onMoverGasto(id, destino) {
+  viajes = cambiarViaje(viajes, viajes.activo, { gastos, presupuesto, cajero });
+  const indice = gastos.findIndex((g) => g.id === id);
+  const nuevos = moverGasto(viajes, id, viajes.activo, destino);
+  if (indice === -1 || nuevos === viajes) return;
+  const gasto = gastos[indice];
+  const fila = el.gastosLista.querySelector(`[data-id="${id}"]`);
+  const mover = () => {
+    viajes = nuevos;
+    ({ gastos } = viajeActivo(viajes));
+    guardarViajes();
+    pintarGastos();
+    ofrecerDeshacer({ movido: { gasto, indice, a: destino } });
+    (el.gastosLista.querySelector(".gastos__quitar") ?? el.gastosConcepto).focus();
+  };
+  if (sinMovimiento.matches || !fila) return mover();
+  fila.classList.remove("is-nueva");
+  fila.classList.add("is-saliendo");
+  fila.addEventListener("animationend", mover, { once: true });
 }
 
 function onDevolverGasto(original) {
@@ -4966,7 +5009,11 @@ function onQuitarGasto(id, fila) {
 // pasar el ratón por encima.
 function ofrecerDeshacer(nuevo) {
   quitado = nuevo;
-  if (nuevo.todos) {
+  if (nuevo.movido) {
+    const { gasto, a } = nuevo.movido;
+    const destino = viajes.lista.find((v) => v.id === a);
+    el.deshacerTexto.textContent = tr("mover.hecho", { concepto: gasto.concepto || tr("gastos.sinConcepto"), viaje: destino ? nombreViaje(destino) : "" });
+  } else if (nuevo.todos) {
     const n = nuevo.todos.length;
     el.deshacerTexto.textContent = tr("gastos.vaciados", { n: n === 1 ? tr("gastos.uno") : tr("gastos.n", { n }) });
   } else {
@@ -4993,6 +5040,19 @@ function olvidarDeshacer() {
 
 function onDeshacer() {
   if (!quitado) return;
+  if (quitado.movido) {
+    const { gasto, indice, a } = quitado.movido;
+    viajes = moverGasto(viajes, gasto.id, a, viajes.activo, indice);
+    ({ gastos } = viajeActivo(viajes));
+    gastoNuevo = gasto.id;
+    if (filtroCategoria && filtroCategoria !== gasto.categoria) filtroCategoria = null;
+    dejarVerGasto(gasto);
+    olvidarDeshacer();
+    guardarViajes();
+    pintarGastos();
+    (el.gastosLista.querySelector(`[data-id="${gasto.id}"] .gastos__que`) ?? el.gastosConcepto).focus();
+    return;
+  }
   if (quitado.todos) {
     gastos = devolverTodos(gastos, quitado.todos);
     if (quitado.saldados?.length) viajes = cambiarViaje(viajes, viajes.activo, { saldados: quitado.saldados });

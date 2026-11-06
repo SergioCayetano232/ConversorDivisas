@@ -159,6 +159,10 @@ que necesitaba una conversión rápida. Ahora es un clic en la barra del navegad
   un campo para lo que no cabe en él ("pedir factura", "pagó Ana"). Sale en
   pequeño debajo del gasto y la lupa también busca ahí. Al volver a apuntarlo
   hoy la nota no se copia, que era de aquel
+- Mover un gasto a otro viaje, si lo apuntaste con el que no era abierto: al
+  pulsar el concepto, con las flechas ⇄ que hay al lado de **↩ Devuelto**,
+  eliges a cuál. Se va con su tasa, su fecha y su nota, y con **Deshacer**
+  vuelve a su sitio
 - Las devoluciones: al pulsar el concepto, al lado de la nota, con **↩
   Devuelto** apuntas que te han devuelto ese gasto (la compra que llevas a la
   tienda, la fianza del piso). Sale en verde y en negativo, y resta del total,

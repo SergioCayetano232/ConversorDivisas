@@ -2383,6 +2383,25 @@ function borrarViaje(viajes, id) {
   return { activo, lista };
 }
 
+// Para el gasto que apuntaste con el viaje equivocado abierto. Va con su tasa
+// y su fecha, como estaba. Si el otro ya tiene 200, no cabe y no se mueve.
+// Con el sitio de antes, para que deshacerlo lo deje donde estaba.
+function moverGasto(viajes, gastoId, desdeId, aId, indice) {
+  const desde = viajes.lista.find((v) => v.id === desdeId);
+  const destino = viajes.lista.find((v) => v.id === aId);
+  if (!desde || !destino || desde === destino) return viajes;
+  const gasto = desde.gastos.find((g) => g.id === gastoId);
+  if (!gasto || destino.gastos.length >= GASTOS_MAX || destino.gastos.some((g) => g.id === gastoId)) return viajes;
+  return {
+    ...viajes,
+    lista: viajes.lista.map((v) => {
+      if (v === desde) return { ...v, gastos: quitarGasto(v.gastos, gastoId) };
+      if (v === destino) return { ...v, gastos: Number.isInteger(indice) ? devolverGasto(v.gastos, gasto, indice) : apuntarGasto(v.gastos, gasto) };
+      return v;
+    }),
+  };
+}
+
 function cambiarViaje(viajes, id, cambios) {
   return { ...viajes, lista: viajes.lista.map((v) => (v.id === id ? { ...v, ...cambios } : v)) };
 }
@@ -6441,7 +6460,7 @@ if (typeof module !== "undefined") {
     CATEGORIAS, CATEGORIA_POR_DEFECTO, adivinarCategoria, PAGOS, PAGO_POR_DEFECTO, leerPago, comisionDelPago, desglose, conceptosUsados, completarConcepto,
     EMOJI_CATEGORIA, destacados, resumenParaCompartir, FINDE_MINIMO, findeContraSemana, ESTRELLA_MINIMO, conceptoEstrella,
     COPIA_APP, COPIA_VERSION, CLAVES_COPIA, limpiarCopia, crearCopia, leerCopia, resumenCopia,
-    VIAJES_MAX, NOMBRE_VIAJE_MAX, leerViajes, leerPersonas, porPersona, leerPagador, leerGente, ponerNombre, nombrePersona, inicialPersona, cuentasViaje, frasePago, leerEntre, entreDe, fraseEntre, cambiarEntre, leerSaldados, saldarPago, quitarSaldado, fraseSaldado, hayOtrosPagadores, NOMBRE_PERSONA_MAX, compararViajes, COLORES_VIAJE, leerColorViaje, colorLibre, siguienteColor, viajeActivo, crearViaje, nombreCopia, nombreDeDestino, duplicarViaje, renombrarViaje, elegirViaje, borrarViaje, cambiarViaje, resumenViaje, archivoGastos,
+    VIAJES_MAX, NOMBRE_VIAJE_MAX, leerViajes, leerPersonas, porPersona, leerPagador, leerGente, ponerNombre, nombrePersona, inicialPersona, cuentasViaje, frasePago, leerEntre, entreDe, fraseEntre, cambiarEntre, leerSaldados, saldarPago, quitarSaldado, fraseSaldado, hayOtrosPagadores, NOMBRE_PERSONA_MAX, compararViajes, COLORES_VIAJE, leerColorViaje, colorLibre, siguienteColor, viajeActivo, crearViaje, nombreCopia, nombreDeDestino, duplicarViaje, renombrarViaje, elegirViaje, borrarViaje, moverGasto, cambiarViaje, resumenViaje, archivoGastos,
     diasHasta, leerPresupuesto, leerTopes, PRESUPUESTO_JUSTO, estadoPresupuesto, estadoTopes, alDiaAlli, inicioDelViaje, diaDelViaje, cuentaAtras, textoCuentaAtras, loDeHoy, CELEBRADOS_MAX, leerCelebrados, anadirCelebrado, viajeParaCelebrar, textoCelebrar, RACHA_MINIMA, rachaPresupuesto, hastaCuandoLlega, previsionViaje, PREVISION_JUSTA, textoPrevision, loQueSeLleva, redondearDias,
     EXTRAS_MAX, EXTRAS_POR_DEFECTO, leerExtras, anadirExtra, quitarExtra,
     extrasVisibles, disponiblesParaAnadir, convertirExtras, semanaDe, trazoMini, CHULETA, escalaChuleta, chuleta, TRUCO_TOLERANCIA, trucoDeCabeza, textoTruco, tituloTruco, chuletaParaCompartir, extrasParaCompartir,
