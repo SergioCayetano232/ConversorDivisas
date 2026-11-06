@@ -5142,6 +5142,95 @@ body::after {
 
 /* El gráfico de lo acumulado: lo gastado en el color del viaje, lo parejo en
    gris a trazos, y la previsión a puntos desde hoy hasta el final. */
+/* La franja que más se lleva, al final de las categorías y con la misma pinta. */
+.desglose__horas {
+  font-family: var(--font-ui);
+}
+
+.desglose__horas[aria-expanded="true"] {
+  color: var(--brass);
+  border-color: color-mix(in srgb, var(--brass) 45%, transparent);
+}
+
+.horas__frase {
+  margin: 0 0 8px;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--mist);
+}
+
+/* Cinco columnas: la altura es lo que se lleva cada franja contra la que más. */
+.horas__barras {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.horas__franja {
+  display: grid;
+  grid-template-rows: auto 44px auto auto;
+  justify-items: center;
+  align-items: end;
+  gap: 2px;
+  cursor: default;
+}
+
+.horas__pct {
+  font-family: var(--font-mono);
+  font-size: 9px;
+  font-variant-numeric: tabular-nums;
+  color: var(--muted);
+}
+
+.horas__barra {
+  width: 100%;
+  max-width: 28px;
+  height: calc(var(--alto, 0) * 100%);
+  min-height: 2px;
+  border-radius: 4px 4px 0 0;
+  background: var(--brass-dim);
+  transform-origin: bottom;
+  animation: horas-sube var(--slow) var(--ease-spring) backwards;
+  animation-delay: calc(var(--i, 0) * 50ms);
+}
+
+.horas__franja.is-mas .horas__barra {
+  background: var(--brass);
+  box-shadow: 0 0 10px var(--brass-glow);
+}
+
+.horas__franja.is-mas .horas__pct {
+  color: var(--mist);
+  font-weight: 700;
+}
+
+@keyframes horas-sube {
+  from {
+    transform: scaleY(0);
+  }
+}
+
+.horas__emoji {
+  font-size: 12px;
+  line-height: 1;
+}
+
+.horas__nombre {
+  font-size: 8.5px;
+  color: var(--muted);
+  white-space: nowrap;
+}
+
+.horas__nota {
+  margin: 8px 0 0;
+  font-size: 9px;
+  line-height: 1.35;
+  color: var(--muted);
+}
+
 .curva__lienzo {
   position: relative;
 }

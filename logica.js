@@ -3066,6 +3066,50 @@ function resumenTramos(gastos, tramos, { hoyIso = hoy(), hasta = null } = {}) {
   return salen;
 }
 
+// A qué hora se te va el dinero. Cada gasto ya guarda cuándo lo apuntaste, así
+// que no hay nada que preguntar. Fuera lo que no dice la hora de verdad: lo
+// pagado aparte, las devoluciones, las noches del hotel repartidas (llevan la
+// hora del día que lo pagaste) y lo traído del banco, que entra a las 12 en punto.
+const FRANJAS = [
+  { id: "madrugada", desde: 0, emoji: "🌃" },
+  { id: "manana", desde: 6, emoji: "🌅" },
+  { id: "mediodia", desde: 12, emoji: "☀️" },
+  { id: "tarde", desde: 16, emoji: "🌇" },
+  { id: "noche", desde: 20, emoji: "🌙" },
+];
+// Con menos, una cena suelta ya es "la noche se lleva el 60 %".
+const HORAS_MINIMO = 8;
+
+function horaFiable(g) {
+  if (esFijo(g) || esDevolucion(g) || /-\d+$/.test(g.id)) return false;
+  const d = new Date(g.cuando);
+  return !(d.getHours() === 12 && d.getMinutes() === 0 && d.getSeconds() === 0 && d.getMilliseconds() === 0);
+}
+
+const franjaDe = (cuando) => {
+  const hora = new Date(cuando).getHours();
+  return FRANJAS.filter((f) => f.desde <= hora).at(-1);
+};
+
+function porFranja(gastos) {
+  const buenos = gastos.filter(horaFiable);
+  const to = sumarPorDivisa(buenos)[0]?.to;
+  const suyos = buenos.filter((g) => g.to === to);
+  if (suyos.length < HORAS_MINIMO) return null;
+  const total = suyos.reduce((suma, g) => suma + g.valor, 0);
+  if (!(total > 0)) return null;
+  const franjas = FRANJAS.map((f) => {
+    const dentro = suyos.filter((g) => franjaDe(g.cuando) === f);
+    const suma = dentro.reduce((acc, g) => acc + g.valor, 0);
+    const porCategoria = new Map();
+    for (const g of dentro) porCategoria.set(g.categoria, (porCategoria.get(g.categoria) ?? 0) + g.valor);
+    const [categoria] = [...porCategoria].sort((a, b) => b[1] - a[1])[0] ?? [null];
+    return { id: f.id, emoji: f.emoji, desde: f.desde, total: Math.round(suma * 100) / 100, n: dentro.length, fraccion: suma / total, categoria };
+  });
+  const mas = franjas.reduce((a, b) => (b.total > a.total ? b : a));
+  return { to, n: suyos.length, franjas, mas: mas.id };
+}
+
 // Lo de cada categoría al día, con los mismos días que la media de arriba: así
 // sumadas dan esa media y no salen cuentas distintas en el mismo panel.
 function categoriasAlDia(gastos) {
@@ -6646,7 +6690,7 @@ if (typeof module !== "undefined") {
     CATEGORIAS, CATEGORIA_POR_DEFECTO, adivinarCategoria, PAGOS, PAGO_POR_DEFECTO, leerPago, comisionDelPago, desglose, conceptosUsados, completarConcepto,
     EMOJI_CATEGORIA, destacados, resumenParaCompartir, FINDE_MINIMO, findeContraSemana, ESTRELLA_MINIMO, conceptoEstrella,
     COPIA_APP, COPIA_VERSION, CLAVES_COPIA, limpiarCopia, crearCopia, leerCopia, resumenCopia,
-    VIAJES_MAX, NOMBRE_VIAJE_MAX, leerViajes, leerPersonas, porPersona, consumoGente, leerPagador, leerGente, ponerNombre, nombrePersona, inicialPersona, cuentasViaje, frasePago, leerEntre, entreDe, fraseEntre, cambiarEntre, leerSaldados, saldarPago, quitarSaldado, fraseSaldado, hayOtrosPagadores, NOMBRE_PERSONA_MAX, compararViajes, COLORES_VIAJE, leerColorViaje, colorLibre, siguienteColor, viajeActivo, crearViaje, nombreCopia, nombreDeDestino, duplicarViaje, renombrarViaje, elegirViaje, borrarViaje, moverGasto, cambiarViaje, TRAMOS_MAX, NOMBRE_TRAMO_MAX, leerTramos, ponerTramo, quitarTramo, tramoDelDia, resumenTramos, curvaPresupuesto, PENDIENTES_MAX, leerPendientes, crearPendiente, apuntarPendiente, quitarPendiente, totalPendiente, pagarPendiente, resumenViaje, archivoGastos,
+    VIAJES_MAX, NOMBRE_VIAJE_MAX, leerViajes, leerPersonas, porPersona, consumoGente, leerPagador, leerGente, ponerNombre, nombrePersona, inicialPersona, cuentasViaje, frasePago, leerEntre, entreDe, fraseEntre, cambiarEntre, leerSaldados, saldarPago, quitarSaldado, fraseSaldado, hayOtrosPagadores, NOMBRE_PERSONA_MAX, compararViajes, COLORES_VIAJE, leerColorViaje, colorLibre, siguienteColor, viajeActivo, crearViaje, nombreCopia, nombreDeDestino, duplicarViaje, renombrarViaje, elegirViaje, borrarViaje, moverGasto, cambiarViaje, TRAMOS_MAX, NOMBRE_TRAMO_MAX, leerTramos, ponerTramo, quitarTramo, tramoDelDia, resumenTramos, curvaPresupuesto, FRANJAS, HORAS_MINIMO, horaFiable, porFranja, PENDIENTES_MAX, leerPendientes, crearPendiente, apuntarPendiente, quitarPendiente, totalPendiente, pagarPendiente, resumenViaje, archivoGastos,
     diasHasta, leerPresupuesto, leerTopes, PRESUPUESTO_JUSTO, estadoPresupuesto, estadoTopes, alDiaAlli, inicioDelViaje, diaDelViaje, cuentaAtras, textoCuentaAtras, loDeHoy, CELEBRADOS_MAX, leerCelebrados, anadirCelebrado, viajeParaCelebrar, textoCelebrar, RACHA_MINIMA, rachaPresupuesto, hastaCuandoLlega, previsionViaje, PREVISION_JUSTA, textoPrevision, loQueSeLleva, redondearDias,
     EXTRAS_MAX, EXTRAS_POR_DEFECTO, leerExtras, anadirExtra, quitarExtra,
     extrasVisibles, disponiblesParaAnadir, convertirExtras, semanaDe, trazoMini, CHULETA, escalaChuleta, chuleta, TRUCO_TOLERANCIA, trucoDeCabeza, textoTruco, tituloTruco, chuletaParaCompartir, extrasParaCompartir,

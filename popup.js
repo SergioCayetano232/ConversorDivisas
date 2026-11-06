@@ -131,6 +131,10 @@ const el = {
   pendientesDivisa: document.getElementById("pendientes-divisa"),
   presupuestoPendiente: document.getElementById("presupuesto-pendiente"),
   curvaAbrir: document.getElementById("curva-abrir"),
+  horas: document.getElementById("horas"),
+  horasFrase: document.getElementById("horas-frase"),
+  horasBarras: document.getElementById("horas-barras"),
+  horasNota: document.getElementById("horas-nota"),
   curva: document.getElementById("curva"),
   curvaLienzo: document.getElementById("curva-lienzo"),
   curvaSvg: document.getElementById("curva-svg"),
@@ -2640,6 +2644,7 @@ function pintarDesglose() {
   if (filtroCategoria && !trozos.some((t) => t.categoria === filtroCategoria)) filtroCategoria = null;
   if (el.desglose.hidden) {
     filtroCategoria = null;
+    cerrarHoras();
     return;
   }
   const alDia = categoriasAlDia(gastos);
@@ -2670,6 +2675,86 @@ function pintarDesglose() {
     });
     return boton;
   }));
+  pintarBotonHoras(trozos.length);
+}
+
+// Al final de las categorías, la franja que más se lleva. Abre el reparto por horas.
+function pintarBotonHoras(despues) {
+  const r = porFranja(gastos);
+  if (!r) return cerrarHoras();
+  const mas = r.franjas.find((f) => f.id === r.mas);
+  const pct = porCientoEntero(mas.fraccion);
+  const boton = document.createElement("button");
+  boton.type = "button";
+  boton.className = "desglose__trozo desglose__horas";
+  boton.id = "horas-abrir";
+  boton.style.setProperty("--i", despues);
+  boton.style.setProperty("--parte", mas.fraccion);
+  boton.textContent = tr("horas.boton", { emoji: mas.emoji, pct });
+  boton.title = tr("horas.botonTitulo", { franja: tr(`horas.${mas.id}El`), pct });
+  boton.setAttribute("aria-label", boton.title);
+  boton.setAttribute("aria-controls", "horas");
+  boton.setAttribute("aria-expanded", String(!el.horas.hidden));
+  boton.addEventListener("click", () => (el.horas.hidden ? abrirHoras() : cerrarHoras()));
+  el.desglose.append(boton);
+  if (!el.horas.hidden) pintarHoras();
+}
+
+function pintarHoras() {
+  const r = porFranja(gastos);
+  if (!r) return cerrarHoras();
+  const mas = r.franjas.find((f) => f.id === r.mas);
+  const pct = porCientoEntero(mas.fraccion);
+  const franja = tr(`horas.${mas.id}El`);
+  el.horasFrase.textContent = `${mas.emoji} ${mas.categoria
+    ? tr("horas.frase", { franja, pct, cat: tr(`cat.${mas.categoria}`).toLocaleLowerCase(localeActual()) })
+    : tr("horas.fraseSola", { franja, pct })}`;
+  const maximo = Math.max(...r.franjas.map((f) => f.fraccion));
+  const hora = (h) => `${String(h).padStart(2, "0")}:00`;
+  el.horasBarras.replaceChildren(...r.franjas.map((f, i) => {
+    const li = document.createElement("li");
+    li.className = "horas__franja";
+    li.classList.toggle("is-mas", f.id === r.mas);
+    li.style.setProperty("--i", i);
+    li.style.setProperty("--alto", maximo > 0 ? f.fraccion / maximo : 0);
+    const siguiente = FRANJAS[i + 1]?.desde ?? 24;
+    li.title = tr("horas.barra", {
+      franja: tr(`horas.${f.id}`), desde: hora(f.desde), hasta: hora(siguiente),
+      valor: `${nf.format(f.total)} ${r.to}`, n: f.n === 1 ? tr("gastos.uno") : tr("gastos.n", { n: f.n }),
+    });
+    li.setAttribute("aria-label", li.title);
+    li.innerHTML = '<span class="horas__pct"></span><span class="horas__barra" aria-hidden="true"></span><span class="horas__emoji" aria-hidden="true"></span><span class="horas__nombre"></span>';
+    li.querySelector(".horas__pct").textContent = f.n ? porCientoEntero(f.fraccion) : "";
+    li.querySelector(".horas__emoji").textContent = f.emoji;
+    li.querySelector(".horas__nombre").textContent = tr(`horas.${f.id}`);
+    return li;
+  }));
+  el.horasNota.textContent = tr("horas.nota");
+}
+
+function abrirHoras() {
+  cerrarViajes();
+  cerrarCajero();
+  cerrarTramos();
+  cerrarPendientes();
+  cerrarCurva();
+  cerrarGente();
+  cerrarCategorias();
+  dejarDeEditarPresupuesto();
+  const boton = document.getElementById("horas-abrir");
+  // Debajo del total como los demás: pegado a la pastilla se salía por abajo.
+  const arriba = el.gastosSuma.getBoundingClientRect().bottom - el.gastos.getBoundingClientRect().top;
+  el.horas.style.setProperty("--cajero-arriba", `${Math.round(arriba) + 4}px`);
+  el.horas.hidden = false;
+  boton?.setAttribute("aria-expanded", "true");
+  pintarHoras();
+}
+
+function cerrarHoras() {
+  if (el.horas.hidden) return false;
+  el.horas.hidden = true;
+  document.getElementById("horas-abrir")?.setAttribute("aria-expanded", "false");
+  return true;
 }
 
 function pintarTope(boton, { categoria, tope, gastado, queda, fraccion, tono, to }) {
@@ -3598,6 +3683,7 @@ function abrirPendientes() {
   cerrarCajero();
   cerrarTramos();
   cerrarCurva();
+  cerrarHoras();
   cerrarGente();
   cerrarCategorias();
   dejarDeEditarPresupuesto();
@@ -3697,6 +3783,7 @@ function abrirCurva() {
   cerrarCajero();
   cerrarTramos();
   cerrarPendientes();
+  cerrarHoras();
   cerrarGente();
   cerrarCategorias();
   dejarDeEditarPresupuesto();
@@ -3828,6 +3915,7 @@ function abrirTramos() {
   cerrarCajero();
   cerrarPendientes();
   cerrarCurva();
+  cerrarHoras();
   cerrarGente();
   cerrarCategorias();
   dejarDeEditarPresupuesto();
@@ -3880,6 +3968,7 @@ function abrirCajero() {
   cerrarTramos();
   cerrarPendientes();
   cerrarCurva();
+  cerrarHoras();
   cerrarGente();
   cerrarCategorias();
   dejarDeEditarPresupuesto();
@@ -4903,6 +4992,7 @@ function abrirViajes() {
   cerrarTramos();
   cerrarPendientes();
   cerrarCurva();
+  cerrarHoras();
   cerrarGente();
   cerrarCategorias();
   dejarDeEditarPresupuesto();
@@ -4939,6 +5029,7 @@ function ponerViaje(nuevos) {
   cerrarTramos();
   cerrarPendientes();
   cerrarCurva();
+  cerrarHoras();
   cerrarGente();
   dejarDeEditarPresupuesto();
   delete el.presupuestoVer.dataset.tono;
@@ -5151,6 +5242,7 @@ function cerrarGastos() {
   cerrarTramos();
   cerrarPendientes();
   cerrarCurva();
+  cerrarHoras();
   cerrarGente();
   dejarDeEditarPresupuesto();
   cerrarCategorias();
@@ -7211,6 +7303,7 @@ function bindEvents() {
       else if (cerrarTramos()) el.gastosTramo.focus();
       else if (cerrarPendientes()) el.gastosPendiente.focus();
       else if (cerrarCurva()) el.curvaAbrir.focus();
+      else if (cerrarHoras()) document.getElementById("horas-abrir")?.focus();
       else if (cerrarGente()) el.personasCabeza.focus();
       else if (cerrarCategorias()) el.gastosCategoria.focus();
       else if (dejarDeEditarPresupuesto()) el.presupuestoVer.hidden ? el.presupuestoAnadir.focus() : el.presupuestoVer.focus();
@@ -7245,6 +7338,9 @@ function bindEvents() {
     }
     if (!el.cajero.hidden && !el.cajero.contains(event.target) && !el.gastosEfectivo.contains(event.target)) {
       cerrarCajero();
+    }
+    if (!el.horas.hidden && !el.horas.contains(event.target) && !document.getElementById("horas-abrir")?.contains(event.target)) {
+      cerrarHoras();
     }
     if (!el.curva.hidden && !el.curva.contains(event.target) && !el.curvaAbrir.contains(event.target)) {
       cerrarCurva();

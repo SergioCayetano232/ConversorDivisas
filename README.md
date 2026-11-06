@@ -137,6 +137,13 @@ que necesitaba una conversión rápida. Ahora es un clic en la barra del navegad
   ves solo esos gastos, y pasando el ratón, lo que llevas al día en ella
 
   ("Comida: 120,00 EUR, 30,00 al día")
+- A qué hora gastas: al final de las categorías sale la franja que más se
+  lleva ("🌙 53 %"), y pulsándola, las cinco (madrugada, mañana, mediodía,
+  tarde y noche) en barras, con "La noche se lleva el 53 %, sobre todo en
+  comida". Sale de la hora a la que apuntas cada gasto, sin preguntar nada.
+  Lo pagado aparte, las devoluciones, las noches del hotel repartidas y lo
+  traído del banco no cuentan, que no dicen la hora de verdad. A partir de
+  ocho gastos
 - Un presupuesto para el viaje: le dices cuánto quieres gastar, qué día sales y
   hasta qué día (si aún no has salido, lo de al día se reparte entre los días del viaje),
   y una barra te enseña lo que llevas (verde, dorada pasado el 80 %, roja si te
