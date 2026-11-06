@@ -121,6 +121,7 @@ const el = {
   gente: document.getElementById("gente"),
   genteLista: document.getElementById("gente-lista"),
   gentePagos: document.getElementById("gente-pagos"),
+  genteDevuelto: document.getElementById("gente-devuelto"),
   cajeroLista: document.getElementById("cajero-lista"),
   viajesLista: document.getElementById("viajes-lista"),
   viajesNuevo: document.getElementById("viajes-nuevo"),
@@ -346,6 +347,7 @@ let pagadorNuevo = 0;
 let compararDivisa = null;
 let pidiendoTasa = false;
 let retiradaNueva = null;
+let saldadoNuevo = null;
 
 // Con el mismo trazo que los iconos de las pestañas.
 const ICONOS_CATEGORIA = {
@@ -3262,8 +3264,8 @@ function onCambiarPagador() {
 }
 
 function pintarCuentasGente() {
-  const { personas, gente } = viajeActivo(viajes);
-  const cuentas = cuentasViaje(gastos, personas);
+  const { personas, gente, saldados } = viajeActivo(viajes);
+  const cuentas = cuentasViaje(gastos, personas, saldados);
   if (!cuentas) return cerrarGente();
   const dinero = (n) => `${nf.format(n)} ${cuentas.to}`;
   // Los campos se quedan si ya están: si los rehiciera, al escribir un nombre perderías el foco.
@@ -3296,16 +3298,64 @@ function pintarCuentasGente() {
     saldo.dataset.tono = centimos > 0 ? "cobra" : centimos < 0 ? "debe" : "";
     saldo.textContent = centimos === 0 ? "✓" : `${centimos > 0 ? "+" : "−"}${nf.format(Math.abs(p.saldo))}`;
   });
-  const lineas = cuentas.pagos.length
-    ? cuentas.pagos.map((pago) => frasePago(pago, gente, cuentas.to))
-    : [tr("gente.enPaz")];
-  el.gentePagos.replaceChildren(...lineas.map((texto, i) => {
+  const linea = (clase, texto, i) => {
     const li = document.createElement("li");
-    li.className = "gente__pago";
+    li.className = clase;
     li.style.setProperty("--i", i);
-    li.textContent = texto;
+    const frase = document.createElement("span");
+    frase.textContent = texto;
+    li.append(frase);
     return li;
-  }));
+  };
+  const pendientes = cuentas.pagos.length
+    ? cuentas.pagos.map((pago, i) => {
+      const li = linea("gente__pago", frasePago(pago, gente, cuentas.to), i);
+      const boton = document.createElement("button");
+      boton.type = "button";
+      boton.className = "gente__saldar";
+      boton.textContent = tr("gente.saldar");
+      boton.title = tr("gente.saldarTitulo");
+      boton.addEventListener("click", () => onSaldar(pago, cuentas.to));
+      li.append(boton);
+      return li;
+    })
+    : [linea("gente__pago", tr("gente.enPaz"), 0)];
+  const hechos = cuentas.saldados.map((s, i) => {
+    const li = linea("gente__pago is-saldado", `✓ ${fraseSaldado(s, gente, cuentas.to)}`, pendientes.length + i);
+    if (s.id === saldadoNuevo) li.classList.add("is-nueva");
+    const quitar = document.createElement("button");
+    quitar.type = "button";
+    quitar.className = "gastos__quitar historial__quitar";
+    quitar.textContent = "✕";
+    quitar.title = tr("gente.desaldar");
+    quitar.setAttribute("aria-label", tr("gente.desaldar"));
+    quitar.addEventListener("click", () => onDesaldar(s.id));
+    li.append(quitar);
+    return li;
+  });
+  saldadoNuevo = null;
+  el.gentePagos.replaceChildren(...pendientes, ...hechos);
+  el.genteDevuelto.hidden = cuentas.devuelto === 0;
+  el.genteDevuelto.textContent = tr("gente.devuelto", { devuelto: dinero(cuentas.devuelto), queda: dinero(cuentas.queda) });
+}
+
+// Queda apuntado con su importe: si luego cambia un gasto, lo que falte sale solo.
+function onSaldar(pago, to) {
+  const id = `${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`;
+  const { saldados } = viajeActivo(viajes);
+  viajes = cambiarViaje(viajes, viajes.activo, { saldados: saldarPago(saldados, pago, to, { id }) });
+  saldadoNuevo = id;
+  guardarViajes();
+  pintarCuentasGente();
+  (el.gentePagos.querySelector(".gente__saldar") ?? el.gentePagos.querySelector(".gastos__quitar"))?.focus();
+}
+
+function onDesaldar(id) {
+  const { saldados } = viajeActivo(viajes);
+  viajes = cambiarViaje(viajes, viajes.activo, { saldados: quitarSaldado(saldados, id) });
+  guardarViajes();
+  pintarCuentasGente();
+  (el.gentePagos.querySelector(".gente__saldar") ?? el.genteLista.querySelector("input"))?.focus();
 }
 
 function onNombrePersona(i, nombre) {
@@ -4893,6 +4943,7 @@ function onDeshacer() {
   if (!quitado) return;
   if (quitado.todos) {
     gastos = devolverTodos(gastos, quitado.todos);
+    if (quitado.saldados?.length) viajes = cambiarViaje(viajes, viajes.activo, { saldados: quitado.saldados });
     filtroCategoria = null;
     cascadaGastos = true;
     olvidarDeshacer();
@@ -4932,11 +4983,14 @@ function onVaciarGastos() {
   noVaciar();
   const filas = [...el.gastosLista.children];
   const todos = gastos;
+  const { saldados } = viajeActivo(viajes);
   const vaciar = () => {
     gastos = [];
+    // Sin gastos lo pagado no cuadra con nada; con deshacer vuelve.
+    viajes = cambiarViaje(viajes, viajes.activo, { saldados: [] });
     guardarViajes();
     pintarGastos();
-    if (todos.length) ofrecerDeshacer({ todos });
+    if (todos.length) ofrecerDeshacer({ todos, saldados });
     el.gastosConcepto.focus();
   };
   if (sinMovimiento.matches || filas.length === 0) return vaciar();

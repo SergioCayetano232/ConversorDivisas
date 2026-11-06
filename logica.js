@@ -2148,7 +2148,7 @@ function inicialPersona(gente, i) {
 // bajas la gente, lo que pagó alguien que ya no está cuenta como tuyo.
 // Todo en céntimos: la parte de cada uno sale de repartirCentimos y así lo que
 // se debe cuadra siempre con lo pagado, sin un céntimo de más ni de menos.
-function cuentasViaje(gastos, personas) {
+function cuentasViaje(gastos, personas, saldados = []) {
   const n = leerPersonas(personas);
   const principal = sumarPorDivisa(gastos)[0];
   if (!principal || n < 2) return null;
@@ -2161,6 +2161,22 @@ function cuentasViaje(gastos, personas) {
   const total = pagado.reduce((a, b) => a + b, 0);
   const partes = repartirCentimos(total / 100, n).map((p) => Math.round(p * 100));
   const saldo = pagado.map((p, i) => p - partes[i]);
+
+  // Lo ya devuelto mueve el saldo de los dos y nada más, así que si luego
+  // cambia un gasto lo que queda se recalcula solo. Si alguien pagó de más,
+  // le toca cobrar a él.
+  let devuelto = 0;
+  const hechos = [];
+  for (const s of leerSaldados(saldados)) {
+    const de = s.de < n ? s.de : 0;
+    const a = s.a < n ? s.a : 0;
+    if (s.to !== principal.to || de === a) continue;
+    const centimos = Math.round(s.importe * 100);
+    saldo[de] += centimos;
+    saldo[a] -= centimos;
+    devuelto += centimos;
+    hechos.push({ ...s, de, a });
+  }
 
   // El que más debe paga al que más tiene que cobrar, hasta que no quede nada:
   // salen como mucho n-1 pagos.
@@ -2181,7 +2197,33 @@ function cuentasViaje(gastos, personas) {
     to: principal.to,
     gente: pagado.map((p, i) => ({ pagado: p / 100, parte: partes[i] / 100, saldo: saldo[i] / 100 })),
     pagos,
+    saldados: hechos,
+    devuelto: devuelto / 100,
+    queda: pagos.reduce((suma, p) => suma + Math.round(p.importe * 100), 0) / 100,
   };
+}
+
+// Lo que ya se ha pagado entre vosotros. Lo de antes no lo trae: nada.
+function leerSaldados(guardado) {
+  if (!Array.isArray(guardado)) return [];
+  const vale = (i) => Number.isInteger(i) && i >= 0 && i < PERSONAS_MAX;
+  return guardado
+    .filter((s) => s && vale(s.de) && vale(s.a) && s.de !== s.a && isValidCode(s.to)
+      && Number.isFinite(s.importe) && s.importe > 0 && typeof s.id === "string" && s.id)
+    .map(({ id, de, a, importe, to, cuando }) => ({ id, de, a, importe: Math.round(importe * 100) / 100, to, cuando: Number.isFinite(cuando) ? cuando : 0 }));
+}
+
+function saldarPago(saldados, { de, a, importe }, to, { id, cuando = Date.now() }) {
+  return leerSaldados([...leerSaldados(saldados), { id, de, a, importe, to, cuando }]);
+}
+
+const quitarSaldado = (saldados, id) => leerSaldados(saldados).filter((s) => s.id !== id);
+
+function fraseSaldado({ de, a, importe }, gente, to) {
+  const valor = `${numeros({ minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(importe)} ${to}`;
+  if (a === 0) return tr("gente.tePago", { de: nombrePersona(gente, de), valor });
+  if (de === 0) return tr("gente.lesPagaste", { a: nombrePersona(gente, a), valor });
+  return tr("gente.lePago", { de: nombrePersona(gente, de), a: nombrePersona(gente, a), valor });
 }
 
 // Contado desde ti, que eres quien lo lee: "Ana te debe", "le debes a Luis".
@@ -2206,6 +2248,7 @@ function leerViajes(guardado, gastosSueltos, presupuestoSuelto) {
       id: v.id, nombre: limpiarNombreViaje(v.nombre), gastos: leerGastos(v.gastos), presupuesto: leerPresupuesto(v.presupuesto),
       cajero: leerRetiradas(v.cajero), personas: leerPersonas(v.personas), color: leerColorViaje(v.color),
       ...(leerGente(v.gente).length ? { gente: leerGente(v.gente) } : {}),
+      ...(leerSaldados(v.saldados).length ? { saldados: leerSaldados(v.saldados) } : {}),
     }));
   if (lista.length === 0) {
     lista.push({ ...viajeVacio("primero"), gastos: leerGastos(gastosSueltos), presupuesto: leerPresupuesto(presupuestoSuelto) });
@@ -2414,7 +2457,7 @@ function conceptoEstrella(gastos) {
 // Para pegarlo en WhatsApp: lo de entre asteriscos sale en negrita, y en
 // cualquier otro sitio se lee igual de bien. Los días van del primero al último,
 // que es como se cuenta un viaje.
-function resumenParaCompartir({ nombre, gastos, presupuesto, personas, gente }, hoyIso = hoy()) {
+function resumenParaCompartir({ nombre, gastos, presupuesto, personas, gente, saldados }, hoyIso = hoy()) {
   if (gastos.length === 0) return "";
   const dinero = (n, to) => `${numeros({ minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(n)} ${to}`;
   const sumas = (totales) => totales.map(({ total, to }) => dinero(total, to)).join(" + ");
@@ -2434,7 +2477,7 @@ function resumenParaCompartir({ nombre, gastos, presupuesto, personas, gente }, 
       : tr("compartir.porPersona", datos));
   }
   if (hayOtrosPagadores(gastos, personas)) {
-    const cuentas = cuentasViaje(gastos, personas);
+    const cuentas = cuentasViaje(gastos, personas, saldados);
     for (const pago of cuentas.pagos) lineas.push(`💸 ${frasePago(pago, gente, cuentas.to)}`);
     if (cuentas.pagos.length === 0) lineas.push(tr("gente.enPaz"));
   }
@@ -6349,7 +6392,7 @@ if (typeof module !== "undefined") {
     CATEGORIAS, CATEGORIA_POR_DEFECTO, adivinarCategoria, PAGOS, PAGO_POR_DEFECTO, leerPago, comisionDelPago, desglose, conceptosUsados, completarConcepto,
     EMOJI_CATEGORIA, destacados, resumenParaCompartir, FINDE_MINIMO, findeContraSemana, ESTRELLA_MINIMO, conceptoEstrella,
     COPIA_APP, COPIA_VERSION, CLAVES_COPIA, limpiarCopia, crearCopia, leerCopia, resumenCopia,
-    VIAJES_MAX, NOMBRE_VIAJE_MAX, leerViajes, leerPersonas, porPersona, leerPagador, leerGente, ponerNombre, nombrePersona, inicialPersona, cuentasViaje, frasePago, hayOtrosPagadores, NOMBRE_PERSONA_MAX, compararViajes, COLORES_VIAJE, leerColorViaje, colorLibre, siguienteColor, viajeActivo, crearViaje, nombreCopia, nombreDeDestino, duplicarViaje, renombrarViaje, elegirViaje, borrarViaje, cambiarViaje, resumenViaje, archivoGastos,
+    VIAJES_MAX, NOMBRE_VIAJE_MAX, leerViajes, leerPersonas, porPersona, leerPagador, leerGente, ponerNombre, nombrePersona, inicialPersona, cuentasViaje, frasePago, leerSaldados, saldarPago, quitarSaldado, fraseSaldado, hayOtrosPagadores, NOMBRE_PERSONA_MAX, compararViajes, COLORES_VIAJE, leerColorViaje, colorLibre, siguienteColor, viajeActivo, crearViaje, nombreCopia, nombreDeDestino, duplicarViaje, renombrarViaje, elegirViaje, borrarViaje, cambiarViaje, resumenViaje, archivoGastos,
     diasHasta, leerPresupuesto, leerTopes, PRESUPUESTO_JUSTO, estadoPresupuesto, estadoTopes, alDiaAlli, inicioDelViaje, diaDelViaje, cuentaAtras, textoCuentaAtras, loDeHoy, CELEBRADOS_MAX, leerCelebrados, anadirCelebrado, viajeParaCelebrar, textoCelebrar, RACHA_MINIMA, rachaPresupuesto, hastaCuandoLlega, previsionViaje, PREVISION_JUSTA, textoPrevision, loQueSeLleva, redondearDias,
     EXTRAS_MAX, EXTRAS_POR_DEFECTO, leerExtras, anadirExtra, quitarExtra,
     extrasVisibles, disponiblesParaAnadir, convertirExtras, semanaDe, trazoMini, CHULETA, escalaChuleta, chuleta, TRUCO_TOLERANCIA, trucoDeCabeza, textoTruco, tituloTruco, chuletaParaCompartir, extrasParaCompartir,
