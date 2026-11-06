@@ -2008,6 +2008,34 @@ function apuntarNoches(lista, noches) {
   return [...buenas, ...lista].sort((x, y) => y.cuando - x.cuando).slice(0, GASTOS_MAX);
 }
 
+// Lo que sabes que vas a pagar y aún no: el hotel que se paga al salir, la
+// cena ya reservada. Va con lo que valía al apuntarlo, y al pagarlo pasa a
+// gasto con la tasa y la comisión de ese día.
+const PENDIENTES_MAX = 30;
+
+function leerPendientes(guardado) {
+  return leerGastos(guardado).filter((p) => p.cantidad > 0).slice(0, PENDIENTES_MAX);
+}
+
+function apuntarPendiente(lista, pendiente) {
+  const buenos = leerPendientes(lista);
+  if (!pendiente || !(pendiente.cantidad > 0) || buenos.length >= PENDIENTES_MAX || buenos.some((p) => p.id === pendiente.id)) return buenos;
+  return [...buenos, pendiente];
+}
+
+const quitarPendiente = (lista, id) => leerPendientes(lista).filter((p) => p.id !== id);
+
+const totalPendiente = (lista, to) => leerPendientes(lista).filter((p) => p.to === to).reduce((suma, p) => suma + p.valor, 0);
+
+// Como un gasto, con la categoría sacada del concepto. Sin comisión: esa se
+// pone al pagarlo, que es cuando el banco la cobra.
+function crearPendiente({ id, from, to, cantidad, valor, concepto = "", cuando }) {
+  if (!(cantidad > 0)) return null;
+  return crearGasto({ id, from, to, cantidad, valor, concepto, cuando, categoria: adivinarCategoria(limpiarConcepto(concepto)) ?? CATEGORIA_POR_DEFECTO });
+}
+
+const pagarPendiente = (pendiente, opciones) => repetirGasto(pendiente, opciones);
+
 function quitarGasto(lista, id) {
   return lista.filter((g) => g.id !== id);
 }
@@ -2299,6 +2327,7 @@ function leerViajes(guardado, gastosSueltos, presupuestoSuelto) {
       ...(leerGente(v.gente).length ? { gente: leerGente(v.gente) } : {}),
       ...(leerSaldados(v.saldados).length ? { saldados: leerSaldados(v.saldados) } : {}),
       ...(leerTramos(v.tramos).length ? { tramos: leerTramos(v.tramos) } : {}),
+      ...(leerPendientes(v.pendientes).length ? { pendientes: leerPendientes(v.pendientes) } : {}),
     }));
   if (lista.length === 0) {
     lista.push({ ...viajeVacio("primero"), gastos: leerGastos(gastosSueltos), presupuesto: leerPresupuesto(presupuestoSuelto) });
@@ -3053,10 +3082,13 @@ const esIso = (texto) => typeof texto === "string" && /^\d{4}-\d{2}-\d{2}$/.test
 // Hasta el 80 % vas bien; de ahí al 100 %, justo; pasado, pasado.
 const PRESUPUESTO_JUSTO = 0.8;
 
-function estadoPresupuesto(presupuesto, gastos, hoyIso = hoy()) {
+function estadoPresupuesto(presupuesto, gastos, hoyIso = hoy(), pendientes = []) {
   if (!presupuesto) return null;
   const gastado = gastos.filter((g) => g.to === presupuesto.to).reduce((suma, g) => suma + g.valor, 0);
+  const pendiente = totalPendiente(pendientes, presupuesto.to);
   const queda = presupuesto.importe - gastado;
+  // Lo que vas a pagar sí o sí no está para gastarlo: el al día sale de lo demás.
+  const libre = queda - pendiente;
   const fraccion = gastado / presupuesto.importe;
   // Si aún no has salido, el dinero se reparte entre los días del viaje, no
   // entre los que faltan desde hoy.
@@ -3065,10 +3097,13 @@ function estadoPresupuesto(presupuesto, gastos, hoyIso = hoy()) {
   return {
     gastado,
     queda,
+    pendiente,
+    libre,
     fraccion,
+    fraccionPendiente: pendiente / presupuesto.importe,
     dias,
     // Acabado el viaje o pasado del presupuesto, "al día" ya no significa nada.
-    porDia: dias > 0 && queda > 0 ? queda / dias : null,
+    porDia: dias > 0 && libre > 0 ? libre / dias : null,
     tono: fraccion > 1 ? "pasado" : fraccion >= PRESUPUESTO_JUSTO ? "justo" : "bien",
   };
 }
@@ -3213,15 +3248,15 @@ function rachaPresupuesto(presupuesto, gastos, hoyIso = hoy()) {
 // Al ritmo que llevas, hasta qué día te llega lo que queda. Solo si no llega al
 // final: si llega, ya lo dice la barra. El primer día no, que el hotel pagado
 // por adelantado haría pensar que te arruinas.
-function hastaCuandoLlega(presupuesto, gastos, hoyIso = hoy()) {
-  const estado = estadoPresupuesto(presupuesto, gastos, hoyIso);
+function hastaCuandoLlega(presupuesto, gastos, hoyIso = hoy(), pendientes = []) {
+  const estado = estadoPresupuesto(presupuesto, gastos, hoyIso, pendientes);
   const dia = diaDelViaje(presupuesto, gastos, hoyIso);
-  if (!estado || !dia || dia.dia < 2 || estado.queda <= 0) return null;
+  if (!estado || !dia || dia.dia < 2 || estado.libre <= 0) return null;
   // Lo fijo ya está pagado y no se repite: el ritmo es solo lo del día a día.
   const fijo = gastos.filter((g) => esFijo(g) && g.to === presupuesto.to).reduce((s, g) => s + g.valor, 0);
   const ritmo = (estado.gastado - fijo) / dia.dia;
   if (!(ritmo > 0)) return null;
-  const llega = Math.floor(estado.queda / ritmo);
+  const llega = Math.floor(estado.libre / ritmo);
   if (llega >= dia.total - dia.dia) return null;
   const [a, m, d] = hoyIso.split("-").map(Number);
   return isoLocal(new Date(a, m - 1, d + llega));
@@ -3230,7 +3265,7 @@ function hastaCuandoLlega(presupuesto, gastos, hoyIso = hoy()) {
 // Cuánto habrás gastado al acabar si sigues así. Lo ya apuntado para días que
 // vienen (las noches del hotel) cuenta tal cual, y su categoría no entra en el
 // ritmo: si no, el hotel saldría dos veces.
-function previsionViaje(presupuesto, gastos, hoyIso = hoy()) {
+function previsionViaje(presupuesto, gastos, hoyIso = hoy(), pendientes = []) {
   const dia = diaDelViaje(presupuesto, gastos, hoyIso);
   // El primer día no, por lo mismo que arriba, y el último ya no hay nada que prever.
   if (!dia || dia.dia < 2 || dia.dia >= dia.total) return null;
@@ -3243,7 +3278,9 @@ function previsionViaje(presupuesto, gastos, hoyIso = hoy()) {
     gastado += g.valor;
     if (!esFuturo(g) && !esFijo(g) && !yaPagadas.has(g.categoria)) ritmo += g.valor / dia.dia;
   }
-  const total = gastado + ritmo * (dia.total - dia.dia);
+  // Lo pendiente suele ser de lo que ya va en el ritmo (el hotel al salir), pero
+  // aún no está pagado: cuenta tal cual, como las noches que vienen.
+  const total = gastado + totalPendiente(pendientes, presupuesto.to) + ritmo * (dia.total - dia.dia);
   return { total, sobra: presupuesto.importe - total, fraccion: total / presupuesto.importe, to: presupuesto.to };
 }
 
@@ -3262,9 +3299,9 @@ function textoPrevision(prevision, importe) {
 
 // Lo que se llevaría el gasto que vas a apuntar: qué trozo del presupuesto y
 // cuántos días de lo que te queda al día. En otra divisa no cuenta, igual que arriba.
-function loQueSeLleva(presupuesto, gastos, gasto, hoyIso = hoy()) {
+function loQueSeLleva(presupuesto, gastos, gasto, hoyIso = hoy(), pendientes = []) {
   if (!presupuesto || !gasto || gasto.to !== presupuesto.to || !(gasto.valor > 0)) return null;
-  const estado = estadoPresupuesto(presupuesto, gastos, hoyIso);
+  const estado = estadoPresupuesto(presupuesto, gastos, hoyIso, pendientes);
   const trozo = gasto.valor / presupuesto.importe;
   return {
     desde: Math.min(estado.fraccion, 1),
@@ -6541,7 +6578,7 @@ if (typeof module !== "undefined") {
     CATEGORIAS, CATEGORIA_POR_DEFECTO, adivinarCategoria, PAGOS, PAGO_POR_DEFECTO, leerPago, comisionDelPago, desglose, conceptosUsados, completarConcepto,
     EMOJI_CATEGORIA, destacados, resumenParaCompartir, FINDE_MINIMO, findeContraSemana, ESTRELLA_MINIMO, conceptoEstrella,
     COPIA_APP, COPIA_VERSION, CLAVES_COPIA, limpiarCopia, crearCopia, leerCopia, resumenCopia,
-    VIAJES_MAX, NOMBRE_VIAJE_MAX, leerViajes, leerPersonas, porPersona, leerPagador, leerGente, ponerNombre, nombrePersona, inicialPersona, cuentasViaje, frasePago, leerEntre, entreDe, fraseEntre, cambiarEntre, leerSaldados, saldarPago, quitarSaldado, fraseSaldado, hayOtrosPagadores, NOMBRE_PERSONA_MAX, compararViajes, COLORES_VIAJE, leerColorViaje, colorLibre, siguienteColor, viajeActivo, crearViaje, nombreCopia, nombreDeDestino, duplicarViaje, renombrarViaje, elegirViaje, borrarViaje, moverGasto, cambiarViaje, TRAMOS_MAX, NOMBRE_TRAMO_MAX, leerTramos, ponerTramo, quitarTramo, tramoDelDia, resumenTramos, resumenViaje, archivoGastos,
+    VIAJES_MAX, NOMBRE_VIAJE_MAX, leerViajes, leerPersonas, porPersona, leerPagador, leerGente, ponerNombre, nombrePersona, inicialPersona, cuentasViaje, frasePago, leerEntre, entreDe, fraseEntre, cambiarEntre, leerSaldados, saldarPago, quitarSaldado, fraseSaldado, hayOtrosPagadores, NOMBRE_PERSONA_MAX, compararViajes, COLORES_VIAJE, leerColorViaje, colorLibre, siguienteColor, viajeActivo, crearViaje, nombreCopia, nombreDeDestino, duplicarViaje, renombrarViaje, elegirViaje, borrarViaje, moverGasto, cambiarViaje, TRAMOS_MAX, NOMBRE_TRAMO_MAX, leerTramos, ponerTramo, quitarTramo, tramoDelDia, resumenTramos, PENDIENTES_MAX, leerPendientes, crearPendiente, apuntarPendiente, quitarPendiente, totalPendiente, pagarPendiente, resumenViaje, archivoGastos,
     diasHasta, leerPresupuesto, leerTopes, PRESUPUESTO_JUSTO, estadoPresupuesto, estadoTopes, alDiaAlli, inicioDelViaje, diaDelViaje, cuentaAtras, textoCuentaAtras, loDeHoy, CELEBRADOS_MAX, leerCelebrados, anadirCelebrado, viajeParaCelebrar, textoCelebrar, RACHA_MINIMA, rachaPresupuesto, hastaCuandoLlega, previsionViaje, PREVISION_JUSTA, textoPrevision, loQueSeLleva, redondearDias,
     EXTRAS_MAX, EXTRAS_POR_DEFECTO, leerExtras, anadirExtra, quitarExtra,
     extrasVisibles, disponiblesParaAnadir, convertirExtras, semanaDe, trazoMini, CHULETA, escalaChuleta, chuleta, TRUCO_TOLERANCIA, trucoDeCabeza, textoTruco, tituloTruco, chuletaParaCompartir, extrasParaCompartir,

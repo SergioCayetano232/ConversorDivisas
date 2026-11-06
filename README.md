@@ -159,6 +159,12 @@ que necesitaba una conversión rápida. Ahora es un clic en la barra del navegad
   un campo para lo que no cabe en él ("pedir factura", "pagó Ana"). Sale en
   pequeño debajo del gasto y la lupa también busca ahí. Al volver a apuntarlo
   hoy la nota no se copia, que era de aquel
+- Lo pendiente de pagar: el hotel que se paga al salir o la cena ya
+  reservada. Con **⏳ Pendiente**, debajo del total, lo apuntas con lo que
+  vale hoy. No cuenta como gastado, pero sí sale de lo que te queda al día y
+  de la previsión, y en la barra del presupuesto va a rayas detrás de lo
+  gastado. El día que lo pagas, con **Pagar** pasa a gasto con la tasa y la
+  comisión de ese momento
 - Tramos dentro del viaje (Tokio, Kioto, Osaka): con **📍 Tramos**, debajo
   del total, pones dónde estás desde qué día. Cada tramo dura hasta que
   empieza el siguiente, así los gastos caen solos en el suyo por la fecha.

@@ -122,6 +122,14 @@ const el = {
   genteLista: document.getElementById("gente-lista"),
   gentePagos: document.getElementById("gente-pagos"),
   gastosTramo: document.getElementById("gastos-tramo"),
+  gastosPendiente: document.getElementById("gastos-pendiente"),
+  pendientes: document.getElementById("pendientes"),
+  pendientesLista: document.getElementById("pendientes-lista"),
+  pendientesForm: document.getElementById("pendientes-form"),
+  pendientesConcepto: document.getElementById("pendientes-concepto"),
+  pendientesCantidad: document.getElementById("pendientes-cantidad"),
+  pendientesDivisa: document.getElementById("pendientes-divisa"),
+  presupuestoPendiente: document.getElementById("presupuesto-pendiente"),
   tramos: document.getElementById("tramos"),
   tramosLista: document.getElementById("tramos-lista"),
   tramosForm: document.getElementById("tramos-form"),
@@ -355,6 +363,7 @@ let pidiendoTasa = false;
 let retiradaNueva = null;
 let saldadoNuevo = null;
 let tramoNuevo = null;
+let pendienteNuevo = null;
 
 // Con el mismo trazo que los iconos de las pestañas.
 const ICONOS_CATEGORIA = {
@@ -2670,7 +2679,7 @@ const porCientoEntero = (fraccion) => tr("pct", { n: Math.round(fraccion * 100) 
 // Antes de apuntarlo ya ves cuánto se come: un trozo a rayas en la barra y los
 // días de presupuesto que son.
 function pintarLoQueSeLleva(gasto = gastoDePantalla()) {
-  const r = loQueSeLleva(presupuesto, gastos, gasto);
+  const r = loQueSeLleva(presupuesto, gastos, gasto, hoy(), viajeActivo(viajes).pendientes);
   const hay = Boolean(r) && (r.trozo > 0 || r.pasaria);
   el.presupuestoEsto.style.left = hay ? `${r.desde * 100}%` : "";
   el.presupuestoEsto.style.width = hay ? `${r.trozo * 100}%` : "0";
@@ -3516,9 +3525,152 @@ function pintarTramos() {
   el.tramosForm.title = tr("tramos.pista");
 }
 
+// Con algo pendiente, cuánto suma. Si no hay nada, la invitación solo con
+// presupuesto: es donde se nota.
+function pintarPendiente() {
+  const { pendientes } = viajeActivo(viajes);
+  const lista = leerPendientes(pendientes);
+  const boton = el.gastosPendiente;
+  boton.hidden = lista.length === 0 && !presupuesto;
+  if (boton.hidden) return;
+  boton.classList.toggle("is-vacio", lista.length === 0);
+  if (lista.length === 0) {
+    boton.textContent = tr("pendientes.invitar");
+    boton.title = tr("pendientes.invitarTitulo");
+  } else {
+    const to = presupuesto?.to ?? sumarPorDivisa(lista)[0].to;
+    boton.textContent = tr("pendientes.boton", { valor: nf.format(totalPendiente(lista, to)) });
+    boton.title = tr("pendientes.botonTitulo", { n: lista.length });
+  }
+  if (!el.pendientes.hidden) pintarPendientes();
+}
+
+function pintarPendientes() {
+  const lista = leerPendientes(viajeActivo(viajes).pendientes);
+  el.pendientesDivisa.textContent = el.from.value;
+  el.pendientesLista.replaceChildren(...lista.map((p, i) => {
+    const fila = document.createElement("li");
+    fila.className = "pendientes__fila";
+    fila.style.setProperty("--i", i);
+    if (p.id === pendienteNuevo) fila.classList.add("is-nueva");
+    const que = document.createElement("span");
+    que.className = "pendientes__que";
+    que.textContent = `${EMOJI_CATEGORIA[p.categoria]} ${p.concepto || tr("gastos.sinConcepto")}`;
+    const cuanto = document.createElement("span");
+    cuanto.className = "pendientes__cuanto";
+    cuanto.textContent = p.from === p.to ? `${nf.format(p.valor)} ${p.to}` : `${nf.format(p.cantidad)} ${p.from} ≈ ${nf.format(p.valor)} ${p.to}`;
+    const pagar = document.createElement("button");
+    pagar.type = "button";
+    pagar.className = "gente__saldar";
+    pagar.textContent = tr("pendientes.pagar");
+    pagar.title = tr("pendientes.pagarTitulo");
+    pagar.addEventListener("click", () => onPagarPendiente(p.id));
+    const quitar = document.createElement("button");
+    quitar.type = "button";
+    quitar.className = "gastos__quitar historial__quitar";
+    quitar.textContent = "✕";
+    quitar.setAttribute("aria-label", tr("pendientes.quitar", { concepto: p.concepto || tr("gastos.sinConcepto") }));
+    quitar.addEventListener("click", () => onQuitarPendiente(p.id));
+    fila.append(que, cuanto, pagar, quitar);
+    return fila;
+  }));
+  pendienteNuevo = null;
+}
+
+function abrirPendientes() {
+  cerrarViajes();
+  cerrarCajero();
+  cerrarTramos();
+  cerrarGente();
+  cerrarCategorias();
+  dejarDeEditarPresupuesto();
+  const arriba = el.gastosSuma.getBoundingClientRect().bottom - el.gastos.getBoundingClientRect().top;
+  el.pendientes.style.setProperty("--cajero-arriba", `${Math.round(arriba) + 4}px`);
+  el.pendientesConcepto.value = "";
+  el.pendientesCantidad.value = "";
+  el.pendientes.hidden = false;
+  el.gastosPendiente.setAttribute("aria-expanded", "true");
+  pintarPendientes();
+  el.pendientesConcepto.focus();
+}
+
+function cerrarPendientes() {
+  if (el.pendientes.hidden) return false;
+  el.pendientes.hidden = true;
+  el.gastosPendiente.setAttribute("aria-expanded", "false");
+  return true;
+}
+
+// En la divisa del presupuesto, que es donde cuenta; sin él, en la de abajo.
+// En la misma de arriba no, igual que un gasto: no hay nada que convertir.
+function onApuntarPendiente(event) {
+  event.preventDefault();
+  const from = el.from.value;
+  const to = presupuesto?.to ?? el.to.value;
+  const cantidad = leerImporte(el.pendientesCantidad.value);
+  if (!(cantidad > 0)) {
+    restartAnimation(el.pendientesCantidad, "is-mal");
+    el.pendientesCantidad.focus();
+    return;
+  }
+  const tasa = from === to ? null : tasaDeHoy(from, to);
+  if (!tasa) {
+    el.pendientesCantidad.title = tr("pendientes.sinTasa", { from, to });
+    restartAnimation(el.pendientesCantidad, "is-mal");
+    return;
+  }
+  const pendiente = crearPendiente({
+    id: `${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`,
+    from, to, cantidad, valor: cantidad * tasa, concepto: el.pendientesConcepto.value, cuando: Date.now(),
+  });
+  if (!pendiente) return;
+  const { pendientes } = viajeActivo(viajes);
+  viajes = cambiarViaje(viajes, viajes.activo, { pendientes: apuntarPendiente(pendientes, pendiente) });
+  pendienteNuevo = pendiente.id;
+  el.pendientesConcepto.value = "";
+  el.pendientesCantidad.value = "";
+  el.pendientesCantidad.title = "";
+  guardarViajes();
+  pintarGastos();
+  el.pendientesConcepto.focus();
+}
+
+function onQuitarPendiente(id) {
+  const { pendientes } = viajeActivo(viajes);
+  viajes = cambiarViaje(viajes, viajes.activo, { pendientes: quitarPendiente(pendientes, id) });
+  guardarViajes();
+  pintarGastos();
+  (el.pendientesLista.querySelector(".gente__saldar") ?? el.pendientesConcepto).focus();
+}
+
+// Pasa a la lista como uno recién apuntado, con la tasa y la comisión de ahora.
+function onPagarPendiente(id) {
+  const { pendientes } = viajeActivo(viajes);
+  const pendiente = leerPendientes(pendientes).find((p) => p.id === id);
+  if (!pendiente) return;
+  const gasto = pagarPendiente(pendiente, {
+    id: `${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`,
+    cuando: Date.now(),
+    tasa: tasaDeHoy(pendiente.from, pendiente.to),
+    comision,
+  });
+  if (!gasto) return;
+  viajes = cambiarViaje(viajes, viajes.activo, { pendientes: quitarPendiente(pendientes, id) });
+  gastos = apuntarGasto(gastos, gasto);
+  gastoNuevo = gasto.id;
+  if (filtroCategoria && filtroCategoria !== gasto.categoria) filtroCategoria = null;
+  dejarVerGasto(gasto);
+  guardarViajes();
+  pintarGastos();
+  restartAnimation(el.abrirGastos, "is-apuntado");
+  el.gastosLista.scrollTop = 0;
+  (el.pendientesLista.querySelector(".gente__saldar") ?? el.pendientesConcepto).focus();
+}
+
 function abrirTramos() {
   cerrarViajes();
   cerrarCajero();
+  cerrarPendientes();
   cerrarGente();
   cerrarCategorias();
   dejarDeEditarPresupuesto();
@@ -3569,6 +3721,7 @@ function onQuitarTramo(id) {
 function abrirCajero() {
   cerrarViajes();
   cerrarTramos();
+  cerrarPendientes();
   cerrarGente();
   cerrarCategorias();
   dejarDeEditarPresupuesto();
@@ -3656,6 +3809,7 @@ function pintarGastos() {
   pintarComisiones();
   pintarEfectivo();
   pintarTramo();
+  pintarPendiente();
   pintarPersonas();
   pintarPagador();
   if (!el.gente.hidden) pintarCuentasGente();
@@ -3770,7 +3924,8 @@ function onTeclaBuscar(event) {
 }
 
 function pintarPresupuesto() {
-  const estado = estadoPresupuesto(presupuesto, gastos);
+  const { pendientes } = viajeActivo(viajes);
+  const estado = estadoPresupuesto(presupuesto, gastos, hoy(), pendientes);
   el.presupuestoAnadir.hidden = Boolean(estado);
   el.presupuestoVer.hidden = !estado;
   if (!estado) {
@@ -3781,7 +3936,7 @@ function pintarPresupuesto() {
   const dia = diaDelViaje(presupuesto, gastos);
   // Si a este ritmo no llegas, eso importa más que el "al día", que pasa al título.
   // Y "Quedan" a secas y sin divisa, que si no la fecha no cabe.
-  const llega = hastaCuandoLlega(presupuesto, gastos);
+  const llega = hastaCuandoLlega(presupuesto, gastos, hoy(), pendientes);
   const alli = llega ? pintarAlDiaAlli(null) : pintarAlDiaAlli(estado.porDia);
   const partes = estado.queda < 0
     ? [tr("presupuesto.pasado", { pasado: dinero(-estado.queda) })]
@@ -3807,7 +3962,10 @@ function pintarPresupuesto() {
   if (alli) el.presupuestoVer.title += `\n${tr("presupuesto.alliTitulo", { porDia: dinero(estado.porDia), importe: alli })}`;
   if (llega) el.presupuestoVer.title += `\n${tr("presupuesto.llegaTitulo", { fecha: fechaLarga(llega), porDia: dinero(estado.porDia) })}`;
   if (falta !== null) el.presupuestoVer.title += `\n${tr(falta === 1 ? "presupuesto.saleManana" : "presupuesto.saleEl", { fecha: fechaLarga(presupuesto.desde), n: falta })}`;
-  const prevision = previsionViaje(presupuesto, gastos);
+  if (estado.pendiente > 0) {
+    el.presupuestoVer.title += `\n${tr("pendientes.presupuesto", { pendiente: dinero(estado.pendiente), libre: dinero(estado.libre) })}`;
+  }
+  const prevision = previsionViaje(presupuesto, gastos, hoy(), pendientes);
   if (prevision) el.presupuestoVer.title += `\n${textoPrevision(prevision, presupuesto.importe)}`;
   // La marca es hasta dónde deberías llevar gastado al acabar hoy, si fueras
   // parejo. El último día no la pongo: estaría pegada al final y no dice nada.
@@ -3829,6 +3987,9 @@ function pintarPresupuesto() {
   const hasta = prevision ? Math.min(prevision.fraccion, 1) : lleno;
   el.presupuestoRitmo.style.left = `${lleno * 100}%`;
   el.presupuestoRitmo.style.width = `${Math.max(hasta - lleno, 0) * 100}%`;
+  // Lo pendiente, a rayas justo detrás de lo gastado: es dinero que ya tiene dueño.
+  el.presupuestoPendiente.style.left = `${lleno * 100}%`;
+  el.presupuestoPendiente.style.width = `${Math.max(Math.min(lleno + estado.fraccionPendiente, 1) - lleno, 0) * 100}%`;
   el.presupuestoRitmo.classList.toggle("is-pasa", Boolean(prevision) && prevision.fraccion > 1 + PREVISION_JUSTA);
   // El temblor solo al pasarte, no cada vez que abres el panel ya pasado.
   const antes = el.presupuestoVer.dataset.tono;
@@ -4581,6 +4742,7 @@ function pintarViajes() {
 function abrirViajes() {
   cerrarCajero();
   cerrarTramos();
+  cerrarPendientes();
   cerrarGente();
   cerrarCategorias();
   dejarDeEditarPresupuesto();
@@ -4615,6 +4777,7 @@ function ponerViaje(nuevos) {
   cerrarBusqueda();
   cerrarCajero();
   cerrarTramos();
+  cerrarPendientes();
   cerrarGente();
   dejarDeEditarPresupuesto();
   delete el.presupuestoVer.dataset.tono;
@@ -4825,6 +4988,7 @@ function cerrarGastos() {
   cerrarViajes();
   cerrarCajero();
   cerrarTramos();
+  cerrarPendientes();
   cerrarGente();
   dejarDeEditarPresupuesto();
   cerrarCategorias();
@@ -6715,6 +6879,11 @@ function bindEvents() {
   el.gastosEfectivo.addEventListener("click", () => (el.cajero.hidden ? abrirCajero() : cerrarCajero()));
   el.gastosTramo.addEventListener("click", () => (el.tramos.hidden ? abrirTramos() : cerrarTramos()));
   el.tramosForm.addEventListener("submit", onPonerTramo);
+  el.gastosPendiente.addEventListener("click", () => (el.pendientes.hidden ? abrirPendientes() : cerrarPendientes()));
+  el.pendientesForm.addEventListener("submit", onApuntarPendiente);
+  for (const campo of [el.pendientesConcepto, el.pendientesCantidad]) {
+    campo.addEventListener("animationend", () => campo.classList.remove("is-mal"));
+  }
   el.tramosNombre.addEventListener("animationend", () => el.tramosNombre.classList.remove("is-mal"));
   el.gastosEfectivo.addEventListener("animationend", () => el.gastosEfectivo.classList.remove("is-tic"));
   el.cajeroForm.addEventListener("submit", onSacar);
@@ -6870,6 +7039,7 @@ function bindEvents() {
       if (cerrarViajes()) el.viaje.focus();
       else if (cerrarCajero()) el.gastosEfectivo.focus();
       else if (cerrarTramos()) el.gastosTramo.focus();
+      else if (cerrarPendientes()) el.gastosPendiente.focus();
       else if (cerrarGente()) el.personasCabeza.focus();
       else if (cerrarCategorias()) el.gastosCategoria.focus();
       else if (dejarDeEditarPresupuesto()) el.presupuestoVer.hidden ? el.presupuestoAnadir.focus() : el.presupuestoVer.focus();
@@ -6904,6 +7074,9 @@ function bindEvents() {
     }
     if (!el.cajero.hidden && !el.cajero.contains(event.target) && !el.gastosEfectivo.contains(event.target)) {
       cerrarCajero();
+    }
+    if (!el.pendientes.hidden && !el.pendientes.contains(event.target) && !el.gastosPendiente.contains(event.target)) {
+      cerrarPendientes();
     }
     if (!el.tramos.hidden && !el.tramos.contains(event.target) && !el.gastosTramo.contains(event.target)) {
       cerrarTramos();

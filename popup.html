@@ -691,6 +691,7 @@
           <span class="gastos__cambio" id="gastos-cambio" hidden></span>
           <button class="gastos__efectivo" type="button" id="gastos-efectivo" aria-expanded="false" aria-controls="cajero" hidden></button>
           <button class="gastos__efectivo gastos__tramo" type="button" id="gastos-tramo" aria-expanded="false" aria-controls="tramos" hidden></button>
+          <button class="gastos__efectivo gastos__pendiente" type="button" id="gastos-pendiente" aria-expanded="false" aria-controls="pendientes" hidden></button>
           <span class="gastos__personas" id="gastos-personas" hidden>
             <button class="gastos__paso" type="button" id="personas-menos" aria-label="Uno menos" data-t-aria-label="cuenta.menos">−</button>
             <span class="gastos__gente" id="personas-n" aria-live="polite"></span>
@@ -777,6 +778,34 @@
         <button class="cajero__sugerencia" type="button" id="cajero-sugerencia" hidden></button>
         <ul class="cajero__lista" id="cajero-lista"></ul>
       </div>
+      <div class="cajero pendientes" id="pendientes" role="group" aria-labelledby="pendientes-titulo" hidden>
+        <p class="cajero__titulo" id="pendientes-titulo" data-t="pendientes.titulo">Pendiente de pagar</p>
+        <ul class="pendientes__lista" id="pendientes-lista"></ul>
+        <form class="cajero__nuevo pendientes__nuevo" id="pendientes-form" novalidate>
+          <input
+            class="gastos__concepto pendientes__concepto"
+            type="text"
+            id="pendientes-concepto"
+            maxlength="40"
+            autocomplete="off"
+            placeholder="Hotel al salir…"
+            aria-label="Qué vas a pagar"
+            data-t-placeholder="pendientes.concepto"
+            data-t-aria-label="pendientes.conceptoAria">
+          <input
+            class="gastos__concepto pendientes__cantidad"
+            type="text"
+            id="pendientes-cantidad"
+            inputmode="decimal"
+            autocomplete="off"
+            spellcheck="false"
+            placeholder="0"
+            aria-label="Cuánto"
+            data-t-aria-label="pendientes.cantidadAria">
+          <span class="cajero__divisa" id="pendientes-divisa"></span>
+          <button class="gastos__apuntar" type="submit" aria-label="Apuntarlo como pendiente" data-t-aria-label="pendientes.anadir">+</button>
+        </form>
+      </div>
       <div class="cajero tramos" id="tramos" role="group" aria-labelledby="tramos-titulo" hidden>
         <p class="cajero__titulo" id="tramos-titulo" data-t="tramos.titulo">Tramos del viaje</p>
         <ul class="tramos__lista" id="tramos-lista"></ul>
@@ -804,7 +833,7 @@
       <div class="presupuesto" id="presupuesto">
         <button class="presupuesto__anadir" type="button" id="presupuesto-anadir" data-t="presupuesto.anadir" title="Ponte un presupuesto y te digo cuánto te queda al día" data-t-title="presupuesto.anadirTitulo">+ presupuesto</button>
         <button class="presupuesto__ver" type="button" id="presupuesto-ver" hidden>
-          <span class="presupuesto__barra" aria-hidden="true"><span class="presupuesto__lleno" id="presupuesto-lleno"></span><span class="presupuesto__hoy" id="presupuesto-hoy" hidden></span><span class="presupuesto__ritmo" id="presupuesto-ritmo"></span><span class="presupuesto__esto" id="presupuesto-esto"></span></span>
+          <span class="presupuesto__barra" aria-hidden="true"><span class="presupuesto__lleno" id="presupuesto-lleno"></span><span class="presupuesto__hoy" id="presupuesto-hoy" hidden></span><span class="presupuesto__ritmo" id="presupuesto-ritmo"></span><span class="presupuesto__pendiente" id="presupuesto-pendiente"></span><span class="presupuesto__esto" id="presupuesto-esto"></span></span>
           <span class="presupuesto__fila">
             <span class="presupuesto__texto" id="presupuesto-texto"></span>
             <span class="presupuesto__alli" id="presupuesto-alli" hidden></span>

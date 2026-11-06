@@ -3335,6 +3335,18 @@ body::after {
   --tono: var(--viaje-azul);
 }
 
+.gastos__pendiente {
+  --tono: var(--brass);
+}
+
+.gastos__pendiente.is-vacio {
+  color: var(--muted);
+}
+
+.gastos__pendiente::before {
+  display: none;
+}
+
 .gastos__tramo.is-vacio {
   color: var(--muted);
 }
@@ -4620,6 +4632,75 @@ body::after {
   text-transform: none;
 }
 
+.pendientes__lista {
+  display: grid;
+  gap: 3px;
+  margin: 0 0 8px;
+  padding: 0;
+  list-style: none;
+}
+
+.pendientes__lista:empty {
+  display: none;
+}
+
+.pendientes__fila {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  grid-template-areas: "que pagar quitar" "cuanto pagar quitar";
+  align-items: center;
+  column-gap: 6px;
+  padding: 3px 4px 3px 8px;
+  border-radius: 6px;
+  background: color-mix(in srgb, var(--brass) 7%, transparent);
+  animation: enter var(--mid) var(--ease-out) backwards;
+  animation-delay: calc(var(--i, 0) * 45ms);
+}
+
+.pendientes__fila.is-nueva {
+  animation: pop var(--mid) var(--ease-spring);
+}
+
+.pendientes__que {
+  grid-area: que;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--mist);
+}
+
+.pendientes__cuanto {
+  grid-area: cuanto;
+  font-family: var(--font-mono);
+  font-size: 9.5px;
+  font-variant-numeric: tabular-nums;
+  color: var(--muted);
+}
+
+.pendientes__fila .gente__saldar {
+  grid-area: pagar;
+}
+
+.pendientes__fila .gastos__quitar {
+  grid-area: quitar;
+}
+
+.pendientes__nuevo .pendientes__concepto {
+  font-family: inherit;
+}
+
+.pendientes__nuevo .pendientes__cantidad {
+  flex: 0 0 72px;
+  text-align: right;
+}
+
+.pendientes__nuevo .gastos__concepto.is-mal {
+  border-color: var(--cinnabar);
+  animation: shake 400ms var(--ease);
+}
+
 .tramos__lista {
   display: grid;
   gap: 3px;
@@ -5104,6 +5185,17 @@ body::after {
   opacity: 0.3;
   transition: width var(--slow) var(--ease-out), left var(--slow) var(--ease-spring),
     background-color var(--mid) var(--ease);
+}
+
+/* Lo pendiente: dinero que ya tiene dueño, a rayas detrás de lo gastado. */
+.presupuesto__pendiente {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 0;
+  background: repeating-linear-gradient(-45deg, var(--brass) 0 2px, transparent 2px 4px);
+  opacity: 0.75;
+  transition: width var(--slow) var(--ease-out), left var(--slow) var(--ease-spring);
 }
 
 .presupuesto__ritmo.is-pasa {
