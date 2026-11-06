@@ -44,7 +44,7 @@ function montarPiezas(t) {
   const datos = [];
   if (t.media) datos.push([dinero(t.media.valor, t.media.to), tr("resumen.alDia")]);
   datos.push([String(t.n), tr(t.n === 1 ? "gastos.uno" : "resumen.gastos")]);
-  if (t.cabeza) datos.push([dinero(t.cabeza.total, t.cabeza.to), tr("resumen.cadaUno", { n: t.cabeza.personas })]);
+  if (t.cabeza) datos.push([dinero(t.cabeza.total, t.cabeza.to), tr(t.cabeza.tuyo ? "resumen.tuyo" : "resumen.cadaUno", { n: t.cabeza.personas })]);
 
   const destacados = [];
   if (t.caro) destacados.push([`${EMOJI_CATEGORIA[t.caro.categoria] ?? "🏆"} ${tr("resumen.caro")}`, `${t.caro.concepto} · ${dinero(t.caro.valor, t.caro.to)}`]);

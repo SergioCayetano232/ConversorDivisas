@@ -3257,10 +3257,11 @@ function pintarPersonas(conSalto = false) {
   // Corto: al lado de los botones "cada uno" no cabía y salía "cada un…". Por
   // encima de mil, sin céntimos, que tampoco cabían. Entero, en el title.
   const corto = cabeza && (cabeza.total >= 1000 ? numeros({ maximumFractionDigits: 0 }) : nf).format(cabeza.total);
-  el.personasCabeza.textContent = cabeza ? tr("personas.cadaCorto", { valor: corto }) : tr("personas.cuantos");
+  el.personasCabeza.textContent = cabeza ? tr(cabeza.tuyo ? "personas.tuyoCorto" : "personas.cadaCorto", { valor: corto }) : tr("personas.cuantos");
+  const datos = cabeza && { valor: `${nf.format(cabeza.total)} ${cabeza.to}`, dia: cabeza.alDia ? `${nf.format(cabeza.alDia)} ${cabeza.to}` : null };
   el.personasCabeza.title = !cabeza ? ""
-    : cabeza.alDia ? tr("personas.cadaAlDia", { valor: `${nf.format(cabeza.total)} ${cabeza.to}`, dia: `${nf.format(cabeza.alDia)} ${cabeza.to}` })
-    : tr("personas.cada", { valor: `${nf.format(cabeza.total)} ${cabeza.to}` });
+    : cabeza.tuyo ? tr(datos.dia ? "personas.tuyoAlDia" : "personas.tuyo", datos)
+    : tr(datos.dia ? "personas.cadaAlDia" : "personas.cada", datos);
   if (cabeza) el.personasCabeza.title += `. ${tr("gente.abrir")}`;
   el.personasCabeza.disabled = !cabeza;
   if (conSalto) restartAnimation(cabeza ? el.personasCabeza : el.personasN, "is-tic");
@@ -3300,6 +3301,7 @@ function pintarCuentasGente() {
   const { personas, gente, saldados } = viajeActivo(viajes);
   const cuentas = cuentasViaje(gastos, personas, saldados);
   if (!cuentas) return cerrarGente();
+  const consumo = consumoGente(gastos, personas);
   const dinero = (n) => `${nf.format(n)} ${cuentas.to}`;
   // Los campos se quedan si ya están: si los rehiciera, al escribir un nombre perderías el foco.
   const filas = [...el.genteLista.children];
@@ -3309,7 +3311,7 @@ function pintarCuentasGente() {
     if (!fila) {
       fila = document.createElement("li");
       fila.className = "gente__fila";
-      fila.innerHTML = '<span class="gastos__quien"></span><input class="gente__nombre" type="text" autocomplete="off" spellcheck="false"><span class="gente__pagado"></span><span class="gente__saldo"></span>';
+      fila.innerHTML = '<span class="gastos__quien"></span><input class="gente__nombre" type="text" autocomplete="off" spellcheck="false"><span class="gente__pagado"><span class="gente__puso"></span><span class="gente__toca"></span></span><span class="gente__saldo"></span>';
       const campo = fila.querySelector("input");
       campo.maxLength = NOMBRE_PERSONA_MAX;
       campo.addEventListener("input", () => onNombrePersona(i, campo.value));
@@ -3325,7 +3327,11 @@ function pintarCuentasGente() {
     campo.placeholder = nombrePersona([], i);
     campo.setAttribute("aria-label", tr("gente.nombre", { n: i + 1 }));
     if (document.activeElement !== campo) campo.value = gente?.[i] ?? "";
-    fila.querySelector(".gente__pagado").textContent = tr("gente.puso", { valor: dinero(p.pagado) });
+    fila.querySelector(".gente__puso").textContent = tr("gente.puso", { valor: dinero(p.pagado) });
+    // Lo que le toca solo si no es igual para todos: si no, es el por cabeza repetido.
+    const toca = fila.querySelector(".gente__toca");
+    toca.hidden = !consumo || consumo.igual;
+    if (!toca.hidden) toca.textContent = tr("gente.toca", { valor: dinero(consumo.gente[i].parte) });
     const saldo = fila.querySelector(".gente__saldo");
     const centimos = Math.round(p.saldo * 100);
     saldo.dataset.tono = centimos > 0 ? "cobra" : centimos < 0 ? "debe" : "";

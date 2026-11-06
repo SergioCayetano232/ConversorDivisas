@@ -2177,11 +2177,38 @@ function siguienteColor(viajes, id) {
 const leerPersonas = (n) => (Number.isInteger(n) && n >= 1 && n <= PERSONAS_MAX ? n : 1);
 
 // Lo que sale por cabeza en la divisa principal, que es la del total de arriba.
+// Si alguno no entra en todo, "por cabeza" ya no es de nadie: va lo tuyo.
 function porPersona(gastos, personas) {
   const principal = sumarPorDivisa(gastos)[0];
   if (!principal || leerPersonas(personas) < 2) return null;
+  const consumo = consumoGente(gastos, personas);
+  if (consumo && !consumo.igual) {
+    const [tuyo] = consumo.gente;
+    return { total: tuyo.parte, to: principal.to, personas, alDia: tuyo.alDia, tuyo: true };
+  }
   const media = mediaPorDia(gastos);
   return { total: principal.total / personas, to: principal.to, personas, alDia: media ? media.media / personas : null };
+}
+
+// Lo que le toca a cada uno, no lo que ha pagado: lo de todos a partes iguales
+// y lo de unos pocos solo entre ellos. Lo de al día, sin lo pagado aparte y con
+// los mismos días que la media de arriba, como el por cabeza.
+function consumoGente(gastos, personas) {
+  const n = leerPersonas(personas);
+  const cuentas = cuentasViaje(gastos, n);
+  if (!cuentas) return null;
+  const media = mediaPorDia(gastos);
+  const diario = media ? cuentasViaje(delDiaADia(gastos), n) : null;
+  const total = cuentas.gente.reduce((suma, p) => suma + p.parte, 0);
+  return {
+    to: cuentas.to,
+    igual: !gastos.some((g) => g.to === cuentas.to && entreDe(g, n)),
+    gente: cuentas.gente.map((p, i) => ({
+      parte: p.parte,
+      fraccion: total > 0 ? p.parte / total : 0,
+      alDia: diario ? diario.gente[i].parte / media.dias : null,
+    })),
+  };
 }
 
 const NOMBRE_PERSONA_MAX = 14;
@@ -2568,7 +2595,11 @@ function resumenParaCompartir({ nombre, gastos, presupuesto, personas, gente, sa
   const porGasto = mediaPorGasto(gastos);
   if (porGasto) lineas[1] += ` ${tr("compartir.porGasto", { valor: dinero(porGasto.media, porGasto.to) })}`;
   const cabeza = porPersona(gastos, personas);
-  if (cabeza) {
+  if (cabeza?.tuyo) {
+    const { gente: partes, to } = consumoGente(gastos, personas);
+    const cada = partes.map((p, i) => `${nombrePersona(gente, i)} *${dinero(p.parte, to)}*`).join(" · ");
+    lineas.push(tr("compartir.cadaUno", { cada }));
+  } else if (cabeza) {
     const datos = { personas: cabeza.personas, valor: dinero(cabeza.total, cabeza.to) };
     lineas.push(cabeza.alDia
       ? tr("compartir.porPersonaDia", { ...datos, dia: dinero(cabeza.alDia, cabeza.to) })
@@ -6578,7 +6609,7 @@ if (typeof module !== "undefined") {
     CATEGORIAS, CATEGORIA_POR_DEFECTO, adivinarCategoria, PAGOS, PAGO_POR_DEFECTO, leerPago, comisionDelPago, desglose, conceptosUsados, completarConcepto,
     EMOJI_CATEGORIA, destacados, resumenParaCompartir, FINDE_MINIMO, findeContraSemana, ESTRELLA_MINIMO, conceptoEstrella,
     COPIA_APP, COPIA_VERSION, CLAVES_COPIA, limpiarCopia, crearCopia, leerCopia, resumenCopia,
-    VIAJES_MAX, NOMBRE_VIAJE_MAX, leerViajes, leerPersonas, porPersona, leerPagador, leerGente, ponerNombre, nombrePersona, inicialPersona, cuentasViaje, frasePago, leerEntre, entreDe, fraseEntre, cambiarEntre, leerSaldados, saldarPago, quitarSaldado, fraseSaldado, hayOtrosPagadores, NOMBRE_PERSONA_MAX, compararViajes, COLORES_VIAJE, leerColorViaje, colorLibre, siguienteColor, viajeActivo, crearViaje, nombreCopia, nombreDeDestino, duplicarViaje, renombrarViaje, elegirViaje, borrarViaje, moverGasto, cambiarViaje, TRAMOS_MAX, NOMBRE_TRAMO_MAX, leerTramos, ponerTramo, quitarTramo, tramoDelDia, resumenTramos, PENDIENTES_MAX, leerPendientes, crearPendiente, apuntarPendiente, quitarPendiente, totalPendiente, pagarPendiente, resumenViaje, archivoGastos,
+    VIAJES_MAX, NOMBRE_VIAJE_MAX, leerViajes, leerPersonas, porPersona, consumoGente, leerPagador, leerGente, ponerNombre, nombrePersona, inicialPersona, cuentasViaje, frasePago, leerEntre, entreDe, fraseEntre, cambiarEntre, leerSaldados, saldarPago, quitarSaldado, fraseSaldado, hayOtrosPagadores, NOMBRE_PERSONA_MAX, compararViajes, COLORES_VIAJE, leerColorViaje, colorLibre, siguienteColor, viajeActivo, crearViaje, nombreCopia, nombreDeDestino, duplicarViaje, renombrarViaje, elegirViaje, borrarViaje, moverGasto, cambiarViaje, TRAMOS_MAX, NOMBRE_TRAMO_MAX, leerTramos, ponerTramo, quitarTramo, tramoDelDia, resumenTramos, PENDIENTES_MAX, leerPendientes, crearPendiente, apuntarPendiente, quitarPendiente, totalPendiente, pagarPendiente, resumenViaje, archivoGastos,
     diasHasta, leerPresupuesto, leerTopes, PRESUPUESTO_JUSTO, estadoPresupuesto, estadoTopes, alDiaAlli, inicioDelViaje, diaDelViaje, cuentaAtras, textoCuentaAtras, loDeHoy, CELEBRADOS_MAX, leerCelebrados, anadirCelebrado, viajeParaCelebrar, textoCelebrar, RACHA_MINIMA, rachaPresupuesto, hastaCuandoLlega, previsionViaje, PREVISION_JUSTA, textoPrevision, loQueSeLleva, redondearDias,
     EXTRAS_MAX, EXTRAS_POR_DEFECTO, leerExtras, anadirExtra, quitarExtra,
     extrasVisibles, disponiblesParaAnadir, convertirExtras, semanaDe, trazoMini, CHULETA, escalaChuleta, chuleta, TRUCO_TOLERANCIA, trucoDeCabeza, textoTruco, tituloTruco, chuletaParaCompartir, extrasParaCompartir,
