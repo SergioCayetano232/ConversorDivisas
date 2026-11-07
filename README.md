@@ -383,6 +383,13 @@ que necesitaba una conversión rápida. Ahora es un clic en la barra del navegad
 - En español o en inglés, según el idioma de Chrome o el que elijas con clic
   derecho en el icono → **Idioma**. En inglés los números van a la inglesa
   (1,084.70), pero si escribes "12,50" también lo entiende
+- Tus preferencias en todos tus ordenadores, con tu cuenta de Chrome: la
+  comisión del banco, el impuesto, los cafés y el sueldo, cómo sueles pagar,
+  las divisas de la otra pestaña, los pares fijados, el idioma y el
+  recordatorio. Cambias la comisión en el portátil y en el de casa ya está.
+  Los viajes y los avisos de tasa se quedan en cada ordenador: los gastos no
+  caben en lo que da Chrome, y los avisos saltarían en todos a la vez. Si no
+  tienes la sincronización de Chrome puesta, no pasa nada
 - Copia de seguridad: con el escudo que hay al lado de **Atajos** (o clic
   derecho en el icono → **Opciones**) se abre una página para bajarte en un
   archivo tus viajes, gastos, avisos, historial y preferencias, y para

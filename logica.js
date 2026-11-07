@@ -6820,6 +6820,40 @@ const CLAVES_COPIA = [
   "recordatorioActivo", "recordatorioHora", "precioCafe", "sueldoHora",
 ];
 
+// Lo que se lleva tu cuenta de Chrome a tus otros ordenadores: cómo lo tienes
+// puesto, no lo que haces. Los viajes no, que no caben (la nube da 100 KB) y
+// pisarse los gastos entre dos ordenadores sería peor. Los avisos de tasa
+// tampoco: saltarían en cada ordenador que tengas abierto.
+const CLAVES_SYNC = [
+  "comisionBanco", "impuestoVenta", "precioCafe", "sueldoHora", "pagoGasto", "cuentaReparto", "divisasExtra",
+  "paresRecientes", "rangoGrafico", "insigniaActiva", "tasaAlReves", "idioma", "recordatorioActivo", "recordatorioHora",
+];
+
+// Lo que llega de otro ordenador pasa por los mismos lectores que la copia: si
+// en el otro hay una versión vieja de la extensión, aquí no entra nada raro.
+function limpiarSync(crudo) {
+  const d = crudo && typeof crudo === "object" ? crudo : {};
+  const limpio = limpiarCopia(Object.fromEntries(CLAVES_SYNC.filter((c) => c in d).map((c) => [c, d[c]])));
+  return Object.fromEntries(CLAVES_SYNC.filter((c) => c in limpio).map((c) => [c, limpio[c]]));
+}
+
+// Solo lo que es distinto: si no, cada cambio volvería rebotado del otro lado.
+function cambiosSync(origen, destino) {
+  const limpio = limpiarSync(origen);
+  const otro = destino ?? {};
+  return Object.fromEntries(Object.entries(limpio).filter(([c, v]) => JSON.stringify(v) !== JSON.stringify(otro[c])));
+}
+
+// Al arrancar: lo que hay en la nube manda, que es lo último que tocaste en
+// algún sitio; lo que solo tienes aquí sube. Así el ordenador nuevo coge lo
+// tuyo y el de siempre no pierde nada la primera vez.
+function mezclaInicial(local, nube) {
+  const deNube = limpiarSync(nube);
+  const deLocal = limpiarSync(local);
+  const sube = Object.fromEntries(Object.entries(deLocal).filter(([c]) => !(c in deNube)));
+  return { aLocal: cambiosSync(deNube, deLocal), aNube: sube };
+}
+
 function crearCopia(crudo, ahora = new Date()) {
   return { app: COPIA_APP, version: COPIA_VERSION, creada: ahora.toISOString(), datos: limpiarCopia(crudo) };
 }
@@ -6869,7 +6903,7 @@ if (typeof module !== "undefined") {
     RETIRADAS_MAX, leerRetiradas, crearRetirada, cambioDelCajero, sobreElBce, alCambioDelCajero, apuntarRetirada, quitarRetirada, efectivoQueda, EFECTIVO_POCO, tonoEfectivo, redondoDeCajero, cuantoSacar, loQueSobra, gastadoHoy, nombreDia,
     CATEGORIAS, CATEGORIA_POR_DEFECTO, adivinarCategoria, PAGOS, PAGO_POR_DEFECTO, leerPago, comisionDelPago, desglose, conceptosUsados, completarConcepto,
     EMOJI_CATEGORIA, destacados, resumenParaCompartir, FINDE_MINIMO, findeContraSemana, ESTRELLA_MINIMO, conceptoEstrella,
-    COPIA_APP, COPIA_VERSION, CLAVES_COPIA, limpiarCopia, crearCopia, leerCopia, resumenCopia,
+    COPIA_APP, COPIA_VERSION, CLAVES_COPIA, CLAVES_SYNC, limpiarSync, cambiosSync, mezclaInicial, limpiarCopia, crearCopia, leerCopia, resumenCopia,
     VIAJES_MAX, NOMBRE_VIAJE_MAX, leerViajes, leerPersonas, porPersona, consumoGente, leerPagador, leerGente, ponerNombre, nombrePersona, inicialPersona, cuentasViaje, frasePago, COBRO_GASTOS_MAX, mensajeCobro, leerEntre, entreDe, fraseEntre, cambiarEntre, leerSaldados, saldarPago, quitarSaldado, fraseSaldado, hayOtrosPagadores, NOMBRE_PERSONA_MAX, compararViajes, COLORES_VIAJE, leerColorViaje, colorLibre, siguienteColor, viajeActivo, ARCHIVADOS_MAX, archivarViaje, desarchivarViaje, borrarArchivado, todosLosViajes, crearViaje, nombreCopia, nombreDeDestino, duplicarViaje, renombrarViaje, elegirViaje, borrarViaje, moverGasto, cambiarViaje, TRAMOS_MAX, NOMBRE_TRAMO_MAX, leerTramos, ponerTramo, quitarTramo, tramoDelDia, resumenTramos, curvaPresupuesto, FRANJAS, HORAS_MINIMO, horaFiable, porFranja, PENDIENTES_MAX, leerPendientes, crearPendiente, apuntarPendiente, quitarPendiente, totalPendiente, pagarPendiente, resumenViaje, archivoGastos,
     diasHasta, leerPresupuesto, leerTopes, PRESUPUESTO_JUSTO, estadoPresupuesto, estadoTopes, alDiaAlli, inicioDelViaje, diaDelViaje, cuentaAtras, textoCuentaAtras, huchaViaje, loDeHoy, CELEBRADOS_MAX, leerCelebrados, anadirCelebrado, viajeParaCelebrar, textoCelebrar, RACHA_MINIMA, rachaPresupuesto, hastaCuandoLlega, previsionViaje, PREVISION_JUSTA, textoPrevision, loQueSeLleva, redondearDias,
     EXTRAS_MAX, EXTRAS_POR_DEFECTO, leerExtras, anadirExtra, quitarExtra,

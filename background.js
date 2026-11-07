@@ -96,9 +96,11 @@ chrome.runtime.onInstalled.addListener(async () => {
   chrome.alarms.create("cada-hora", { periodInMinutes: 60 });
   actualizarInsignia();
   revisarAvisos();
+  mezclarSync();
 });
 
 chrome.runtime.onStartup.addListener(() => {
+  mezclarSync();
   actualizarInsignia();
   revisarAvisos();
   recordarGastos();
@@ -115,9 +117,59 @@ chrome.alarms.onAlarm.addListener((alarma) => {
   avisarTaxFree();
 });
 
+// Las preferencias van y vienen con tu cuenta de Chrome. Si no tienes la
+// sincronización puesta, storage.sync se queda en este ordenador y no pasa nada.
+// Lo que se borra aquí se borra allí, como quitar el sueldo por hora.
+async function subirSync(cambios) {
+  const claves = Object.keys(cambios).filter((c) => CLAVES_SYNC.includes(c));
+  if (!claves.length) return;
+  try {
+    const quitar = claves.filter((c) => cambios[c].newValue === undefined);
+    const nube = await chrome.storage.sync.get(claves);
+    const nuevos = cambiosSync(Object.fromEntries(claves.map((c) => [c, cambios[c].newValue])), nube);
+    if (Object.keys(nuevos).length) await chrome.storage.sync.set(nuevos);
+    const sobran = quitar.filter((c) => c in nube);
+    if (sobran.length) await chrome.storage.sync.remove(sobran);
+  } catch (error) {
+    console.warn("No se pudieron subir las preferencias", error);
+  }
+}
+
+async function bajarSync(cambios) {
+  const claves = Object.keys(cambios).filter((c) => CLAVES_SYNC.includes(c));
+  if (!claves.length) return;
+  try {
+    const local = await chrome.storage.local.get(claves);
+    const nuevos = cambiosSync(Object.fromEntries(claves.map((c) => [c, cambios[c].newValue])), local);
+    if (Object.keys(nuevos).length) await chrome.storage.local.set(nuevos);
+    const sobran = claves.filter((c) => cambios[c].newValue === undefined && c in local);
+    if (sobran.length) await chrome.storage.local.remove(sobran);
+  } catch (error) {
+    console.warn("No se pudieron bajar las preferencias", error);
+  }
+}
+
+async function mezclarSync() {
+  try {
+    const [local, nube] = await Promise.all([chrome.storage.local.get(CLAVES_SYNC), chrome.storage.sync.get(CLAVES_SYNC)]);
+    const { aLocal, aNube } = mezclaInicial(local, nube);
+    if (Object.keys(aLocal).length) await chrome.storage.local.set(aLocal);
+    if (Object.keys(aNube).length) await chrome.storage.sync.set(aNube);
+  } catch (error) {
+    console.warn("No se pudieron mezclar las preferencias", error);
+  }
+}
+
 // El popup guarda el par al cambiarlo; con esto el icono cambia a la vez.
 chrome.storage.onChanged.addListener((cambios, zona) => {
+  if (zona === "sync") {
+    bajarSync(cambios);
+    return;
+  }
   if (zona !== "local") return;
+  subirSync(cambios);
+  // Si llegan del otro ordenador, el menú del icono tiene que enseñarlas.
+  if (cambios.insigniaActiva || cambios.recordatorioActivo || cambios.recordatorioHora) crearMenus();
   if (cambios.viajes) {
     revisarPresupuesto(cambios.viajes.oldValue, cambios.viajes.newValue);
     ponerTitulo();
