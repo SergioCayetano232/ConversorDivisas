@@ -158,6 +158,9 @@ const el = {
   viajesDuplicar: document.getElementById("viajes-duplicar"),
   viajesTarjeta: document.getElementById("viajes-tarjeta"),
   viajesLleno: document.getElementById("viajes-lleno"),
+  viajesArchivo: document.getElementById("viajes-archivo"),
+  viajesAbrirArchivo: document.getElementById("viajes-abrir-archivo"),
+  viajesArchivados: document.getElementById("viajes-archivados"),
   viajesPie: document.getElementById("viajes-pie"),
   viajesCsv: document.getElementById("viajes-csv"),
   gastos: document.getElementById("gastos"),
@@ -4986,6 +4989,17 @@ function crearFilaViaje(viaje, i) {
 
   fila.append(color, elegir, renombrar);
   if (viajes.lista.length > 1) {
+    // Sale al ir a borrar, al lado de "Borrar": en la fila no cabe un botón más
+    // sin cortar el nombre, y si vas a quitar un viaje es cuando te interesa.
+    const archivar = document.createElement("button");
+    archivar.type = "button";
+    archivar.hidden = true;
+    archivar.className = "viajes__accion viajes__archivar";
+    archivar.innerHTML = ICONO_ARCHIVO;
+    archivar.setAttribute("aria-label", tr("viajes.archivar", { nombre: nombreViaje(viaje) }));
+    archivar.title = archivar.getAttribute("aria-label");
+    archivar.addEventListener("click", () => onArchivarViaje(viaje, fila));
+    fila.append(archivar);
     const borrar = document.createElement("button");
     borrar.type = "button";
     borrar.className = "viajes__accion viajes__borrar";
@@ -5031,11 +5045,78 @@ function crearComparacion(f) {
   return linea;
 }
 
+const ICONO_ARCHIVO = '<svg viewBox="0 0 12 12" aria-hidden="true"><rect x="1.5" y="2" width="9" height="2.6" rx="0.7"/><path d="M2.4 4.6v4.6a1 1 0 0 0 1 1h5.2a1 1 0 0 0 1-1V4.6M4.8 6.6h2.4"/></svg>';
+
+// Los archivados, sin el color ni el lápiz: están para mirarlos. Con la tarjeta,
+// que es lo que se suele querer de un viaje viejo, y para sacarlo o borrarlo.
+function crearFilaArchivado(viaje, i) {
+  const fila = document.createElement("li");
+  fila.className = "viajes__fila is-archivado";
+  fila.dataset.id = viaje.id;
+  fila.style.setProperty("--i", i);
+  fila.style.setProperty("--acento-fila", `var(--viaje-${viaje.color})`);
+  const lleno = viajes.lista.length >= VIAJES_MAX;
+
+  const sacar = document.createElement("button");
+  sacar.type = "button";
+  sacar.className = "viajes__elegir";
+  const { n, total } = resumenViaje(viaje);
+  const nombre = document.createElement("span");
+  nombre.className = "viajes__nombre";
+  nombre.textContent = nombreViaje(viaje);
+  const meta = document.createElement("span");
+  meta.className = "viajes__meta";
+  meta.textContent = n === 0
+    ? tr("viajes.vacio")
+    : `${n === 1 ? tr("gastos.uno") : tr("gastos.n", { n })} · ${nf.format(total.total)} ${total.to}`;
+  sacar.append(nombre, meta);
+  const compara = comparacion.get(viaje.id);
+  if (compara?.media != null) sacar.append(crearComparacion(compara));
+  sacar.setAttribute("aria-label", tr(lleno ? "viajes.sacarLleno" : "viajes.sacar", { nombre: nombreViaje(viaje), n: VIAJES_MAX }));
+  sacar.title = sacar.getAttribute("aria-label");
+  sacar.addEventListener("click", () => onSacarArchivado(viaje, sacar));
+  fila.append(sacar);
+
+  if (n > 0) {
+    const tarjeta = document.createElement("button");
+    tarjeta.type = "button";
+    tarjeta.className = "viajes__accion viajes__duplicar";
+    tarjeta.innerHTML = el.viajesTarjeta.innerHTML;
+    tarjeta.setAttribute("aria-label", tr("resumen.abrirDe", { nombre: nombreViaje(viaje) }));
+    tarjeta.title = tarjeta.getAttribute("aria-label");
+    tarjeta.addEventListener("click", () => chrome.tabs.create({ url: `resumen.html?viaje=${encodeURIComponent(viaje.id)}` }));
+    fila.append(tarjeta);
+  }
+  const borrar = document.createElement("button");
+  borrar.type = "button";
+  borrar.className = "viajes__accion viajes__borrar";
+  borrar.textContent = "✕";
+  borrar.setAttribute("aria-label", tr("viajes.borrar", { nombre: nombreViaje(viaje) }));
+  borrar.addEventListener("click", () => onBorrarArchivado(viaje, borrar));
+  fila.append(borrar);
+  return fila;
+}
+
 let comparacion = new Map();
+let archivoAbierto = false;
+
+function pintarArchivo() {
+  const archivados = viajes.archivados ?? [];
+  el.viajesArchivo.hidden = archivados.length === 0;
+  if (!archivados.length) archivoAbierto = false;
+  el.viajesAbrirArchivo.textContent = tr("viajes.archivados", { n: archivados.length });
+  el.viajesAbrirArchivo.setAttribute("aria-expanded", String(archivoAbierto));
+  el.viajesArchivados.hidden = !archivoAbierto;
+  // Abierto ocupa el sitio de la lista: debajo no cabe y el popup no crece más de 600 px.
+  el.viajes.classList.toggle("is-archivo", archivoAbierto);
+  el.viajesArchivados.replaceChildren(...(archivoAbierto ? archivados.map(crearFilaArchivado) : []));
+}
 
 function pintarViajes() {
-  comparacion = new Map(compararViajes(viajes.lista).map((f) => [f.id, f]));
+  // Con los archivados dentro: el más caro y el más barato, de todos tus viajes.
+  comparacion = new Map(compararViajes(todosLosViajes(viajes)).map((f) => [f.id, f]));
   el.viajesLista.replaceChildren(...viajes.lista.map(crearFilaViaje));
+  pintarArchivo();
   const lleno = viajes.lista.length >= VIAJES_MAX;
   el.viajesNuevo.hidden = lleno;
   el.viajesLleno.hidden = !lleno;
@@ -5051,7 +5132,7 @@ function pintarViajes() {
   const sugerido = nombreDeDestino(el.from.value, viajes.lista);
   el.viajesNombre.placeholder = sugerido ? tr("viajes.nuevoDe", { nombre: sugerido }) : tr("viajes.nuevo");
   // Con un viaje solo es el CSV de abajo otra vez.
-  el.viajesPie.hidden = viajes.lista.length < 2 || !viajes.lista.some((v) => v.gastos.length > 0);
+  el.viajesPie.hidden = todosLosViajes(viajes).length < 2 || !todosLosViajes(viajes).some((v) => v.gastos.length > 0);
 }
 
 function abrirViajes() {
@@ -5076,6 +5157,7 @@ function abrirViajes() {
 
 function cerrarViajes() {
   if (el.viajes.hidden) return false;
+  archivoAbierto = false;
   el.viajes.hidden = true;
   el.viaje.setAttribute("aria-expanded", "false");
   noBorrarViaje();
@@ -5187,7 +5269,8 @@ function empezarRenombrar(fila, viaje) {
 
 function noBorrarViaje() {
   clearTimeout(borrarViajeId);
-  for (const boton of el.viajesLista.querySelectorAll(".viajes__borrar.is-seguro")) {
+  for (const boton of el.viajesLista.querySelectorAll(".viajes__archivar")) boton.hidden = true;
+  for (const boton of el.viajes.querySelectorAll(".viajes__borrar.is-seguro")) {
     boton.classList.remove("is-seguro");
     boton.textContent = "✕";
   }
@@ -5200,7 +5283,12 @@ function onBorrarViaje(viaje, boton) {
     boton.classList.add("is-seguro");
     boton.textContent = tr("viajes.seguro");
     boton.setAttribute("aria-label", tr("viajes.seguroAria", { nombre: nombreViaje(viaje) }));
-    borrarViajeId = setTimeout(noBorrarViaje, 3000);
+    const archivar = boton.closest(".viajes__fila").querySelector(".viajes__archivar");
+    if (archivar) {
+      archivar.hidden = false;
+      restartAnimation(archivar, "is-entra");
+    }
+    borrarViajeId = setTimeout(noBorrarViaje, 4000);
     return;
   }
   noBorrarViaje();
@@ -5215,6 +5303,68 @@ function onBorrarViaje(viaje, boton) {
     }
     pintarViajes();
     el.viajesLista.querySelector(".is-activo .viajes__elegir")?.focus();
+  };
+  if (sinMovimiento.matches) return acabar();
+  fila.classList.add("is-saliendo");
+  fila.addEventListener("animationend", acabar, { once: true });
+}
+
+// Con lo último del abierto dentro, que si no se archivaría sin lo que acabas de apuntar.
+function onArchivarViaje(viaje, fila) {
+  noBorrarViaje();
+  const nuevos = archivarViaje(cambiarViaje(viajes, viajes.activo, { gastos, presupuesto, cajero }), viaje.id);
+  if (nuevos.lista.length === viajes.lista.length) {
+    restartAnimation(fila.querySelector(".viajes__archivar"), "is-mal");
+    mostrarFlash([tr("viajes.archivoLleno", { n: ARCHIVADOS_MAX })], 2200);
+    return;
+  }
+  const acabar = () => {
+    if (nuevos.activo !== viajes.activo) ponerViaje(nuevos);
+    else {
+      viajes = nuevos;
+      guardarViajes();
+    }
+    pintarViajes();
+    restartAnimation(el.viajesAbrirArchivo, "is-nuevo");
+    mostrarFlash([tr("viajes.archivado", { nombre: nombreViaje(viaje) })], 2200);
+    el.viajesLista.querySelector(".is-activo .viajes__elegir")?.focus();
+  };
+  if (sinMovimiento.matches) return acabar();
+  fila.classList.add("is-saliendo");
+  fila.addEventListener("animationend", acabar, { once: true });
+}
+
+function onSacarArchivado(viaje, boton) {
+  const antes = cambiarViaje(viajes, viajes.activo, { gastos, presupuesto, cajero });
+  const nuevos = desarchivarViaje(antes, viaje.id);
+  if (nuevos === antes) {
+    restartAnimation(boton, "is-mal");
+    mostrarFlash([tr("viajes.sacarLleno", { nombre: nombreViaje(viaje), n: VIAJES_MAX })], 2600);
+    return;
+  }
+  cerrarViajes();
+  ponerViaje(nuevos);
+  restartAnimation(el.viaje, "is-estreno");
+  mostrarFlash([tr("viajes.sacado", { nombre: nombreViaje(viaje) })], 2200);
+  el.gastosConcepto.focus();
+}
+
+function onBorrarArchivado(viaje, boton) {
+  if (!boton.classList.contains("is-seguro")) {
+    noBorrarViaje();
+    boton.classList.add("is-seguro");
+    boton.textContent = tr("viajes.seguro");
+    boton.setAttribute("aria-label", tr("viajes.seguroAria", { nombre: nombreViaje(viaje) }));
+    borrarViajeId = setTimeout(noBorrarViaje, 3000);
+    return;
+  }
+  noBorrarViaje();
+  const fila = boton.closest(".viajes__fila");
+  const acabar = () => {
+    viajes = borrarArchivado(viajes, viaje.id);
+    guardarViajes();
+    pintarViajes();
+    (el.viajesArchivados.querySelector(".viajes__elegir") ?? el.viajesLista.querySelector(".is-activo .viajes__elegir"))?.focus();
   };
   if (sinMovimiento.matches) return acabar();
   fila.classList.add("is-saliendo");
@@ -7169,7 +7319,13 @@ function bindEvents() {
   el.extrasCompartir.addEventListener("click", onCompartirExtras);
   el.chuletaImprimir.addEventListener("click", onImprimirChuleta);
   el.gastosCsv.addEventListener("click", () => descargarCsv(csvGastos(gastos), archivoGastos(viajeActivo(viajes).nombre), el.gastosCsv));
-  el.viajesCsv.addEventListener("click", () => descargarCsv(csvViajes(viajes.lista), tr("csv.archivoViajes"), el.viajesCsv));
+  el.viajesCsv.addEventListener("click", () => descargarCsv(csvViajes(todosLosViajes(viajes)), tr("csv.archivoViajes"), el.viajesCsv));
+  el.viajesAbrirArchivo.addEventListener("click", () => {
+    archivoAbierto = !archivoAbierto;
+    noBorrarViaje();
+    pintarArchivo();
+  });
+  el.viajesAbrirArchivo.addEventListener("animationend", () => el.viajesAbrirArchivo.classList.remove("is-nuevo"));
   el.abrirGastos.addEventListener("click", () => (el.gastos.hidden ? abrirGastos() : cerrarGastos()));
   el.abrirGastos.addEventListener("animationend", () => el.abrirGastos.classList.remove("is-apuntado"));
   el.gastosForm.addEventListener("submit", onApuntarGasto);

@@ -3106,6 +3106,107 @@ body::after {
   color: var(--muted);
 }
 
+/* El archivo, plegado debajo de la lista: está, pero no estorba. */
+.viajes__archivo {
+  margin-top: 6px;
+  padding-top: 6px;
+  border-top: 1px solid var(--hairline);
+}
+
+.viajes__archivo[hidden],
+.viajes__archivados[hidden] {
+  display: none;
+}
+
+.viajes__abrirArchivo {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  width: 100%;
+  padding: 2px 6px;
+  background: none;
+  border: 0;
+  border-radius: 6px;
+  font: inherit;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--muted);
+  cursor: pointer;
+  transition: color var(--fast) var(--ease);
+}
+
+.viajes__abrirArchivo::after {
+  content: "";
+  width: 5px;
+  height: 5px;
+  margin-left: auto;
+  border-right: 1.3px solid currentColor;
+  border-bottom: 1.3px solid currentColor;
+  transform: rotate(45deg) translate(-1px, -1px);
+  transition: transform var(--mid) var(--ease-spring);
+}
+
+.viajes__abrirArchivo[aria-expanded="true"]::after {
+  transform: rotate(225deg) translate(-1px, -1px);
+}
+
+.viajes__abrirArchivo:hover,
+.viajes__abrirArchivo:focus-visible {
+  color: var(--brass);
+  outline: none;
+}
+
+.viajes__abrirArchivo.is-nuevo {
+  animation: beat var(--mid) var(--ease-spring);
+}
+
+.viajes__archivados {
+  max-height: 230px;
+  margin-top: 4px;
+}
+
+.viajes.is-archivo #viajes-lista,
+.viajes.is-archivo .viajes__nuevo,
+.viajes.is-archivo .viajes__lleno {
+  display: none;
+}
+
+.viajes.is-archivo .viajes__archivo {
+  margin-top: 0;
+  padding-top: 0;
+  border-top: 0;
+}
+
+.viajes__archivar[hidden] {
+  display: none;
+}
+
+.viajes__archivar.is-entra {
+  animation: pop var(--mid) var(--ease-spring);
+}
+
+/* Apagados, que son de otra época; al pasar por encima vuelven a su color. */
+.viajes__fila.is-archivado .viajes__elegir {
+  opacity: 0.72;
+  transition: opacity var(--fast) var(--ease);
+}
+
+.viajes__fila.is-archivado .viajes__elegir:hover,
+.viajes__fila.is-archivado .viajes__elegir:focus-visible {
+  opacity: 1;
+}
+
+.viajes__elegir.is-mal,
+.viajes__archivar.is-mal {
+  animation: shake 400ms var(--ease);
+}
+
+.viajes__archivar:hover svg {
+  transform: translateY(1px);
+}
+
 .viajes__pie {
   display: flex;
   align-items: center;

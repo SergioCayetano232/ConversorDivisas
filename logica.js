@@ -2392,35 +2392,47 @@ function mensajeCobro({ nombre, gastos, personas, gente, saldados }, quien) {
 // Si nadie ha marcado otro pagador es que no lo usas: no hay cuentas que contar.
 const hayOtrosPagadores = (gastos, personas) => gastos.some((g) => g.pagador > 0 && g.pagador < leerPersonas(personas));
 
+// Los viajes acabados, aparte: no cuentan para los ocho ni salen en el
+// desplegable, pero siguen ahí para mirarlos. Cuarenta son años de viajes.
+const ARCHIVADOS_MAX = 40;
+
+const leerViaje = (v) => ({
+  id: v.id, nombre: limpiarNombreViaje(v.nombre), gastos: leerGastos(v.gastos), presupuesto: leerPresupuesto(v.presupuesto),
+  cajero: leerRetiradas(v.cajero), personas: leerPersonas(v.personas), color: leerColorViaje(v.color),
+  ...(leerGente(v.gente).length ? { gente: leerGente(v.gente) } : {}),
+  ...(leerSaldados(v.saldados).length ? { saldados: leerSaldados(v.saldados) } : {}),
+  ...(leerTramos(v.tramos).length ? { tramos: leerTramos(v.tramos) } : {}),
+  ...(leerPendientes(v.pendientes).length ? { pendientes: leerPendientes(v.pendientes) } : {}),
+});
+
+// Sin archivados no lo guardo: así lo de antes sale igual que siempre.
+const conArchivados = ({ archivados: _, ...viajes }, archivados) => (archivados.length ? { ...viajes, archivados } : viajes);
+
 // Antes de los viajes había una sola lista y un presupuesto sueltos: pasan a
 // ser el primer viaje, sin nombre, para que nadie pierda lo que tenía.
 function leerViajes(guardado, gastosSueltos, presupuestoSuelto) {
   const vistos = new Set();
-  const lista = (Array.isArray(guardado?.lista) ? guardado.lista : [])
-    .filter((v) => v && typeof v.id === "string" && v.id && !vistos.has(v.id) && vistos.add(v.id))
-    .slice(0, VIAJES_MAX)
-    .map((v) => ({
-      id: v.id, nombre: limpiarNombreViaje(v.nombre), gastos: leerGastos(v.gastos), presupuesto: leerPresupuesto(v.presupuesto),
-      cajero: leerRetiradas(v.cajero), personas: leerPersonas(v.personas), color: leerColorViaje(v.color),
-      ...(leerGente(v.gente).length ? { gente: leerGente(v.gente) } : {}),
-      ...(leerSaldados(v.saldados).length ? { saldados: leerSaldados(v.saldados) } : {}),
-      ...(leerTramos(v.tramos).length ? { tramos: leerTramos(v.tramos) } : {}),
-      ...(leerPendientes(v.pendientes).length ? { pendientes: leerPendientes(v.pendientes) } : {}),
-    }));
+  const buenos = (lista) => (Array.isArray(lista) ? lista : [])
+    .filter((v) => v && typeof v.id === "string" && v.id && !vistos.has(v.id) && vistos.add(v.id));
+  const lista = buenos(guardado?.lista).slice(0, VIAJES_MAX).map(leerViaje);
+  const archivados = buenos(guardado?.archivados).slice(0, ARCHIVADOS_MAX).map(leerViaje);
   if (lista.length === 0) {
-    lista.push({ ...viajeVacio("primero"), gastos: leerGastos(gastosSueltos), presupuesto: leerPresupuesto(presupuestoSuelto) });
+    const id = vistos.has("primero") ? `primero-${vistos.size}` : "primero";
+    lista.push({ ...viajeVacio(id), gastos: leerGastos(gastosSueltos), presupuesto: leerPresupuesto(presupuestoSuelto) });
   }
   const activo = lista.some((v) => v.id === guardado?.activo) ? guardado.activo : lista[0].id;
-  return { activo, lista };
+  return conArchivados({ activo, lista }, archivados);
 }
+
+const idUsado = (viajes, id) => [...viajes.lista, ...(viajes.archivados ?? [])].some((v) => v.id === id);
 
 const viajeActivo = (viajes) => viajes.lista.find((v) => v.id === viajes.activo);
 
 // El nuevo es al que vas: lo creas para empezar a apuntar en él.
 function crearViaje(viajes, id, nombre) {
   const limpio = limpiarNombreViaje(nombre);
-  if (!limpio || viajes.lista.length >= VIAJES_MAX || viajes.lista.some((v) => v.id === id)) return viajes;
-  return { activo: id, lista: [...viajes.lista, viajeVacio(id, limpio, colorLibre(viajes.lista))] };
+  if (!limpio || viajes.lista.length >= VIAJES_MAX || idUsado(viajes, id)) return viajes;
+  return { ...viajes, activo: id, lista: [...viajes.lista, viajeVacio(id, limpio, colorLibre(viajes.lista))] };
 }
 
 // "Lisboa" → "Lisboa (2)", y si ya está, "Lisboa (3)". Entre paréntesis, que
@@ -2454,7 +2466,7 @@ function nombreDeDestino(code, lista = []) {
 // color, que si no no sabrías en cuál apuntas.
 function duplicarViaje(viajes, id, nuevoId, { nombre = "", hoyIso = hoy() } = {}) {
   const origen = viajes.lista.find((v) => v.id === id);
-  if (!origen || viajes.lista.length >= VIAJES_MAX || viajes.lista.some((v) => v.id === nuevoId)) return viajes;
+  if (!origen || viajes.lista.length >= VIAJES_MAX || idUsado(viajes, nuevoId)) return viajes;
   let presupuesto = null;
   if (origen.presupuesto) {
     const dias = Math.max(diasHasta(origen.presupuesto.hasta, inicioDelViaje(origen.presupuesto, origen.gastos, hoyIso)), 1);
@@ -2468,7 +2480,7 @@ function duplicarViaje(viajes, id, nuevoId, { nombre = "", hoyIso = hoy() } = {}
     personas: origen.personas,
     ...(origen.gente?.length ? { gente: origen.gente } : {}),
   };
-  return { activo: nuevoId, lista: [...viajes.lista, copia] };
+  return { ...viajes, activo: nuevoId, lista: [...viajes.lista, copia] };
 }
 
 function renombrarViaje(viajes, id, nombre) {
@@ -2488,8 +2500,33 @@ function borrarViaje(viajes, id) {
   if (i === -1 || viajes.lista.length <= 1) return viajes;
   const lista = viajes.lista.filter((v) => v.id !== id);
   const activo = viajes.activo === id ? lista[Math.min(i, lista.length - 1)].id : viajes.activo;
-  return { activo, lista };
+  return { ...viajes, activo, lista };
 }
+
+// Al archivo, el primero de la lista: el último que acabas es el que buscarás.
+// Como al borrar, el último que queda no se va, y si era el abierto pasas al de al lado.
+function archivarViaje(viajes, id) {
+  const archivados = viajes.archivados ?? [];
+  const viaje = viajes.lista.find((v) => v.id === id);
+  if (!viaje || viajes.lista.length <= 1 || archivados.length >= ARCHIVADOS_MAX) return viajes;
+  return conArchivados(borrarViaje(viajes, id), [viaje, ...archivados]);
+}
+
+// Lo sacas para mirarlo o apuntar algo que faltaba: vuelve a la lista y se abre.
+function desarchivarViaje(viajes, id) {
+  const archivados = viajes.archivados ?? [];
+  const viaje = archivados.find((v) => v.id === id);
+  if (!viaje || viajes.lista.length >= VIAJES_MAX) return viajes;
+  return conArchivados({ ...viajes, activo: id, lista: [...viajes.lista, viaje] }, archivados.filter((v) => v.id !== id));
+}
+
+function borrarArchivado(viajes, id) {
+  const archivados = viajes.archivados ?? [];
+  if (!archivados.some((v) => v.id === id)) return viajes;
+  return conArchivados(viajes, archivados.filter((v) => v.id !== id));
+}
+
+const todosLosViajes = (viajes) => [...viajes.lista, ...(viajes.archivados ?? [])];
 
 // Para el gasto que apuntaste con el viaje equivocado abierto. Va con su tasa
 // y su fecha, como estaba. Si el otro ya tiene 200, no cabe y no se mueve.
@@ -6747,8 +6784,8 @@ function leerCopia(texto) {
 
 function resumenCopia(datos) {
   return {
-    viajes: datos.viajes.lista.length,
-    gastos: datos.viajes.lista.reduce((suma, v) => suma + v.gastos.length, 0),
+    viajes: todosLosViajes(datos.viajes).length,
+    gastos: todosLosViajes(datos.viajes).reduce((suma, v) => suma + v.gastos.length, 0),
     avisos: datos.avisos?.length ?? 0,
     conversiones: datos.historialConversiones?.length ?? 0,
   };
@@ -6778,7 +6815,7 @@ if (typeof module !== "undefined") {
     CATEGORIAS, CATEGORIA_POR_DEFECTO, adivinarCategoria, PAGOS, PAGO_POR_DEFECTO, leerPago, comisionDelPago, desglose, conceptosUsados, completarConcepto,
     EMOJI_CATEGORIA, destacados, resumenParaCompartir, FINDE_MINIMO, findeContraSemana, ESTRELLA_MINIMO, conceptoEstrella,
     COPIA_APP, COPIA_VERSION, CLAVES_COPIA, limpiarCopia, crearCopia, leerCopia, resumenCopia,
-    VIAJES_MAX, NOMBRE_VIAJE_MAX, leerViajes, leerPersonas, porPersona, consumoGente, leerPagador, leerGente, ponerNombre, nombrePersona, inicialPersona, cuentasViaje, frasePago, COBRO_GASTOS_MAX, mensajeCobro, leerEntre, entreDe, fraseEntre, cambiarEntre, leerSaldados, saldarPago, quitarSaldado, fraseSaldado, hayOtrosPagadores, NOMBRE_PERSONA_MAX, compararViajes, COLORES_VIAJE, leerColorViaje, colorLibre, siguienteColor, viajeActivo, crearViaje, nombreCopia, nombreDeDestino, duplicarViaje, renombrarViaje, elegirViaje, borrarViaje, moverGasto, cambiarViaje, TRAMOS_MAX, NOMBRE_TRAMO_MAX, leerTramos, ponerTramo, quitarTramo, tramoDelDia, resumenTramos, curvaPresupuesto, FRANJAS, HORAS_MINIMO, horaFiable, porFranja, PENDIENTES_MAX, leerPendientes, crearPendiente, apuntarPendiente, quitarPendiente, totalPendiente, pagarPendiente, resumenViaje, archivoGastos,
+    VIAJES_MAX, NOMBRE_VIAJE_MAX, leerViajes, leerPersonas, porPersona, consumoGente, leerPagador, leerGente, ponerNombre, nombrePersona, inicialPersona, cuentasViaje, frasePago, COBRO_GASTOS_MAX, mensajeCobro, leerEntre, entreDe, fraseEntre, cambiarEntre, leerSaldados, saldarPago, quitarSaldado, fraseSaldado, hayOtrosPagadores, NOMBRE_PERSONA_MAX, compararViajes, COLORES_VIAJE, leerColorViaje, colorLibre, siguienteColor, viajeActivo, ARCHIVADOS_MAX, archivarViaje, desarchivarViaje, borrarArchivado, todosLosViajes, crearViaje, nombreCopia, nombreDeDestino, duplicarViaje, renombrarViaje, elegirViaje, borrarViaje, moverGasto, cambiarViaje, TRAMOS_MAX, NOMBRE_TRAMO_MAX, leerTramos, ponerTramo, quitarTramo, tramoDelDia, resumenTramos, curvaPresupuesto, FRANJAS, HORAS_MINIMO, horaFiable, porFranja, PENDIENTES_MAX, leerPendientes, crearPendiente, apuntarPendiente, quitarPendiente, totalPendiente, pagarPendiente, resumenViaje, archivoGastos,
     diasHasta, leerPresupuesto, leerTopes, PRESUPUESTO_JUSTO, estadoPresupuesto, estadoTopes, alDiaAlli, inicioDelViaje, diaDelViaje, cuentaAtras, textoCuentaAtras, loDeHoy, CELEBRADOS_MAX, leerCelebrados, anadirCelebrado, viajeParaCelebrar, textoCelebrar, RACHA_MINIMA, rachaPresupuesto, hastaCuandoLlega, previsionViaje, PREVISION_JUSTA, textoPrevision, loQueSeLleva, redondearDias,
     EXTRAS_MAX, EXTRAS_POR_DEFECTO, leerExtras, anadirExtra, quitarExtra,
     extrasVisibles, disponiblesParaAnadir, convertirExtras, semanaDe, trazoMini, CHULETA, escalaChuleta, chuleta, TRUCO_TOLERANCIA, trucoDeCabeza, textoTruco, tituloTruco, chuletaParaCompartir, extrasParaCompartir,

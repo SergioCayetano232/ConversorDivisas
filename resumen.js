@@ -321,7 +321,7 @@ async function init() {
   const id = new URLSearchParams(location.search).get("viaje");
   const { viajes, gastosViaje, presupuestoViaje } = await chrome.storage.local.get(["viajes", "gastosViaje", "presupuestoViaje"]);
   const todos = leerViajes(viajes, gastosViaje, presupuestoViaje);
-  const viaje = todos.lista.find((v) => v.id === id) ?? viajeActivo(todos);
+  const viaje = todosLosViajes(todos).find((v) => v.id === id) ?? viajeActivo(todos);
   const datos = datosTarjeta(viaje);
   if (!datos) {
     el.error.textContent = tr("resumen.vacio");

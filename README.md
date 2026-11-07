@@ -69,6 +69,11 @@ que necesitaba una conversión rápida. Ahora es un clic en la barra del navegad
   presupuesto y la gente pero sin gastos, para la escapada que repites: empieza
   hoy y dura lo mismo. Hasta ocho. Lo que tenías
   apuntado antes de esto pasa al primero, sin perder nada
+- Archivar los viajes acabados, para que no cuenten en los ocho: al darle a
+  la ✕ de uno, al lado de **Borrar** sale la caja para archivarlo. Abajo, en
+  **Archivados**, siguen con sus gastos y su media al día para compararlos, y
+  se puede abrir su tarjeta, sacarlos (vuelven a la lista y se abren) o
+  borrarlos. Caben cuarenta, y van en el CSV de todos y en la copia de seguridad
 - Comparar los viajes: en esa misma lista, debajo de cada uno, lo que gastaste
   de media al día y en qué se fue más ("110,00/día · 🏨 80 %"), con una barrita
   medida contra el que más gasta al día. El más caro y el más barato llevan su
