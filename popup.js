@@ -111,6 +111,8 @@ const el = {
   cajeroCuentas: document.getElementById("cajero-cuentas"),
   cajeroForm: document.getElementById("cajero-form"),
   cajeroCantidad: document.getElementById("cajero-cantidad"),
+  cajeroCoste: document.getElementById("cajero-coste"),
+  cajeroEn: document.getElementById("cajero-en"),
   cajeroDivisa: document.getElementById("cajero-divisa"),
   cajeroSugerencia: document.getElementById("cajero-sugerencia"),
   gastosPersonas: document.getElementById("gastos-personas"),
@@ -407,6 +409,7 @@ const nfDias = formatoNumero({ maximumFractionDigits: 1 });
 const nfRate = formatoNumero({ minimumFractionDigits: 4, maximumFractionDigits: 4 });
 const nfEntero = formatoNumero({ maximumFractionDigits: 0 });
 const nfComision = formatoNumero({ maximumFractionDigits: 2 });
+const nfCajero = formatoNumero({ maximumFractionDigits: 1 });
 const nfImpuesto = formatoNumero({ maximumFractionDigits: 3 });
 const nfMargen = formatoNumero({ style: "percent", minimumFractionDigits: 1, maximumFractionDigits: 1 });
 const nfPercent = formatoNumero({
@@ -2453,7 +2456,7 @@ const textoTotales = (totales) => totales.map(({ to, total }) => `${nf.format(to
 function gastoDePantalla() {
   if (rate === null) return null;
   const valor = conComision(leerImporte(el.result.value), comisionDelPago(pagoNuevo, comision));
-  return crearGasto({
+  return alCambioDelCajero(crearGasto({
     id: `${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`,
     from: el.from.value,
     to: el.to.value,
@@ -2465,7 +2468,7 @@ function gastoDePantalla() {
     comision: comisionDelPago(pagoNuevo, comision),
     cuando: Date.now(),
     pagador: pagadorNuevo < viajeActivo(viajes).personas ? pagadorNuevo : 0,
-  });
+  }), cajero);
 }
 
 function pintarCategoriaNueva(conSalto = false) {
@@ -3201,12 +3204,17 @@ function pintarCambioViaje() {
 
 function pintarAhorro() {
   const ahorro = ahorroEnEfectivo(gastos, comision);
-  const texto = ahorro ? tr("gastos.ahorro", { importe: nf.format(ahorro.total) }) : "";
+  // En negativo es que el cajero se ha llevado más de lo que habría cobrado la tarjeta.
+  const pierdes = ahorro?.total < 0;
+  const clave = pierdes ? "gastos.ahorroNo" : "gastos.ahorro";
+  const importe = ahorro ? Math.abs(ahorro.total) : 0;
+  const texto = ahorro ? tr(clave, { importe: nf.format(importe) }) : "";
   const habia = el.gastosAhorro.textContent;
   el.gastosAhorro.hidden = !ahorro;
   el.gastosAhorro.textContent = texto;
+  el.gastosAhorro.classList.toggle("is-pierdes", pierdes);
   el.gastosAhorro.title = ahorro
-    ? `${tr("gastos.ahorro", { importe: `${nf.format(ahorro.total)} ${ahorro.to}` })}. ${tr("gastos.ahorroTitulo", { pct: tr("pct", { n: nfComision.format(comision) }) })}`
+    ? `${tr(clave, { importe: `${nf.format(importe)} ${ahorro.to}` })}. ${tr(pierdes ? "gastos.ahorroNoTitulo" : "gastos.ahorroTitulo", { pct: tr("pct", { n: nfComision.format(comision) }) })}`
     : "";
   if (habia && texto && habia !== texto) restartAnimation(el.gastosAhorro, "is-tic");
   pintarTaxFree();
@@ -3291,9 +3299,22 @@ function pintarEfectivo() {
   if (!el.cajero.hidden) pintarCajero();
 }
 
+// Lo que daría el BCE por lo que has escrito, para que veas de un vistazo si el
+// banco te ha cobrado de más.
+function pintarPistaCoste() {
+  const cantidad = leerImporte(el.cajeroCantidad.value);
+  const tasa = tasaDeHoy(el.from.value, el.to.value);
+  el.cajeroCoste.placeholder = Number.isFinite(cantidad) && cantidad > 0 && tasa
+    ? `≈ ${nf.format(cantidad * tasa)}`
+    : tr("cajero.coste");
+}
+
 function pintarCajero() {
   const divisa = el.from.value;
   el.cajeroDivisa.textContent = divisa;
+  el.cajeroEn.textContent = el.to.value;
+  el.cajeroCoste.title = tr("cajero.costeTitulo", { divisa: el.to.value });
+  pintarPistaCoste();
   el.cajeroCuentas.replaceChildren(...efectivoQueda(cajero, gastos).map((cuenta) => {
     const fila = document.createElement("li");
     fila.className = "cajero__cuenta";
@@ -3321,6 +3342,24 @@ function pintarCajero() {
     fila.style.setProperty("--i", i);
     const texto = document.createElement("span");
     texto.textContent = `${nombreDia(isoLocal(new Date(r.cuando)))} · ${cifraEfectivo(r.cantidad, r.divisa)}`;
+    if (r.coste) {
+      const coste = `${nf.format(r.coste)} ${r.en}`;
+      const sobre = sobreElBce(r);
+      const cobro = document.createElement("span");
+      cobro.className = "cajero__cobro";
+      // Medio punto arriba o abajo es lo que se mueve la tasa en un día: lo doy por igual.
+      if (sobre !== null && Math.abs(sobre) >= 0.005) {
+        cobro.dataset.tono = sobre > 0 ? "caro" : "barato";
+        cobro.textContent = ` · ${nf.format(r.coste)} (${sobre > 0 ? "+" : "−"}${tr("pct", { n: nfCajero.format(Math.abs(sobre) * 100) })})`;
+      } else {
+        cobro.textContent = ` · ${nf.format(r.coste)}`;
+      }
+      const pct = sobre === null ? "" : tr("pct", { n: nfCajero.format(Math.abs(sobre) * 100) });
+      fila.title = sobre === null ? tr("cajero.sinBce", { coste })
+        : Math.abs(sobre) < 0.005 ? tr("cajero.igualBce", { coste })
+          : tr(sobre > 0 ? "cajero.sobreBce" : "cajero.bajoBce", { coste, pct });
+      texto.append(cobro);
+    }
     const quitar = document.createElement("button");
     quitar.type = "button";
     quitar.className = "gastos__quitar historial__quitar";
@@ -3775,12 +3814,12 @@ function onPagarPendiente(id) {
   const { pendientes } = viajeActivo(viajes);
   const pendiente = leerPendientes(pendientes).find((p) => p.id === id);
   if (!pendiente) return;
-  const gasto = pagarPendiente(pendiente, {
+  const gasto = alCambioDelCajero(pagarPendiente(pendiente, {
     id: `${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`,
     cuando: Date.now(),
     tasa: tasaDeHoy(pendiente.from, pendiente.to),
     comision,
-  });
+  }), cajero);
   if (!gasto) return;
   viajes = cambiarViaje(viajes, viajes.activo, { pendientes: quitarPendiente(pendientes, id) });
   gastos = apuntarGasto(gastos, gasto);
@@ -4020,6 +4059,9 @@ function onSacar(event) {
     cantidad: leerImporte(el.cajeroCantidad.value),
     divisa: el.from.value,
     cuando: Date.now(),
+    coste: leerImporte(el.cajeroCoste.value),
+    en: el.to.value,
+    bce: tasaDeHoy(el.from.value, el.to.value),
   });
   if (!retirada) {
     restartAnimation(el.cajeroCantidad, "is-mal");
@@ -4029,6 +4071,7 @@ function onSacar(event) {
   cajero = apuntarRetirada(cajero, retirada);
   retiradaNueva = retirada.id;
   el.cajeroCantidad.value = "";
+  el.cajeroCoste.value = "";
   guardarViajes();
   pintarEfectivo();
   el.cajeroCantidad.focus();
@@ -4612,13 +4655,13 @@ function gastoDeCuenta() {
   const to = el.to.value;
   const r = repartirCuenta(cantidadOrigen(), from === to ? null : rate, reparto, comision);
   const solo = reparto.personas === 1;
-  return gastoDeLaCuenta(r, {
+  return alCambioDelCajero(gastoDeLaCuenta(r, {
     id: `${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`,
     from, to, rate, comision,
     pago: pagoNuevo,
     cuando: Date.now(),
     concepto: tr(solo ? "cuenta.conceptoSolo" : "cuenta.concepto", { n: reparto.personas }),
-  });
+  }), cajero);
 }
 
 const claveCuenta = (g) => `${viajes.activo} ${g.from} ${g.to} ${g.cantidad} ${g.valor} ${g.pago} ${g.concepto}`;
@@ -5330,12 +5373,12 @@ function tasaDeHoy(from, to) {
 }
 
 function onRepetirGasto(original) {
-  const gasto = repetirGasto(original, {
+  const gasto = alCambioDelCajero(repetirGasto(original, {
     id: `${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`,
     cuando: Date.now(),
     tasa: tasaDeHoy(original.from, original.to),
     comision,
-  });
+  }), cajero);
   if (!gasto) return;
   gastos = apuntarGasto(gastos, gasto);
   gastoNuevo = gasto.id;
@@ -7173,6 +7216,7 @@ function bindEvents() {
   el.tramosNombre.addEventListener("animationend", () => el.tramosNombre.classList.remove("is-mal"));
   el.gastosEfectivo.addEventListener("animationend", () => el.gastosEfectivo.classList.remove("is-tic"));
   el.cajeroForm.addEventListener("submit", onSacar);
+  el.cajeroCantidad.addEventListener("input", pintarPistaCoste);
   el.cajeroCantidad.addEventListener("animationend", () => el.cajeroCantidad.classList.remove("is-mal", "is-cambiado"));
   el.cajeroSugerencia.addEventListener("click", onSugerencia);
   el.personasMenos.addEventListener("click", () => onPersonas(-1));

@@ -3271,6 +3271,16 @@ body::after {
   box-shadow: 0 0 6px var(--jade);
 }
 
+/* Cuando el cajero se ha llevado más que la tarjeta: el mismo sitio, en rojo. */
+.gastos__ahorro.is-pierdes {
+  color: color-mix(in srgb, var(--cinnabar) 75%, var(--muted));
+}
+
+.gastos__ahorro.is-pierdes::before {
+  background: var(--cinnabar);
+  box-shadow: 0 0 6px var(--cinnabar);
+}
+
 .gastos__ahorro[hidden] {
   display: none;
 }
@@ -3928,6 +3938,11 @@ body::after {
   font-variant-numeric: tabular-nums;
 }
 
+/* Lo que te costó es opcional: más estrecho, para que la cantidad mande. */
+.cajero__nuevo .cajero__coste {
+  flex: 0.8;
+}
+
 .cajero__nuevo .gastos__concepto.is-mal {
   border-color: var(--cinnabar);
   animation: shake 400ms var(--ease);
@@ -4035,6 +4050,18 @@ body::after {
   font-size: 10px;
   font-variant-numeric: tabular-nums;
   color: var(--mist);
+}
+
+.cajero__cobro {
+  color: var(--muted);
+}
+
+.cajero__cobro[data-tono="caro"] {
+  color: color-mix(in srgb, var(--cinnabar) 80%, var(--muted));
+}
+
+.cajero__cobro[data-tono="barato"] {
+  color: color-mix(in srgb, var(--jade) 80%, var(--muted));
 }
 
 .cajero__retirada.is-nueva {

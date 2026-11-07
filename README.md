@@ -128,7 +128,11 @@ que necesitaba una conversión rápida. Ahora es un clic en la barra del navegad
   cajero ("20k" son veinte mil) y los gastos en efectivo lo van descontando, en
   yenes y no en euros, que es lo que llevas en la cartera. Arriba pone "Quedan
   3.000 JPY", en dorado si te queda menos de una quinta parte y en rojo si has
-  pagado más de lo sacado. Cada viaje con el suyo. Con presupuesto, te dice
+  pagado más de lo sacado. Si al sacarlo pones también lo que te ha cobrado el
+  banco ("20k" que te costaron 120 EUR), lo que pagues en efectivo va a ese
+  cambio y no al del BCE, y al lado te dice cuánto se ha quedado ("+6,1 %").
+  Eso cuenta en las comisiones, y si el cajero te sale más caro que la
+  tarjeta, en vez de lo ahorrado sale en rojo lo que has perdido. Cada viaje con el suyo. Con presupuesto, te dice
   también cuánto sacar para lo que queda ("Saca 24.000 JPY para los 3 días que
   quedan"): lo que te toca al día, por la parte que sueles pagar en efectivo,
   menos lo que llevas, y redondeado a lo que da un cajero. Pulsándolo se pone.

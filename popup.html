@@ -768,11 +768,23 @@
             inputmode="decimal"
             autocomplete="off"
             spellcheck="false"
-            placeholder="Lo que has sacado"
+            placeholder="Sacado"
             aria-label="Lo que has sacado del cajero"
             data-t-placeholder="cajero.cantidad"
             data-t-aria-label="cajero.cantidadAria">
           <span class="cajero__divisa" id="cajero-divisa"></span>
+          <input
+            class="gastos__concepto cajero__coste"
+            type="text"
+            id="cajero-coste"
+            inputmode="decimal"
+            autocomplete="off"
+            spellcheck="false"
+            placeholder="Te costó"
+            aria-label="Lo que te ha cobrado el banco por sacarlo (si lo sabes)"
+            data-t-placeholder="cajero.coste"
+            data-t-aria-label="cajero.costeAria">
+          <span class="cajero__divisa" id="cajero-en"></span>
           <button class="gastos__apuntar" type="submit" id="cajero-sacar" data-t="cajero.sacar">Sacar</button>
         </form>
         <button class="cajero__sugerencia" type="button" id="cajero-sugerencia" hidden></button>

@@ -400,7 +400,8 @@ async function prepararGasto(texto) {
     pago: guardado.pagoGasto,
     usados: conceptosUsados(viajes.lista.flatMap((v) => v.gastos)),
   });
-  return gasto && { gasto, viajes, viaje: viajeActivo(viajes) };
+  const viaje = viajeActivo(viajes);
+  return gasto && { gasto: alCambioDelCajero(gasto, viaje.cajero), viajes, viaje };
 }
 
 const cifraGasto = (n, divisa) => `${nf.format(n)} ${divisa}`;

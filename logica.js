@@ -1926,17 +1926,18 @@ const esDevolucion = (g) => g.cantidad < 0;
 function devolucionDe(gasto, { id, cuando }) {
   if (!esGastoBueno(gasto) || !(gasto.cantidad > 0)) return null;
   const sinComision = gasto.valor / (1 + leerComision(gasto.comision) / 100);
-  return crearGasto({
+  const devuelto = crearGasto({
     id, cuando, from: gasto.from, to: gasto.to, cantidad: -gasto.cantidad, valor: -sinComision,
     concepto: gasto.concepto, categoria: gasto.categoria, pago: gasto.pago, comision: 0, pagador: gasto.pagador, entre: gasto.entre,
   });
+  return devuelto && Number.isFinite(gasto.alBce) ? { ...devuelto, alBce: -gasto.alBce } : devuelto;
 }
 
 function leerGastos(guardado) {
   if (!Array.isArray(guardado)) return [];
   // Los de antes de las categorías no traen ninguna: la saco del concepto, como
   // al apuntarlos, y si no dice nada van a "otros".
-  return guardado.filter(esGastoBueno).slice(0, GASTOS_MAX).map(({ pagador, fijo, nota, entre, ...g }) => ({
+  return guardado.filter(esGastoBueno).slice(0, GASTOS_MAX).map(({ pagador, fijo, nota, entre, alBce, ...g }) => ({
     ...g,
     categoria: CATEGORIAS.includes(g.categoria) ? g.categoria : adivinarCategoria(g.concepto) ?? CATEGORIA_POR_DEFECTO,
     pago: leerPago(g.pago),
@@ -1946,6 +1947,7 @@ function leerGastos(guardado) {
     ...(fijo === true ? { fijo: true } : {}),
     ...(typeof nota === "string" && limpiarNota(nota) ? { nota: limpiarNota(nota) } : {}),
     ...(leerEntre(entre) ? { entre: leerEntre(entre) } : {}),
+    ...(Number.isFinite(alBce) && Math.sign(alBce) === Math.sign(g.valor) ? { alBce } : {}),
   }));
 }
 
@@ -1985,6 +1987,7 @@ function repartirNoches(gasto, noches) {
   if (!esGastoBueno(gasto) || esDevolucion(gasto) || !Number.isInteger(noches) || noches < 2 || noches > NOCHES_MAX) return [gasto];
   const cantidades = repartirCentimos(gasto.cantidad, noches);
   const valores = repartirCentimos(gasto.valor, noches);
+  const alBce = Number.isFinite(gasto.alBce) ? repartirCentimos(gasto.alBce, noches) : null;
   const antes = new Date(gasto.cuando);
   return cantidades.map((cantidad, i) => {
     // La noche delante: el concepto se corta por la derecha en la lista.
@@ -1994,6 +1997,7 @@ function repartirNoches(gasto, noches) {
       id: `${gasto.id}-${i + 1}`,
       cantidad,
       valor: valores[i],
+      ...(alBce ? { alBce: alBce[i] } : {}),
       concepto: gasto.concepto ? `${marca} · ${gasto.concepto}`.slice(0, CONCEPTO_MAX) : marca,
       // Con la fecha local y no sumando milisegundos: el día del cambio de hora tiene 23 horas.
       cuando: new Date(antes.getFullYear(), antes.getMonth(), antes.getDate() + i,
@@ -2852,7 +2856,10 @@ function pesoDeLosDias(dias) {
 // viaje estabas igual. Con un solo día la media sería el total, no la enseño.
 // Lo que se ha quedado el banco, en la divisa que más suma, como el total. El
 // valor ya la lleva dentro, así que sale de quitársela.
-const comisionDe = (g) => (g.comision > 0 ? g.valor - g.valor / (1 + g.comision / 100) : 0);
+// En efectivo no hay comisión de tarjeta, pero lo que el cajero cobró sobre el
+// BCE también se lo ha llevado el banco.
+const comisionDe = (g) => (g.comision > 0 ? g.valor - g.valor / (1 + g.comision / 100)
+  : Number.isFinite(g.alBce) ? g.valor - g.alBce : 0);
 
 function comisionesPagadas(gastos) {
   const principal = sumarPorDivisa(gastos)[0];
@@ -2900,13 +2907,18 @@ function textoCambio(tasa, from, to) {
 }
 
 // Lo que se habría quedado el banco si lo de efectivo hubiera ido con tarjeta.
-// Esos no guardan comisión, así que tiro de la que tienes puesta ahora.
+// Esos no guardan comisión, así que tiro de la que tienes puesta ahora. Si el
+// cajero cobró más que la tarjeta, sale en negativo: el efectivo te ha costado.
 function ahorroEnEfectivo(gastos, comision) {
-  if (!(comision > 0)) return null;
   const pagado = pagadoEnEfectivo(gastos);
   if (!pagado) return null;
-  const total = pagado.total * comision / 100;
-  return total >= 0.005 ? { total, to: pagado.to } : null;
+  const pct = leerComision(comision);
+  const efectivo = gastos.filter((g) => g.to === pagado.to && g.pago === "efectivo");
+  const alBce = efectivo.reduce((suma, g) => suma + (Number.isFinite(g.alBce) ? g.alBce : g.valor), 0);
+  // Por separado: sin cajero, lo de antes sale igual al céntimo.
+  const cajero = efectivo.reduce((suma, g) => suma + (Number.isFinite(g.alBce) ? g.valor - g.alBce : 0), 0);
+  const total = alBce * pct / 100 - cajero;
+  return Math.abs(total) >= 0.005 ? { total, to: pagado.to } : null;
 }
 
 function gastadoHoy(todos, hoyIso = hoy()) {
@@ -2934,16 +2946,45 @@ const RETIRADAS_MAX = 30;
 const esRetiradaBuena = (r) => Boolean(r) && typeof r.id === "string" && r.id !== ""
   && Number.isFinite(r.cantidad) && r.cantidad > 0 && isValidCode(r.divisa) && Number.isFinite(r.cuando);
 
+// Lo que te cobró el banco por ella, en tu divisa, y la del BCE de ese momento
+// para saber cuánto se ha quedado. Las de antes no lo traen: van como siempre.
+function costeDeRetirada({ divisa, coste, en, bce }) {
+  if (!(Number.isFinite(coste) && coste > 0 && isValidCode(en) && en !== divisa)) return {};
+  return { coste: Math.round(coste * 100) / 100, en, ...(Number.isFinite(bce) && bce > 0 ? { bce } : {}) };
+}
+
 // Los viajes de antes no traen cajero: sin retiradas, como si no hubieras sacado.
 function leerRetiradas(guardado) {
   if (!Array.isArray(guardado)) return [];
   return guardado.filter(esRetiradaBuena).slice(0, RETIRADAS_MAX)
-    .map(({ id, cantidad, divisa, cuando }) => ({ id, cantidad, divisa, cuando }));
+    .map((r) => ({ id: r.id, cantidad: r.cantidad, divisa: r.divisa, cuando: r.cuando, ...costeDeRetirada(r) }));
 }
 
-function crearRetirada({ id, cantidad, divisa, cuando }) {
+function crearRetirada({ id, cantidad, divisa, cuando, coste, en, bce }) {
   const r = { id, cantidad: Math.round(cantidad * 100) / 100, divisa, cuando };
-  return esRetiradaBuena(r) ? r : null;
+  return esRetiradaBuena(r) ? { ...r, ...costeDeRetirada({ divisa, coste, en, bce }) } : null;
+}
+
+// A cuánto te ha salido cada yen de verdad, con todo lo que has sacado y sabes
+// lo que te costó. La media y no la última: los billetes se mezclan en la cartera.
+function cambioDelCajero(retiradas, from, to) {
+  const con = leerRetiradas(retiradas).filter((r) => r.divisa === from && r.en === to);
+  if (!con.length) return null;
+  const cantidad = con.reduce((suma, r) => suma + r.cantidad, 0);
+  const coste = con.reduce((suma, r) => suma + r.coste, 0);
+  return { tasa: coste / cantidad, n: con.length };
+}
+
+// Lo que se ha quedado por encima del BCE: "+4,7 %". Sin la del BCE no lo sé.
+const sobreElBce = (r) => (r.coste > 0 && r.bce > 0 ? r.coste / (r.cantidad * r.bce) - 1 : null);
+
+// Lo pagado en efectivo a lo que te costaron esos billetes, no a la del BCE. Lo
+// del BCE se queda en alBce para saber cuánto se llevó el cajero.
+function alCambioDelCajero(gasto, retiradas) {
+  if (!gasto || gasto.pago !== "efectivo" || !(gasto.cantidad > 0)) return gasto;
+  const cambio = cambioDelCajero(retiradas, gasto.from, gasto.to);
+  if (!cambio) return gasto;
+  return { ...gasto, valor: Math.round(gasto.cantidad * cambio.tasa * 100) / 100, alBce: gasto.valor };
 }
 
 function apuntarRetirada(lista, retirada) {
@@ -6733,7 +6774,7 @@ if (typeof module !== "undefined") {
     HISTORIAL_MAX, leerHistorial, apuntarConversion, quitarConversion, haceCuanto, ultimoDeHoy, textoParaCopiar, fraseParaCopiar, gastoParaCopiar, ultimoGasto, gastoMasCaro, totalParaCopiar, hoyParaCopiar, simboloDe, textoConSimbolo, fraseConSimbolo,
     celdaCsv, csvHistorial, csvGastos, csvViajes,
     GASTOS_MAX, CONCEPTO_MAX, crearGasto, leerGastos, esDevolucion, devolucionDe, apuntarGasto, NOCHES_MAX, repartirCentimos, repartirNoches, apuntarNoches, quitarGasto, cambiarConcepto, cambiarDia, buscarGastos, trozosResaltados, repetirGasto, devolverGasto, devolverTodos, sumarPorDivisa, gastosPorDia, huecoEntre, cifraEnMarcha, categoriaDelDia, pesoDeLosDias, ordenarPorImporte, masCarosDelDia, pesoDeLosGastos, RARO_VECES, mediana, gastoRaro, REPETIDO_MS, gastoRepetido, mediaPorDia, categoriasAlDia, mediaPorGasto, comisionesPagadas, cambioDelViaje, cifraCambio, textoCambio, pagadoEnEfectivo, ahorroEnEfectivo,
-    RETIRADAS_MAX, leerRetiradas, crearRetirada, apuntarRetirada, quitarRetirada, efectivoQueda, EFECTIVO_POCO, tonoEfectivo, redondoDeCajero, cuantoSacar, loQueSobra, gastadoHoy, nombreDia,
+    RETIRADAS_MAX, leerRetiradas, crearRetirada, cambioDelCajero, sobreElBce, alCambioDelCajero, apuntarRetirada, quitarRetirada, efectivoQueda, EFECTIVO_POCO, tonoEfectivo, redondoDeCajero, cuantoSacar, loQueSobra, gastadoHoy, nombreDia,
     CATEGORIAS, CATEGORIA_POR_DEFECTO, adivinarCategoria, PAGOS, PAGO_POR_DEFECTO, leerPago, comisionDelPago, desglose, conceptosUsados, completarConcepto,
     EMOJI_CATEGORIA, destacados, resumenParaCompartir, FINDE_MINIMO, findeContraSemana, ESTRELLA_MINIMO, conceptoEstrella,
     COPIA_APP, COPIA_VERSION, CLAVES_COPIA, limpiarCopia, crearCopia, leerCopia, resumenCopia,
