@@ -3450,6 +3450,18 @@ function pintarCuentasGente() {
       boton.textContent = tr("gente.saldar");
       boton.title = tr("gente.saldarTitulo");
       boton.addEventListener("click", () => onSaldar(pago, cuentas.to));
+      // Solo a quien te debe a ti: lo que se deben entre ellos no lo cobras tú.
+      if (pago.a === 0) {
+        const nombre = nombrePersona(gente, pago.de);
+        const cobrar = document.createElement("button");
+        cobrar.type = "button";
+        cobrar.className = "gente__cobrar";
+        cobrar.textContent = "💬";
+        cobrar.title = tr("gente.cobrar", { nombre });
+        cobrar.setAttribute("aria-label", tr("gente.cobrar", { nombre }));
+        cobrar.addEventListener("click", () => onCobrar(pago.de, cobrar));
+        li.append(cobrar);
+      }
       li.append(boton);
       return li;
     })
@@ -3482,6 +3494,18 @@ function onSaldar(pago, to) {
   guardarViajes();
   pintarCuentasGente();
   (el.gentePagos.querySelector(".gente__saldar") ?? el.gentePagos.querySelector(".gastos__quitar"))?.focus();
+}
+
+async function onCobrar(quien, boton) {
+  const viaje = viajeActivo(viajes);
+  const texto = mensajeCobro({ ...viaje, nombre: viaje.nombre || tr("gastos"), gastos }, quien);
+  if (!texto) return;
+  const bien = await copiar(texto);
+  boton.classList.toggle("is-fallo", !bien);
+  restartAnimation(boton, "is-hecho");
+  clearTimeout(boton.vuelta);
+  boton.vuelta = setTimeout(() => boton.classList.remove("is-hecho", "is-fallo"), 1600);
+  mostrarFlash([bien ? tr("gente.cobrado", { nombre: nombrePersona(viaje.gente, quien) }) : tr("compartir.fallo")], 2200);
 }
 
 function onDesaldar(id) {

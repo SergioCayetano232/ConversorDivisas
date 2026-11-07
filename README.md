@@ -92,7 +92,10 @@ que necesitaba una conversión rápida. Ahora es un clic en la barra del navegad
   cada uno con su nombre. Cuando alguien te lo da, le pulsas **Pagado** y deja de
   contar ("✓ Ana te pagó 32,75 EUR"), con lo que lleváis pagado y lo que
   queda debajo. Si luego cambia un gasto, sale solo la diferencia, y con la ✕
-  lo desmarcas. Si alguien más ha pagado algo, va también en el resumen
+  lo desmarcas. Si alguien más ha pagado algo, va también en el resumen.
+  Para cobrarle por privado, el 💬 de al lado de **Pagado** copia un mensaje
+  solo para esa persona: lo que le toca, lo que puso ella, los gastos de solo
+  algunos en los que entraba y lo que ya te dio ("💸 *Me debes 30,00 EUR*")
 - Si un gasto es cinco veces lo normal de su categoría, te avisa antes de
   apuntarlo ("11 veces lo normal en comida"), que un cero de más se cuela
   fácil. Para apuntarlo igual, le das otra vez. Lo mismo si apuntas otra vez

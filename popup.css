@@ -3732,6 +3732,43 @@ body::after {
   transform: scale(0.94);
 }
 
+/* El margen lo pega a Pagado; si no, el space-between lo deja en medio. */
+.gente__cobrar {
+  flex-shrink: 0;
+  margin-left: auto;
+  padding: 1px 6px;
+  font: inherit;
+  font-size: 10px;
+  line-height: 1.4;
+  background: transparent;
+  border: 1px solid var(--hairline);
+  border-radius: 999px;
+  cursor: pointer;
+  transition: background var(--fast) var(--ease), border-color var(--fast) var(--ease), transform var(--fast) var(--ease-spring);
+}
+
+.gente__cobrar:hover,
+.gente__cobrar:focus-visible {
+  background: color-mix(in srgb, var(--jade) 10%, transparent);
+  border-color: color-mix(in srgb, var(--jade) 45%, transparent);
+  outline: none;
+  transform: scale(1.06);
+}
+
+.gente__cobrar:active {
+  transform: scale(0.94);
+}
+
+.gente__cobrar.is-hecho {
+  border-color: var(--jade);
+  animation: pop var(--mid) var(--ease-spring);
+}
+
+.gente__cobrar.is-hecho.is-fallo {
+  border-color: var(--cinnabar);
+  animation: shake var(--mid) var(--ease);
+}
+
 /* Lo ya pagado se queda a la vista, apagado, por si hay que desmarcarlo. */
 .gente__pago.is-saldado {
   font-weight: 500;

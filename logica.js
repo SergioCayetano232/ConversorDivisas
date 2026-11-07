@@ -2338,6 +2338,53 @@ function frasePago({ de, a, importe }, gente, to) {
   return tr("gente.debe", { de: nombrePersona(gente, de), a: nombrePersona(gente, a), valor });
 }
 
+// El mensaje para cobrarle a uno por privado, con lo justo para que lo pueda
+// repasar: lo que le toca, lo que puso y lo que ya te dio. Sale de las mismas
+// cuentas que la pantalla, así que lo que pone que te debe es lo mismo al céntimo.
+const COBRO_GASTOS_MAX = 6;
+
+function mensajeCobro({ nombre, gastos, personas, gente, saldados }, quien) {
+  const n = leerPersonas(personas);
+  const cuentas = cuentasViaje(gastos, n, saldados);
+  const pago = cuentas?.pagos.find((p) => p.de === quien && p.a === 0);
+  if (!pago) return "";
+  const { to } = cuentas;
+  const nf = numeros({ minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  const dinero = (v) => `${nf.format(v)} ${to}`;
+  const suyo = cuentas.gente[quien];
+  const total = sumarPorDivisa(gastos)[0].total;
+  const delPrincipal = gastos.filter((g) => g.to === to).sort((a, b) => a.cuando - b.cuando);
+  const que = (g) => g.concepto || tr(`cat.${g.categoria}`);
+  // Más de seis gastos en un mensaje ya no se leen: el resto va contado.
+  const lista = (unos, texto) => {
+    const lineas = unos.slice(0, COBRO_GASTOS_MAX).map(texto);
+    if (unos.length > COBRO_GASTOS_MAX) lineas.push(tr("cobro.mas", { n: unos.length - COBRO_GASTOS_MAX }));
+    return lineas.join(" · ");
+  };
+
+  const igual = !delPrincipal.some((g) => entreDe(g, n));
+  const lineas = [
+    `*🧳 ${nombre}*`,
+    tr(igual ? "cobro.toca" : "cobro.tocaDe", { nombre: nombrePersona(gente, quien), parte: `*${dinero(suyo.parte)}*`, total: dinero(total), n }),
+  ];
+  const conEl = delPrincipal.filter((g) => entreDe(g, n)?.includes(quien));
+  if (conEl.length) {
+    lineas.push(`👥 ${tr("cobro.algunos", { gastos: lista(conEl, (g) => tr("cobro.entre", { que: que(g), valor: nf.format(g.valor), n: entreDe(g, n).length })) })}`);
+  }
+  // El que ya no está cuenta como tú, igual que en las cuentas.
+  const puso = delPrincipal.filter((g) => { const p = leerPagador(g.pagador); return (p < n ? p : 0) === quien; });
+  if (puso.length) lineas.push(`💳 ${tr("cobro.puso", { valor: dinero(suyo.pagado), gastos: lista(puso, (g) => `${que(g)} ${nf.format(g.valor)}`) })}`);
+  for (const s of cuentas.saldados) {
+    if (s.de === quien) lineas.push(`✓ ${s.a === 0 ? tr("cobro.meDiste", { valor: dinero(s.importe) }) : tr("cobro.leDiste", { valor: dinero(s.importe), a: nombrePersona(gente, s.a) })}`);
+    else if (s.a === quien) lineas.push(`✓ ${tr("cobro.teDio", { valor: dinero(s.importe), de: nombrePersona(gente, s.de) })}`);
+  }
+  lineas.push(`💸 *${tr("cobro.meDebes", { valor: dinero(pago.importe) })}*`);
+  for (const otro of cuentas.pagos) {
+    if (otro.de === quien && otro.a !== 0) lineas.push(tr("cobro.yA", { a: nombrePersona(gente, otro.a), valor: dinero(otro.importe) }));
+  }
+  return lineas.join("\n");
+}
+
 // Si nadie ha marcado otro pagador es que no lo usas: no hay cuentas que contar.
 const hayOtrosPagadores = (gastos, personas) => gastos.some((g) => g.pagador > 0 && g.pagador < leerPersonas(personas));
 
@@ -6690,7 +6737,7 @@ if (typeof module !== "undefined") {
     CATEGORIAS, CATEGORIA_POR_DEFECTO, adivinarCategoria, PAGOS, PAGO_POR_DEFECTO, leerPago, comisionDelPago, desglose, conceptosUsados, completarConcepto,
     EMOJI_CATEGORIA, destacados, resumenParaCompartir, FINDE_MINIMO, findeContraSemana, ESTRELLA_MINIMO, conceptoEstrella,
     COPIA_APP, COPIA_VERSION, CLAVES_COPIA, limpiarCopia, crearCopia, leerCopia, resumenCopia,
-    VIAJES_MAX, NOMBRE_VIAJE_MAX, leerViajes, leerPersonas, porPersona, consumoGente, leerPagador, leerGente, ponerNombre, nombrePersona, inicialPersona, cuentasViaje, frasePago, leerEntre, entreDe, fraseEntre, cambiarEntre, leerSaldados, saldarPago, quitarSaldado, fraseSaldado, hayOtrosPagadores, NOMBRE_PERSONA_MAX, compararViajes, COLORES_VIAJE, leerColorViaje, colorLibre, siguienteColor, viajeActivo, crearViaje, nombreCopia, nombreDeDestino, duplicarViaje, renombrarViaje, elegirViaje, borrarViaje, moverGasto, cambiarViaje, TRAMOS_MAX, NOMBRE_TRAMO_MAX, leerTramos, ponerTramo, quitarTramo, tramoDelDia, resumenTramos, curvaPresupuesto, FRANJAS, HORAS_MINIMO, horaFiable, porFranja, PENDIENTES_MAX, leerPendientes, crearPendiente, apuntarPendiente, quitarPendiente, totalPendiente, pagarPendiente, resumenViaje, archivoGastos,
+    VIAJES_MAX, NOMBRE_VIAJE_MAX, leerViajes, leerPersonas, porPersona, consumoGente, leerPagador, leerGente, ponerNombre, nombrePersona, inicialPersona, cuentasViaje, frasePago, COBRO_GASTOS_MAX, mensajeCobro, leerEntre, entreDe, fraseEntre, cambiarEntre, leerSaldados, saldarPago, quitarSaldado, fraseSaldado, hayOtrosPagadores, NOMBRE_PERSONA_MAX, compararViajes, COLORES_VIAJE, leerColorViaje, colorLibre, siguienteColor, viajeActivo, crearViaje, nombreCopia, nombreDeDestino, duplicarViaje, renombrarViaje, elegirViaje, borrarViaje, moverGasto, cambiarViaje, TRAMOS_MAX, NOMBRE_TRAMO_MAX, leerTramos, ponerTramo, quitarTramo, tramoDelDia, resumenTramos, curvaPresupuesto, FRANJAS, HORAS_MINIMO, horaFiable, porFranja, PENDIENTES_MAX, leerPendientes, crearPendiente, apuntarPendiente, quitarPendiente, totalPendiente, pagarPendiente, resumenViaje, archivoGastos,
     diasHasta, leerPresupuesto, leerTopes, PRESUPUESTO_JUSTO, estadoPresupuesto, estadoTopes, alDiaAlli, inicioDelViaje, diaDelViaje, cuentaAtras, textoCuentaAtras, loDeHoy, CELEBRADOS_MAX, leerCelebrados, anadirCelebrado, viajeParaCelebrar, textoCelebrar, RACHA_MINIMA, rachaPresupuesto, hastaCuandoLlega, previsionViaje, PREVISION_JUSTA, textoPrevision, loQueSeLleva, redondearDias,
     EXTRAS_MAX, EXTRAS_POR_DEFECTO, leerExtras, anadirExtra, quitarExtra,
     extrasVisibles, disponiblesParaAnadir, convertirExtras, semanaDe, trazoMini, CHULETA, escalaChuleta, chuleta, TRUCO_TOLERANCIA, trucoDeCabeza, textoTruco, tituloTruco, chuletaParaCompartir, extrasParaCompartir,
