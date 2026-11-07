@@ -124,7 +124,11 @@ que necesitaba una conversión rápida. Ahora es un clic en la barra del navegad
   UE sin euro, debajo del total sale lo que te pueden devolver ("🧾 9,07 de tax
   free"). Cuenta solo las compras que llegan al mínimo de allí por tique, y
   pasando el ratón te dice cuántas son y cuántas se quedan cerca. Si vives en la
-  UE, dentro de la UE no te lo devuelven, así que esos no los cuenta
+  UE, dentro de la UE no te lo devuelven, así que esos no los cuenta. Y el
+  penúltimo día del viaje (o el último, si ese no abriste Chrome) te salta una
+  notificación para que no se te olvide en el aeropuerto: "En Japón tienes 2
+  compras con tax free, unos 18,00 EUR. Lleva los tiques y el pasaporte…".
+  Solo con fecha de vuelta en el presupuesto, y una vez por viaje
 - A cuánto te ha salido el cambio en el viaje: debajo de las comisiones,
   "⇄ Cambio: 162,9 JPY", lo que te ha dado cada euro de media con la comisión
   dentro. Pasando el ratón, a cuánto te saldría hoy ("un 6 % más barato"), y

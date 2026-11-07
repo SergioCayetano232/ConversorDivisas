@@ -102,6 +102,7 @@ chrome.runtime.onStartup.addListener(() => {
   actualizarInsignia();
   revisarAvisos();
   recordarGastos();
+  avisarTaxFree();
 });
 
 // Con la de cada hora basta: salta en la hora que hayas elegido, y si a esa
@@ -111,6 +112,7 @@ chrome.alarms.onAlarm.addListener((alarma) => {
   actualizarInsignia();
   revisarAvisos();
   recordarGastos();
+  avisarTaxFree();
 });
 
 // El popup guarda el par al cambiarlo; con esto el icono cambia a la vez.
@@ -1273,6 +1275,31 @@ async function recordarGastos() {
   }
 }
 
+// Va aparte del recordatorio de la noche: quitar ese no debería costarte el IVA.
+async function avisarTaxFree() {
+  try {
+    await idiomaListo;
+    const { taxFreeAvisado, viajes } = await chrome.storage.local.get(["taxFreeAvisado", "viajes"]);
+    if (!viajes) return;
+    const leidos = leerViajes(viajes);
+    const aviso = tocaTaxFree(leidos, taxFreeAvisado);
+    if (!aviso) return;
+    // Solo de los viajes que siguen ahí, que si no la lista crecería para siempre.
+    const avisados = Object.fromEntries(Object.entries(taxFreeAvisado ?? {}).filter(([id]) => leidos.lista.some((v) => v.id === id)));
+    await chrome.storage.local.set({ taxFreeAvisado: { ...avisados, [aviso.viaje.id]: aviso.hasta } });
+    const { titulo, cuerpo } = mensajeTaxFree(aviso);
+    await chrome.notifications.create(`taxfree:${aviso.viaje.id}`, {
+      type: "basic",
+      iconUrl: "icons/icon128.png",
+      title: titulo,
+      message: cuerpo,
+      priority: 1,
+    });
+  } catch (error) {
+    console.warn("No se pudo mirar el tax free", error);
+  }
+}
+
 // Te lleva a ese viaje con los gastos ya abiertos, que es a lo que vienes.
 async function irAGastos(viajeId) {
   const { viajes } = await chrome.storage.local.get("viajes");
@@ -1294,6 +1321,7 @@ async function abrirConGastos() {
 chrome.notifications.onClicked.addListener(async (id) => {
   chrome.notifications.clear(id);
   if (id.startsWith("recordatorio:")) await irAGastos(id.slice(13));
+  if (id.startsWith("taxfree:")) await irAGastos(id.slice(8));
   if (id.startsWith("gasto:")) await irAGastos(id.split(":")[1]);
   const [, from, to] = id.split(":");
   if (isValidCode(from) && isValidCode(to)) await chrome.storage.local.set({ lastPair: { from, to } });

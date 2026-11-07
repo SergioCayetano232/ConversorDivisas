@@ -858,6 +858,11 @@ const TEXTOS = {
     "recordatorio.titulo": "¿Hoy no has gastado nada?",
     "recordatorio.cuerpo": "No has apuntado ningún gasto hoy. Si se te ha olvidado la cena, aún estás a tiempo.",
     "recordatorio.cuerpoEn": "No has apuntado nada hoy en {viaje}. Si se te ha olvidado la cena, aún estás a tiempo.",
+    "taxFree.aviso.titulo": "🧾 Antes de volar: el tax free",
+    "taxFree.aviso.cuerpo": "Tienes {compras} con tax free, unos {valor}. Lleva los tiques y el pasaporte, y pide el sello en la aduana antes de facturar.",
+    "taxFree.aviso.cuerpoEn": "En {viaje} tienes {compras} con tax free, unos {valor}. Lleva los tiques y el pasaporte, y pide el sello en la aduana antes de facturar.",
+    "taxFree.aviso.una": "una compra",
+    "taxFree.aviso.n": "{n} compras",
 
     "tarjeta": "Conversión de divisa",
     "tarjeta.cita": "«{texto}»",
@@ -1802,6 +1807,11 @@ const TEXTOS = {
     "recordatorio.titulo": "Nothing spent today?",
     "recordatorio.cuerpo": "You haven't logged any expenses today. If you forgot dinner, there's still time.",
     "recordatorio.cuerpoEn": "You haven't logged anything today in {viaje}. If you forgot dinner, there's still time.",
+    "taxFree.aviso.titulo": "🧾 Before you fly: tax free",
+    "taxFree.aviso.cuerpo": "You have {compras} with tax free, about {valor}. Bring the receipts and your passport, and get the customs stamp before check-in.",
+    "taxFree.aviso.cuerpoEn": "In {viaje} you have {compras} with tax free, about {valor}. Bring the receipts and your passport, and get the customs stamp before check-in.",
+    "taxFree.aviso.una": "one purchase",
+    "taxFree.aviso.n": "{n} purchases",
 
     "tarjeta": "Currency conversion",
     "tarjeta.cita": "“{texto}”",
