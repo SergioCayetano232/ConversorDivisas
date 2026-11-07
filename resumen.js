@@ -47,7 +47,7 @@ function montarPiezas(t) {
   if (t.cabeza) datos.push([dinero(t.cabeza.total, t.cabeza.to), tr(t.cabeza.tuyo ? "resumen.tuyo" : "resumen.cadaUno", { n: t.cabeza.personas })]);
 
   const destacados = [];
-  if (t.caro) destacados.push([`${EMOJI_CATEGORIA[t.caro.categoria] ?? "🏆"} ${tr("resumen.caro")}`, `${t.caro.concepto} · ${dinero(t.caro.valor, t.caro.to)}`]);
+  if (t.caro) destacados.push([`${emojiCategoria(t.caro.categoria)} ${tr("resumen.caro")}`, `${t.caro.concepto} · ${dinero(t.caro.valor, t.caro.to)}`]);
   if (t.diaMas) destacados.push([`📅 ${tr("resumen.diaMas")}`, `${fechaCorta(t.diaMas.dia)} · ${dinero(t.diaMas.total, t.diaMas.to)}`]);
 
   let presupuesto = null;
@@ -69,7 +69,7 @@ function montarPiezas(t) {
     otras: t.otras.map((o) => dinero(o.total, o.to)).join(" + "),
     datos,
     destacados,
-    categorias: t.categorias.map((c) => ({ emoji: EMOJI_CATEGORIA[c.categoria] ?? "", nombre: tr(`cat.${c.categoria}`), fraccion: c.fraccion, categoria: c.categoria })),
+    categorias: t.categorias.map((c) => ({ emoji: emojiCategoria(c.categoria), nombre: nombreCategoria(c.categoria), fraccion: c.fraccion, categoria: c.categoria })),
     presupuesto,
     pie,
   };
@@ -319,7 +319,8 @@ async function onCopiar() {
 async function init() {
   await ponerIdiomaGuardado();
   const id = new URLSearchParams(location.search).get("viaje");
-  const { viajes, gastosViaje, presupuestoViaje } = await chrome.storage.local.get(["viajes", "gastosViaje", "presupuestoViaje"]);
+  const { viajes, gastosViaje, presupuestoViaje, categoriasPropias } = await chrome.storage.local.get(["viajes", "gastosViaje", "presupuestoViaje", "categoriasPropias"]);
+  ponerCategoriasPropias(categoriasPropias);
   const todos = leerViajes(viajes, gastosViaje, presupuestoViaje);
   const viaje = todosLosViajes(todos).find((v) => v.id === id) ?? viajeActivo(todos);
   const datos = datosTarjeta(viaje);

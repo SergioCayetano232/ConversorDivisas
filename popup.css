@@ -6513,6 +6513,87 @@ body::after {
   box-shadow: 0 0 10px -2px var(--brass-glow);
 }
 
+/* Las tuyas: la inicial en un círculo, del mismo grueso que los iconos. */
+.cat__letra {
+  display: grid;
+  place-items: center;
+  width: 12px;
+  height: 12px;
+  border: 1.4px solid currentColor;
+  border-radius: 50%;
+  font-size: 7px;
+  font-weight: 800;
+  line-height: 1;
+}
+
+.categorias {
+  flex-wrap: wrap;
+  max-width: calc(100vw - 60px);
+}
+
+.categorias__propia {
+  position: relative;
+  display: grid;
+}
+
+/* La ✕ sale al pasar por encima o al llegar con el teclado, para no llenar el abanico. */
+.categorias__quitar {
+  position: absolute;
+  top: -5px;
+  right: -5px;
+  display: grid;
+  place-items: center;
+  width: 13px;
+  height: 13px;
+  padding: 0;
+  font: inherit;
+  font-size: 7px;
+  font-weight: 700;
+  color: var(--muted);
+  background: var(--graphite);
+  border: 1px solid var(--hairline-strong);
+  border-radius: 50%;
+  cursor: pointer;
+  opacity: 0;
+  transform: scale(0.6);
+  transition: opacity var(--fast) var(--ease), transform var(--fast) var(--ease-spring), color var(--fast) var(--ease);
+}
+
+.categorias__propia:hover .categorias__quitar,
+.categorias__propia:focus-within .categorias__quitar,
+.categorias__quitar.is-seguro {
+  opacity: 1;
+  transform: none;
+}
+
+.categorias__quitar:hover,
+.categorias__quitar.is-seguro {
+  color: var(--cinnabar);
+  border-color: color-mix(in srgb, var(--cinnabar) 45%, transparent);
+}
+
+.categorias__mas {
+  font-size: 14px;
+  font-weight: 600;
+  border: 1px dashed var(--hairline-strong);
+}
+
+.categorias__nueva {
+  display: flex;
+  gap: 4px;
+  width: 210px;
+}
+
+.categorias__nueva .gastos__concepto {
+  flex: 1;
+  min-width: 0;
+}
+
+.categorias__nueva .gastos__concepto.is-mal {
+  border-color: var(--cinnabar);
+  animation: shake 400ms var(--ease);
+}
+
 .gastos__icono {
   display: grid;
   place-items: center;

@@ -1792,6 +1792,76 @@ const CONCEPTO_MAX = 40;
 const CATEGORIAS = ["comida", "transporte", "alojamiento", "ocio", "compras", "otros"];
 const CATEGORIA_POR_DEFECTO = "otros";
 
+// Las tuyas, además de las seis: "Buceo", "Regalos". Tres como mucho, que con
+// más el abanico no cabe en el popup. El gasto guarda el id y no el nombre,
+// así cambiarle el nombre no toca ningún gasto.
+const CATEGORIAS_PROPIAS_MAX = 3;
+const NOMBRE_CATEGORIA_MAX = 14;
+const ID_PROPIA = /^p-[a-z0-9]{1,16}$/;
+
+// Vale por la forma y no por la lista: si el gasto llega antes que la lista
+// (otra pestaña, una copia a medias), no lo mando a "otros" para siempre.
+const esCategoria = (c) => CATEGORIAS.includes(c) || (typeof c === "string" && ID_PROPIA.test(c));
+
+function leerCategoriasPropias(guardado) {
+  if (!Array.isArray(guardado)) return [];
+  const vistos = new Set();
+  return guardado
+    .filter((c) => c && ID_PROPIA.test(c.id) && !vistos.has(c.id) && vistos.add(c.id))
+    .map((c) => ({ id: c.id, nombre: String(c.nombre ?? "").replace(/\s+/g, " ").trim().slice(0, NOMBRE_CATEGORIA_MAX) }))
+    .filter((c) => c.nombre)
+    .slice(0, CATEGORIAS_PROPIAS_MAX);
+}
+
+// Como el idioma: cada página la pone al cargar, y los nombres salen de aquí.
+let categoriasPropias = [];
+function ponerCategoriasPropias(guardado) {
+  categoriasPropias = leerCategoriasPropias(guardado);
+  return categoriasPropias;
+}
+
+const todasCategorias = () => [...CATEGORIAS, ...categoriasPropias.map((c) => c.id)];
+const propia = (c) => categoriasPropias.find((p) => p.id === c);
+
+// La que ya no está sale como "Otros", que es donde acabaría.
+function nombreCategoria(c) {
+  if (CATEGORIAS.includes(c)) return tr(`cat.${c}`);
+  return propia(c)?.nombre ?? tr(`cat.${CATEGORIA_POR_DEFECTO}`);
+}
+
+const emojiCategoria = (c) => EMOJI_CATEGORIA[c] ?? (propia(c) ? "🏷️" : EMOJI_CATEGORIA[CATEGORIA_POR_DEFECTO]);
+
+// Si ya hay una que se llama igual, sea tuya o de las seis, no hace falta otra.
+function crearCategoriaPropia(lista, { id, nombre }) {
+  const actuales = leerCategoriasPropias(lista);
+  const [nueva] = leerCategoriasPropias([{ id, nombre }]);
+  if (!nueva || actuales.length >= CATEGORIAS_PROPIAS_MAX || actuales.some((c) => c.id === id)) return actuales;
+  const clave = normalizar(nueva.nombre);
+  const repetida = actuales.some((c) => normalizar(c.nombre) === clave) || CATEGORIAS.some((c) => normalizar(tr(`cat.${c}`)) === clave);
+  return repetida ? actuales : [...actuales, nueva];
+}
+
+const quitarCategoriaPropia = (lista, id) => leerCategoriasPropias(lista).filter((c) => c.id !== id);
+
+// Al quitar una, sus gastos, sus pendientes y su tope pasan a "otros", en
+// todos los viajes, también los archivados. Si "otros" ya tenía tope, se suman.
+function sinCategoria(viajes, id) {
+  const cambiar = (v) => {
+    const gastos = v.gastos.map((g) => (g.categoria === id ? { ...g, categoria: CATEGORIA_POR_DEFECTO } : g));
+    const pendientes = v.pendientes?.map((p) => (p.categoria === id ? { ...p, categoria: CATEGORIA_POR_DEFECTO } : p));
+    let presupuesto = v.presupuesto;
+    const tope = presupuesto?.categorias?.[id];
+    if (tope) {
+      const { [id]: _, ...resto } = presupuesto.categorias;
+      const categorias = { ...resto, [CATEGORIA_POR_DEFECTO]: (resto[CATEGORIA_POR_DEFECTO] ?? 0) + tope };
+      presupuesto = { ...presupuesto, categorias };
+    }
+    return { ...v, gastos, presupuesto, ...(pendientes ? { pendientes } : {}) };
+  };
+  const nuevos = { ...viajes, lista: viajes.lista.map(cambiar) };
+  return viajes.archivados ? { ...nuevos, archivados: viajes.archivados.map(cambiar) } : nuevos;
+}
+
 // El transporte va antes que la comida para que "barco" no se quede en "bar".
 // Las raíces cortas van con \b detrás, que si no "bar" se comía "barato".
 const PISTAS_CATEGORIA = [
@@ -1844,7 +1914,7 @@ const PAGO_POR_DEFECTO = "tarjeta";
 const leerPago = (pago) => (PAGOS.includes(pago) ? pago : PAGO_POR_DEFECTO);
 const comisionDelPago = (pago, comision) => (pago === "efectivo" ? 0 : comision);
 
-const categoriaBuena = (c) => (CATEGORIAS.includes(c) ? c : CATEGORIA_POR_DEFECTO);
+const categoriaBuena = (c) => (esCategoria(c) ? c : CATEGORIA_POR_DEFECTO);
 
 const esGastoBueno = (g) => Boolean(g) && typeof g.id === "string" && isValidCode(g.from) && isValidCode(g.to)
   // Las devoluciones van en negativo, las dos cifras a la vez.
@@ -1939,7 +2009,7 @@ function leerGastos(guardado) {
   // al apuntarlos, y si no dice nada van a "otros".
   return guardado.filter(esGastoBueno).slice(0, GASTOS_MAX).map(({ pagador, fijo, nota, entre, alBce, ...g }) => ({
     ...g,
-    categoria: CATEGORIAS.includes(g.categoria) ? g.categoria : adivinarCategoria(g.concepto) ?? CATEGORIA_POR_DEFECTO,
+    categoria: esCategoria(g.categoria) ? g.categoria : adivinarCategoria(g.concepto) ?? CATEGORIA_POR_DEFECTO,
     pago: leerPago(g.pago),
     // Los de antes no la guardaban: ya va dentro del valor y no sé cuánta era.
     comision: leerComision(g.comision),
@@ -2120,7 +2190,7 @@ function buscarGastos(gastos, consulta) {
   const palabras = normalizar(String(consulta ?? "")).split(/\s+/).filter(Boolean);
   if (palabras.length === 0) return gastos;
   return gastos.filter((g) => {
-    const texto = normalizar(`${g.concepto} ${tr(`cat.${g.categoria}`)} ${g.nota ?? ""}`);
+    const texto = normalizar(`${g.concepto} ${nombreCategoria(g.categoria)} ${g.nota ?? ""}`);
     return palabras.every((p) => texto.includes(p));
   });
 }
@@ -2369,7 +2439,7 @@ function mensajeCobro({ nombre, gastos, personas, gente, saldados }, quien) {
   const suyo = cuentas.gente[quien];
   const total = sumarPorDivisa(gastos)[0].total;
   const delPrincipal = gastos.filter((g) => g.to === to).sort((a, b) => a.cuando - b.cuando);
-  const que = (g) => g.concepto || tr(`cat.${g.categoria}`);
+  const que = (g) => g.concepto || nombreCategoria(g.categoria);
   // Más de seis gastos en un mensaje ya no se leen: el resto va contado.
   const lista = (unos, texto) => {
     const lineas = unos.slice(0, COBRO_GASTOS_MAX).map(texto);
@@ -2712,7 +2782,7 @@ function resumenParaCompartir({ nombre, gastos, presupuesto, personas, gente, sa
 
   const { caro, dia, barato } = destacados(gastos, hoyIso);
   if (caro) {
-    const que = caro.concepto || tr(`cat.${caro.categoria}`);
+    const que = caro.concepto || nombreCategoria(caro.categoria);
     lineas.push(tr("compartir.caro", { que, valor: dinero(caro.valor, caro.to), dia: nombreDia(isoLocal(new Date(caro.cuando)), hoyIso) }));
   }
   if (dia) lineas.push(tr("compartir.diaMas", { dia: nombreDia(dia.dia, hoyIso), valor: dinero(dia.total, dia.to) }));
@@ -2720,7 +2790,7 @@ function resumenParaCompartir({ nombre, gastos, presupuesto, personas, gente, sa
   const estrella = conceptoEstrella(gastos);
   if (estrella) {
     lineas.push(tr("compartir.estrella", {
-      emoji: EMOJI_CATEGORIA[estrella.categoria] ?? EMOJI_CATEGORIA.otros,
+      emoji: emojiCategoria(estrella.categoria),
       que: estrella.concepto, veces: estrella.veces, valor: dinero(estrella.total, estrella.to),
     }));
   }
@@ -2746,7 +2816,7 @@ function resumenParaCompartir({ nombre, gastos, presupuesto, personas, gente, sa
     lineas.push("", `*${tr("compartir.categorias")}*`);
     for (const { categoria, total, fraccion, to } of trozos) {
       const pct = tr("pct", { n: Math.round(fraccion * 100) });
-      lineas.push(`${EMOJI_CATEGORIA[categoria]} ${tr(`cat.${categoria}`)}: ${dinero(total, to)} (${pct})`);
+      lineas.push(`${emojiCategoria(categoria)} ${nombreCategoria(categoria)}: ${dinero(total, to)} (${pct})`);
     }
   }
 
@@ -3282,8 +3352,8 @@ function leerPresupuesto(guardado) {
 // presupuesto. Son opcionales: si no pones ninguno, ni se guarda el campo.
 function leerTopes(guardado) {
   if (!guardado || typeof guardado !== "object") return null;
-  const topes = Object.fromEntries(CATEGORIAS
-    .filter((c) => Number.isFinite(guardado[c]) && guardado[c] > 0)
+  const topes = Object.fromEntries(Object.keys(guardado)
+    .filter((c) => esCategoria(c) && Number.isFinite(guardado[c]) && guardado[c] > 0)
     .map((c) => [c, Math.round(guardado[c] * 100) / 100]));
   return Object.keys(topes).length ? topes : null;
 }
@@ -3622,7 +3692,7 @@ function csvHistorial(lista) {
 const cabeceraGastosCsv = () => [tr("csv.fecha"), tr("csv.hora"), tr("csv.concepto"), tr("csv.categoria"), tr("csv.cantidad"), tr("csv.de"), tr("csv.importe"), tr("csv.a"), tr("csv.pago"), tr("csv.comision")];
 
 const filaGastoCsv = (g) => [
-  isoLocal(new Date(g.cuando)), horaLocal(g.cuando), g.concepto, tr(`cat.${g.categoria ?? CATEGORIA_POR_DEFECTO}`),
+  isoLocal(new Date(g.cuando)), horaLocal(g.cuando), g.concepto, nombreCategoria(g.categoria ?? CATEGORIA_POR_DEFECTO),
   numeroCsv(g.cantidad), g.from, numeroCsv(g.valor), g.to, tr(`pago.${leerPago(g.pago)}`), numeroCsv(comisionDe(g)),
 ];
 
@@ -3653,7 +3723,7 @@ function fraseParaCopiar({ cantidad, from, valor, to }) {
 // la categoría, que "· 38,90 EUR" solo no dice nada.
 function gastoParaCopiar(gasto) {
   const dinero = (n, code) => `${numeros({ minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(n)} ${code}`;
-  const que = gasto.concepto || tr(`cat.${gasto.categoria}`);
+  const que = gasto.concepto || nombreCategoria(gasto.categoria);
   const cuanto = gasto.from === gasto.to ? dinero(gasto.valor, gasto.to)
     : `${dinero(gasto.valor, gasto.to)} (${dinero(gasto.cantidad, gasto.from)})`;
   return `${que} · ${cuanto}`;
@@ -6771,7 +6841,7 @@ function datosTarjeta(viaje, hoyIso = hoy()) {
     total,
     otras: sumarPorDivisa(gastos).slice(1),
     media: media ? { valor: media.media, to: media.to } : null,
-    caro: caro ? { concepto: caro.concepto || tr(`cat.${caro.categoria}`), valor: caro.valor, to: caro.to, categoria: caro.categoria } : null,
+    caro: caro ? { concepto: caro.concepto || nombreCategoria(caro.categoria), valor: caro.valor, to: caro.to, categoria: caro.categoria } : null,
     diaMas: dia ? { dia: dia.dia, total: dia.total, to: dia.to } : null,
     categorias: desglose(gastos).slice(0, 3),
     presupuesto: estado ? { importe: presupuesto.importe, to: presupuesto.to, queda: estado.queda } : null,
@@ -6809,6 +6879,7 @@ function limpiarCopia(crudo) {
   if (RECORDATORIO_HORAS.includes(d.recordatorioHora)) datos.recordatorioHora = d.recordatorioHora;
   if (typeof d.tasaAlReves === "boolean") datos.tasaAlReves = d.tasaAlReves;
   if (d.idioma === "auto" || TEXTOS[d.idioma]) datos.idioma = d.idioma;
+  if (leerCategoriasPropias(d.categoriasPropias).length) datos.categoriasPropias = leerCategoriasPropias(d.categoriasPropias);
   return datos;
 }
 
@@ -6817,7 +6888,7 @@ function limpiarCopia(crudo) {
 const CLAVES_COPIA = [
   "viajes", "gastosViaje", "presupuestoViaje", "lastPair", "paresRecientes", "divisasExtra", "avisos",
   "historialConversiones", "rangoGrafico", "comisionBanco", "impuestoVenta", "pagoGasto", "cuentaReparto", "insigniaActiva", "tasaAlReves", "idioma",
-  "recordatorioActivo", "recordatorioHora", "precioCafe", "sueldoHora",
+  "recordatorioActivo", "recordatorioHora", "precioCafe", "sueldoHora", "categoriasPropias",
 ];
 
 // Lo que se lleva tu cuenta de Chrome a tus otros ordenadores: cómo lo tienes
@@ -6901,7 +6972,7 @@ if (typeof module !== "undefined") {
     celdaCsv, csvHistorial, csvGastos, csvViajes,
     GASTOS_MAX, CONCEPTO_MAX, crearGasto, leerGastos, esDevolucion, devolucionDe, apuntarGasto, NOCHES_MAX, repartirCentimos, repartirNoches, repartoPorDias, apuntarNoches, quitarGasto, cambiarConcepto, cambiarDia, buscarGastos, trozosResaltados, repetirGasto, devolverGasto, devolverTodos, sumarPorDivisa, gastosPorDia, huecoEntre, cifraEnMarcha, categoriaDelDia, pesoDeLosDias, ordenarPorImporte, masCarosDelDia, pesoDeLosGastos, RARO_VECES, mediana, gastoRaro, REPETIDO_MS, gastoRepetido, mediaPorDia, categoriasAlDia, mediaPorGasto, comisionesPagadas, cambioDelViaje, cifraCambio, textoCambio, pagadoEnEfectivo, ahorroEnEfectivo,
     RETIRADAS_MAX, leerRetiradas, crearRetirada, cambioDelCajero, sobreElBce, alCambioDelCajero, apuntarRetirada, quitarRetirada, efectivoQueda, EFECTIVO_POCO, tonoEfectivo, redondoDeCajero, cuantoSacar, loQueSobra, gastadoHoy, nombreDia,
-    CATEGORIAS, CATEGORIA_POR_DEFECTO, adivinarCategoria, PAGOS, PAGO_POR_DEFECTO, leerPago, comisionDelPago, desglose, conceptosUsados, completarConcepto,
+    CATEGORIAS, CATEGORIA_POR_DEFECTO, CATEGORIAS_PROPIAS_MAX, NOMBRE_CATEGORIA_MAX, esCategoria, leerCategoriasPropias, ponerCategoriasPropias, todasCategorias, nombreCategoria, emojiCategoria, crearCategoriaPropia, quitarCategoriaPropia, sinCategoria, adivinarCategoria, PAGOS, PAGO_POR_DEFECTO, leerPago, comisionDelPago, desglose, conceptosUsados, completarConcepto,
     EMOJI_CATEGORIA, destacados, resumenParaCompartir, FINDE_MINIMO, findeContraSemana, ESTRELLA_MINIMO, conceptoEstrella,
     COPIA_APP, COPIA_VERSION, CLAVES_COPIA, CLAVES_SYNC, limpiarSync, cambiosSync, mezclaInicial, limpiarCopia, crearCopia, leerCopia, resumenCopia,
     VIAJES_MAX, NOMBRE_VIAJE_MAX, leerViajes, leerPersonas, porPersona, consumoGente, leerPagador, leerGente, ponerNombre, nombrePersona, inicialPersona, cuentasViaje, frasePago, COBRO_GASTOS_MAX, mensajeCobro, leerEntre, entreDe, fraseEntre, cambiarEntre, leerSaldados, saldarPago, quitarSaldado, fraseSaldado, hayOtrosPagadores, NOMBRE_PERSONA_MAX, compararViajes, COLORES_VIAJE, leerColorViaje, colorLibre, siguienteColor, viajeActivo, ARCHIVADOS_MAX, archivarViaje, desarchivarViaje, borrarArchivado, todosLosViajes, crearViaje, nombreCopia, nombreDeDestino, duplicarViaje, renombrarViaje, elegirViaje, borrarViaje, moverGasto, cambiarViaje, TRAMOS_MAX, NOMBRE_TRAMO_MAX, leerTramos, ponerTramo, quitarTramo, tramoDelDia, resumenTramos, curvaPresupuesto, FRANJAS, HORAS_MINIMO, horaFiable, porFranja, PENDIENTES_MAX, leerPendientes, crearPendiente, apuntarPendiente, quitarPendiente, totalPendiente, pagarPendiente, resumenViaje, archivoGastos,

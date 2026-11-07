@@ -9,6 +9,8 @@ const IDIOMA_KEY = "idioma";
 // de despertar por un clic, la lectura puede no haber llegado.
 ponerIdioma(idiomaPara(chrome.i18n.getUILanguage()));
 let idiomaListo = aplicarIdioma();
+// Los nombres de tus categorías, para los gastos que apuntas desde la barra.
+chrome.storage.local.get("categoriasPropias").then(({ categoriasPropias }) => ponerCategoriasPropias(categoriasPropias));
 
 async function aplicarIdioma() {
   const { [IDIOMA_KEY]: guardado } = await chrome.storage.local.get(IDIOMA_KEY);
@@ -168,6 +170,7 @@ chrome.storage.onChanged.addListener((cambios, zona) => {
   }
   if (zona !== "local") return;
   subirSync(cambios);
+  if (cambios.categoriasPropias) ponerCategoriasPropias(cambios.categoriasPropias.newValue);
   // Si llegan del otro ordenador, el menú del icono tiene que enseñarlas.
   if (cambios.insigniaActiva || cambios.recordatorioActivo || cambios.recordatorioHora) crearMenus();
   if (cambios.viajes) {
@@ -470,7 +473,7 @@ async function sugerirGasto(texto, sugerir, actual) {
       return;
     }
     const { gasto, viaje } = listo;
-    const que = [cifraGasto(gasto.cantidad, gasto.from), gasto.concepto || tr(`cat.${gasto.categoria}`)].join(" · ");
+    const que = [cifraGasto(gasto.cantidad, gasto.from), gasto.concepto || nombreCategoria(gasto.categoria)].join(" · ");
     const donde = viaje.nombre ? tr("barra.gastoEn", { viaje: viaje.nombre }) : tr("barra.gastoApunta");
     chrome.omnibox.setDefaultSuggestion({
       description: `${escaparXml(donde)} <match>${escaparXml(que)}</match>`
@@ -489,7 +492,7 @@ async function apuntarDesdeBarra(texto) {
     const { gasto, viajes, viaje } = listo;
     await chrome.storage.local.set({ viajes: cambiarViaje(viajes, viaje.id, { gastos: apuntarGasto(viaje.gastos, gasto) }) });
     await chrome.storage.local.remove(["gastosViaje", "presupuestoViaje"]);
-    const cuerpo = [gasto.concepto || tr(`cat.${gasto.categoria}`), cifraGasto(gasto.valor, gasto.to)].join(" · ");
+    const cuerpo = [gasto.concepto || nombreCategoria(gasto.categoria), cifraGasto(gasto.valor, gasto.to)].join(" · ");
     await chrome.notifications.create(`gasto:${viaje.id}:${gasto.id}`, {
       type: "basic",
       iconUrl: "icons/icon128.png",

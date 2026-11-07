@@ -152,7 +152,10 @@ que necesitaba una conversión rápida. Ahora es un clic en la barra del navegad
   con un clic. Arriba, en qué se te va el dinero en porcentajes; pulsando una
   ves solo esos gastos, y pasando el ratón, lo que llevas al día en ella
 
-  ("Comida: 120,00 EUR, 30,00 al día")
+  ("Comida: 120,00 EUR, 30,00 al día"). Y hasta tres tuyas ("Buceo",
+  "Regalos"), con el + del final al elegir la categoría: salen con su inicial,
+  cuentan en los porcentajes, en los topes, en el resumen y en la búsqueda.
+  Para quitar una, la ✕ de su esquina, dos veces: sus gastos pasan a Otros
 - A qué hora gastas: al final de las categorías sale la franja que más se
   lleva ("🌙 53 %"), y pulsándola, las cinco (madrugada, mañana, mediodía,
   tarde y noche) en barras, con "La noche se lleva el 53 %, sobre todo en

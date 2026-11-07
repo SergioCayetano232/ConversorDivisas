@@ -401,8 +401,15 @@ const ICONOS_PAGO = {
   efectivo: '<svg viewBox="0 0 12 12" aria-hidden="true"><rect x="1" y="3" width="10" height="6" rx="1"/><circle cx="6" cy="6" r="1.4"/><path d="M2.8 4.8v2.4M9.2 4.8v2.4"/></svg>',
 };
 
-const iconoCategoria = (categoria) =>
-  `<svg viewBox="0 0 14 14" aria-hidden="true">${ICONOS_CATEGORIA[categoria] ?? ICONOS_CATEGORIA.otros}</svg>`;
+// Las tuyas, con su inicial en un círculo: un emoji en color desentonaría al
+// lado de los iconos de línea de las otras seis.
+function iconoCategoria(categoria) {
+  if (ICONOS_CATEGORIA[categoria] || !todasCategorias().includes(categoria)) {
+    return `<svg viewBox="0 0 14 14" aria-hidden="true">${ICONOS_CATEGORIA[categoria] ?? ICONOS_CATEGORIA.otros}</svg>`;
+  }
+  const letra = [...nombreCategoria(categoria)][0].toLocaleUpperCase(localeActual());
+  return `<span class="cat__letra" aria-hidden="true">${escaparXml(letra)}</span>`;
+}
 
 // Se piden en el momento a numeros(), que los guarda por idioma: así da igual
 // que el idioma elegido llegue después de cargar el archivo. Y todos agrupan
@@ -439,6 +446,7 @@ const HISTORIAL_KEY = "historialConversiones";
 const GASTOS_KEY = "gastosViaje";
 const PRESUPUESTO_KEY = "presupuestoViaje";
 const VIAJES_KEY = "viajes";
+const CATEGORIAS_KEY = "categoriasPropias";
 const CELEBRADOS_KEY = "viajesCelebrados";
 const CUENTA_KEY = "cuentaReparto";
 const AL_REVES_KEY = "tasaAlReves";
@@ -674,8 +682,9 @@ async function cargarHistorial() {
 
 async function cargarViajes() {
   try {
-    const guardado = await chrome.storage.local.get([VIAJES_KEY, GASTOS_KEY, PRESUPUESTO_KEY]);
+    const guardado = await chrome.storage.local.get([VIAJES_KEY, GASTOS_KEY, PRESUPUESTO_KEY, CATEGORIAS_KEY]);
     quedanSueltos = GASTOS_KEY in guardado || PRESUPUESTO_KEY in guardado;
+    ponerCategoriasPropias(guardado[CATEGORIAS_KEY]);
     return leerViajes(guardado[VIAJES_KEY], guardado[GASTOS_KEY], guardado[PRESUPUESTO_KEY]);
   } catch (error) {
     console.warn("No se pudieron leer los viajes", error);
@@ -2479,7 +2488,7 @@ function gastoDePantalla() {
 function pintarCategoriaNueva(conSalto = false) {
   el.gastosCategoria.innerHTML = iconoCategoria(categoriaNueva);
   el.gastosCategoria.dataset.categoria = categoriaNueva;
-  const nombre = tr(`cat.${categoriaNueva}`);
+  const nombre = nombreCategoria(categoriaNueva);
   el.gastosCategoria.title = nombre;
   el.gastosCategoria.setAttribute("aria-label", tr("cat.elegir", { nombre }));
   if (conSalto) restartAnimation(el.gastosCategoria, "is-cambiada");
@@ -2612,30 +2621,125 @@ function onConceptoGasto() {
   pintarBotonGasto();
 }
 
+function elegirCategoria(categoria) {
+  categoriaNueva = categoria;
+  categoriaAMano = true;
+  pintarCategoriaNueva(true);
+  pintarBotonGasto();
+  cerrarCategorias();
+  el.gastosConcepto.focus();
+}
+
 function abrirCategorias() {
-  el.categorias.replaceChildren(...CATEGORIAS.map((categoria, i) => {
+  const opciones = todasCategorias().map((categoria, i) => {
     const boton = document.createElement("button");
     boton.type = "button";
     boton.className = "categorias__opcion";
     boton.style.setProperty("--i", i);
     boton.dataset.categoria = categoria;
     boton.innerHTML = iconoCategoria(categoria);
-    boton.title = tr(`cat.${categoria}`);
-    boton.setAttribute("aria-label", tr(`cat.${categoria}`));
+    boton.title = nombreCategoria(categoria);
+    boton.setAttribute("aria-label", nombreCategoria(categoria));
     boton.setAttribute("aria-pressed", String(categoria === categoriaNueva));
-    boton.addEventListener("click", () => {
-      categoriaNueva = categoria;
-      categoriaAMano = true;
-      pintarCategoriaNueva(true);
-      pintarBotonGasto();
-      cerrarCategorias();
-      el.gastosConcepto.focus();
-    });
-    return boton;
-  }));
+    boton.addEventListener("click", () => elegirCategoria(categoria));
+    if (CATEGORIAS.includes(categoria)) return boton;
+    // Las tuyas llevan una ✕ en la esquina para quitarlas. Dos veces, como borrar un viaje.
+    const caja = document.createElement("span");
+    caja.className = "categorias__propia";
+    const quitar = document.createElement("button");
+    quitar.type = "button";
+    quitar.className = "categorias__quitar";
+    quitar.textContent = "✕";
+    quitar.setAttribute("aria-label", tr("cat.quitar", { nombre: nombreCategoria(categoria) }));
+    quitar.title = quitar.getAttribute("aria-label");
+    quitar.addEventListener("click", () => onQuitarCategoria(categoria, quitar));
+    caja.append(boton, quitar);
+    return caja;
+  });
+  if (todasCategorias().length < CATEGORIAS.length + CATEGORIAS_PROPIAS_MAX) {
+    const mas = document.createElement("button");
+    mas.type = "button";
+    mas.className = "categorias__opcion categorias__mas";
+    mas.style.setProperty("--i", opciones.length);
+    mas.textContent = "+";
+    mas.setAttribute("aria-label", tr("cat.nueva"));
+    mas.title = tr("cat.nueva");
+    mas.addEventListener("click", empezarCategoria);
+    opciones.push(mas);
+  }
+  el.categorias.replaceChildren(...opciones);
   el.categorias.hidden = false;
   el.gastosCategoria.setAttribute("aria-expanded", "true");
   el.categorias.querySelector('[aria-pressed="true"]')?.focus();
+}
+
+// En el mismo abanico: escribes el nombre y con Enter se crea y se elige.
+function empezarCategoria() {
+  const form = document.createElement("form");
+  form.className = "categorias__nueva";
+  form.noValidate = true;
+  const campo = Object.assign(document.createElement("input"), {
+    type: "text", autocomplete: "off", spellcheck: false, maxLength: NOMBRE_CATEGORIA_MAX,
+    className: "gastos__concepto", placeholder: tr("cat.nuevaEjemplo"),
+  });
+  campo.setAttribute("aria-label", tr("cat.nueva"));
+  const ok = Object.assign(document.createElement("button"), { type: "submit", className: "gastos__apuntar", textContent: "OK" });
+  form.append(campo, ok);
+  form.addEventListener("submit", (event) => {
+    event.preventDefault();
+    const id = `p-${Date.now().toString(36)}${Math.random().toString(36).slice(2, 5)}`;
+    const nuevas = crearCategoriaPropia(categoriasGuardadas(), { id, nombre: campo.value });
+    if (!nuevas.some((c) => c.id === id)) {
+      restartAnimation(campo, "is-mal");
+      campo.focus();
+      return;
+    }
+    guardarCategorias(nuevas);
+    elegirCategoria(id);
+  });
+  campo.addEventListener("keydown", (event) => {
+    if (event.key !== "Escape") return;
+    event.preventDefault();
+    event.stopPropagation();
+    abrirCategorias();
+  });
+  campo.addEventListener("animationend", () => campo.classList.remove("is-mal"));
+  el.categorias.replaceChildren(form);
+  campo.focus();
+}
+
+const categoriasGuardadas = () => todasCategorias().filter((c) => !CATEGORIAS.includes(c))
+  .map((id) => ({ id, nombre: nombreCategoria(id) }));
+
+function guardarCategorias(lista) {
+  ponerCategoriasPropias(lista);
+  chrome.storage.local.set({ [CATEGORIAS_KEY]: lista }).catch((error) => console.warn("No se pudieron guardar las categorías", error));
+}
+
+// Lo suyo pasa a "otros" en todos los viajes: si no, esos gastos se quedarían
+// con una categoría que ya no sale en ningún sitio.
+function onQuitarCategoria(categoria, boton) {
+  if (!boton.classList.contains("is-seguro")) {
+    boton.classList.add("is-seguro");
+    boton.textContent = "?";
+    boton.setAttribute("aria-label", tr("cat.quitarSeguro", { nombre: nombreCategoria(categoria) }));
+    boton.title = boton.getAttribute("aria-label");
+    clearTimeout(boton.vuelta);
+    boton.vuelta = setTimeout(() => abrirCategorias(), 3000);
+    return;
+  }
+  clearTimeout(boton.vuelta);
+  const nombre = nombreCategoria(categoria);
+  viajes = sinCategoria(cambiarViaje(viajes, viajes.activo, { gastos, presupuesto, cajero }), categoria);
+  ({ gastos, presupuesto, cajero } = viajeActivo(viajes));
+  guardarCategorias(quitarCategoriaPropia(categoriasGuardadas(), categoria));
+  if (categoriaNueva === categoria) categoriaNueva = CATEGORIA_POR_DEFECTO;
+  if (filtroCategoria === categoria) filtroCategoria = null;
+  guardarViajes();
+  pintarCategoriaNueva();
+  pintarGastos();
+  abrirCategorias();
+  mostrarFlash([tr("cat.quitada", { nombre })], 2200);
 }
 
 function cerrarCategorias() {
@@ -2672,7 +2776,7 @@ function pintarDesglose() {
     const pct = porCientoEntero(fraccion);
     boton.innerHTML = `${iconoCategoria(categoria)}<span class="desglose__pct"></span>`;
     boton.querySelector(".desglose__pct").textContent = pct;
-    const nombre = tr(`cat.${categoria}`);
+    const nombre = nombreCategoria(categoria);
     const datos = { nombre, total: `${nf.format(total)} ${to}`, pct };
     boton.title = alDia.has(categoria)
       ? tr("cat.filtrarDia", { ...datos, dia: nf.format(alDia.get(categoria)) })
@@ -2721,7 +2825,7 @@ function pintarHoras() {
   const pct = porCientoEntero(mas.fraccion);
   const franja = tr(`horas.${mas.id}El`);
   el.horasFrase.textContent = `${mas.emoji} ${mas.categoria
-    ? tr("horas.frase", { franja, pct, cat: tr(`cat.${mas.categoria}`).toLocaleLowerCase(localeActual()) })
+    ? tr("horas.frase", { franja, pct, cat: nombreCategoria(mas.categoria).toLocaleLowerCase(localeActual()) })
     : tr("horas.fraseSola", { franja, pct })}`;
   const maximo = Math.max(...r.franjas.map((f) => f.fraccion));
   const hora = (h) => `${String(h).padStart(2, "0")}:00`;
@@ -2818,7 +2922,7 @@ function pintarGastoRaro(gasto, entero = gasto) {
   if (!raroAvisado && !repetidoAvisado) el.gastosRaro.classList.remove("is-insiste");
   const texto = repetidoAvisado ? tr("gastos.repetido", { hace: haceSegundos(repetidoAvisado.segundos) })
     : !raro ? ""
-    : raro.categoria ? tr("gastos.raro", { veces: raro.veces, categoria: tr(`cat.${raro.categoria}`).toLowerCase() })
+    : raro.categoria ? tr("gastos.raro", { veces: raro.veces, categoria: nombreCategoria(raro.categoria).toLowerCase() })
     : tr("gastos.raroTodo", { veces: raro.veces });
   if (el.gastosRaro.textContent !== texto) {
     el.gastosRaro.textContent = texto;
@@ -2922,8 +3026,8 @@ function crearDiaGastos({ dia, gastos: suyos, totales }, peso, d) {
   if (manda) {
     const emoji = document.createElement("span");
     emoji.className = "gastos__dia-cat";
-    emoji.textContent = EMOJI_CATEGORIA[manda.categoria];
-    emoji.title = tr("gastos.diaCategoria", { cat: tr(`cat.${manda.categoria}`).toLocaleLowerCase(), pct: tr("pct", { n: Math.round(manda.fraccion * 100) }) });
+    emoji.textContent = emojiCategoria(manda.categoria);
+    emoji.title = tr("gastos.diaCategoria", { cat: nombreCategoria(manda.categoria).toLocaleLowerCase(), pct: tr("pct", { n: Math.round(manda.fraccion * 100) }) });
     suma.prepend(emoji);
   }
   const empieza = leerTramos(viajeActivo(viajes).tramos).find((t) => t.desde === dia);
@@ -2974,7 +3078,7 @@ function crearFilaGasto(gasto, i, peso, rey = false) {
   const icono = document.createElement("span");
   icono.className = "gastos__icono";
   icono.dataset.categoria = gasto.categoria;
-  icono.title = tr(`cat.${gasto.categoria}`);
+  icono.title = nombreCategoria(gasto.categoria);
   icono.innerHTML = iconoCategoria(gasto.categoria);
   const que = document.createElement("button");
   que.type = "button";
@@ -3014,7 +3118,7 @@ function crearFilaGasto(gasto, i, peso, rey = false) {
   // El efectivo va como un punto en el icono: en la fila no cabe nada más.
   if (gasto.pago === "efectivo") {
     icono.classList.add("is-efectivo");
-    icono.title = `${tr(`cat.${gasto.categoria}`)} · ${tr("pago.efectivo")}`;
+    icono.title = `${nombreCategoria(gasto.categoria)} · ${tr("pago.efectivo")}`;
   }
   if (rey) {
     fila.classList.add("is-rey");
@@ -3730,7 +3834,7 @@ function pintarPendientes() {
     if (p.id === pendienteNuevo) fila.classList.add("is-nueva");
     const que = document.createElement("span");
     que.className = "pendientes__que";
-    que.textContent = `${EMOJI_CATEGORIA[p.categoria]} ${p.concepto || tr("gastos.sinConcepto")}`;
+    que.textContent = `${emojiCategoria(p.categoria)} ${p.concepto || tr("gastos.sinConcepto")}`;
     const cuanto = document.createElement("span");
     cuanto.className = "pendientes__cuanto";
     cuanto.textContent = p.from === p.to ? `${nf.format(p.valor)} ${p.to}` : `${nf.format(p.cantidad)} ${p.from} ≈ ${nf.format(p.valor)} ${p.to}`;
@@ -4439,7 +4543,7 @@ function ponerPresupuesto(nuevo) {
 }
 
 function pintarCamposTopes() {
-  el.presupuestoTopes.replaceChildren(...CATEGORIAS.map((categoria) => {
+  el.presupuestoTopes.replaceChildren(...todasCategorias().map((categoria) => {
     const caja = document.createElement("label");
     caja.className = "presupuesto__tope";
     caja.innerHTML = iconoCategoria(categoria);
@@ -4449,7 +4553,7 @@ function pintarCamposTopes() {
       value: presupuesto?.categorias?.[categoria] ? nf.format(presupuesto.categorias[categoria]) : "",
     });
     campo.dataset.categoria = categoria;
-    campo.setAttribute("aria-label", tr("presupuesto.tope", { nombre: tr(`cat.${categoria}`).toLowerCase() }));
+    campo.setAttribute("aria-label", tr("presupuesto.tope", { nombre: nombreCategoria(categoria).toLowerCase() }));
     caja.title = campo.getAttribute("aria-label");
     caja.append(campo);
     return caja;
@@ -5055,8 +5159,8 @@ function crearComparacion(f) {
   if (f.categoria) {
     const cat = document.createElement("span");
     cat.className = "viajes__cat";
-    cat.textContent = `${EMOJI_CATEGORIA[f.categoria.categoria]} ${tr("pct", { n: Math.round(f.categoria.fraccion * 100) })}`;
-    cat.title = tr(`cat.${f.categoria.categoria}`);
+    cat.textContent = `${emojiCategoria(f.categoria.categoria)} ${tr("pct", { n: Math.round(f.categoria.fraccion * 100) })}`;
+    cat.title = nombreCategoria(f.categoria.categoria);
     linea.append(cat);
   }
   if (f.peso !== null) {

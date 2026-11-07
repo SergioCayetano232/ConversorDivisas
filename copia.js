@@ -173,7 +173,8 @@ let importado = null;
 const dineroBanco = (n) => `${numeros({ minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(n)} EUR`;
 
 async function cargarViajesGuardados() {
-  const { viajes, gastosViaje, presupuestoViaje } = await chrome.storage.local.get(["viajes", "gastosViaje", "presupuestoViaje"]);
+  const { viajes, gastosViaje, presupuestoViaje, categoriasPropias } = await chrome.storage.local.get(["viajes", "gastosViaje", "presupuestoViaje", "categoriasPropias"]);
+  ponerCategoriasPropias(categoriasPropias);
   return leerViajes(viajes, gastosViaje, presupuestoViaje);
 }
 
@@ -221,7 +222,7 @@ async function pintarBanco() {
     li.innerHTML = '<span class="banco__fecha"></span><span class="banco__cat" aria-hidden="true"></span><span class="banco__concepto"></span><span class="banco__importe"></span>';
     li.prepend(marca);
     li.querySelector(".banco__fecha").textContent = fechaCorta(m.fecha);
-    li.querySelector(".banco__cat").textContent = EMOJI_CATEGORIA[categoria] ?? EMOJI_CATEGORIA.otros;
+    li.querySelector(".banco__cat").textContent = emojiCategoria(categoria);
     li.querySelector(".banco__concepto").textContent = repetido ? `${concepto} · ${tr("banco.yaEsta")}` : concepto;
     li.querySelector(".banco__concepto").title = m.concepto;
     li.querySelector(".banco__importe").textContent = dineroBanco(m.importe);
