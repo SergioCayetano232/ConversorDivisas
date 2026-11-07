@@ -204,6 +204,7 @@ const el = {
   presupuestoRacha: document.getElementById("presupuesto-racha"),
   hoy: document.getElementById("hoy"),
   noches: document.getElementById("noches"),
+  nochesNombre: document.getElementById("noches-nombre"),
   nochesMenos: document.getElementById("noches-menos"),
   nochesMas: document.getElementById("noches-mas"),
   nochesN: document.getElementById("noches-n"),
@@ -2484,32 +2485,38 @@ function pintarCategoriaNueva(conSalto = false) {
   pintarNoches();
 }
 
-// Las noches solo tienen sentido en el alojamiento. Al cambiar de categoría
-// vuelve a una, que si no un taxi se repartiría sin querer.
+// Las noches en el alojamiento, y los días en lo que dura (el coche, el abono).
+// Si deja de tocar vuelve a una, que si no un taxi se repartiría sin querer.
 function pintarNoches() {
-  const toca = categoriaNueva === "alojamiento";
-  if (!toca) nochesNuevas = 1;
+  const modo = repartoPorDias(categoriaNueva, el.gastosConcepto.value);
+  if (!modo) nochesNuevas = 1;
   const estaba = !el.noches.hidden;
-  el.noches.hidden = !toca;
-  if (!toca) return;
-  if (!estaba) restartAnimation(el.noches, "is-entra");
+  el.noches.hidden = !modo;
+  if (!modo) return;
+  if (!estaba || el.noches.dataset.modo !== modo) restartAnimation(el.noches, "is-entra");
+  if (el.noches.dataset.modo !== modo) el.nochesLunas.replaceChildren();
+  el.noches.dataset.modo = modo;
+  el.nochesNombre.textContent = tr(`${modo}.nombre`);
+  el.noches.title = tr(`${modo}.titulo`);
+  el.nochesMenos.setAttribute("aria-label", tr(`${modo}.menos`));
+  el.nochesMas.setAttribute("aria-label", tr(`${modo}.mas`));
   el.nochesN.textContent = nochesNuevas;
   el.nochesMenos.disabled = nochesNuevas <= 1;
   el.nochesMas.disabled = nochesNuevas >= NOCHES_MAX;
-  // Una luna por noche hasta siete; más ya no caben y no se cuentan.
+  // Una luna por noche (o un sol por día) hasta siete; más ya no caben.
   const lunas = Math.min(nochesNuevas, 7);
   if (el.nochesLunas.childElementCount !== lunas) {
     el.nochesLunas.replaceChildren(...Array.from({ length: lunas }, (_, i) => {
       const luna = document.createElement("span");
       luna.className = "noches__luna";
-      luna.textContent = "☾";
+      luna.textContent = modo === "noches" ? "☾" : "☀\uFE0E";
       luna.style.setProperty("--i", i);
       return luna;
     }));
   }
   const gasto = gastoDePantalla();
   el.nochesCada.textContent = gasto && nochesNuevas > 1
-    ? tr("noches.porNoche", { valor: `${nf.format(repartirNoches(gasto, nochesNuevas)[0].valor)} ${gasto.to}` })
+    ? tr(`${modo}.porNoche`, { valor: `${nf.format(repartirNoches(gasto, nochesNuevas)[0].valor)} ${gasto.to}` })
     : "";
 }
 
@@ -2823,7 +2830,7 @@ function pintarGastoRaro(gasto, entero = gasto) {
 
 function pintarBotonGasto() {
   const gasto = gastoDePantalla();
-  if (!el.noches.hidden) pintarNoches();
+  pintarNoches();
   pintarLoQueSeLleva(gasto);
   el.gastosApuntar.disabled = !gasto;
   if (!gasto) {

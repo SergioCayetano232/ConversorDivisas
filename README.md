@@ -216,7 +216,9 @@ que necesitaba una conversión rápida. Ahora es un clic en la barra del navegad
   hasta cuándo te llega el presupuesto. En el resumen va en su propia línea
 - El hotel por noches: si apuntas algo de alojamiento sale una fila con las
   noches, y con 5 se apunta un gasto por noche desde ese día ("1/5 · Hotel"),
-  para que el día que pagas no parezca el más caro del viaje
+  para que el día que pagas no parezca el más caro del viaje. Lo mismo, por días, con
+  lo que se paga una vez y dura: el coche de alquiler, el abono del metro, el
+  forfait o la eSIM ("Alquiler de coche" de 7 días sale a "38,80 EUR/día")
 - Al acabar un viaje sin pasarte del presupuesto, la primera vez que abres sus
   gastos sale confeti y lo que te ha sobrado
 - La tarjeta del viaje: en la lista de viajes, al lado de duplicar, el botón
