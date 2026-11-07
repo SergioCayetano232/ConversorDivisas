@@ -3424,6 +3424,21 @@ function textoCuentaAtras(n) {
   return n === 1 ? tr("presupuesto.manana") : tr("presupuesto.faltan", { n });
 }
 
+// Cuánto apartar cada semana hasta salir para llegar con el presupuesto. Lo ya
+// pagado (el vuelo, el hotel reservado) ya no hay que ahorrarlo; lo pendiente sí,
+// que aún no ha salido de la cuenta. Hacia arriba a la unidad: mejor que sobre.
+function huchaViaje(presupuesto, gastos, hoyIso = hoy()) {
+  const faltanDias = cuentaAtras(presupuesto, hoyIso);
+  if (faltanDias === null) return null;
+  const gastado = gastos.filter((g) => g.to === presupuesto.to).reduce((suma, g) => suma + g.valor, 0);
+  const falta = presupuesto.importe - gastado;
+  if (falta < 1) return null;
+  // Con menos de una semana, lo que falta de una vez.
+  if (faltanDias < 7) return { falta, to: presupuesto.to, semanas: 0, porSemana: Math.ceil(falta) };
+  const semanas = Math.floor(faltanDias / 7);
+  return { falta, to: presupuesto.to, semanas, porSemana: Math.ceil(falta / semanas) };
+}
+
 // Días seguidos gastando lo que toca o menos, del de ayer hacia atrás: hoy aún
 // no ha acabado. Lo que toca es fijo, el presupuesto entre los días del viaje,
 // que con lo que queda al día la vara se movería cada vez que gastas.
@@ -6856,7 +6871,7 @@ if (typeof module !== "undefined") {
     EMOJI_CATEGORIA, destacados, resumenParaCompartir, FINDE_MINIMO, findeContraSemana, ESTRELLA_MINIMO, conceptoEstrella,
     COPIA_APP, COPIA_VERSION, CLAVES_COPIA, limpiarCopia, crearCopia, leerCopia, resumenCopia,
     VIAJES_MAX, NOMBRE_VIAJE_MAX, leerViajes, leerPersonas, porPersona, consumoGente, leerPagador, leerGente, ponerNombre, nombrePersona, inicialPersona, cuentasViaje, frasePago, COBRO_GASTOS_MAX, mensajeCobro, leerEntre, entreDe, fraseEntre, cambiarEntre, leerSaldados, saldarPago, quitarSaldado, fraseSaldado, hayOtrosPagadores, NOMBRE_PERSONA_MAX, compararViajes, COLORES_VIAJE, leerColorViaje, colorLibre, siguienteColor, viajeActivo, ARCHIVADOS_MAX, archivarViaje, desarchivarViaje, borrarArchivado, todosLosViajes, crearViaje, nombreCopia, nombreDeDestino, duplicarViaje, renombrarViaje, elegirViaje, borrarViaje, moverGasto, cambiarViaje, TRAMOS_MAX, NOMBRE_TRAMO_MAX, leerTramos, ponerTramo, quitarTramo, tramoDelDia, resumenTramos, curvaPresupuesto, FRANJAS, HORAS_MINIMO, horaFiable, porFranja, PENDIENTES_MAX, leerPendientes, crearPendiente, apuntarPendiente, quitarPendiente, totalPendiente, pagarPendiente, resumenViaje, archivoGastos,
-    diasHasta, leerPresupuesto, leerTopes, PRESUPUESTO_JUSTO, estadoPresupuesto, estadoTopes, alDiaAlli, inicioDelViaje, diaDelViaje, cuentaAtras, textoCuentaAtras, loDeHoy, CELEBRADOS_MAX, leerCelebrados, anadirCelebrado, viajeParaCelebrar, textoCelebrar, RACHA_MINIMA, rachaPresupuesto, hastaCuandoLlega, previsionViaje, PREVISION_JUSTA, textoPrevision, loQueSeLleva, redondearDias,
+    diasHasta, leerPresupuesto, leerTopes, PRESUPUESTO_JUSTO, estadoPresupuesto, estadoTopes, alDiaAlli, inicioDelViaje, diaDelViaje, cuentaAtras, textoCuentaAtras, huchaViaje, loDeHoy, CELEBRADOS_MAX, leerCelebrados, anadirCelebrado, viajeParaCelebrar, textoCelebrar, RACHA_MINIMA, rachaPresupuesto, hastaCuandoLlega, previsionViaje, PREVISION_JUSTA, textoPrevision, loQueSeLleva, redondearDias,
     EXTRAS_MAX, EXTRAS_POR_DEFECTO, leerExtras, anadirExtra, quitarExtra,
     extrasVisibles, disponiblesParaAnadir, convertirExtras, semanaDe, trazoMini, CHULETA, escalaChuleta, chuleta, TRUCO_TOLERANCIA, trucoDeCabeza, textoTruco, tituloTruco, chuletaParaCompartir, extrasParaCompartir,
     urlImpresion, leerImpresion, chuletaParaImprimir,

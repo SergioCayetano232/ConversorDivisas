@@ -5880,6 +5880,27 @@ body::after {
   display: none;
 }
 
+/* Antes de salir, debajo de la barra: lo que apartar cada semana. */
+.presupuesto__hucha {
+  display: block;
+  margin-top: 2px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 10px;
+  font-variant-numeric: tabular-nums;
+  text-align: left;
+  color: color-mix(in srgb, var(--viaje-rosa) 70%, var(--muted));
+}
+
+.presupuesto__hucha[hidden] {
+  display: none;
+}
+
+.presupuesto__hucha.is-tic {
+  animation: beat var(--mid) var(--ease-spring);
+}
+
 /* La cuenta atrás va en dorado, con el avión despegando cuando cambia. */
 .presupuesto__dia.is-cuenta {
   color: var(--brass);

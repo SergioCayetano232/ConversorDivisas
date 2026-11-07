@@ -212,6 +212,7 @@ const el = {
   nochesCada: document.getElementById("noches-cada"),
   hoyLleno: document.getElementById("hoy-lleno"),
   presupuestoTexto: document.getElementById("presupuesto-texto"),
+  presupuestoHucha: document.getElementById("presupuesto-hucha"),
   presupuestoAlli: document.getElementById("presupuesto-alli"),
   presupuestoForm: document.getElementById("presupuesto-form"),
   presupuestoImporte: document.getElementById("presupuesto-importe"),
@@ -3844,6 +3845,21 @@ function onPagarPendiente(id) {
 }
 
 // El botón solo tiene sentido con un presupuesto de varios días.
+// Antes de salir, cuánto apartar cada semana. Sin decimales: es para hacer una
+// transferencia, y "58,34" no se lo pone nadie.
+function pintarHucha() {
+  const hucha = presupuesto ? huchaViaje(presupuesto, gastos) : null;
+  el.presupuestoHucha.hidden = !hucha;
+  if (!hucha) return;
+  const valor = `${nfEntero.format(hucha.porSemana)} ${hucha.to}`;
+  const texto = hucha.semanas ? tr("hucha.semana", { valor }) : tr("hucha.antes", { valor });
+  if (el.presupuestoHucha.textContent && el.presupuestoHucha.textContent !== texto) restartAnimation(el.presupuestoHucha, "is-tic");
+  el.presupuestoHucha.textContent = texto;
+  el.presupuestoVer.title += `\n${tr(hucha.semanas ? "hucha.titulo" : "hucha.tituloAntes", {
+    falta: `${nf.format(hucha.falta)} ${hucha.to}`, semanas: hucha.semanas, fecha: fechaLarga(presupuesto.desde),
+  })}`;
+}
+
 function pintarCurvaBoton() {
   const curva = curvaPresupuesto(presupuesto, gastos, hoy(), viajeActivo(viajes).pendientes);
   el.curvaAbrir.hidden = !curva;
@@ -4255,6 +4271,7 @@ function pintarPresupuesto() {
   pintarCurvaBoton();
   if (!estado) {
     delete el.presupuestoVer.dataset.tono;
+    el.presupuestoHucha.hidden = true;
     return;
   }
   const dinero = (n) => `${nf.format(n)} ${presupuesto.to}`;
@@ -4287,6 +4304,7 @@ function pintarPresupuesto() {
   if (alli) el.presupuestoVer.title += `\n${tr("presupuesto.alliTitulo", { porDia: dinero(estado.porDia), importe: alli })}`;
   if (llega) el.presupuestoVer.title += `\n${tr("presupuesto.llegaTitulo", { fecha: fechaLarga(llega), porDia: dinero(estado.porDia) })}`;
   if (falta !== null) el.presupuestoVer.title += `\n${tr(falta === 1 ? "presupuesto.saleManana" : "presupuesto.saleEl", { fecha: fechaLarga(presupuesto.desde), n: falta })}`;
+  pintarHucha();
   if (estado.pendiente > 0) {
     el.presupuestoVer.title += `\n${tr("pendientes.presupuesto", { pendiente: dinero(estado.pendiente), libre: dinero(estado.libre) })}`;
   }

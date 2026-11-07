@@ -175,7 +175,10 @@ que necesitaba una conversión rápida. Ahora es un clic en la barra del navegad
   un brillo dorado. Arriba, una llamita con los días seguidos que llevas
   gastando lo que toca o menos ("🔥 3"), y un aro que se va cerrando con lo que
   llevas hoy contra lo que te toca hoy. Antes de salir, en vez del día del
-  viaje, cuántos faltan ("✈ 12 días")
+  viaje, cuántos faltan ("✈ 12 días"), y debajo de la barra cuánto apartar cada semana
+  hasta salir para llegar con el presupuesto ("🐷 Aparta 150 EUR a la semana"),
+  sin contar lo que ya has pagado, como el vuelo. Con menos de una semana, lo
+  que falta de una vez
 - Cómo va el gasto día a día: con la curva que hay al lado de la barra del
   presupuesto se abre un gráfico con lo que llevas gastado, la línea de ir
   parejo hasta el último día y, a puntos, adónde llegas a este ritmo (en rojo
