@@ -91,7 +91,9 @@ que necesitaba una conversión rápida. Ahora es un clic en la barra del navegad
   quedar en paz. Si un gasto no es de todos (el museo de Ana y tuyo), al
   pulsar su concepto sale la fila **Entre** con las caras: quitas a los que no
   entran, te dice lo que sale cada uno y en la lista se queda "👥 Solo Ana y
-  tú". Las cuentas lo reparten solo entre ellos. Entonces el por cabeza de
+  tú". Las cuentas lo reparten solo entre ellos. Y si no todos cuentan lo
+  mismo (la pareja, el niño), con la balanza ⚖ de esa fila pulsas su cara y
+  cuenta ×2, ×3 o ×½ ("👥 Ana ×2, Luis y tú"). Entonces el por cabeza de
   arriba pasa a ser lo tuyo ("tú 70,00"), en las cuentas sale lo que le toca
   a cada uno debajo de lo que puso, y en el resumen para WhatsApp, lo de
   cada uno con su nombre. Cuando alguien te lo da, le pulsas **Pagado** y deja de

@@ -4743,6 +4743,7 @@ body::after {
 /* Quién entra en el gasto: debajo de la nota, con las mismas caras que el pagador. */
 .gastos__entre-fila {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   gap: 4px;
   flex-shrink: 0;
@@ -4756,6 +4757,7 @@ body::after {
 }
 
 .gastos__entre-cara {
+  position: relative;
   min-width: 20px;
   height: 20px;
   border: 0;
@@ -4782,6 +4784,55 @@ body::after {
 
 .gastos__entre-cara.is-mal {
   animation: shake 400ms var(--ease);
+}
+
+/* Lo que cuenta cada uno, colgado de la cara para no ensanchar la fila. */
+.gastos__entre-cara[data-parte]::after {
+  content: attr(data-parte);
+  position: absolute;
+  top: -5px;
+  right: -6px;
+  padding: 1px 2px;
+  border-radius: 999px;
+  background: var(--brass);
+  color: var(--graphite);
+  font-size: 7.5px;
+  line-height: 1;
+}
+
+.gastos__entre-modo {
+  display: inline-grid;
+  place-items: center;
+  flex-shrink: 0;
+  width: 20px;
+  height: 20px;
+  margin-left: 4px;
+  padding: 0;
+  background: transparent;
+  border: 1px dashed var(--hairline-strong);
+  border-radius: 999px;
+  color: var(--muted);
+  font-size: 11px;
+  line-height: 1;
+  cursor: pointer;
+  transition: color var(--fast) var(--ease), border-color var(--fast) var(--ease), background var(--fast) var(--ease);
+}
+
+.gastos__entre-modo:hover,
+.gastos__entre-modo:focus-visible {
+  outline: none;
+  border-color: var(--brass);
+  color: var(--brass);
+}
+
+.gastos__entre-modo[aria-pressed="true"] {
+  background: color-mix(in srgb, var(--brass) 18%, transparent);
+  border: 1px solid var(--brass);
+  color: var(--brass);
+}
+
+.gastos__entre-modo.is-tic {
+  animation: pop var(--mid) var(--ease-spring);
 }
 
 .gastos__entre-cada {

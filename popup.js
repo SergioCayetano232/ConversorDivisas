@@ -3143,10 +3143,11 @@ function crearFilaGasto(gasto, i, peso, rey = false) {
   }
   texto.append(icono, que, de, cuanto);
   const entre = entreDe(gasto, personas);
-  if (entre) {
+  const partes = partesDe(gasto, personas);
+  if (entre || partes) {
     const linea = document.createElement("span");
     linea.className = "gastos__nota gastos__entre";
-    linea.textContent = fraseEntre(entre, gente);
+    linea.textContent = fraseEntre(entre ?? [...Array(personas).keys()], gente, partes, !entre);
     texto.classList.add("con-nota");
     texto.append(linea);
     texto.setAttribute("aria-label", `${texto.getAttribute("aria-label")}. ${linea.textContent}`);
@@ -5707,7 +5708,7 @@ function editarConcepto(gasto, que) {
     if (hecho) return;
     hecho = true;
     const conNota = guardar ? cambiarNota(gastos, gasto.id, notaCampo.value) : gastos;
-    const conEntre = guardar && entreFila ? cambiarEntre(conNota, gasto.id, [...elegidos], personas) : conNota;
+    const conEntre = guardar && entreFila ? cambiarEntre(conNota, gasto.id, [...elegidos], personas, pesos) : conNota;
     const renombrados = guardar ? cambiarConcepto(conEntre, gasto.id, campo.value) : gastos;
     const fechados = dia ? cambiarDia(renombrados, gasto.id, dia) : renombrados;
     const nuevos = fijo === undefined ? fechados : marcarFijo(fechados, gasto.id, fijo);
@@ -5774,6 +5775,8 @@ function editarConcepto(gasto, que) {
   // Siendo varios, quién entra. Al menos uno: un gasto de nadie no cuadra.
   const { personas, gente } = viajeActivo(viajes);
   const elegidos = new Set(entreDe(gasto, personas) ?? [...Array(personas).keys()]);
+  const pesos = { ...partesDe(gasto, personas) };
+  let modoPartes = Object.keys(pesos).length > 0;
   let entreFila = null;
   if (personas > 1) {
     entreFila = document.createElement("li");
@@ -5784,9 +5787,19 @@ function editarConcepto(gasto, que) {
     const cadaUno = document.createElement("span");
     cadaUno.className = "gastos__entre-cada";
     const pintarCada = () => {
-      cadaUno.textContent = elegidos.size < personas
-        ? tr("entre.cadaUno", { valor: `${nf.format(gasto.valor / elegidos.size)} ${gasto.to}` })
-        : "";
+      const cuentan = [...elegidos].map((i) => pesos[i] ?? 1);
+      const valor = (v) => `${nf.format(v)} ${gasto.to}`;
+      cadaUno.textContent = new Set(cuentan).size > 1
+        ? tr("entre.porParte", { valor: valor(gasto.valor / cuentan.reduce((a, b) => a + b, 0)) })
+        : elegidos.size < personas ? tr("entre.cadaUno", { valor: valor(gasto.valor / elegidos.size) }) : "";
+    };
+    const pintarCara = (cara, i) => {
+      const parte = elegidos.has(i) ? pesos[i] : undefined;
+      if (parte) cara.dataset.parte = `×${textoParte(parte)}`;
+      else delete cara.dataset.parte;
+      cara.setAttribute("aria-pressed", String(elegidos.has(i)));
+      const nombre = nombrePersona(gente, i);
+      cara.setAttribute("aria-label", parte ? tr("entre.personaPartes", { nombre, n: textoParte(parte) }) : tr("entre.persona", { nombre }));
     };
     const caras = [...Array(personas).keys()].map((i) => {
       const cara = document.createElement("button");
@@ -5795,23 +5808,39 @@ function editarConcepto(gasto, que) {
       cara.dataset.n = i % 6;
       cara.textContent = inicialPersona(gente, i);
       cara.title = nombrePersona(gente, i);
-      cara.setAttribute("aria-label", tr("entre.persona", { nombre: nombrePersona(gente, i) }));
-      cara.setAttribute("aria-pressed", String(elegidos.has(i)));
+      pintarCara(cara, i);
       cara.addEventListener("click", () => {
-        if (elegidos.has(i)) {
+        if (modoPartes && elegidos.has(i)) {
+          const siguiente = PARTES_VALIDAS[(PARTES_VALIDAS.indexOf(pesos[i] ?? 1) + 1) % PARTES_VALIDAS.length];
+          if (siguiente === 1) delete pesos[i];
+          else pesos[i] = siguiente;
+        } else if (elegidos.has(i)) {
           if (elegidos.size === 1) return restartAnimation(cara, "is-mal");
           elegidos.delete(i);
+          delete pesos[i];
         } else {
           elegidos.add(i);
         }
-        cara.setAttribute("aria-pressed", String(elegidos.has(i)));
+        pintarCara(cara, i);
         restartAnimation(cara, "is-tic");
         pintarCada();
       });
       return cara;
     });
+    const modo = document.createElement("button");
+    modo.type = "button";
+    modo.className = "gastos__entre-modo";
+    modo.textContent = "⚖";
+    modo.title = tr("entre.partes");
+    modo.setAttribute("aria-label", tr("entre.partes"));
+    modo.setAttribute("aria-pressed", String(modoPartes));
+    modo.addEventListener("click", () => {
+      modoPartes = !modoPartes;
+      modo.setAttribute("aria-pressed", String(modoPartes));
+      restartAnimation(modo, "is-tic");
+    });
     pintarCada();
-    entreFila.append(nombre, ...caras, cadaUno);
+    entreFila.append(nombre, ...caras, modo, cadaUno);
   }
   for (const caja of [campo, notaCampo]) {
     caja.addEventListener("keydown", (event) => {

@@ -1947,23 +1947,55 @@ function entreDe(gasto, personas) {
   return ahora.length < n ? ahora : null;
 }
 
-// "Solo Ana y tú": tú al final, que es como se dice.
-function fraseEntre(entre, gente) {
-  const nombres = entre.filter((i) => i !== 0).map((i) => nombrePersona(gente, i));
-  if (entre.includes(0)) nombres.push(tr("entre.tu"));
-  return tr("entre.solo", { nombres: new Intl.ListFormat(localeActual(), { type: "conjunction" }).format(nombres) });
+// Lo que cuenta cada uno en un gasto: la pareja, 2; el niño, ½. Solo guardo a
+// quien no cuenta 1, así los gastos de antes no cambian.
+const PARTES_VALIDAS = [1, 2, 3, 0.5];
+
+function leerPartes(partes) {
+  if (!partes || typeof partes !== "object" || Array.isArray(partes)) return null;
+  const buenas = Object.entries(partes).filter(([i, p]) => {
+    const quien = Number(i);
+    return Number.isInteger(quien) && quien >= 0 && quien < PERSONAS_MAX && p !== 1 && PARTES_VALIDAS.includes(p);
+  });
+  return buenas.length ? Object.fromEntries(buenas) : null;
 }
 
-function cambiarEntre(gastos, id, entre, personas) {
+const quienesEntran = (gasto, n) => entreDe(gasto, n) ?? [...Array(n).keys()];
+
+// Si todos cuentan lo mismo, aunque sea 2, es a partes iguales.
+function partesDe(gasto, personas) {
+  const n = leerPersonas(personas);
+  const guardadas = leerPartes(gasto.partes);
+  if (!guardadas) return null;
+  const entran = quienesEntran(gasto, n);
+  if (new Set(entran.map((i) => guardadas[i] ?? 1)).size < 2) return null;
+  return Object.fromEntries(entran.filter((i) => guardadas[i]).map((i) => [i, guardadas[i]]));
+}
+
+const esRepartoDesigual = (gasto, n) => Boolean(entreDe(gasto, n) || partesDe(gasto, n));
+
+const textoParte = (p) => (p === 0.5 ? "½" : String(p));
+
+// "Solo Ana y tú": tú al final, que es como se dice.
+function fraseEntre(entre, gente, partes = null, todos = false) {
+  const conParte = (i, nombre) => (partes?.[i] ? `${nombre} ×${textoParte(partes[i])}` : nombre);
+  const nombres = entre.filter((i) => i !== 0).map((i) => conParte(i, nombrePersona(gente, i)));
+  if (entre.includes(0)) nombres.push(conParte(0, tr("entre.tu")));
+  const lista = new Intl.ListFormat(localeActual(), { type: "conjunction" }).format(nombres);
+  return todos ? lista : tr("entre.solo", { nombres: lista });
+}
+
+function cambiarEntre(gastos, id, entre, personas, partes = null) {
   const gasto = gastos.find((g) => g.id === id);
   if (!gasto) return gastos;
   const nuevo = entreDe({ entre }, personas);
-  const antes = entreDe(gasto, personas);
-  if (String(nuevo) === String(antes)) return gastos;
+  const nuevas = partesDe({ entre, partes }, personas);
+  if (String(nuevo) === String(entreDe(gasto, personas))
+    && JSON.stringify(nuevas) === JSON.stringify(partesDe(gasto, personas))) return gastos;
   return gastos.map((g) => {
     if (g.id !== id) return g;
-    const { entre: _, ...resto } = g;
-    return nuevo ? { ...resto, entre: nuevo } : resto;
+    const { entre: _, partes: __, ...resto } = g;
+    return { ...resto, ...(nuevo ? { entre: nuevo } : {}), ...(nuevas ? { partes: nuevas } : {}) };
   });
 }
 
@@ -1971,7 +2003,7 @@ function cambiarEntre(gastos, id, entre, personas) {
 const NOTA_MAX = 80;
 const limpiarNota = (nota) => String(nota ?? "").replace(/\s+/g, " ").trim().slice(0, NOTA_MAX);
 
-function crearGasto({ id, from, to, cantidad, valor, concepto = "", cuando, categoria, pago, comision, pagador, fijo, nota, entre }) {
+function crearGasto({ id, from, to, cantidad, valor, concepto = "", cuando, categoria, pago, comision, pagador, fijo, nota, entre, partes }) {
   // Al céntimo: con la comisión salía 90,5148 y en el CSV se veía la cola.
   const gasto = {
     id, from, to, cantidad, cuando,
@@ -1985,6 +2017,7 @@ function crearGasto({ id, from, to, cantidad, valor, concepto = "", cuando, cate
   if (fijo === true) gasto.fijo = true;
   if (limpiarNota(nota)) gasto.nota = limpiarNota(nota);
   if (leerEntre(entre)) gasto.entre = leerEntre(entre);
+  if (leerPartes(partes)) gasto.partes = leerPartes(partes);
   return esGastoBueno(gasto) && from !== to ? gasto : null;
 }
 
@@ -1998,7 +2031,7 @@ function devolucionDe(gasto, { id, cuando }) {
   const sinComision = gasto.valor / (1 + leerComision(gasto.comision) / 100);
   const devuelto = crearGasto({
     id, cuando, from: gasto.from, to: gasto.to, cantidad: -gasto.cantidad, valor: -sinComision,
-    concepto: gasto.concepto, categoria: gasto.categoria, pago: gasto.pago, comision: 0, pagador: gasto.pagador, entre: gasto.entre,
+    concepto: gasto.concepto, categoria: gasto.categoria, pago: gasto.pago, comision: 0, pagador: gasto.pagador, entre: gasto.entre, partes: gasto.partes,
   });
   return devuelto && Number.isFinite(gasto.alBce) ? { ...devuelto, alBce: -gasto.alBce } : devuelto;
 }
@@ -2007,7 +2040,7 @@ function leerGastos(guardado) {
   if (!Array.isArray(guardado)) return [];
   // Los de antes de las categorías no traen ninguna: la saco del concepto, como
   // al apuntarlos, y si no dice nada van a "otros".
-  return guardado.filter(esGastoBueno).slice(0, GASTOS_MAX).map(({ pagador, fijo, nota, entre, alBce, ...g }) => ({
+  return guardado.filter(esGastoBueno).slice(0, GASTOS_MAX).map(({ pagador, fijo, nota, entre, partes, alBce, ...g }) => ({
     ...g,
     categoria: esCategoria(g.categoria) ? g.categoria : adivinarCategoria(g.concepto) ?? CATEGORIA_POR_DEFECTO,
     pago: leerPago(g.pago),
@@ -2017,6 +2050,7 @@ function leerGastos(guardado) {
     ...(fijo === true ? { fijo: true } : {}),
     ...(typeof nota === "string" && limpiarNota(nota) ? { nota: limpiarNota(nota) } : {}),
     ...(leerEntre(entre) ? { entre: leerEntre(entre) } : {}),
+    ...(leerPartes(partes) ? { partes: leerPartes(partes) } : {}),
     ...(Number.isFinite(alBce) && Math.sign(alBce) === Math.sign(g.valor) ? { alBce } : {}),
   }));
 }
@@ -2051,6 +2085,20 @@ function repartirCentimos(total, n) {
   const centimos = Math.round(total * 100);
   const base = Math.floor(centimos / n);
   return Array.from({ length: n }, (_, i) => (base + (i < centimos - base * n ? 1 : 0)) / 100);
+}
+
+// En céntimos enteros. Los que sobran van a quien más decimales perdió, y si
+// empatan, al primero: con todos a 1 sale lo mismo que repartirCentimos.
+function repartirPorPartes(centimos, pesos) {
+  // Por dos para que el ½ también sea un entero y no se cuelen decimales.
+  const enteros = pesos.map((p) => p * 2);
+  const suma = enteros.reduce((a, b) => a + b, 0);
+  const base = enteros.map((p) => Math.floor((centimos * p) / suma));
+  const sobran = centimos - base.reduce((a, b) => a + b, 0);
+  const orden = enteros.map((p, i) => ({ i, resto: centimos * p - base[i] * suma }))
+    .sort((a, b) => b.resto - a.resto || a.i - b.i);
+  orden.slice(0, sobran).forEach(({ i }) => { base[i] += 1; });
+  return base;
 }
 
 function repartirNoches(gasto, noches) {
@@ -2287,7 +2335,7 @@ function consumoGente(gastos, personas) {
   const total = cuentas.gente.reduce((suma, p) => suma + p.parte, 0);
   return {
     to: cuentas.to,
-    igual: !gastos.some((g) => g.to === cuentas.to && entreDe(g, n)),
+    igual: !gastos.some((g) => g.to === cuentas.to && esRepartoDesigual(g, n)),
     gente: cuentas.gente.map((p, i) => ({
       parte: p.parte,
       fraccion: total > 0 ? p.parte / total : 0,
@@ -2341,13 +2389,14 @@ function cuentasViaje(gastos, personas, saldados = []) {
     const quien = leerPagador(g.pagador);
     const centimos = Math.round(g.valor * 100);
     pagado[quien < n ? quien : 0] += centimos;
-    const entre = entreDe(g, n) ?? [...Array(n).keys()];
-    const clave = entre.join(",");
-    grupos.set(clave, { entre, centimos: (grupos.get(clave)?.centimos ?? 0) + centimos });
+    const entre = quienesEntran(g, n);
+    const reparto = partesDe(g, n);
+    const clave = `${entre.join(",")}|${JSON.stringify(reparto)}`;
+    grupos.set(clave, { entre, pesos: entre.map((i) => reparto?.[i] ?? 1), centimos: (grupos.get(clave)?.centimos ?? 0) + centimos });
   }
   const partes = Array(n).fill(0);
-  for (const { entre, centimos } of grupos.values()) {
-    repartirCentimos(centimos / 100, entre.length).forEach((p, k) => { partes[entre[k]] += Math.round(p * 100); });
+  for (const { entre, pesos, centimos } of grupos.values()) {
+    repartirPorPartes(centimos, pesos).forEach((c, k) => { partes[entre[k]] += c; });
   }
   const saldo = pagado.map((p, i) => p - partes[i]);
 
@@ -2447,14 +2496,23 @@ function mensajeCobro({ nombre, gastos, personas, gente, saldados }, quien) {
     return lineas.join(" · ");
   };
 
-  const igual = !delPrincipal.some((g) => entreDe(g, n));
+  const igual = !delPrincipal.some((g) => esRepartoDesigual(g, n));
   const lineas = [
     `*🧳 ${nombre}*`,
     tr(igual ? "cobro.toca" : "cobro.tocaDe", { nombre: nombrePersona(gente, quien), parte: `*${dinero(suyo.parte)}*`, total: dinero(total), n }),
   ];
-  const conEl = delPrincipal.filter((g) => entreDe(g, n)?.includes(quien));
+  const conEl = delPrincipal.filter((g) => !partesDe(g, n) && entreDe(g, n)?.includes(quien));
   if (conEl.length) {
     lineas.push(`👥 ${tr("cobro.algunos", { gastos: lista(conEl, (g) => tr("cobro.entre", { que: que(g), valor: nf.format(g.valor), n: entreDe(g, n).length })) })}`);
+  }
+  const aPartes = delPrincipal.filter((g) => partesDe(g, n) && quienesEntran(g, n).includes(quien));
+  if (aPartes.length) {
+    const cuantas = numeros({ maximumFractionDigits: 1 });
+    lineas.push(`⚖️ ${tr("cobro.aPartes", { gastos: lista(aPartes, (g) => {
+      const reparto = partesDe(g, n);
+      const total = quienesEntran(g, n).reduce((suma, i) => suma + (reparto[i] ?? 1), 0);
+      return tr("cobro.parte", { que: que(g), valor: nf.format(g.valor), suyas: cuantas.format(reparto[quien] ?? 1), total: cuantas.format(total) });
+    }) })}`);
   }
   // El que ya no está cuenta como tú, igual que en las cuentas.
   const puso = delPrincipal.filter((g) => { const p = leerPagador(g.pagador); return (p < n ? p : 0) === quien; });
@@ -6998,7 +7056,7 @@ if (typeof module !== "undefined") {
     CATEGORIAS, CATEGORIA_POR_DEFECTO, CATEGORIAS_PROPIAS_MAX, NOMBRE_CATEGORIA_MAX, esCategoria, leerCategoriasPropias, ponerCategoriasPropias, todasCategorias, nombreCategoria, emojiCategoria, crearCategoriaPropia, quitarCategoriaPropia, sinCategoria, adivinarCategoria, PAGOS, PAGO_POR_DEFECTO, leerPago, comisionDelPago, desglose, conceptosUsados, completarConcepto,
     EMOJI_CATEGORIA, destacados, resumenParaCompartir, FINDE_MINIMO, findeContraSemana, ESTRELLA_MINIMO, conceptoEstrella,
     COPIA_APP, COPIA_VERSION, CLAVES_COPIA, CLAVES_SYNC, limpiarSync, cambiosSync, mezclaInicial, limpiarCopia, crearCopia, leerCopia, resumenCopia,
-    presupuestoSugerido,
+    presupuestoSugerido, PARTES_VALIDAS, leerPartes, partesDe, repartirPorPartes, textoParte,
     VIAJES_MAX, NOMBRE_VIAJE_MAX, leerViajes, leerPersonas, porPersona, consumoGente, leerPagador, leerGente, ponerNombre, nombrePersona, inicialPersona, cuentasViaje, frasePago, COBRO_GASTOS_MAX, mensajeCobro, leerEntre, entreDe, fraseEntre, cambiarEntre, leerSaldados, saldarPago, quitarSaldado, fraseSaldado, hayOtrosPagadores, NOMBRE_PERSONA_MAX, compararViajes, COLORES_VIAJE, leerColorViaje, colorLibre, siguienteColor, viajeActivo, ARCHIVADOS_MAX, archivarViaje, desarchivarViaje, borrarArchivado, todosLosViajes, crearViaje, nombreCopia, nombreDeDestino, duplicarViaje, renombrarViaje, elegirViaje, borrarViaje, moverGasto, cambiarViaje, TRAMOS_MAX, NOMBRE_TRAMO_MAX, leerTramos, ponerTramo, quitarTramo, tramoDelDia, resumenTramos, curvaPresupuesto, FRANJAS, HORAS_MINIMO, horaFiable, porFranja, PENDIENTES_MAX, leerPendientes, crearPendiente, apuntarPendiente, quitarPendiente, totalPendiente, pagarPendiente, resumenViaje, archivoGastos,
     diasHasta, leerPresupuesto, leerTopes, PRESUPUESTO_JUSTO, estadoPresupuesto, estadoTopes, alDiaAlli, inicioDelViaje, diaDelViaje, cuentaAtras, textoCuentaAtras, huchaViaje, loDeHoy, CELEBRADOS_MAX, leerCelebrados, anadirCelebrado, viajeParaCelebrar, textoCelebrar, RACHA_MINIMA, rachaPresupuesto, hastaCuandoLlega, previsionViaje, PREVISION_JUSTA, textoPrevision, loQueSeLleva, redondearDias,
     EXTRAS_MAX, EXTRAS_POR_DEFECTO, leerExtras, anadirExtra, quitarExtra,
