@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>ConversorDivisas · Nota de gastos</title>
+  <link rel="icon" href="icons/icon48.png">
+  <link rel="stylesheet" href="copia.css">
+  <link rel="stylesheet" href="nota.css">
+</head>
+<body>
+  <main class="pagina pagina--ancha">
+    <header class="cabeza">
+      <img class="cabeza__logo" src="icons/icon128.png" alt="" width="44" height="44">
+      <div>
+        <p class="cabeza__app">ConversorDivisas</p>
+        <h1 class="cabeza__titulo" data-t="nota.titulo">Nota de gastos</h1>
+      </div>
+    </header>
+    <p class="intro" data-t="nota.intro">Lista para imprimir o guardar en PDF.</p>
+
+    <section class="tarjeta nota" id="nota" hidden>
+      <h2 class="nota__viaje" id="nota-viaje"></h2>
+      <p class="nota__periodo" id="nota-periodo"></p>
+      <div class="nota__tabla">
+        <table>
+          <thead>
+            <tr>
+              <th data-t="csv.fecha">Fecha</th>
+              <th data-t="csv.concepto">Concepto</th>
+              <th data-t="csv.categoria">Categoría</th>
+              <th data-t="csv.pago">Pago</th>
+              <th class="nota__cifra" data-t="csv.cantidad">Cantidad</th>
+              <th class="nota__cifra" data-t="csv.importe">Importe</th>
+            </tr>
+          </thead>
+          <tbody id="nota-filas"></tbody>
+          <tfoot id="nota-totales"></tfoot>
+        </table>
+      </div>
+      <p class="nota__pie" data-t="nota.pie">Importes al cambio del día de cada gasto, comisión incluida.</p>
+      <button class="boton boton--dorado" type="button" id="imprimir">
+        <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4.5 6V2.5h7V6"/><rect x="2" y="6" width="12" height="5.5" rx="1"/><path d="M4.5 9.5h7v4h-7z"/></svg>
+        <span data-t="empresa.imprimir">Imprimir</span>
+      </button>
+    </section>
+    <p class="error" id="error" role="alert" hidden></p>
+  </main>
+
+  <script src="textos.js"></script>
+  <script src="logica.js"></script>
+  <script src="nota.js"></script>
+</body>
+</html>

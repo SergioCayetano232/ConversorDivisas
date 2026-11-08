@@ -1849,6 +1849,7 @@ function sinCategoria(viajes, id) {
   const cambiar = (v) => {
     const gastos = v.gastos.map((g) => (g.categoria === id ? { ...g, categoria: CATEGORIA_POR_DEFECTO } : g));
     const pendientes = v.pendientes?.map((p) => (p.categoria === id ? { ...p, categoria: CATEGORIA_POR_DEFECTO } : p));
+    const empresa = v.empresa?.map((g) => (g.categoria === id ? { ...g, categoria: CATEGORIA_POR_DEFECTO } : g));
     let presupuesto = v.presupuesto;
     const tope = presupuesto?.categorias?.[id];
     if (tope) {
@@ -1856,7 +1857,7 @@ function sinCategoria(viajes, id) {
       const categorias = { ...resto, [CATEGORIA_POR_DEFECTO]: (resto[CATEGORIA_POR_DEFECTO] ?? 0) + tope };
       presupuesto = { ...presupuesto, categorias };
     }
-    return { ...v, gastos, presupuesto, ...(pendientes ? { pendientes } : {}) };
+    return { ...v, gastos, presupuesto, ...(pendientes ? { pendientes } : {}), ...(empresa ? { empresa } : {}) };
   };
   const nuevos = { ...viajes, lista: viajes.lista.map(cambiar) };
   return viajes.archivados ? { ...nuevos, archivados: viajes.archivados.map(cambiar) } : nuevos;
@@ -2542,6 +2543,7 @@ const leerViaje = (v) => ({
   ...(leerSaldados(v.saldados).length ? { saldados: leerSaldados(v.saldados) } : {}),
   ...(leerTramos(v.tramos).length ? { tramos: leerTramos(v.tramos) } : {}),
   ...(leerPendientes(v.pendientes).length ? { pendientes: leerPendientes(v.pendientes) } : {}),
+  ...(leerGastos(v.empresa).length ? { empresa: leerGastos(v.empresa) } : {}),
 });
 
 // Sin archivados no lo guardo: así lo de antes sale igual que siempre.
@@ -3203,7 +3205,7 @@ function redondoDeCajero(n) {
 // Cuánto sacar para lo que queda de viaje, a lo que te toca al día. Cuenta solo
 // la parte que sueles pagar en efectivo; sin gastos aún, todo, que es lo seguro.
 // La tasa es de la divisa del cajero a la del presupuesto.
-function cuantoSacar(presupuesto, gastos, retiradas, divisa, tasa, hoyIso = hoy()) {
+function cuantoSacar(presupuesto, gastos, retiradas, divisa, tasa, hoyIso = hoy(), empresa = []) {
   const estado = estadoPresupuesto(presupuesto, gastos, hoyIso);
   if (!estado?.porDia || !(tasa > 0) || divisa === presupuesto.to) return null;
   const contados = gastos.filter((g) => g.to === presupuesto.to);
@@ -3211,7 +3213,7 @@ function cuantoSacar(presupuesto, gastos, retiradas, divisa, tasa, hoyIso = hoy(
   const parte = contados.length ? enEfectivo / estado.gastado : 1;
   if (!(parte > 0)) return null;
   const hace = (estado.porDia * estado.dias * parte) / tasa;
-  const cuenta = efectivoQueda(retiradas, gastos).find((c) => c.divisa === divisa);
+  const cuenta = efectivoQueda(retiradas, [...gastos, ...empresa]).find((c) => c.divisa === divisa);
   const tienes = Math.max(cuenta?.queda ?? 0, 0);
   const falta = hace - tienes;
   return { sacar: falta > 0 ? redondoDeCajero(falta) : 0, divisa, dias: estado.dias, parte, tienes };
@@ -3220,9 +3222,9 @@ function cuantoSacar(presupuesto, gastos, retiradas, divisa, tasa, hoyIso = hoy(
 // El último día y a la vuelta, lo que queda en la cartera ya no es para el
 // viaje: te digo cuánto vale en tu divisa, para gastarlo o cambiarlo. Sin fecha
 // de vuelta no sé cuándo acaba, y no digo nada.
-function loQueSobra(presupuesto, gastos, retiradas, tasa, hoyIso = hoy()) {
+function loQueSobra(presupuesto, gastos, retiradas, tasa, hoyIso = hoy(), empresa = []) {
   if (!presupuesto?.hasta || hoyIso < presupuesto.hasta) return null;
-  const [cuenta] = efectivoQueda(retiradas, gastos);
+  const [cuenta] = efectivoQueda(retiradas, [...gastos, ...empresa]);
   if (!cuenta || cuenta.queda <= 0) return null;
   const valor = cuenta.divisa === presupuesto.to ? cuenta.queda
     : Number.isFinite(tasa) && tasa > 0 ? cuenta.queda * tasa
@@ -3272,6 +3274,45 @@ function presupuestoSugerido(viajes, to, dias) {
   const porDia = mediana(medias);
   const importe = redondoPresupuesto(porDia * dias);
   return importe > 0 ? { porDia, dias, importe, to, viajes: medias.length } : null;
+}
+
+// Lo que te paga el trabajo. En su propia lista, como los pendientes: así no
+// cuenta en nada de lo tuyo sin tener que filtrarlo en cada cuenta.
+const puedeSerDeEmpresa = (g) => !g.pagador;
+const delMasNuevo = (a, b) => b.cuando - a.cuando;
+
+function pasarAEmpresa(gastos, empresa, id) {
+  const gasto = gastos.find((g) => g.id === id);
+  const lista = empresa ?? [];
+  if (!gasto || !puedeSerDeEmpresa(gasto) || lista.length >= GASTOS_MAX) return null;
+  return { gastos: gastos.filter((g) => g.id !== id), empresa: [...lista, gasto].sort(delMasNuevo) };
+}
+
+function sacarDeEmpresa(gastos, empresa, id) {
+  const lista = empresa ?? [];
+  const gasto = lista.find((g) => g.id === id);
+  if (!gasto || gastos.length >= GASTOS_MAX) return null;
+  return { gastos: [...gastos, gasto].sort(delMasNuevo), empresa: lista.filter((g) => g.id !== id) };
+}
+
+// Del primero al último, que es como se entrega una nota de gastos.
+function notaDeGastos(viaje) {
+  const lista = [...(viaje?.empresa ?? [])].sort((a, b) => a.cuando - b.cuando);
+  if (!lista.length) return null;
+  const dia = (g) => isoLocal(new Date(g.cuando));
+  return {
+    nombre: viaje.nombre || tr("viajes.sinNombre"),
+    desde: dia(lista[0]),
+    hasta: dia(lista.at(-1)),
+    filas: lista.map((g) => ({
+      dia: dia(g),
+      concepto: g.concepto || nombreCategoria(g.categoria),
+      categoria: nombreCategoria(g.categoria),
+      cantidad: g.cantidad, from: g.from, valor: g.valor, to: g.to,
+      pago: tr(`pago.${leerPago(g.pago)}`),
+    })),
+    totales: sumarPorDivisa(lista),
+  };
 }
 
 // Los tramos del viaje: "desde el 4 estoy en Kioto". Cada uno dura hasta que
@@ -7147,7 +7188,7 @@ function juntarGastos(viaje, nuevos, personas) {
 function resumenCopia(datos) {
   return {
     viajes: todosLosViajes(datos.viajes).length,
-    gastos: todosLosViajes(datos.viajes).reduce((suma, v) => suma + v.gastos.length, 0),
+    gastos: todosLosViajes(datos.viajes).reduce((suma, v) => suma + v.gastos.length + (v.empresa?.length ?? 0), 0),
     avisos: datos.avisos?.length ?? 0,
     conversiones: datos.historialConversiones?.length ?? 0,
   };
@@ -7178,6 +7219,7 @@ if (typeof module !== "undefined") {
     EMOJI_CATEGORIA, destacados, resumenParaCompartir, FINDE_MINIMO, findeContraSemana, ESTRELLA_MINIMO, conceptoEstrella,
     COPIA_APP, COPIA_VERSION, CLAVES_COPIA, CLAVES_SYNC, limpiarSync, cambiosSync, mezclaInicial, limpiarCopia, crearCopia, leerCopia, resumenCopia,
     crearPaquete, leerPaquete, quienEsQuien, mapaValido, gastosParaJuntar, juntarGastos,
+    puedeSerDeEmpresa, pasarAEmpresa, sacarDeEmpresa, notaDeGastos,
     AVISO_MEJOR_DIAS, techoDeSerie, crearAvisoMejor, ponerTechos,
     presupuestoSugerido, PARTES_VALIDAS, leerPartes, partesDe, repartirPorPartes, textoParte,
     VIAJES_MAX, NOMBRE_VIAJE_MAX, leerViajes, leerPersonas, porPersona, consumoGente, leerPagador, leerGente, ponerNombre, nombrePersona, inicialPersona, cuentasViaje, frasePago, COBRO_GASTOS_MAX, mensajeCobro, leerEntre, entreDe, fraseEntre, cambiarEntre, leerSaldados, saldarPago, quitarSaldado, fraseSaldado, hayOtrosPagadores, NOMBRE_PERSONA_MAX, compararViajes, COLORES_VIAJE, leerColorViaje, colorLibre, siguienteColor, viajeActivo, ARCHIVADOS_MAX, archivarViaje, desarchivarViaje, borrarArchivado, todosLosViajes, crearViaje, nombreCopia, nombreDeDestino, duplicarViaje, renombrarViaje, elegirViaje, borrarViaje, moverGasto, cambiarViaje, TRAMOS_MAX, NOMBRE_TRAMO_MAX, leerTramos, ponerTramo, quitarTramo, tramoDelDia, resumenTramos, curvaPresupuesto, FRANJAS, HORAS_MINIMO, horaFiable, porFranja, PENDIENTES_MAX, leerPendientes, crearPendiente, apuntarPendiente, quitarPendiente, totalPendiente, pagarPendiente, resumenViaje, archivoGastos,

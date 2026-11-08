@@ -125,6 +125,12 @@ const el = {
   gentePagos: document.getElementById("gente-pagos"),
   gastosTramo: document.getElementById("gastos-tramo"),
   gastosPendiente: document.getElementById("gastos-pendiente"),
+  gastosEmpresa: document.getElementById("gastos-empresa"),
+  empresa: document.getElementById("empresa"),
+  empresaLista: document.getElementById("empresa-lista"),
+  empresaTotal: document.getElementById("empresa-total"),
+  empresaCsv: document.getElementById("empresa-csv"),
+  empresaImprimir: document.getElementById("empresa-imprimir"),
   pendientes: document.getElementById("pendientes"),
   pendientesLista: document.getElementById("pendientes-lista"),
   pendientesForm: document.getElementById("pendientes-form"),
@@ -2857,6 +2863,7 @@ function abrirHoras() {
   cerrarCajero();
   cerrarTramos();
   cerrarPendientes();
+  cerrarEmpresa();
   cerrarCurva();
   cerrarGente();
   cerrarCategorias();
@@ -3380,12 +3387,12 @@ const cifraEfectivo = (n, divisa) => `${Number.isInteger(n) ? nfEntero.format(n)
 // Con algo sacado, lo que te queda; si no, lo pagado en efectivo como antes.
 // Y si vas a pagar en efectivo y no hay nada, la invitación a apuntarlo.
 function pintarEfectivo() {
-  const [cuenta] = efectivoQueda(cajero, gastos);
+  const [cuenta] = efectivoQueda(cajero, [...gastos, ...deEmpresa()]);
   const pagado = pagadoEnEfectivo(gastos);
   const habia = el.gastosEfectivo.textContent;
   let texto = "";
   const sobra = cuenta && presupuesto
-    ? loQueSobra(presupuesto, gastos, cajero, tasaDeHoy(cuenta.divisa, presupuesto.to))
+    ? loQueSobra(presupuesto, gastos, cajero, tasaDeHoy(cuenta.divisa, presupuesto.to), hoy(), deEmpresa())
     : null;
   if (sobra) {
     const dice = tr(sobra.cuando === "ultimo" ? "cajero.sobraUltimo" : "cajero.sobra", { importe: cifraEfectivo(sobra.queda, sobra.divisa) });
@@ -3433,7 +3440,7 @@ function pintarCajero() {
   el.cajeroEn.textContent = el.to.value;
   el.cajeroCoste.title = tr("cajero.costeTitulo", { divisa: el.to.value });
   pintarPistaCoste();
-  el.cajeroCuentas.replaceChildren(...efectivoQueda(cajero, gastos).map((cuenta) => {
+  el.cajeroCuentas.replaceChildren(...efectivoQueda(cajero, [...gastos, ...deEmpresa()]).map((cuenta) => {
     const fila = document.createElement("li");
     fila.className = "cajero__cuenta";
     fila.dataset.tono = tonoEfectivo(cuenta);
@@ -3708,7 +3715,7 @@ function cerrarGente() {
 function pintarSugerenciaCajero() {
   const boton = el.cajeroSugerencia;
   const tasa = presupuesto && el.to.value === presupuesto.to ? rate : null;
-  const s = presupuesto ? cuantoSacar(presupuesto, gastos, cajero, el.from.value, tasa) : null;
+  const s = presupuesto ? cuantoSacar(presupuesto, gastos, cajero, el.from.value, tasa, hoy(), deEmpresa()) : null;
   const habia = boton.textContent;
   boton.hidden = !s;
   if (!s) return;
@@ -3809,6 +3816,107 @@ function pintarTramos() {
 
 // Con algo pendiente, cuánto suma. Si no hay nada, la invitación solo con
 // presupuesto: es donde se nota.
+const deEmpresa = () => viajeActivo(viajes).empresa ?? [];
+
+function pintarEmpresa() {
+  const lista = deEmpresa();
+  el.gastosEmpresa.hidden = lista.length === 0;
+  if (lista.length === 0) {
+    cerrarEmpresa();
+    return;
+  }
+  const principal = sumarPorDivisa(lista)[0];
+  el.gastosEmpresa.textContent = tr("empresa.boton", { valor: nf.format(principal.total) });
+  el.gastosEmpresa.title = tr("empresa.botonTitulo", { n: lista.length });
+  if (el.empresa.hidden) return;
+  el.empresaTotal.textContent = sumarPorDivisa(lista).map((t) => `${nf.format(t.total)} ${t.to}`).join(" + ");
+  el.empresaLista.replaceChildren(...lista.map((g, i) => {
+    const concepto = g.concepto || tr("gastos.sinConcepto");
+    const fila = document.createElement("li");
+    fila.className = "pendientes__fila";
+    fila.style.setProperty("--i", Math.min(i, 8));
+    const que = document.createElement("span");
+    que.className = "pendientes__que";
+    que.textContent = `${emojiCategoria(g.categoria)} ${concepto}`;
+    const cuanto = document.createElement("span");
+    cuanto.className = "pendientes__cuanto";
+    cuanto.textContent = `${fechaCorta(isoLocal(new Date(g.cuando)))} · ${nf.format(g.valor)} ${g.to}`;
+    const volver = document.createElement("button");
+    volver.type = "button";
+    volver.className = "gastos__quitar historial__quitar";
+    volver.textContent = "↩";
+    volver.title = tr("empresa.volverTitulo");
+    volver.setAttribute("aria-label", tr("empresa.volver", { concepto }));
+    volver.addEventListener("click", () => onSacarDeEmpresa(g.id));
+    fila.append(que, cuanto, volver);
+    return fila;
+  }));
+}
+
+function abrirEmpresa() {
+  cerrarViajes();
+  cerrarCajero();
+  cerrarTramos();
+  cerrarPendientes();
+  cerrarCurva();
+  cerrarHoras();
+  cerrarGente();
+  cerrarCategorias();
+  dejarDeEditarPresupuesto();
+  const arriba = el.gastosSuma.getBoundingClientRect().bottom - el.gastos.getBoundingClientRect().top;
+  el.empresa.style.setProperty("--cajero-arriba", `${Math.round(arriba) + 4}px`);
+  el.empresa.hidden = false;
+  el.gastosEmpresa.setAttribute("aria-expanded", "true");
+  pintarEmpresa();
+  el.empresaCsv.focus();
+}
+
+function cerrarEmpresa() {
+  if (el.empresa.hidden) return false;
+  el.empresa.hidden = true;
+  el.gastosEmpresa.setAttribute("aria-expanded", "false");
+  return true;
+}
+
+function onPasarAEmpresa(id) {
+  const indice = gastos.findIndex((g) => g.id === id);
+  const r = pasarAEmpresa(gastos, deEmpresa(), id);
+  if (!r) return;
+  const gasto = gastos[indice];
+  const fila = el.gastosLista.querySelector(`[data-id="${id}"]`);
+  const pasar = () => {
+    gastos = r.gastos;
+    viajes = cambiarViaje(viajes, viajes.activo, { empresa: r.empresa });
+    guardarViajes();
+    pintarGastos();
+    ofrecerDeshacer({ empresa: { gasto, indice } });
+    (el.gastosLista.querySelector(".gastos__quitar") ?? el.gastosConcepto).focus();
+  };
+  if (sinMovimiento.matches || !fila) return pasar();
+  fila.classList.remove("is-nueva");
+  fila.classList.add("is-saliendo");
+  fila.addEventListener("animationend", pasar, { once: true });
+}
+
+function onSacarDeEmpresa(id) {
+  const r = sacarDeEmpresa(gastos, deEmpresa(), id);
+  if (!r) return;
+  gastos = r.gastos;
+  viajes = cambiarViaje(viajes, viajes.activo, { empresa: r.empresa });
+  gastoNuevo = id;
+  guardarViajes();
+  pintarGastos();
+  (el.empresaLista.querySelector(".gastos__quitar") ?? el.gastosEmpresa).focus();
+}
+
+function onCsvEmpresa() {
+  descargarCsv(csvGastos(deEmpresa()), `${archivoGastos(viajeActivo(viajes).nombre)}-${tr("empresa.archivo")}`, el.empresaCsv);
+}
+
+function onImprimirEmpresa() {
+  chrome.tabs.create({ url: `nota.html?viaje=${encodeURIComponent(viajes.activo)}` });
+}
+
 function pintarPendiente() {
   const { pendientes } = viajeActivo(viajes);
   const lista = leerPendientes(pendientes);
@@ -3979,6 +4087,7 @@ function abrirCurva() {
   cerrarCajero();
   cerrarTramos();
   cerrarPendientes();
+  cerrarEmpresa();
   cerrarHoras();
   cerrarGente();
   cerrarCategorias();
@@ -4110,6 +4219,7 @@ function abrirTramos() {
   cerrarViajes();
   cerrarCajero();
   cerrarPendientes();
+  cerrarEmpresa();
   cerrarCurva();
   cerrarHoras();
   cerrarGente();
@@ -4163,6 +4273,7 @@ function abrirCajero() {
   cerrarViajes();
   cerrarTramos();
   cerrarPendientes();
+  cerrarEmpresa();
   cerrarCurva();
   cerrarHoras();
   cerrarGente();
@@ -4257,6 +4368,7 @@ function pintarGastos() {
   pintarEfectivo();
   pintarTramo();
   pintarPendiente();
+  pintarEmpresa();
   pintarPersonas();
   pintarPagador();
   if (!el.gente.hidden) pintarCuentasGente();
@@ -5294,6 +5406,7 @@ function abrirViajes() {
   cerrarCajero();
   cerrarTramos();
   cerrarPendientes();
+  cerrarEmpresa();
   cerrarCurva();
   cerrarHoras();
   cerrarGente();
@@ -5332,6 +5445,7 @@ function ponerViaje(nuevos) {
   cerrarCajero();
   cerrarTramos();
   cerrarPendientes();
+  cerrarEmpresa();
   cerrarCurva();
   cerrarHoras();
   cerrarGente();
@@ -5613,6 +5727,7 @@ function cerrarGastos() {
   cerrarCajero();
   cerrarTramos();
   cerrarPendientes();
+  cerrarEmpresa();
   cerrarCurva();
   cerrarHoras();
   cerrarGente();
@@ -5751,6 +5866,19 @@ function editarConcepto(gasto, que) {
       onDevolverGasto(gastos.find((g) => g.id === gasto.id) ?? gasto);
     });
     notaFila.append(vuelta);
+  }
+  if (puedeSerDeEmpresa(gasto)) {
+    const trabajo = document.createElement("button");
+    trabajo.type = "button";
+    trabajo.className = "gastos__devolver gastos__a-empresa";
+    trabajo.textContent = "💼";
+    trabajo.title = tr("empresa.pasar");
+    trabajo.setAttribute("aria-label", tr("empresa.pasar"));
+    trabajo.addEventListener("click", () => {
+      acabar(true);
+      onPasarAEmpresa(gasto.id);
+    });
+    notaFila.append(trabajo);
   }
   const otros = viajes.lista.filter((v) => v.id !== viajes.activo);
   if (otros.length) {
@@ -5977,7 +6105,9 @@ function onQuitarGasto(id, fila) {
 // pasar el ratón por encima.
 function ofrecerDeshacer(nuevo) {
   quitado = nuevo;
-  if (nuevo.movido) {
+  if (nuevo.empresa) {
+    el.deshacerTexto.textContent = tr("empresa.pasado", { concepto: nuevo.empresa.gasto.concepto || tr("gastos.sinConcepto") });
+  } else if (nuevo.movido) {
     const { gasto, a } = nuevo.movido;
     const destino = viajes.lista.find((v) => v.id === a);
     el.deshacerTexto.textContent = tr("mover.hecho", { concepto: gasto.concepto || tr("gastos.sinConcepto"), viaje: destino ? nombreViaje(destino) : "" });
@@ -6008,6 +6138,19 @@ function olvidarDeshacer() {
 
 function onDeshacer() {
   if (!quitado) return;
+  if (quitado.empresa) {
+    const { gasto, indice } = quitado.empresa;
+    gastos = devolverGasto(gastos, gasto, indice);
+    viajes = cambiarViaje(viajes, viajes.activo, { empresa: deEmpresa().filter((g) => g.id !== gasto.id) });
+    gastoNuevo = gasto.id;
+    if (filtroCategoria && filtroCategoria !== gasto.categoria) filtroCategoria = null;
+    dejarVerGasto(gasto);
+    olvidarDeshacer();
+    guardarViajes();
+    pintarGastos();
+    (el.gastosLista.querySelector(`[data-id="${gasto.id}"] .gastos__quitar`) ?? el.gastosConcepto).focus();
+    return;
+  }
   if (quitado.movido) {
     const { gasto, indice, a } = quitado.movido;
     viajes = moverGasto(viajes, gasto.id, a, viajes.activo, indice);
@@ -7589,6 +7732,9 @@ function bindEvents() {
   el.curvaSvg.addEventListener("blur", () => mirarCurva(null));
   el.curvaSvg.addEventListener("keydown", onTeclaCurva);
   el.gastosPendiente.addEventListener("click", () => (el.pendientes.hidden ? abrirPendientes() : cerrarPendientes()));
+  el.gastosEmpresa.addEventListener("click", () => (el.empresa.hidden ? abrirEmpresa() : cerrarEmpresa()));
+  el.empresaCsv.addEventListener("click", onCsvEmpresa);
+  el.empresaImprimir.addEventListener("click", onImprimirEmpresa);
   el.pendientesForm.addEventListener("submit", onApuntarPendiente);
   for (const campo of [el.pendientesConcepto, el.pendientesCantidad]) {
     campo.addEventListener("animationend", () => campo.classList.remove("is-mal"));
@@ -7753,6 +7899,7 @@ function bindEvents() {
       else if (cerrarCajero()) el.gastosEfectivo.focus();
       else if (cerrarTramos()) el.gastosTramo.focus();
       else if (cerrarPendientes()) el.gastosPendiente.focus();
+      else if (cerrarEmpresa()) el.gastosEmpresa.focus();
       else if (cerrarCurva()) el.curvaAbrir.focus();
       else if (cerrarHoras()) document.getElementById("horas-abrir")?.focus();
       else if (cerrarGente()) el.personasCabeza.focus();
@@ -7795,6 +7942,9 @@ function bindEvents() {
     }
     if (!el.curva.hidden && !el.curva.contains(event.target) && !el.curvaAbrir.contains(event.target)) {
       cerrarCurva();
+    }
+    if (!el.empresa.hidden && !el.empresa.contains(event.target) && !el.gastosEmpresa.contains(event.target)) {
+      cerrarEmpresa();
     }
     if (!el.pendientes.hidden && !el.pendientes.contains(event.target) && !el.gastosPendiente.contains(event.target)) {
       cerrarPendientes();

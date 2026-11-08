@@ -692,6 +692,7 @@
           <button class="gastos__efectivo" type="button" id="gastos-efectivo" aria-expanded="false" aria-controls="cajero" hidden></button>
           <button class="gastos__efectivo gastos__tramo" type="button" id="gastos-tramo" aria-expanded="false" aria-controls="tramos" hidden></button>
           <button class="gastos__efectivo gastos__pendiente" type="button" id="gastos-pendiente" aria-expanded="false" aria-controls="pendientes" hidden></button>
+          <button class="gastos__efectivo gastos__empresa" type="button" id="gastos-empresa" aria-expanded="false" aria-controls="empresa" hidden></button>
           <span class="gastos__personas" id="gastos-personas" hidden>
             <button class="gastos__paso" type="button" id="personas-menos" aria-label="Uno menos" data-t-aria-label="cuenta.menos">−</button>
             <span class="gastos__gente" id="personas-n" aria-live="polite"></span>
@@ -793,6 +794,15 @@
         </form>
         <button class="cajero__sugerencia" type="button" id="cajero-sugerencia" hidden></button>
         <ul class="cajero__lista" id="cajero-lista"></ul>
+      </div>
+      <div class="cajero empresa" id="empresa" role="group" aria-labelledby="empresa-titulo" hidden>
+        <p class="cajero__titulo" id="empresa-titulo" data-t="empresa.titulo">De la empresa</p>
+        <ul class="pendientes__lista empresa__lista" id="empresa-lista"></ul>
+        <div class="empresa__pie">
+          <span class="empresa__total" id="empresa-total"></span>
+          <button class="gente__saldar" type="button" id="empresa-csv" data-t="csv.boton">CSV</button>
+          <button class="gente__saldar" type="button" id="empresa-imprimir" data-t="empresa.imprimir">Imprimir</button>
+        </div>
       </div>
       <div class="cajero pendientes" id="pendientes" role="group" aria-labelledby="pendientes-titulo" hidden>
         <p class="cajero__titulo" id="pendientes-titulo" data-t="pendientes.titulo">Pendiente de pagar</p>

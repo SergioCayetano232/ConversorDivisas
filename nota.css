@@ -1,0 +1,98 @@
+/* La nota de gastos. Fondo y botones vienen de copia.css. */
+.pagina--ancha {
+  max-width: 760px;
+}
+
+.nota[hidden] {
+  display: none;
+}
+
+.nota__viaje {
+  font-size: 18px;
+  font-weight: 700;
+}
+
+.nota__periodo,
+.nota__pie {
+  font-size: 12px;
+  color: var(--tenue);
+}
+
+.nota__tabla {
+  overflow-x: auto;
+}
+
+.nota__tabla table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12.5px;
+}
+
+.nota__tabla th {
+  padding: 6px 8px;
+  border-bottom: 1px solid var(--borde-fuerte);
+  font-size: 11px;
+  font-weight: 600;
+  text-align: left;
+  color: var(--tenue);
+}
+
+.nota__tabla td {
+  padding: 6px 8px;
+  border-bottom: 1px solid var(--borde);
+}
+
+.nota__tabla th.nota__cifra,
+.nota__cifra {
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+  white-space: nowrap;
+}
+
+.nota__tabla tfoot td {
+  border-bottom: 0;
+  font-weight: 700;
+}
+
+@media print {
+  html,
+  body {
+    background: #fff !important;
+    color: #000;
+  }
+
+  body::before,
+  .cabeza__logo,
+  .cabeza__app,
+  .intro,
+  .boton {
+    display: none !important;
+  }
+
+  .pagina {
+    padding: 0;
+  }
+
+  .pagina > * {
+    animation: none !important;
+  }
+
+  .tarjeta {
+    background: #fff;
+    border: 0;
+    box-shadow: none;
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+  }
+
+  .nota__periodo,
+  .nota__pie,
+  .nota__tabla th {
+    color: #444;
+  }
+
+  .nota__tabla th,
+  .nota__tabla td {
+    border-bottom-color: #ccc;
+  }
+}
