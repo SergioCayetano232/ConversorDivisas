@@ -8783,6 +8783,18 @@ body::after {
   75% { transform: translateY(1.5px); }
 }
 
+.aviso__flecha[data-sentido="mejor"] {
+  font-size: 10px;
+}
+
+.aviso-form.is-mejor .aviso-form__boton {
+  margin-left: auto;
+}
+
+.aviso-form__sentido[data-sentido="mejor"] {
+  color: var(--brass);
+}
+
 .aviso__umbral {
   overflow: hidden;
   text-overflow: ellipsis;

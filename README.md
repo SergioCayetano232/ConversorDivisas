@@ -354,7 +354,9 @@ que necesitaba una conversión rápida. Ahora es un clic en la barra del navegad
   hacia ese. Debajo te dice en qué tasa saltará. Con la bolsa 🛍 de al lado
   el aviso es por precio: pones arriba lo que cuesta (180 USD) y lo máximo que
   quieres pagar (152 EUR), y te avisa cuando el cambio lo deje ahí. Pulsando
-  la pastilla vuelves a ver lo que cuesta hoy
+  la pastilla vuelves a ver lo que cuesta hoy. Pulsando otra vez esa bolsa sale el 🏆: sin
+  poner ninguna cifra, te avisa el día que tu par marque su mejor tasa de los
+  últimos 3 meses
 - Se abre con `Ctrl+Shift+U` (en Mac, `Cmd+Shift+U`). Con clic derecho en el
   icono → **Gastos del viaje**, se abre directamente en los gastos
 - Desde la barra de direcciones, sin abrir nada: escribes `cd`, espacio, y

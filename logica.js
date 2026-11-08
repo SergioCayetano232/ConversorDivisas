@@ -6402,6 +6402,25 @@ function crearAvisoPorcentaje(from, to, { pct, signo }, rate, id) {
 // Una compra es un aviso que baja: "180 USD por menos de 160 EUR" es que la
 // tasa baje de 160/180. Guardo el precio y el máximo para el mensaje, que
 // dividido y vuelto a multiplicar salía 159,99.
+// "Avísame si marca su mejor tasa en tres meses". El umbral es el máximo de
+// los días anteriores; el último es el de ahora, y con él nunca lo superaría.
+const AVISO_MEJOR_DIAS = 90;
+// Con menos de un mes de datos, "la mejor en tres meses" sería mentira.
+const AVISO_MEJOR_MINIMO = 20;
+
+function techoDeSerie(valores) {
+  const buenos = (valores ?? []).filter((v) => Number.isFinite(v) && v > 0);
+  return buenos.length < AVISO_MEJOR_MINIMO ? null : Math.max(...buenos.slice(0, -1));
+}
+
+function crearAvisoMejor(from, to, techo, rate, id) {
+  if (!isValidCode(from) || !isValidCode(to) || from === to || !(techo > 0) || !(rate > 0) || rate >= techo) return null;
+  return { id, from, to, sentido: "mejor", umbral: techo };
+}
+
+// El pico se va saliendo de los tres meses, así que el umbral se recalcula.
+const ponerTechos = (avisos, techos) => avisos.map((a) => (a.sentido === "mejor" && techos[a.id] ? { ...a, umbral: techos[a.id] } : a));
+
 function crearCompra(from, to, precio, maximo, rate, id) {
   if (!isValidCode(from) || !isValidCode(to) || from === to) return null;
   if (!(precio > 0) || !(maximo > 0) || !(rate > 0)) return null;
@@ -6419,7 +6438,7 @@ function leerAvisos(guardado) {
   if (!Array.isArray(guardado)) return [];
   return guardado
     .filter((a) => a && typeof a.id === "string" && isValidCode(a.from) && isValidCode(a.to)
-      && (a.sentido === "sube" || a.sentido === "baja" || esAvisoMueve(a)) && typeof a.umbral === "number" && a.umbral > 0
+      && (a.sentido === "sube" || a.sentido === "baja" || a.sentido === "mejor" || esAvisoMueve(a)) && typeof a.umbral === "number" && a.umbral > 0
       && compraBien(a))
     .slice(0, AVISOS_MAX);
 }
@@ -6430,6 +6449,8 @@ const movimiento = (aviso, rate) => rate / aviso.umbral - 1;
 function avisoCumplido(aviso, rate) {
   if (typeof rate !== "number") return false;
   if (aviso.sentido === "mueve") return Math.abs(movimiento(aviso, rate)) >= aviso.pct / 100 - 1e-9;
+  // Igualar el máximo no es superarlo: si no, saltaría con la tasa de siempre.
+  if (aviso.sentido === "mejor") return rate > aviso.umbral;
   return aviso.sentido === "sube" ? rate >= aviso.umbral : rate <= aviso.umbral;
 }
 
@@ -6454,7 +6475,7 @@ function faltaParaAviso(aviso, { from, to }, rate) {
     : aviso.from === to && aviso.to === from ? 1 / rate : null;
   if (suya === null) return null;
   if (aviso.sentido === "mueve") return Math.max(aviso.pct / 100 - Math.abs(movimiento(aviso, suya)), 0);
-  const falta = aviso.sentido === "sube" ? aviso.umbral / suya - 1 : 1 - aviso.umbral / suya;
+  const falta = aviso.sentido === "sube" || aviso.sentido === "mejor" ? aviso.umbral / suya - 1 : 1 - aviso.umbral / suya;
   return Math.max(falta, 0);
 }
 
@@ -6483,6 +6504,12 @@ function mensajeAviso(aviso, rate) {
     return {
       titulo: tr("avisos.notiTitulo", { from: aviso.from, tasa: tasaLarga(rate), to: aviso.to }),
       cuerpo: tr(cambio > 0 ? "avisos.notiMueveSube" : "avisos.notiMueveBaja", { pct, umbral: tasaLarga(aviso.umbral) }),
+    };
+  }
+  if (aviso.sentido === "mejor") {
+    return {
+      titulo: tr("avisos.notiTitulo", { from: aviso.from, tasa: tasaLarga(rate), to: aviso.to }),
+      cuerpo: tr("avisos.notiMejor", { umbral: tasaLarga(aviso.umbral) }),
     };
   }
   return {
@@ -7151,6 +7178,7 @@ if (typeof module !== "undefined") {
     EMOJI_CATEGORIA, destacados, resumenParaCompartir, FINDE_MINIMO, findeContraSemana, ESTRELLA_MINIMO, conceptoEstrella,
     COPIA_APP, COPIA_VERSION, CLAVES_COPIA, CLAVES_SYNC, limpiarSync, cambiosSync, mezclaInicial, limpiarCopia, crearCopia, leerCopia, resumenCopia,
     crearPaquete, leerPaquete, quienEsQuien, mapaValido, gastosParaJuntar, juntarGastos,
+    AVISO_MEJOR_DIAS, techoDeSerie, crearAvisoMejor, ponerTechos,
     presupuestoSugerido, PARTES_VALIDAS, leerPartes, partesDe, repartirPorPartes, textoParte,
     VIAJES_MAX, NOMBRE_VIAJE_MAX, leerViajes, leerPersonas, porPersona, consumoGente, leerPagador, leerGente, ponerNombre, nombrePersona, inicialPersona, cuentasViaje, frasePago, COBRO_GASTOS_MAX, mensajeCobro, leerEntre, entreDe, fraseEntre, cambiarEntre, leerSaldados, saldarPago, quitarSaldado, fraseSaldado, hayOtrosPagadores, NOMBRE_PERSONA_MAX, compararViajes, COLORES_VIAJE, leerColorViaje, colorLibre, siguienteColor, viajeActivo, ARCHIVADOS_MAX, archivarViaje, desarchivarViaje, borrarArchivado, todosLosViajes, crearViaje, nombreCopia, nombreDeDestino, duplicarViaje, renombrarViaje, elegirViaje, borrarViaje, moverGasto, cambiarViaje, TRAMOS_MAX, NOMBRE_TRAMO_MAX, leerTramos, ponerTramo, quitarTramo, tramoDelDia, resumenTramos, curvaPresupuesto, FRANJAS, HORAS_MINIMO, horaFiable, porFranja, PENDIENTES_MAX, leerPendientes, crearPendiente, apuntarPendiente, quitarPendiente, totalPendiente, pagarPendiente, resumenViaje, archivoGastos,
     diasHasta, leerPresupuesto, leerTopes, PRESUPUESTO_JUSTO, estadoPresupuesto, estadoTopes, alDiaAlli, inicioDelViaje, diaDelViaje, cuentaAtras, textoCuentaAtras, huchaViaje, loDeHoy, CELEBRADOS_MAX, leerCelebrados, anadirCelebrado, viajeParaCelebrar, textoCelebrar, RACHA_MINIMA, rachaPresupuesto, hastaCuandoLlega, previsionViaje, PREVISION_JUSTA, textoPrevision, loQueSeLleva, redondearDias,

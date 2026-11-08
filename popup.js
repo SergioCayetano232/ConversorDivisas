@@ -320,6 +320,7 @@ let avisos = [];
 // la tasa nueva, pero mientras sea el mismo no le toco lo que hayas escrito.
 let parDelUmbral = null;
 let modoCompra = false;
+let modoMejor = false;
 let comision = 0;
 let impuesto = 0;
 let cafe = null;
@@ -6089,10 +6090,42 @@ async function guardarAvisos() {
   }
 }
 
+async function crearMejorDesdeForm(from, to, id) {
+  if (avisos.some((a) => a.sentido === "mejor" && a.from === from && a.to === to)) return decir(tr("avisos.mejorYa"), "error");
+  if (avisos.length >= AVISOS_MAX) return decir(tr("avisos.lleno", { max: AVISOS_MAX }), "error");
+  el.avisoBoton.disabled = true;
+  try {
+    const puntos = await fetchHistory(from, to, AVISO_MEJOR_DIAS);
+    // Si has cambiado de par mientras llegaba, ese máximo ya no es de este.
+    if (from !== el.from.value || to !== el.to.value) return;
+    const techo = techoDeSerie(puntos.map((p) => p.valor));
+    if (!techo) return decir(tr("avisos.mejorSinDatos"), "error");
+    if (rate >= techo) return decir(tr("avisos.yaMejor"), "ok");
+    avisos = [...avisos, crearAvisoMejor(from, to, techo, rate, id)];
+    guardarAvisos();
+    pintarAvisos();
+    restartAnimation(el.campana, "is-sonando");
+    decir(tr("avisos.mejorHecho", { umbral: `${nfRate.format(techo)} ${to}` }), "ok");
+  } catch (error) {
+    console.warn("No se pudo traer el histórico para el aviso", error);
+    decir(tr("avisos.mejorSinDatos"), "error");
+  } finally {
+    pintarSentidoAviso();
+  }
+}
+
 function pintarSentidoAviso() {
   const from = el.from.value;
   const to = el.to.value;
   el.avisoBoton.disabled = from === to || rate === null;
+  el.avisoUmbral.hidden = modoMejor;
+  el.avisoForm.classList.toggle("is-mejor", modoMejor);
+  if (modoMejor) {
+    el.avisoSentido.textContent = tr("avisos.mejorModo");
+    el.avisoSentido.dataset.sentido = "mejor";
+    el.avisoCodigo.textContent = "";
+    return pintarNota();
+  }
   if (modoCompra) return pintarCompra(from, to);
   const par = `${from}${to}`;
   if (par !== parDelUmbral && rate !== null && from !== to) {
@@ -6132,10 +6165,14 @@ function pintarCompra(from, to) {
   pintarNota();
 }
 
+// Tasa → precio → mejor tasa → tasa. En la fila no cabe ni un botón más.
 function onModoAviso() {
-  modoCompra = !modoCompra;
-  el.avisoModo.setAttribute("aria-pressed", String(modoCompra));
-  const clave = modoCompra ? "avisos.tasaModo" : "avisos.compraModo";
+  const eraCompra = modoCompra;
+  modoCompra = !modoCompra && !modoMejor;
+  modoMejor = eraCompra;
+  el.avisoModo.textContent = modoMejor ? "🏆" : "🛍";
+  el.avisoModo.setAttribute("aria-pressed", String(modoCompra || modoMejor));
+  const clave = modoCompra ? "avisos.mejor" : modoMejor ? "avisos.tasaModo" : "avisos.compraModo";
   el.avisoModo.title = tr(clave);
   el.avisoModo.setAttribute("aria-label", tr(clave));
   el.avisoSentido.title = "";
@@ -6143,6 +6180,7 @@ function onModoAviso() {
   parDelUmbral = null;
   pintarSentidoAviso();
   restartAnimation(el.avisoSentido, "is-cambiado");
+  if (modoMejor) return el.avisoBoton.focus();
   el.avisoUmbral.focus();
   el.avisoUmbral.select();
 }
@@ -6151,6 +6189,7 @@ function onModoAviso() {
 // una compra, tampoco.
 function previaAviso() {
   const to = el.to.value;
+  if (modoMejor) return avisos.length ? null : tr("avisos.mejorTitulo");
   if (modoCompra) {
     const precio = cantidadOrigen();
     const maximo = leerImporte(el.avisoUmbral.value);
@@ -6198,6 +6237,7 @@ function crearPastillaAviso(aviso) {
   ir.className = "aviso__ir";
   const umbral = nfRate.format(aviso.umbral);
   const mueve = aviso.sentido === "mueve";
+  const mejor = aviso.sentido === "mejor";
   const pct = mueve ? tr("pct", { n: nfComision.format(aviso.pct) }) : null;
   ir.setAttribute(
     "aria-label",
@@ -6212,7 +6252,8 @@ function crearPastillaAviso(aviso) {
   const flecha = document.createElement("span");
   flecha.className = "aviso__flecha";
   flecha.dataset.sentido = aviso.sentido;
-  flecha.textContent = mueve ? "⇕" : aviso.sentido === "sube" ? "▲" : "▼";
+  flecha.textContent = mejor ? "🏆" : mueve ? "⇕" : aviso.sentido === "sube" ? "▲" : "▼";
+  if (mejor) ir.setAttribute("aria-label", tr("avisos.pastillaMejor", { from: aviso.from, umbral, to: aviso.to }));
   const cifra = document.createElement("span");
   cifra.className = "aviso__umbral";
   cifra.textContent = mueve ? `±${pct}` : umbral;
@@ -6274,6 +6315,7 @@ function onCrearAviso(event) {
   const from = el.from.value;
   const to = el.to.value;
   const id = `${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`;
+  if (modoMejor) return crearMejorDesdeForm(from, to, id);
   if (modoCompra) return crearCompraDesdeForm(from, to, id);
   const porcentaje = leerPorcentajeAviso(el.avisoUmbral.value);
   const umbral = porcentaje ? null : leerImporte(el.avisoUmbral.value);

@@ -191,11 +191,11 @@ const COLORES = { sube: "#4EA96B", baja: "#E5534B", igual: "#E8B75C" };
 
 // Pido una semana y me quedo con los dos últimos días publicados: así el lunes
 // compara con el viernes y un festivo no deja la flecha sin nada con qué comparar.
-async function serieCorta(from, to) {
+async function serieCorta(from, to, dias = 10) {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), TIMEOUT_MS);
   try {
-    const url = `${API_HISTORY}/${startDateFor(10)}..?base=${from}&symbols=${to}`;
+    const url = `${API_HISTORY}/${startDateFor(dias)}..?base=${from}&symbols=${to}`;
     const response = await fetch(url, { signal: controller.signal });
     if (!response.ok) throw new Error(`HTTP ${response.status}`);
     const data = await response.json();
@@ -1256,14 +1256,28 @@ async function revisarAvisos() {
     }
   }
 
-  const { cumplidos } = repartirAvisos(avisos, tasas);
-  if (cumplidos.length === 0) return;
+  // Si falla la serie me quedo con el umbral de antes: como mucho tarda más en saltar.
+  const techos = {};
+  for (const aviso of avisos.filter((a) => a.sentido === "mejor")) {
+    try {
+      const puntos = await serieCorta(aviso.from, aviso.to, AVISO_MEJOR_DIAS);
+      const techo = techoDeSerie(puntos.map((p) => p.valor));
+      if (techo) techos[aviso.id] = techo;
+    } catch (error) {
+      console.warn(`No se pudo mirar el máximo de ${aviso.from}${aviso.to}`, error);
+    }
+  }
+
+  const { cumplidos } = repartirAvisos(ponerTechos(avisos, techos), tasas);
 
   // Vuelvo a leer antes de guardar: si mientras pedía las tasas has creado uno
   // en el popup, con la lista de antes lo borraría.
   const hechos = new Set(cumplidos.map(({ aviso }) => aviso.id));
   const { avisos: ahora } = await chrome.storage.local.get("avisos");
-  await chrome.storage.local.set({ avisos: leerAvisos(ahora).filter((a) => !hechos.has(a.id)) });
+  const antes = leerAvisos(ahora);
+  const siguen = ponerTechos(antes.filter((a) => !hechos.has(a.id)), techos);
+  if (JSON.stringify(siguen) !== JSON.stringify(antes)) await chrome.storage.local.set({ avisos: siguen });
+  if (cumplidos.length === 0) return;
 
   // Las espero: si la función acaba antes, Chrome puede dormir el service
   // worker con alguna notificación sin crear.
