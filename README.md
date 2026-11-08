@@ -408,6 +408,12 @@ que necesitaba una conversión rápida. Ahora es un clic en la barra del navegad
   la divisa de allí a la tasa del BCE de cada día y la categoría adivinada por
   el concepto. Antes de importar los ves y quitas los que no son del viaje; lo
   que ya tenías apuntado ese día con ese importe no se repite. Y se puede deshacer
+- Los gastos del grupo, también ahí: cada uno baja su viaje en un archivo (sin
+  sus notas) y os lo pasáis. Al soltarlo eliges a qué viaje va y quién es quién,
+  que cada uno tiene a la gente en su orden. Lo que pagó el otro entra a su
+  nombre y no se repite lo que ya tienes, aunque el archivo vaya y vuelva. Si
+  algo coincide en día e importe, sale desmarcado por si es la misma cena. Los
+  de otra divisa se quedan fuera, y se puede deshacer
 - Si algo falla te dice qué ha pasado, no se queda en blanco
 
 Pide lo justo: guardar tus preferencias, hablar con la API de las tasas, una

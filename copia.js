@@ -29,6 +29,23 @@ const el = {
   bancoHecho: document.getElementById("banco-hecho"),
   bancoHechoTexto: document.getElementById("banco-hecho-texto"),
   bancoDeshacer: document.getElementById("banco-deshacer"),
+  grupoBajar: document.getElementById("grupo-bajar"),
+  grupoTuViaje: document.getElementById("grupo-tu-viaje"),
+  grupoDescargar: document.getElementById("grupo-descargar"),
+  grupoSin: document.getElementById("grupo-sin"),
+  grupoSoltar: document.getElementById("grupo-soltar"),
+  grupoArchivo: document.getElementById("grupo-archivo"),
+  grupoError: document.getElementById("grupo-error"),
+  grupo: document.getElementById("grupo"),
+  grupoViaje: document.getElementById("grupo-viaje"),
+  grupoGente: document.getElementById("grupo-gente"),
+  grupoLista: document.getElementById("grupo-lista"),
+  grupoResumen: document.getElementById("grupo-resumen"),
+  grupoImportar: document.getElementById("grupo-importar"),
+  grupoCancelar: document.getElementById("grupo-cancelar"),
+  grupoHecho: document.getElementById("grupo-hecho"),
+  grupoHechoTexto: document.getElementById("grupo-hecho-texto"),
+  grupoDeshacer: document.getElementById("grupo-deshacer"),
 };
 
 const API_HISTORY = "https://api.frankfurter.dev/v1";
@@ -88,18 +105,22 @@ async function leerTodo() {
 
 async function pintarAhora() {
   pintarCifras(el.cifras, resumenCopia(crearCopia(await leerTodo()).datos));
+  await pintarBajarGrupo();
 }
 
-async function onDescargar() {
-  const copia = crearCopia(await leerTodo());
-  const url = URL.createObjectURL(new Blob([JSON.stringify(copia, null, 2)], { type: "application/json" }));
+function bajarJson(objeto, nombre) {
+  const url = URL.createObjectURL(new Blob([JSON.stringify(objeto, null, 2)], { type: "application/json" }));
   const enlace = document.createElement("a");
   enlace.href = url;
-  enlace.download = `${tr("copia.archivo")}-${hoy()}.json`;
+  enlace.download = nombre;
   document.body.append(enlace);
   enlace.click();
   enlace.remove();
   setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+
+async function onDescargar() {
+  bajarJson(crearCopia(await leerTodo()), `${tr("copia.archivo")}-${hoy()}.json`);
 
   el.descargarTexto.textContent = tr("copia.descargada");
   reiniciar(el.descargar, "is-hecho");
@@ -339,6 +360,176 @@ function onCancelarBanco() {
   el.bancoSoltar.focus();
 }
 
+// Lo del grupo: el archivo leído, quién es quién, lo que has marcado a mano y
+// lo último que se juntó, para poder deshacerlo.
+let paquete = null;
+let mapaGrupo = [];
+const decisiones = new Map();
+let juntado = null;
+
+async function pintarBajarGrupo() {
+  const { lista } = await cargarViajesGuardados();
+  const con = lista.filter((v) => v.gastos.length);
+  const antes = el.grupoTuViaje.value;
+  el.grupoTuViaje.replaceChildren(...con.map((v) => new Option(v.nombre || tr("gastos"), v.id)));
+  if (con.some((v) => v.id === antes)) el.grupoTuViaje.value = antes;
+  el.grupoBajar.hidden = con.length === 0;
+  el.grupoSin.hidden = con.length > 0;
+}
+
+async function onDescargarGrupo() {
+  const viaje = (await cargarViajesGuardados()).lista.find((v) => v.id === el.grupoTuViaje.value);
+  if (!viaje) return;
+  bajarJson(crearPaquete(viaje), `${archivoGastos(viaje.nombre)}-${tr("grupo.archivo")}.json`);
+  el.grupoDescargar.textContent = tr("copia.descargada");
+  clearTimeout(el.grupoDescargar.vuelta);
+  el.grupoDescargar.vuelta = setTimeout(() => { el.grupoDescargar.textContent = tr("grupo.descargar"); }, 1800);
+}
+
+function errorGrupo(clave) {
+  paquete = null;
+  el.grupo.hidden = true;
+  el.grupoError.textContent = tr(clave);
+  el.grupoError.hidden = false;
+  reiniciar(el.grupoSoltar, "is-mal");
+}
+
+function ponerGente(viaje) {
+  mapaGrupo = quienEsQuien(paquete, viaje);
+  const mios = Math.max(leerPersonas(viaje.personas), paquete.personas);
+  el.grupoGente.replaceChildren(...mapaGrupo.map((elegido, i) => {
+    const caja = document.createElement("label");
+    caja.className = "campo";
+    const nombre = document.createElement("span");
+    nombre.className = "campo__nombre";
+    nombre.textContent = i === 0 ? tr("grupo.quienManda") : paquete.gente[i] || tr("gente.persona", { n: i + 1 });
+    const lista = document.createElement("select");
+    lista.className = "campo__control";
+    lista.append(...[...Array(mios).keys()].map((k) => new Option(nombrePersona(viaje.gente, k), String(k))));
+    lista.value = String(elegido);
+    lista.addEventListener("change", () => {
+      mapaGrupo[i] = Number(lista.value);
+      pintarGrupo();
+    });
+    caja.append(nombre, lista);
+    return caja;
+  }));
+}
+
+const entraEnGrupo = (fila) => decisiones.get(fila.gasto.id) ?? !fila.repetido;
+
+async function pintarGrupo() {
+  if (!paquete) return;
+  const viajes = await cargarViajesGuardados();
+  const viaje = viajes.lista.find((v) => v.id === el.grupoViaje.value) ?? viajes.lista[0];
+  const r = gastosParaJuntar(paquete, viaje, mapaGrupo);
+  const dinero = (n) => `${numeros({ minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(n)} ${r.to}`;
+  el.grupoLista.replaceChildren(...r.filas.map((fila, i) => {
+    const { gasto, repetido } = fila;
+    const li = document.createElement("li");
+    li.className = "banco__fila";
+    li.style.setProperty("--i", Math.min(i, 12));
+    li.classList.toggle("is-repetido", repetido);
+    const que = gasto.concepto || nombreCategoria(gasto.categoria);
+    const marca = document.createElement("input");
+    marca.type = "checkbox";
+    marca.checked = entraEnGrupo(fila);
+    marca.setAttribute("aria-label", tr("banco.incluir", { concepto: que, importe: dinero(gasto.valor) }));
+    marca.addEventListener("change", () => {
+      decisiones.set(gasto.id, marca.checked);
+      pintarGrupo();
+    });
+    li.innerHTML = '<span class="banco__fecha"></span><span class="banco__cat" aria-hidden="true"></span><span class="banco__concepto"></span><span class="banco__importe"></span>';
+    li.prepend(marca);
+    li.querySelector(".banco__fecha").textContent = fechaCorta(isoLocal(new Date(gasto.cuando)));
+    li.querySelector(".banco__cat").textContent = emojiCategoria(gasto.categoria);
+    li.querySelector(".banco__concepto").textContent = [que, nombrePersona(viaje.gente, gasto.pagador ?? 0), repetido ? tr("grupo.repetido") : ""].filter(Boolean).join(" · ");
+    li.querySelector(".banco__importe").textContent = dinero(gasto.valor);
+    return li;
+  }));
+  const elegidos = r.filas.filter(entraEnGrupo);
+  const libres = GASTOS_MAX - viaje.gastos.length;
+  const bien = mapaValido(mapaGrupo);
+  const cabe = elegidos.length <= libres;
+  const partes = [tr("grupo.resumen", { n: elegidos.length, de: r.filas.length, total: dinero(elegidos.reduce((s, f) => s + f.gasto.valor, 0)) })];
+  if (r.yaEstan) partes.push(tr("grupo.yaEstan", { n: r.yaEstan }));
+  if (r.otraDivisa) partes.push(tr("grupo.otraDivisa", { n: r.otraDivisa }));
+  el.grupoResumen.textContent = !bien ? tr("grupo.iguales")
+    : !cabe ? tr("grupo.noCaben", { libres, max: GASTOS_MAX })
+    : partes.join(" · ");
+  el.grupoResumen.classList.toggle("is-mal", !bien || !cabe);
+  el.grupoImportar.disabled = !bien || !cabe || elegidos.length === 0;
+  el.grupoImportar.textContent = tr(elegidos.length === 1 ? "banco.importarUno" : "banco.importar", { n: elegidos.length });
+}
+
+async function leerGrupo(archivo) {
+  if (!archivo) return;
+  el.grupoHecho.hidden = true;
+  const leido = leerPaquete(await archivo.text());
+  if (leido.error) return errorGrupo(`grupo.error.${leido.error}`);
+  paquete = leido;
+  decisiones.clear();
+  el.grupoError.hidden = true;
+  const viajes = await cargarViajesGuardados();
+  el.grupoViaje.replaceChildren(...viajes.lista.map((v) => new Option(v.nombre || tr("gastos"), v.id, false, v.id === viajes.activo)));
+  ponerGente(viajes.lista.find((v) => v.id === viajes.activo));
+  el.grupo.hidden = false;
+  reiniciar(el.grupo, "is-nueva");
+  await pintarGrupo();
+  el.grupoImportar.focus();
+}
+
+async function onCambiarViajeGrupo() {
+  ponerGente((await cargarViajesGuardados()).lista.find((v) => v.id === el.grupoViaje.value));
+  pintarGrupo();
+}
+
+async function onImportarGrupo() {
+  const id = el.grupoViaje.value;
+  el.grupoImportar.disabled = true;
+  try {
+    const viajes = await cargarViajesGuardados();
+    const viaje = viajes.lista.find((v) => v.id === id);
+    const r = gastosParaJuntar(paquete, viaje, mapaGrupo);
+    const nuevos = r.filas.filter(entraEnGrupo).map((f) => f.gasto);
+    await chrome.storage.local.set({ viajes: cambiarViaje(viajes, id, juntarGastos(viaje, nuevos, r.personas)) });
+    juntado = { viaje: id, ids: nuevos.map((g) => g.id), personas: viaje.personas };
+    paquete = null;
+    el.grupo.hidden = true;
+    el.grupoArchivo.value = "";
+    el.grupoHechoTexto.textContent = tr(nuevos.length === 1 ? "grupo.hechoUno" : "grupo.hecho", { n: nuevos.length, viaje: viaje.nombre || tr("gastos") });
+    el.grupoDeshacer.hidden = false;
+    el.grupoHecho.hidden = false;
+    reiniciar(el.grupoHecho, "is-nueva");
+  } catch (error) {
+    console.warn("No se pudo juntar el viaje", error);
+    el.grupoError.textContent = tr("copia.error.guardar");
+    el.grupoError.hidden = false;
+    el.grupoImportar.disabled = false;
+  }
+}
+
+async function onDeshacerGrupo() {
+  if (!juntado) return;
+  const viajes = await cargarViajesGuardados();
+  const viaje = viajes.lista.find((v) => v.id === juntado.viaje);
+  if (viaje) {
+    const fuera = new Set(juntado.ids);
+    await chrome.storage.local.set({ viajes: cambiarViaje(viajes, viaje.id, { gastos: viaje.gastos.filter((g) => !fuera.has(g.id)), personas: juntado.personas }) });
+  }
+  juntado = null;
+  el.grupoHechoTexto.textContent = tr("banco.deshecho");
+  el.grupoDeshacer.hidden = true;
+  reiniciar(el.grupoHecho, "is-nueva");
+}
+
+function onCancelarGrupo() {
+  paquete = null;
+  el.grupoArchivo.value = "";
+  el.grupo.hidden = true;
+  el.grupoSoltar.focus();
+}
+
 // Las dos cajas para soltar se portan igual.
 function zonaDeSoltar(zona, alSoltar) {
   for (const tipo of ["dragenter", "dragover"]) {
@@ -359,6 +550,13 @@ function zonaDeSoltar(zona, alSoltar) {
 }
 
 function bindEvents() {
+  zonaDeSoltar(el.grupoSoltar, leerGrupo);
+  el.grupoArchivo.addEventListener("change", () => leerGrupo(el.grupoArchivo.files[0]));
+  el.grupoDescargar.addEventListener("click", onDescargarGrupo);
+  el.grupoViaje.addEventListener("change", onCambiarViajeGrupo);
+  el.grupoImportar.addEventListener("click", onImportarGrupo);
+  el.grupoCancelar.addEventListener("click", onCancelarGrupo);
+  el.grupoDeshacer.addEventListener("click", onDeshacerGrupo);
   zonaDeSoltar(el.bancoSoltar, leerBanco);
   el.bancoArchivo.addEventListener("change", () => leerBanco(el.bancoArchivo.files[0]));
   el.bancoViaje.addEventListener("change", async () => {

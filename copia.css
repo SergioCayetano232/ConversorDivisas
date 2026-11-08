@@ -453,6 +453,27 @@ body::before {
   font-size: 12px;
 }
 
+.grupo__bajar {
+  display: flex;
+  align-items: flex-end;
+  gap: 12px;
+}
+
+.grupo__bajar[hidden] {
+  display: none;
+}
+
+.grupo__bajar .campo {
+  flex: 1;
+}
+
+.grupo__quien {
+  margin-top: 4px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--texto);
+}
+
 .banco__ajustes {
   display: grid;
   grid-template-columns: 1fr 1fr;

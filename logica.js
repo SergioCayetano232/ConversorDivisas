@@ -3180,7 +3180,8 @@ function efectivoQueda(retiradas, gastos) {
     cuentas.set(r.divisa, c);
   }
   for (const g of gastos) {
-    if (g.pago === "efectivo" && cuentas.has(g.from)) cuentas.get(g.from).gastado += g.cantidad;
+    // Lo que pagó otro salió de su cartera, no de la tuya.
+    if (g.pago === "efectivo" && !g.pagador && cuentas.has(g.from)) cuentas.get(g.from).gastado += g.cantidad;
   }
   return [...cuentas.values()]
     .map((c) => ({ ...c, queda: c.sacado - c.gastado, fraccion: Math.max(0, (c.sacado - c.gastado) / c.sacado) }))
@@ -7023,6 +7024,99 @@ function leerCopia(texto) {
   return { datos: limpiarCopia(copia.datos), creada };
 }
 
+// Un viaje para pasárselo al grupo. Con su propio tipo, para que no se pueda
+// restaurar como copia y te borre todo. Las notas no viajan, que son tuyas.
+const PAQUETE_TIPO = "viaje";
+const PAQUETE_VERSION = 1;
+
+function crearPaquete(viaje) {
+  return {
+    app: COPIA_APP, tipo: PAQUETE_TIPO, version: PAQUETE_VERSION,
+    nombre: viaje.nombre, personas: viaje.personas, gente: viaje.gente ?? [],
+    gastos: viaje.gastos.map(({ nota: _, ...g }) => g),
+  };
+}
+
+function leerPaquete(texto) {
+  let crudo;
+  try {
+    crudo = JSON.parse(texto);
+  } catch {
+    return { error: "json" };
+  }
+  if (!crudo || crudo.app !== COPIA_APP || crudo.tipo !== PAQUETE_TIPO) return { error: "otra" };
+  if (!Number.isInteger(crudo.version) || crudo.version > PAQUETE_VERSION) return { error: "version" };
+  const gastos = leerGastos(crudo.gastos);
+  if (!gastos.length) return { error: "vacio" };
+  return { nombre: limpiarNombreViaje(crudo.nombre), personas: leerPersonas(crudo.personas), gente: leerGente(crudo.gente), gastos };
+}
+
+// Cada uno tiene a la gente numerada a su manera: en su lista él es el 0.
+// Primero por el nombre; el resto, a los huecos libres, tú el último, porque
+// quien te manda el archivo no eres tú.
+function quienEsQuien(paquete, viaje) {
+  const n = paquete.personas;
+  const mios = Math.max(leerPersonas(viaje.personas), n);
+  const mapa = Array(n).fill(null);
+  const libres = new Set([...Array(mios).keys()].slice(1).concat(0));
+  for (let i = 1; i < n; i += 1) {
+    const nombre = normalizar(paquete.gente[i] ?? "");
+    if (!nombre) continue;
+    const j = [...libres].find((k) => normalizar(viaje.gente?.[k] ?? "") === nombre);
+    if (j !== undefined) {
+      mapa[i] = j;
+      libres.delete(j);
+    }
+  }
+  return mapa.map((j) => {
+    if (j !== null) return j;
+    const [primero] = libres;
+    libres.delete(primero);
+    return primero;
+  });
+}
+
+const mapaValido = (mapa) => new Set(mapa).size === mapa.length;
+
+// Si lo del otro va entre dos y tú sois cuatro, su "todos" no son tus cuatro:
+// por eso pongo quiénes entran. Con una sola persona en su viaje no dice nada.
+function aMiViaje({ pagador, entre: _e, partes: _p, ...gasto }, original, n, mapa, personas) {
+  const mio = (i) => mapa[i < n ? i : 0];
+  const quien = mio(leerPagador(pagador));
+  const entran = n > 1 ? quienesEntran(original, n).map(mio) : [];
+  const suyas = partesDe(original, n);
+  return {
+    ...gasto,
+    ...(quien ? { pagador: quien } : {}),
+    ...(entran.length && entran.length < personas ? { entre: leerEntre(entran) } : {}),
+    ...(suyas ? { partes: Object.fromEntries(Object.entries(suyas).map(([i, p]) => [mio(Number(i)), p])) } : {}),
+  };
+}
+
+// Lo mismo el mismo día y por lo mismo puede ser la cena que apuntasteis los
+// dos, o dos cafés iguales: lo marco y decide quien lo importa.
+function gastosParaJuntar(paquete, viaje, mapa) {
+  const ids = new Set(viaje.gastos.map((g) => g.id));
+  const to = sumarPorDivisa(viaje.gastos)[0]?.to ?? viaje.presupuesto?.to ?? sumarPorDivisa(paquete.gastos)[0].to;
+  const personas = Math.max(leerPersonas(viaje.personas), paquete.personas);
+  const parecido = (g) => viaje.gastos.some((m) => m.from === g.from && Math.abs(m.cantidad - g.cantidad) < 0.005
+    && isoLocal(new Date(m.cuando)) === isoLocal(new Date(g.cuando)));
+  const nuevos = paquete.gastos.filter((g) => !ids.has(g.id));
+  const validos = nuevos.filter((g) => g.to === to);
+  return {
+    to,
+    personas,
+    yaEstan: paquete.gastos.length - nuevos.length,
+    otraDivisa: nuevos.length - validos.length,
+    filas: validos.map((g) => ({ gasto: aMiViaje(g, g, paquete.personas, mapa, personas), repetido: parecido(g) })),
+  };
+}
+
+// Ordenados por fecha: la lista va siempre de lo último a lo primero.
+function juntarGastos(viaje, nuevos, personas) {
+  return { gastos: [...nuevos, ...viaje.gastos].sort((a, b) => b.cuando - a.cuando), personas: Math.max(leerPersonas(viaje.personas), personas) };
+}
+
 function resumenCopia(datos) {
   return {
     viajes: todosLosViajes(datos.viajes).length,
@@ -7056,6 +7150,7 @@ if (typeof module !== "undefined") {
     CATEGORIAS, CATEGORIA_POR_DEFECTO, CATEGORIAS_PROPIAS_MAX, NOMBRE_CATEGORIA_MAX, esCategoria, leerCategoriasPropias, ponerCategoriasPropias, todasCategorias, nombreCategoria, emojiCategoria, crearCategoriaPropia, quitarCategoriaPropia, sinCategoria, adivinarCategoria, PAGOS, PAGO_POR_DEFECTO, leerPago, comisionDelPago, desglose, conceptosUsados, completarConcepto,
     EMOJI_CATEGORIA, destacados, resumenParaCompartir, FINDE_MINIMO, findeContraSemana, ESTRELLA_MINIMO, conceptoEstrella,
     COPIA_APP, COPIA_VERSION, CLAVES_COPIA, CLAVES_SYNC, limpiarSync, cambiosSync, mezclaInicial, limpiarCopia, crearCopia, leerCopia, resumenCopia,
+    crearPaquete, leerPaquete, quienEsQuien, mapaValido, gastosParaJuntar, juntarGastos,
     presupuestoSugerido, PARTES_VALIDAS, leerPartes, partesDe, repartirPorPartes, textoParte,
     VIAJES_MAX, NOMBRE_VIAJE_MAX, leerViajes, leerPersonas, porPersona, consumoGente, leerPagador, leerGente, ponerNombre, nombrePersona, inicialPersona, cuentasViaje, frasePago, COBRO_GASTOS_MAX, mensajeCobro, leerEntre, entreDe, fraseEntre, cambiarEntre, leerSaldados, saldarPago, quitarSaldado, fraseSaldado, hayOtrosPagadores, NOMBRE_PERSONA_MAX, compararViajes, COLORES_VIAJE, leerColorViaje, colorLibre, siguienteColor, viajeActivo, ARCHIVADOS_MAX, archivarViaje, desarchivarViaje, borrarArchivado, todosLosViajes, crearViaje, nombreCopia, nombreDeDestino, duplicarViaje, renombrarViaje, elegirViaje, borrarViaje, moverGasto, cambiarViaje, TRAMOS_MAX, NOMBRE_TRAMO_MAX, leerTramos, ponerTramo, quitarTramo, tramoDelDia, resumenTramos, curvaPresupuesto, FRANJAS, HORAS_MINIMO, horaFiable, porFranja, PENDIENTES_MAX, leerPendientes, crearPendiente, apuntarPendiente, quitarPendiente, totalPendiente, pagarPendiente, resumenViaje, archivoGastos,
     diasHasta, leerPresupuesto, leerTopes, PRESUPUESTO_JUSTO, estadoPresupuesto, estadoTopes, alDiaAlli, inicioDelViaje, diaDelViaje, cuentaAtras, textoCuentaAtras, huchaViaje, loDeHoy, CELEBRADOS_MAX, leerCelebrados, anadirCelebrado, viajeParaCelebrar, textoCelebrar, RACHA_MINIMA, rachaPresupuesto, hastaCuandoLlega, previsionViaje, PREVISION_JUSTA, textoPrevision, loQueSeLleva, redondearDias,

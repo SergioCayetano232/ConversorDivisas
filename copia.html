@@ -94,6 +94,47 @@
       </div>
     </section>
 
+    <section class="tarjeta" aria-labelledby="grupo-titulo">
+      <h2 class="tarjeta__titulo" id="grupo-titulo" data-t="grupo.titulo">Gastos del grupo</h2>
+      <p class="tarjeta__nota" data-t="grupo.intro">Cada uno baja su viaje y os pasáis el archivo. Al soltarlo aquí se juntan los gastos, sin repetir los que ya tienes.</p>
+      <div class="grupo__bajar" id="grupo-bajar" hidden>
+        <label class="campo">
+          <span class="campo__nombre" data-t="grupo.tuViaje">Tu viaje</span>
+          <select class="campo__control" id="grupo-tu-viaje"></select>
+        </label>
+        <button class="boton" type="button" id="grupo-descargar" data-t="grupo.descargar">Bajar para el grupo</button>
+      </div>
+      <p class="tarjeta__nota" id="grupo-sin" data-t="grupo.sinGastos" hidden>Cuando apuntes gastos en un viaje, podrás bajarlo aquí.</p>
+      <label class="soltar" id="grupo-soltar">
+        <input class="soltar__archivo" type="file" id="grupo-archivo" accept=".json,application/json">
+        <svg class="soltar__icono" viewBox="0 0 24 24" aria-hidden="true"><circle cx="9" cy="8" r="3"/><path d="M3.5 19a5.5 5.5 0 0 1 11 0"/><path d="M16 5.5a3 3 0 0 1 0 5M17.5 14.2a5.5 5.5 0 0 1 3 4.8"/></svg>
+        <span class="soltar__texto" data-t="grupo.soltar">Arrastra aquí el archivo que te han pasado</span>
+        <span class="soltar__pista" data-t="copia.elegir">o pulsa para elegirlo</span>
+      </label>
+      <p class="error" id="grupo-error" role="alert" hidden></p>
+      <div class="vista-previa banco" id="grupo" hidden>
+        <div class="banco__ajustes">
+          <label class="campo">
+            <span class="campo__nombre" data-t="banco.viaje">Al viaje</span>
+            <select class="campo__control" id="grupo-viaje"></select>
+          </label>
+        </div>
+        <p class="grupo__quien" data-t="grupo.quienEs">¿Quién es quién?</p>
+        <div class="banco__ajustes" id="grupo-gente"></div>
+        <ul class="banco__lista" id="grupo-lista" aria-label="Gastos del archivo" data-t-aria-label="grupo.lista"></ul>
+        <p class="banco__resumen" id="grupo-resumen" aria-live="polite"></p>
+        <div class="vista-previa__botones">
+          <button class="boton boton--dorado" type="button" id="grupo-importar"></button>
+          <button class="boton" type="button" id="grupo-cancelar" data-t="copia.no">Cancelar</button>
+        </div>
+      </div>
+      <div class="hecho banco__hecho" id="grupo-hecho" role="status" hidden>
+        <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3.5 8.3l3 3 6-6.5"/></svg>
+        <span id="grupo-hecho-texto"></span>
+        <button class="boton boton--pequeno" type="button" id="grupo-deshacer" data-t="banco.deshacer">Deshacer</button>
+      </div>
+    </section>
+
     <footer class="pie">
       <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 1.8l5 2v4c0 3-2.2 5.3-5 6.4-2.8-1.1-5-3.4-5-6.4v-4z"/></svg>
       <span data-t="copia.pie">Todo se queda en tu navegador: la copia es un archivo tuyo y no se manda a ningún sitio.</span>
