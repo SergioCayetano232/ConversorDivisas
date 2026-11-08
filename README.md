@@ -181,7 +181,8 @@ que necesitaba una conversión rápida. Ahora es un clic en la barra del navegad
   viaje, cuántos faltan ("✈ 12 días"), y debajo de la barra cuánto apartar cada semana
   hasta salir para llegar con el presupuesto ("🐷 Aparta 150 EUR a la semana"),
   sin contar lo que ya has pagado, como el vuelo. Con menos de una semana, lo
-  que falta de una vez
+  que falta de una vez. Si no sabes cuánto poner, mira tus otros viajes y te lo
+  propone ("💡 Sueles gastar 100 al día: 7 días, 700 EUR"), y pulsándolo se pone
 - Cómo va el gasto día a día: con la curva que hay al lado de la barra del
   presupuesto se abre un gráfico con lo que llevas gastado, la línea de ir
   parejo hasta el último día y, a puntos, adónde llegas a este ritmo (en rojo

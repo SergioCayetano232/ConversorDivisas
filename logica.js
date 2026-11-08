@@ -3192,6 +3192,29 @@ function mediaPorDia(todos) {
   return { media: principal.total / total, to: principal.to, dias: total };
 }
 
+// Un viaje con dos cafés apuntados no dice lo que gastas al día.
+const GASTOS_PARA_SUGERIR = 5;
+
+// A dos cifras: 553 son 550 y 12.340 son 12.000, que es un presupuesto, no un tique.
+function redondoPresupuesto(n) {
+  const paso = Math.max(10 ** (Math.floor(Math.log10(n)) - 1), 1);
+  return Math.round(n / paso) * paso;
+}
+
+// Con la mediana, para que un viaje de lujo no te infle todos los demás.
+function presupuestoSugerido(viajes, to, dias) {
+  if (!(dias > 0)) return null;
+  const medias = todosLosViajes(viajes)
+    .filter((v) => v.id !== viajes.activo && delDiaADia(v.gastos).length >= GASTOS_PARA_SUGERIR)
+    .map((v) => mediaPorDia(v.gastos))
+    .filter((m) => m?.to === to)
+    .map((m) => m.media);
+  if (!medias.length) return null;
+  const porDia = mediana(medias);
+  const importe = redondoPresupuesto(porDia * dias);
+  return importe > 0 ? { porDia, dias, importe, to, viajes: medias.length } : null;
+}
+
 // Los tramos del viaje: "desde el 4 estoy en Kioto". Cada uno dura hasta que
 // empieza el siguiente, así los gastos caen solos en el suyo por la fecha y no
 // hay que marcar nada al apuntar.
@@ -6975,6 +6998,7 @@ if (typeof module !== "undefined") {
     CATEGORIAS, CATEGORIA_POR_DEFECTO, CATEGORIAS_PROPIAS_MAX, NOMBRE_CATEGORIA_MAX, esCategoria, leerCategoriasPropias, ponerCategoriasPropias, todasCategorias, nombreCategoria, emojiCategoria, crearCategoriaPropia, quitarCategoriaPropia, sinCategoria, adivinarCategoria, PAGOS, PAGO_POR_DEFECTO, leerPago, comisionDelPago, desglose, conceptosUsados, completarConcepto,
     EMOJI_CATEGORIA, destacados, resumenParaCompartir, FINDE_MINIMO, findeContraSemana, ESTRELLA_MINIMO, conceptoEstrella,
     COPIA_APP, COPIA_VERSION, CLAVES_COPIA, CLAVES_SYNC, limpiarSync, cambiosSync, mezclaInicial, limpiarCopia, crearCopia, leerCopia, resumenCopia,
+    presupuestoSugerido,
     VIAJES_MAX, NOMBRE_VIAJE_MAX, leerViajes, leerPersonas, porPersona, consumoGente, leerPagador, leerGente, ponerNombre, nombrePersona, inicialPersona, cuentasViaje, frasePago, COBRO_GASTOS_MAX, mensajeCobro, leerEntre, entreDe, fraseEntre, cambiarEntre, leerSaldados, saldarPago, quitarSaldado, fraseSaldado, hayOtrosPagadores, NOMBRE_PERSONA_MAX, compararViajes, COLORES_VIAJE, leerColorViaje, colorLibre, siguienteColor, viajeActivo, ARCHIVADOS_MAX, archivarViaje, desarchivarViaje, borrarArchivado, todosLosViajes, crearViaje, nombreCopia, nombreDeDestino, duplicarViaje, renombrarViaje, elegirViaje, borrarViaje, moverGasto, cambiarViaje, TRAMOS_MAX, NOMBRE_TRAMO_MAX, leerTramos, ponerTramo, quitarTramo, tramoDelDia, resumenTramos, curvaPresupuesto, FRANJAS, HORAS_MINIMO, horaFiable, porFranja, PENDIENTES_MAX, leerPendientes, crearPendiente, apuntarPendiente, quitarPendiente, totalPendiente, pagarPendiente, resumenViaje, archivoGastos,
     diasHasta, leerPresupuesto, leerTopes, PRESUPUESTO_JUSTO, estadoPresupuesto, estadoTopes, alDiaAlli, inicioDelViaje, diaDelViaje, cuentaAtras, textoCuentaAtras, huchaViaje, loDeHoy, CELEBRADOS_MAX, leerCelebrados, anadirCelebrado, viajeParaCelebrar, textoCelebrar, RACHA_MINIMA, rachaPresupuesto, hastaCuandoLlega, previsionViaje, PREVISION_JUSTA, textoPrevision, loQueSeLleva, redondearDias,
     EXTRAS_MAX, EXTRAS_POR_DEFECTO, leerExtras, anadirExtra, quitarExtra,

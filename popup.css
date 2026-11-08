@@ -6079,6 +6079,32 @@ body::after {
   animation: enter var(--mid) var(--ease-out) 60ms both;
 }
 
+.presupuesto__importe.is-puesto {
+  animation: beat var(--mid) var(--ease-spring);
+}
+
+.presupuesto__sugerido {
+  flex-basis: 100%;
+  min-width: 0;
+  padding: 3px 6px;
+  background: color-mix(in srgb, var(--brass) 10%, transparent);
+  border: 1px dashed color-mix(in srgb, var(--brass) 45%, transparent);
+  border-radius: 6px;
+  color: var(--brass);
+  font-family: inherit;
+  font-size: 10px;
+  font-variant-numeric: tabular-nums;
+  text-align: left;
+  cursor: pointer;
+  animation: enter var(--mid) var(--ease-out) 90ms both;
+  transition: background var(--fast) var(--ease), border-color var(--fast) var(--ease);
+}
+
+.presupuesto__sugerido:hover {
+  background: color-mix(in srgb, var(--brass) 20%, transparent);
+  border-color: var(--brass);
+}
+
 /* Los topes, tres por fila, que seis en una no caben con su cifra. */
 .presupuesto__topes {
   display: grid;
@@ -9714,6 +9740,7 @@ kbd {
   }
 
   .presupuesto__fechas,
+  .presupuesto__sugerido,
   .presupuesto__topes {
     animation-delay: 0s;
   }

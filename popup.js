@@ -220,6 +220,7 @@ const el = {
   presupuestoHasta: document.getElementById("presupuesto-hasta"),
   presupuestoDesde: document.getElementById("presupuesto-desde"),
   presupuestoQuitar: document.getElementById("presupuesto-quitar"),
+  presupuestoSugerido: document.getElementById("presupuesto-sugerido"),
   presupuestoTopes: document.getElementById("presupuesto-topes"),
   historialCuenta: document.getElementById("historial-cuenta"),
   historial: document.getElementById("historial"),
@@ -4515,6 +4516,7 @@ function editarPresupuesto() {
   const [a, m, d] = el.presupuestoHasta.min.split("-").map(Number);
   el.presupuestoHasta.value = presupuesto?.hasta ?? isoLocal(new Date(a, m - 1, d + 6));
   el.presupuestoQuitar.hidden = !presupuesto;
+  pintarSugerido();
   pintarCamposTopes();
   el.presupuestoForm.hidden = false;
   el.presupuesto.hidden = true;
@@ -4522,6 +4524,28 @@ function editarPresupuesto() {
   restartAnimation(el.presupuestoForm, "is-nuevo");
   el.presupuestoImporte.focus();
   el.presupuestoImporte.select();
+}
+
+// Solo al crearlo: si ya tienes uno, esa cifra la decidiste tú.
+function pintarSugerido() {
+  const hasta = el.presupuestoHasta.value;
+  const sugerido = presupuesto || !hasta ? null
+    : presupuestoSugerido(viajes, el.presupuestoCodigo.textContent, diasHasta(hasta, el.presupuestoDesde.value || hoy()));
+  el.presupuestoSugerido.hidden = !sugerido;
+  if (!sugerido) return;
+  el.presupuestoSugerido.dataset.importe = sugerido.importe;
+  el.presupuestoSugerido.textContent = tr(sugerido.dias === 1 ? "presupuesto.sugeridoUno" : "presupuesto.sugerido", {
+    porDia: nfEntero.format(sugerido.porDia),
+    dias: sugerido.dias,
+    importe: `${nfEntero.format(sugerido.importe)} ${sugerido.to}`,
+  });
+  el.presupuestoSugerido.title = tr(sugerido.viajes === 1 ? "presupuesto.sugeridoTituloUno" : "presupuesto.sugeridoTitulo", { n: sugerido.viajes });
+}
+
+function onSugerido() {
+  el.presupuestoImporte.value = nfEntero.format(Number(el.presupuestoSugerido.dataset.importe));
+  restartAnimation(el.presupuestoImporte, "is-puesto");
+  el.presupuestoImporte.focus();
 }
 
 function dejarDeEditarPresupuesto() {
@@ -7546,10 +7570,13 @@ function bindEvents() {
   el.presupuestoVer.addEventListener("click", editarPresupuesto);
   el.presupuestoForm.addEventListener("submit", onGuardarPresupuesto);
   el.presupuestoDesde.addEventListener("input", ajustarHasta);
+  el.presupuestoDesde.addEventListener("input", pintarSugerido);
+  el.presupuestoHasta.addEventListener("input", pintarSugerido);
+  el.presupuestoSugerido.addEventListener("click", onSugerido);
   el.presupuestoQuitar.addEventListener("click", () => ponerPresupuesto(null));
   el.presupuestoVer.addEventListener("animationend", () => el.presupuestoVer.classList.remove("is-nuevo", "is-alarma"));
   el.presupuestoForm.addEventListener("animationend", (event) => {
-    event.target.classList.remove("is-nuevo", "is-mal");
+    event.target.classList.remove("is-nuevo", "is-mal", "is-puesto");
   });
   // Si cierras el popup antes de los dos segundos, que no se pierda.
   window.addEventListener("pagehide", apuntarAhora);
