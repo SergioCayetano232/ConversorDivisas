@@ -2160,8 +2160,12 @@ function apuntarNoches(lista, noches) {
 // gasto con la tasa y la comisión de ese día.
 const PENDIENTES_MAX = 30;
 
+// El día que toca pagarlo. Es opcional: los de antes no lo traen.
+const leerVence = (vence) => (esIso(vence) && isoLocal(new Date(`${vence}T12:00:00`)) === vence ? vence : null);
+
 function leerPendientes(guardado) {
-  return leerGastos(guardado).filter((p) => p.cantidad > 0).slice(0, PENDIENTES_MAX);
+  return leerGastos(guardado).filter((p) => p.cantidad > 0).slice(0, PENDIENTES_MAX)
+    .map(({ vence, ...p }) => (leerVence(vence) ? { ...p, vence } : p));
 }
 
 function apuntarPendiente(lista, pendiente) {
@@ -2176,12 +2180,84 @@ const totalPendiente = (lista, to) => leerPendientes(lista).filter((p) => p.to =
 
 // Como un gasto, con la categoría sacada del concepto. Sin comisión: esa se
 // pone al pagarlo, que es cuando el banco la cobra.
-function crearPendiente({ id, from, to, cantidad, valor, concepto = "", cuando }) {
+function crearPendiente({ id, from, to, cantidad, valor, concepto = "", cuando, vence }) {
   if (!(cantidad > 0)) return null;
-  return crearGasto({ id, from, to, cantidad, valor, concepto, cuando, categoria: adivinarCategoria(limpiarConcepto(concepto)) ?? CATEGORIA_POR_DEFECTO });
+  const pendiente = crearGasto({ id, from, to, cantidad, valor, concepto, cuando, categoria: adivinarCategoria(limpiarConcepto(concepto)) ?? CATEGORIA_POR_DEFECTO });
+  return pendiente && leerVence(vence) ? { ...pendiente, vence } : pendiente;
 }
 
 const pagarPendiente = (pendiente, opciones) => repetirGasto(pendiente, opciones);
+
+// Con la fecha vacía se la quita: es lo que manda el "Borrar" del calendario.
+function cambiarVence(lista, id, vence) {
+  return leerPendientes(lista).map(({ vence: antes, ...p }) => {
+    const dia = p.id === id ? leerVence(vence) : antes;
+    return dia ? { ...p, vence: dia } : p;
+  });
+}
+
+// Lo que corre más prisa arriba, y los que no tienen día al final.
+const pendientesPorFecha = (lista) => [...leerPendientes(lista)].sort((a, b) => (a.vence ?? "9999").localeCompare(b.vence ?? "9999"));
+
+const tocaPagar = (lista, hoyIso = hoy()) => leerPendientes(lista).filter((p) => p.vence && p.vence <= hoyIso);
+
+function tonoVence(vence, hoyIso = hoy()) {
+  const dias = diasHasta(vence, hoyIso) - 1;
+  if (dias < 0) return "pasado";
+  if (dias === 0) return "hoy";
+  return dias <= 3 ? "pronto" : "luego";
+}
+
+function textoVence(vence, hoyIso = hoy()) {
+  const dias = diasHasta(vence, hoyIso) - 1;
+  if (dias === -1) return tr("vence.ayer");
+  if (dias < 0) return tr("vence.era", { fecha: fechaCorta(vence) });
+  if (dias === 0) return tr("vence.hoy");
+  if (dias === 1) return tr("vence.manana");
+  return dias < 7 ? tr("vence.dias", { n: dias }) : tr("vence.dia", { fecha: fechaCorta(vence) });
+}
+
+// A las nueve, que antes de desayunar no hace falta. Si ese día no abriste Chrome,
+// salta el siguiente que lo abras. Con el día en la clave: si lo cambias, vuelve a avisar.
+const PENDIENTE_HORA = 9;
+const claveAvisoPendiente = (p) => `${p.id}:${p.vence}`;
+
+function tocaPendientes(viajes, avisados, ahora = new Date()) {
+  if (ahora.getHours() < PENDIENTE_HORA) return null;
+  const ya = new Set(Array.isArray(avisados) ? avisados : []);
+  for (const viaje of viajes?.lista ?? []) {
+    const pagos = tocaPagar(viaje.pendientes, isoLocal(ahora)).filter((p) => !ya.has(claveAvisoPendiente(p)));
+    if (pagos.length) return { viaje, pagos };
+  }
+  return null;
+}
+
+// Solo los que siguen ahí, que si no la lista crecería para siempre.
+function avisadosPendientes(avisados, viajes, pagos) {
+  const vivos = new Set((viajes?.lista ?? []).flatMap((v) => leerPendientes(v.pendientes).filter((p) => p.vence).map(claveAvisoPendiente)));
+  return [...new Set([...(Array.isArray(avisados) ? avisados : []).filter((c) => vivos.has(c)), ...pagos.map(claveAvisoPendiente)])];
+}
+
+function mensajePendientes({ viaje, pagos }, hoyIso = hoy()) {
+  const dinero = numeros({ minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  const nombre = (p) => p.concepto || tr("gastos.sinConcepto");
+  const [pago] = pagos;
+  const enViaje = (que) => (viaje.nombre ? tr("pendientes.aviso.en", { que, viaje: viaje.nombre }) : que);
+  if (pagos.length === 1) {
+    const importe = pago.from === pago.to ? `${dinero.format(pago.valor)} ${pago.to}` : `${dinero.format(pago.cantidad)} ${pago.from} ≈ ${dinero.format(pago.valor)} ${pago.to}`;
+    return {
+      titulo: tr(pago.vence < hoyIso ? "pendientes.aviso.pasado" : "pendientes.aviso.hoy", { concepto: nombre(pago) }),
+      cuerpo: enViaje(importe),
+    };
+  }
+  // Si fueran de dos divisas, sumarlas no diría nada.
+  const [suma, otra] = sumarPorDivisa(pagos);
+  const que = pagos.map(nombre).join(", ");
+  return {
+    titulo: tr("pendientes.aviso.varios", { n: pagos.length }),
+    cuerpo: enViaje(otra ? que : `${que} · ${dinero.format(suma.total)} ${suma.to}`),
+  };
+}
 
 function quitarGasto(lista, id) {
   return lista.filter((g) => g.id !== id);
@@ -7235,7 +7311,7 @@ if (typeof module !== "undefined") {
     puedeSerDeEmpresa, pasarAEmpresa, sacarDeEmpresa, notaDeGastos,
     AVISO_MEJOR_DIAS, techoDeSerie, crearAvisoMejor, ponerTechos,
     presupuestoSugerido, PARTES_VALIDAS, leerPartes, partesDe, repartirPorPartes, textoParte,
-    VIAJES_MAX, NOMBRE_VIAJE_MAX, leerViajes, leerPersonas, porPersona, consumoGente, leerPagador, leerGente, ponerNombre, nombrePersona, inicialPersona, cuentasViaje, frasePago, COBRO_GASTOS_MAX, mensajeCobro, leerEntre, entreDe, fraseEntre, cambiarEntre, leerSaldados, saldarPago, quitarSaldado, fraseSaldado, hayOtrosPagadores, NOMBRE_PERSONA_MAX, compararViajes, COLORES_VIAJE, leerColorViaje, colorLibre, siguienteColor, viajeActivo, ARCHIVADOS_MAX, archivarViaje, desarchivarViaje, borrarArchivado, todosLosViajes, crearViaje, nombreCopia, nombreDeDestino, duplicarViaje, renombrarViaje, elegirViaje, borrarViaje, moverGasto, cambiarViaje, TRAMOS_MAX, NOMBRE_TRAMO_MAX, leerTramos, ponerTramo, quitarTramo, tramoDelDia, resumenTramos, curvaPresupuesto, FRANJAS, HORAS_MINIMO, horaFiable, porFranja, PENDIENTES_MAX, leerPendientes, crearPendiente, apuntarPendiente, quitarPendiente, totalPendiente, pagarPendiente, resumenViaje, archivoGastos,
+    VIAJES_MAX, NOMBRE_VIAJE_MAX, leerViajes, leerPersonas, porPersona, consumoGente, leerPagador, leerGente, ponerNombre, nombrePersona, inicialPersona, cuentasViaje, frasePago, COBRO_GASTOS_MAX, mensajeCobro, leerEntre, entreDe, fraseEntre, cambiarEntre, leerSaldados, saldarPago, quitarSaldado, fraseSaldado, hayOtrosPagadores, NOMBRE_PERSONA_MAX, compararViajes, COLORES_VIAJE, leerColorViaje, colorLibre, siguienteColor, viajeActivo, ARCHIVADOS_MAX, archivarViaje, desarchivarViaje, borrarArchivado, todosLosViajes, crearViaje, nombreCopia, nombreDeDestino, duplicarViaje, renombrarViaje, elegirViaje, borrarViaje, moverGasto, cambiarViaje, TRAMOS_MAX, NOMBRE_TRAMO_MAX, leerTramos, ponerTramo, quitarTramo, tramoDelDia, resumenTramos, curvaPresupuesto, FRANJAS, HORAS_MINIMO, horaFiable, porFranja, PENDIENTES_MAX, leerPendientes, crearPendiente, cambiarVence, pendientesPorFecha, tocaPagar, tonoVence, textoVence, PENDIENTE_HORA, tocaPendientes, avisadosPendientes, mensajePendientes, apuntarPendiente, quitarPendiente, totalPendiente, pagarPendiente, resumenViaje, archivoGastos,
     diasHasta, leerPresupuesto, leerTopes, PRESUPUESTO_JUSTO, estadoPresupuesto, estadoTopes, alDiaAlli, inicioDelViaje, diaDelViaje, cuentaAtras, textoCuentaAtras, huchaViaje, loDeHoy, CELEBRADOS_MAX, leerCelebrados, anadirCelebrado, viajeParaCelebrar, textoCelebrar, RACHA_MINIMA, rachaPresupuesto, hastaCuandoLlega, previsionViaje, PREVISION_JUSTA, textoPrevision, loQueSeLleva, redondearDias,
     EXTRAS_MAX, EXTRAS_POR_DEFECTO, leerExtras, anadirExtra, quitarExtra,
     extrasVisibles, disponiblesParaAnadir, convertirExtras, semanaDe, trazoMini, CHULETA, escalaChuleta, chuleta, TRUCO_TOLERANCIA, trucoDeCabeza, textoTruco, tituloTruco, chuletaParaCompartir, extrasParaCompartir,

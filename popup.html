@@ -830,6 +830,10 @@
             data-t-aria-label="pendientes.cantidadAria">
           <span class="cajero__divisa" id="pendientes-divisa"></span>
           <button class="gastos__apuntar" type="submit" aria-label="Apuntarlo como pendiente" data-t-aria-label="pendientes.anadir">+</button>
+          <label class="pendientes__cuando">
+            <span data-t="pendientes.venceEtiqueta">Se paga el</span>
+            <input class="presupuesto__fecha" type="date" id="pendientes-vence" aria-label="Qué día toca pagarlo (opcional)" data-t-aria-label="pendientes.venceAria">
+          </label>
         </form>
       </div>
       <div class="cajero tramos" id="tramos" role="group" aria-labelledby="tramos-titulo" hidden>

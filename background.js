@@ -107,6 +107,7 @@ chrome.runtime.onStartup.addListener(() => {
   revisarAvisos();
   recordarGastos();
   avisarTaxFree();
+  avisarPendientes();
 });
 
 // Con la de cada hora basta: salta en la hora que hayas elegido, y si a esa
@@ -117,6 +118,7 @@ chrome.alarms.onAlarm.addListener((alarma) => {
   revisarAvisos();
   recordarGastos();
   avisarTaxFree();
+  avisarPendientes();
 });
 
 // Las preferencias van y vienen con tu cuenta de Chrome. Si no tienes la
@@ -1406,6 +1408,29 @@ async function avisarTaxFree() {
   }
 }
 
+// Tampoco depende del recordatorio: lo pusiste tú con su fecha, y quieres que salte.
+async function avisarPendientes() {
+  try {
+    await idiomaListo;
+    const { pendientesAvisados, viajes } = await chrome.storage.local.get(["pendientesAvisados", "viajes"]);
+    if (!viajes) return;
+    const leidos = leerViajes(viajes);
+    const aviso = tocaPendientes(leidos, pendientesAvisados);
+    if (!aviso) return;
+    await chrome.storage.local.set({ pendientesAvisados: avisadosPendientes(pendientesAvisados, leidos, aviso.pagos) });
+    const { titulo, cuerpo } = mensajePendientes(aviso);
+    await chrome.notifications.create(`pendiente:${aviso.viaje.id}`, {
+      type: "basic",
+      iconUrl: "icons/icon128.png",
+      title: titulo,
+      message: cuerpo,
+      priority: 1,
+    });
+  } catch (error) {
+    console.warn("No se pudo mirar lo pendiente", error);
+  }
+}
+
 // Te lleva a ese viaje con los gastos ya abiertos, que es a lo que vienes.
 async function irAGastos(viajeId) {
   const { viajes } = await chrome.storage.local.get("viajes");
@@ -1428,6 +1453,7 @@ chrome.notifications.onClicked.addListener(async (id) => {
   chrome.notifications.clear(id);
   if (id.startsWith("recordatorio:")) await irAGastos(id.slice(13));
   if (id.startsWith("taxfree:")) await irAGastos(id.slice(8));
+  if (id.startsWith("pendiente:")) await irAGastos(id.slice(10));
   if (id.startsWith("gasto:")) await irAGastos(id.split(":")[1]);
   const [, from, to] = id.split(":");
   if (isValidCode(from) && isValidCode(to)) await chrome.storage.local.set({ lastPair: { from, to } });

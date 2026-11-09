@@ -205,7 +205,10 @@ que necesitaba una conversión rápida. Ahora es un clic en la barra del navegad
   vale hoy. No cuenta como gastado, pero sí sale de lo que te queda al día y
   de la previsión, y en la barra del presupuesto va a rayas detrás de lo
   gastado. El día que lo pagas, con **Pagar** pasa a gasto con la tasa y la
-  comisión de ese momento
+  comisión de ese momento. Si le pones el día en que toca pagarlo, salen los más
+  urgentes arriba ("📅 Mañana"), y ese día a partir de las nueve te salta una
+  notificación ("Hoy toca pagar Hotel Kioto"), o al abrir Chrome si ese día no lo
+  abriste. El día se cambia pulsándolo
 - Tramos dentro del viaje (Tokio, Kioto, Osaka): con **📍 Tramos**, debajo
   del total, pones dónde estás desde qué día. Cada tramo dura hasta que
   empieza el siguiente, así los gastos caen solos en el suyo por la fecha.

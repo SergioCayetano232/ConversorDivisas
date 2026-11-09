@@ -3454,6 +3454,10 @@ body::after {
   color: var(--muted);
 }
 
+.gastos__pendiente.is-urgente {
+  --tono: var(--cinnabar);
+}
+
 .gastos__pendiente::before {
   display: none;
 }
@@ -4910,7 +4914,7 @@ body::after {
 .pendientes__fila {
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto auto;
-  grid-template-areas: "que pagar quitar" "cuanto pagar quitar";
+  grid-template-areas: "que pagar quitar" "cuanto pagar quitar" "vence pagar quitar";
   align-items: center;
   column-gap: 6px;
   padding: 3px 4px 3px 8px;
@@ -4942,8 +4946,83 @@ body::after {
   color: var(--muted);
 }
 
+/* El popup no pasa de 600 px: sin tope, con varios se iba el formulario de abajo. */
+.pendientes .pendientes__lista {
+  max-height: 168px;
+  overflow-y: auto;
+}
+
+/* El input va encima y transparente: así todo el texto abre el calendario. */
+.pendientes__vence {
+  grid-area: vence;
+  position: relative;
+  justify-self: start;
+  border-radius: 4px;
+  font-size: 9.5px;
+  color: var(--muted);
+  transition: color var(--fast) var(--ease);
+}
+
+.pendientes__vence:hover {
+  color: var(--brass);
+}
+
+.pendientes__vence[data-tono="pronto"] {
+  color: var(--brass);
+}
+
+.pendientes__vence[data-tono="hoy"],
+.pendientes__vence[data-tono="pasado"] {
+  font-weight: 600;
+  color: var(--cinnabar);
+}
+
+.pendientes__vence input {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  border: none;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.pendientes__vence input::-webkit-calendar-picker-indicator {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  cursor: pointer;
+}
+
+.pendientes__vence:has(input:focus-visible) {
+  outline: 2px solid var(--brass);
+  outline-offset: 1px;
+}
+
 .pendientes__fila .gente__saldar {
   grid-area: pagar;
+}
+
+.pendientes__nuevo {
+  flex-wrap: wrap;
+}
+
+.pendientes__cuando {
+  flex: 0 0 100%;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 10px;
+  color: var(--muted);
+}
+
+.pendientes__cuando .presupuesto__fecha {
+  flex: 1;
 }
 
 .pendientes__fila .gastos__quitar {

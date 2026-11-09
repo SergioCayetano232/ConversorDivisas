@@ -137,6 +137,7 @@ const el = {
   pendientesConcepto: document.getElementById("pendientes-concepto"),
   pendientesCantidad: document.getElementById("pendientes-cantidad"),
   pendientesDivisa: document.getElementById("pendientes-divisa"),
+  pendientesVence: document.getElementById("pendientes-vence"),
   presupuestoPendiente: document.getElementById("presupuesto-pendiente"),
   curvaAbrir: document.getElementById("curva-abrir"),
   horas: document.getElementById("horas"),
@@ -3917,26 +3918,37 @@ function onImprimirEmpresa() {
   chrome.tabs.create({ url: `nota.html?viaje=${encodeURIComponent(viajes.activo)}` });
 }
 
-function pintarPendiente() {
+function pintarBotonPendiente() {
   const { pendientes } = viajeActivo(viajes);
   const lista = leerPendientes(pendientes);
   const boton = el.gastosPendiente;
   boton.hidden = lista.length === 0 && !presupuesto;
   if (boton.hidden) return;
+  const urgentes = tocaPagar(lista).length;
   boton.classList.toggle("is-vacio", lista.length === 0);
+  boton.classList.toggle("is-urgente", urgentes > 0);
   if (lista.length === 0) {
     boton.textContent = tr("pendientes.invitar");
     boton.title = tr("pendientes.invitarTitulo");
   } else {
     const to = presupuesto?.to ?? sumarPorDivisa(lista)[0].to;
     boton.textContent = tr("pendientes.boton", { valor: nf.format(totalPendiente(lista, to)) });
-    boton.title = tr("pendientes.botonTitulo", { n: lista.length });
+    boton.title = urgentes ? tr("pendientes.botonUrgente", { urgentes, n: lista.length }) : tr("pendientes.botonTitulo", { n: lista.length });
   }
-  if (!el.pendientes.hidden) pintarPendientes();
+}
+
+function pintarPendiente() {
+  pintarBotonPendiente();
+  if (!el.gastosPendiente.hidden && !el.pendientes.hidden) pintarPendientes();
+}
+
+function pintarVence(chip, vence) {
+  chip.dataset.tono = vence ? tonoVence(vence) : "sin";
+  chip.firstChild.textContent = `📅 ${vence ? textoVence(vence) : tr("pendientes.ponerFecha")}`;
 }
 
 function pintarPendientes() {
-  const lista = leerPendientes(viajeActivo(viajes).pendientes);
+  const lista = pendientesPorFecha(viajeActivo(viajes).pendientes);
   el.pendientesDivisa.textContent = el.from.value;
   el.pendientesLista.replaceChildren(...lista.map((p, i) => {
     const fila = document.createElement("li");
@@ -3949,6 +3961,16 @@ function pintarPendientes() {
     const cuanto = document.createElement("span");
     cuanto.className = "pendientes__cuanto";
     cuanto.textContent = p.from === p.to ? `${nf.format(p.valor)} ${p.to}` : `${nf.format(p.cantidad)} ${p.from} ≈ ${nf.format(p.valor)} ${p.to}`;
+    const vence = document.createElement("label");
+    vence.className = "pendientes__vence";
+    vence.append(document.createElement("span"));
+    const campo = document.createElement("input");
+    campo.type = "date";
+    campo.value = p.vence ?? "";
+    campo.setAttribute("aria-label", tr("pendientes.cambiarFecha", { concepto: p.concepto || tr("gastos.sinConcepto") }));
+    campo.addEventListener("change", () => onCambiarVence(p.id, campo.value, vence));
+    vence.append(campo);
+    pintarVence(vence, p.vence);
     const pagar = document.createElement("button");
     pagar.type = "button";
     pagar.className = "gente__saldar";
@@ -3961,7 +3983,7 @@ function pintarPendientes() {
     quitar.textContent = "✕";
     quitar.setAttribute("aria-label", tr("pendientes.quitar", { concepto: p.concepto || tr("gastos.sinConcepto") }));
     quitar.addEventListener("click", () => onQuitarPendiente(p.id));
-    fila.append(que, cuanto, pagar, quitar);
+    fila.append(que, cuanto, vence, pagar, quitar);
     return fila;
   }));
   pendienteNuevo = null;
@@ -3980,6 +4002,8 @@ function abrirPendientes() {
   el.pendientes.style.setProperty("--cajero-arriba", `${Math.round(arriba) + 4}px`);
   el.pendientesConcepto.value = "";
   el.pendientesCantidad.value = "";
+  el.pendientesVence.value = "";
+  el.pendientesVence.min = hoy();
   el.pendientes.hidden = false;
   el.gastosPendiente.setAttribute("aria-expanded", "true");
   pintarPendientes();
@@ -4013,7 +4037,7 @@ function onApuntarPendiente(event) {
   }
   const pendiente = crearPendiente({
     id: `${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`,
-    from, to, cantidad, valor: cantidad * tasa, concepto: el.pendientesConcepto.value, cuando: Date.now(),
+    from, to, cantidad, valor: cantidad * tasa, concepto: el.pendientesConcepto.value, cuando: Date.now(), vence: el.pendientesVence.value,
   });
   if (!pendiente) return;
   const { pendientes } = viajeActivo(viajes);
@@ -4021,10 +4045,21 @@ function onApuntarPendiente(event) {
   pendienteNuevo = pendiente.id;
   el.pendientesConcepto.value = "";
   el.pendientesCantidad.value = "";
+  el.pendientesVence.value = "";
   el.pendientesCantidad.title = "";
   guardarViajes();
   pintarGastos();
   el.pendientesConcepto.focus();
+}
+
+// Sin repintar la lista: al escribir la fecha a mano salta un change por cada
+// número, y repintando perderías el campo a medias.
+function onCambiarVence(id, valor, chip) {
+  const { pendientes } = viajeActivo(viajes);
+  viajes = cambiarViaje(viajes, viajes.activo, { pendientes: cambiarVence(pendientes, id, valor) });
+  guardarViajes();
+  pintarVence(chip, valor || null);
+  pintarBotonPendiente();
 }
 
 function onQuitarPendiente(id) {
