@@ -1660,6 +1660,19 @@ function gastoDeBarra(leido, { id, cuando, tasa, comision, pago, usados = [] }) 
   });
 }
 
+// Lo de una web se paga con tarjeta, nunca en efectivo, aunque sea lo que sueles usar.
+// Si el precio ya viene en tu divisa (Booking en euros) va como lo del banco: tu
+// importe exacto, sin comisión y con lo que vale allí, o se quedaría en yenes.
+function gastoDeTarjeta({ cantidad, from, to, concepto }, par, { tasa, comision, ...resto }) {
+  if (!(cantidad > 0) || !(tasa > 0) || !isValidCode(from) || !isValidCode(to)) return null;
+  const pago = "tarjeta";
+  if (from !== par.to || to !== par.from) {
+    return gastoDeBarra({ cantidad, from, to, concepto: limpiarConcepto(concepto), pago }, { ...resto, tasa, comision });
+  }
+  const deAlli = Math.round(cantidad * tasa * 100) / 100;
+  return gastoDeBarra({ cantidad: deAlli, from: to, to: from, concepto: limpiarConcepto(concepto), pago }, { ...resto, tasa: cantidad / deAlli, comision: 0 });
+}
+
 // Lo que pinta Chrome en la sugerencia es XML: un "&" suelto la deja en blanco.
 function escaparXml(texto) {
   return String(texto).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
@@ -7209,7 +7222,7 @@ if (typeof module !== "undefined") {
     RECIENTES_MAX, FIJOS_MAX, apuntarReciente, fijarReciente, leerRecientes, recientesVisibles,
     RANGOS, RANGO_POR_DEFECTO, leerRango, siguienteRango, coordenadas, alturaEn, MOMENTO_UMBRAL, momento, textoMomento,
     SEMANAS_MINIMAS, mejorDiaSemana, nombreDiaSemana, textoDiaSemana, indiceCercano, extremos, fechaCorta, largoEnPantalla,
-    leerNumero, divisaDe, leerSeleccion, destinoPara, leerPegado, leerPegadoSuelto, buscarPrecios, precioEntero, leerOmnibox, precioUnidadBarra, leerGastoBarra, gastoDeBarra, escaparXml,
+    leerNumero, divisaDe, leerSeleccion, destinoPara, leerPegado, leerPegadoSuelto, buscarPrecios, precioEntero, leerOmnibox, precioUnidadBarra, leerGastoBarra, gastoDeBarra, gastoDeTarjeta, escaparXml,
     divisaDeIdioma, parPorIdioma, banderaDe, banderaDivisa,
     HISTORIAL_MAX, leerHistorial, apuntarConversion, quitarConversion, haceCuanto, ultimoDeHoy, textoParaCopiar, fraseParaCopiar, gastoParaCopiar, ultimoGasto, gastoMasCaro, totalParaCopiar, hoyParaCopiar, simboloDe, textoConSimbolo, fraseConSimbolo,
     celdaCsv, csvHistorial, csvGastos, csvViajes,

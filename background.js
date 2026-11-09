@@ -310,6 +310,10 @@ function paraLaTarjeta(datos) {
       copiado: tr("copiado"),
       fallo: tr("copiar.fallo"),
       cita: tr("tarjeta.cita"),
+      gasto: tr("tarjeta.gasto"),
+      concepto: tr("tarjeta.concepto"),
+      apuntado: tr("tarjeta.apuntado"),
+      noApuntado: tr("tarjeta.noApuntado"),
     },
   };
 }
@@ -442,26 +446,50 @@ function pistaBarra(texto) {
   chrome.omnibox.setDefaultSuggestion({ description: escaparXml(texto) });
 }
 
+async function paraApuntar() {
+  const guardado = await chrome.storage.local.get(["viajes", "gastosViaje", "presupuestoViaje", "comisionBanco", "pagoGasto"]);
+  const viajes = leerViajes(guardado.viajes, guardado.gastosViaje, guardado.presupuestoViaje);
+  return {
+    viajes,
+    viaje: viajeActivo(viajes),
+    id: `${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`,
+    cuando: Date.now(),
+    comision: leerComision(guardado.comisionBanco),
+    pago: guardado.pagoGasto,
+    usados: conceptosUsados(viajes.lista.flatMap((v) => v.gastos)),
+  };
+}
+
 // Lo que hace falta para apuntar desde la barra, con la tasa de hoy.
 async function prepararGasto(texto) {
   const leido = leerGastoBarra(texto, await leerPar());
   if (!leido) return null;
-  const guardado = await chrome.storage.local.get(["viajes", "gastosViaje", "presupuestoViaje", "comisionBanco", "pagoGasto"]);
-  const viajes = leerViajes(guardado.viajes, guardado.gastosViaje, guardado.presupuestoViaje);
+  const { viajes, viaje, ...datos } = await paraApuntar();
   const rates = await tasasDe(leido.from);
-  const gasto = gastoDeBarra(leido, {
-    id: `${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`,
-    cuando: Date.now(),
-    tasa: rates[leido.to],
-    comision: leerComision(guardado.comisionBanco),
-    pago: guardado.pagoGasto,
-    usados: conceptosUsados(viajes.lista.flatMap((v) => v.gastos)),
-  });
-  const viaje = viajeActivo(viajes);
+  const gasto = gastoDeBarra(leido, { ...datos, tasa: rates[leido.to] });
   return gasto && { gasto: alCambioDelCajero(gasto, viaje.cajero), viajes, viaje };
 }
 
+async function guardarGasto({ gasto, viajes, viaje }) {
+  await chrome.storage.local.set({ viajes: cambiarViaje(viajes, viaje.id, { gastos: apuntarGasto(viaje.gastos, gasto) }) });
+  await chrome.storage.local.remove(["gastosViaje", "presupuestoViaje"]);
+}
+
 const cifraGasto = (n, divisa) => `${nf.format(n)} ${divisa}`;
+
+// La tasa primero: si leyera los viajes antes de la red, un gasto apuntado
+// mientras tanto se perdería al guardar.
+async function apuntarDesdeTarjeta(precio) {
+  await idiomaListo;
+  const { rate } = await tasa(precio.from, precio.to);
+  const par = await leerPar();
+  const { viajes, viaje, ...datos } = await paraApuntar();
+  const gasto = gastoDeTarjeta(precio, par, { ...datos, tasa: rate });
+  if (!gasto) return { ok: false, mensaje: tr("tarjeta.noApuntado") };
+  await guardarGasto({ gasto, viajes, viaje });
+  const importe = cifraGasto(gasto.valor, gasto.to);
+  return { ok: true, mensaje: viaje.nombre ? tr("barra.apuntadoEn", { importe, viaje: viaje.nombre }) : tr("barra.apuntado", { importe }) };
+}
 
 async function sugerirGasto(texto, sugerir, actual) {
   sugerir([]);
@@ -489,9 +517,8 @@ async function apuntarDesdeBarra(texto) {
   try {
     const listo = await prepararGasto(texto);
     if (!listo) return false;
-    const { gasto, viajes, viaje } = listo;
-    await chrome.storage.local.set({ viajes: cambiarViaje(viajes, viaje.id, { gastos: apuntarGasto(viaje.gastos, gasto) }) });
-    await chrome.storage.local.remove(["gastosViaje", "presupuestoViaje"]);
+    const { gasto, viaje } = listo;
+    await guardarGasto(listo);
     const cuerpo = [gasto.concepto || nombreCategoria(gasto.categoria), cifraGasto(gasto.valor, gasto.to)].join(" · ");
     await chrome.notifications.create(`gasto:${viaje.id}:${gasto.id}`, {
       type: "basic",
@@ -1223,6 +1250,16 @@ async function convertirConAtajo(tab) {
 
 chrome.commands.onCommand.addListener((comando, tab) => {
   if (comando === "convertir-seleccion" && tab) convertirConAtajo(tab);
+});
+
+chrome.runtime.onMessage.addListener((mensaje, quien, responder) => {
+  if (mensaje?.tipo !== "apuntarTarjeta") return false;
+  apuntarDesdeTarjeta(mensaje).then(responder, (error) => {
+    console.warn("No se pudo apuntar el gasto", error);
+    responder({ ok: false, mensaje: errorMessageFor(error) });
+  });
+  // Sin el true, Chrome cierra el canal antes de que llegue la respuesta.
+  return true;
 });
 
 // Aquí no uso la caché del popup: guarda la tasa de la mañana hasta el día

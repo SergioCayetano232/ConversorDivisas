@@ -279,12 +279,35 @@
 
     .pie {
       display: flex;
-      justify-content: flex-end;
+      align-items: center;
+      gap: 6px;
       margin-top: 10px;
     }
 
-    .copiar {
-      padding: 3px 9px;
+    .concepto {
+      flex: 1;
+      min-width: 0;
+      box-sizing: border-box;
+      height: 24px;
+      padding: 0 8px;
+      font: 11px system-ui, -apple-system, "Segoe UI", Inter, sans-serif;
+      color: var(--texto);
+      background: var(--dorado-ghost);
+      border: 1px solid var(--borde);
+      border-radius: 8px;
+      outline: none;
+      transition: border-color 180ms ease, opacity 180ms ease;
+    }
+
+    .concepto::placeholder { color: var(--tenue); }
+    .concepto:focus { border-color: var(--dorado-dim); }
+    .concepto:disabled { opacity: 0.6; }
+
+    .copiar,
+    .gasto {
+      flex: none;
+      height: 24px;
+      padding: 0 9px;
       background: transparent;
       border: 1px solid var(--borde);
       border-radius: 8px;
@@ -297,15 +320,20 @@
         transform 180ms var(--muelle);
     }
 
-    .copiar:hover {
+    .copiar:hover,
+    .gasto:hover:not(:disabled) {
       color: var(--dorado);
       border-color: var(--dorado-dim);
       background: var(--dorado-ghost);
     }
 
-    .copiar:active { transform: scale(0.92); }
+    .copiar:active,
+    .gasto:active:not(:disabled) { transform: scale(0.92); }
 
-    .copiar.is-hecho {
+    .gasto:disabled { cursor: default; }
+
+    .copiar.is-hecho,
+    .gasto.is-hecho {
       color: var(--jade);
       border-color: var(--jade);
       background: var(--jade-ghost);
@@ -313,6 +341,7 @@
     }
 
     .cerrar:focus-visible,
+    .gasto:focus-visible,
     .copiar:focus-visible {
       outline: 2px solid var(--dorado);
       outline-offset: 2px;
@@ -356,7 +385,11 @@
       <p class="meta"></p>
       <p class="nota"></p>
       <p class="aviso" role="alert"></p>
-      <div class="pie"><button class="copiar" type="button">Copiar</button></div>
+      <div class="pie">
+        <input class="concepto" type="text" maxlength="40" autocomplete="off" placeholder="Concepto" aria-label="Concepto">
+        <button class="gasto" type="button">+ Gasto</button>
+        <button class="copiar" type="button">Copiar</button>
+      </div>
     </div>
   `;
 
@@ -383,6 +416,14 @@
     $(".cerrar").addEventListener("click", cerrar);
     $(".copiar").addEventListener("click", copiar);
     $(".cifra").addEventListener("dblclick", copiar);
+    $(".gasto").addEventListener("click", apuntar);
+    const campo = $(".concepto");
+    campo.addEventListener("keydown", (event) => {
+      // En japonés o chino el Enter acepta el carácter, no es que hayas acabado.
+      if (event.key === "Enter" && !event.isComposing) apuntar();
+    });
+    // Si no, al escribir aquí saltan los atajos de la web (YouTube, Gmail…).
+    for (const tipo of ["keydown", "keypress", "keyup"]) campo.addEventListener(tipo, (event) => event.stopPropagation());
     document.documentElement.appendChild(host);
     document.addEventListener("mousedown", fuera, true);
     document.addEventListener("keydown", tecla, true);
@@ -461,6 +502,19 @@
     $(".cerrar").setAttribute("aria-label", d.textos.cerrar);
     const copiar = $(".copiar");
     if (!copiar.classList.contains("is-hecho")) copiar.textContent = d.textos.copiar;
+    const gasto = $(".gasto");
+    if (!gasto.classList.contains("is-hecho")) gasto.textContent = d.textos.gasto;
+    $(".concepto").placeholder = d.textos.concepto;
+    $(".concepto").setAttribute("aria-label", d.textos.concepto);
+  }
+
+  // Con la tarjeta ya abierta, otra conversión no puede heredar el "Apuntado".
+  function prepararGasto() {
+    const boton = $(".gasto");
+    boton.disabled = false;
+    boton.classList.remove("is-hecho");
+    $(".concepto").disabled = false;
+    $(".concepto").value = "";
   }
 
   function mostrar(d) {
@@ -468,6 +522,7 @@
     const tarjeta = $(".tarjeta");
     tarjeta.classList.remove("is-saliendo");
     datos = d;
+    if (d.estado === "cargando") prepararGasto();
     traducir(d);
 
     if (d.estado === "cargando") {
@@ -560,6 +615,38 @@
       boton.textContent = datos?.textos?.copiar ?? "Copiar";
       boton.classList.remove("is-hecho");
     }, 1400);
+  }
+
+  async function apuntar() {
+    const boton = $(".gasto");
+    if (!datos || datos.estado !== "ok" || boton.disabled) return;
+    const enviados = datos;
+    boton.disabled = true;
+    let respuesta;
+    try {
+      respuesta = await chrome.runtime.sendMessage({
+        tipo: "apuntarTarjeta",
+        cantidad: enviados.cantidad,
+        from: enviados.from,
+        to: enviados.to,
+        concepto: $(".concepto").value,
+      });
+    } catch (error) {
+      // Pasa si recargas la extensión con la tarjeta abierta.
+      respuesta = { ok: false, mensaje: enviados.textos.noApuntado };
+    }
+    if (!raiz || datos !== enviados) return;
+
+    // Se queda en verde y sin poder pulsarse, para no apuntarlo dos veces.
+    if (respuesta?.ok) {
+      boton.textContent = enviados.textos.apuntado;
+      boton.classList.add("is-hecho");
+      $(".concepto").disabled = true;
+    } else {
+      boton.disabled = false;
+    }
+    $(".nota").textContent = respuesta?.mensaje ?? enviados.textos.noApuntado;
+    colocar();
   }
 
   window.__conversorDivisas = { mostrar, cerrar };

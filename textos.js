@@ -933,6 +933,10 @@ const TEXTOS = {
     "tarjeta.sinDivisa": "Sin divisa en el texto: uso {from}",
     "tarjeta.nada": "No veo ninguna cantidad en lo que has seleccionado.",
     "tarjeta.sinSeleccion": "Selecciona un precio en la página y vuelve a pulsar el atajo.",
+    "tarjeta.gasto": "+ Gasto",
+    "tarjeta.concepto": "Concepto",
+    "tarjeta.apuntado": "Apuntado",
+    "tarjeta.noApuntado": "No se ha podido apuntar.",
 
     "menu.precios": "Convertir los precios de la página",
     "barra.pista": "Escribe una cantidad: 20 usd, 50 eur a gbp, 100-15% jpy. Con + delante apuntas un gasto: + 20 cena. Con hoy, ayer, semana, mes o viaje, cómo vas; con 75f, los grados; con 10mi, los km; con 5lb, los kilos; con 8oz, los gramos; con 6ft, los metros; con 65mph, los km/h; con 10gal, los litros; con 55in, los cm; con 800sqft, los m²; con 30mpg, los l/100 km; con 35psi, los bares, y con 2cups, los ml",
@@ -1946,6 +1950,10 @@ const TEXTOS = {
     "tarjeta.sinDivisa": "No currency in the text: using {from}",
     "tarjeta.nada": "I can't find an amount in what you selected.",
     "tarjeta.sinSeleccion": "Select a price on the page and press the shortcut again.",
+    "tarjeta.gasto": "+ Expense",
+    "tarjeta.concepto": "What for?",
+    "tarjeta.apuntado": "Logged",
+    "tarjeta.noApuntado": "Couldn't log it.",
 
     "menu.precios": "Convert prices on this page",
     "barra.pista": "Type an amount: 20 usd, 50 eur to gbp, 100-15% jpy. Start with + to log an expense: + 20 dinner. Type today, yesterday, week, month or trip to see how it's going, 75f for the temperature, 10mi for km, 5lb for kg, 8oz for grams, 6ft for meters, 65mph for km/h, 10gal for liters, 55in for cm, 800sqft for m², 30mpg for l/100 km, 35psi for bar or 2cups for ml",
