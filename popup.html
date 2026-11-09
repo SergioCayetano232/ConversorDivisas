@@ -225,6 +225,7 @@
             <span class="comision__total" id="comision-total"></span>
           </button>
           <div class="burbuja burbuja--doble" id="comision-burbuja" role="dialog" aria-label="Comisión de tu banco e impuesto de venta" data-t-aria-label="comision.dialogo" hidden>
+            <div class="burbuja__dentro" id="comision-dentro">
             <div class="burbuja__fila">
               <span class="burbuja__nombre" title="Comisión de tu banco" data-t="comision.nombre" data-t-title="comision.titulo">Banco</span>
               <div class="burbuja__rapidas" id="comision-rapidas" role="group" aria-label="Comisiones habituales" data-t-aria-label="comision.rapidas"></div>
@@ -242,6 +243,20 @@
                   data-t-aria-label="comision.otraAria">
                 <span aria-hidden="true">%</span>
               </label>
+            </div>
+            <div class="burbuja__fila burbuja__fila--tarjetas">
+              <span class="burbuja__nombre" title="Tus tarjetas, cada una con su comisión. La que elijas es la que se aplica" data-t="tarjetas.nombre" data-t-title="tarjetas.titulo">Tarjetas</span>
+              <div class="burbuja__tarjetas">
+                <div class="burbuja__rapidas burbuja__mias" id="tarjetas-lista" role="group" aria-label="Tus tarjetas" data-t-aria-label="tarjetas.lista"></div>
+                <form class="burbuja__nueva" id="tarjetas-form" novalidate>
+                  <input class="burbuja__campo burbuja__campo--nombre" type="text" id="tarjetas-nombre" maxlength="14" autocomplete="off" spellcheck="false" placeholder="Nombre" aria-label="Nombre de la tarjeta" data-t-placeholder="tarjetas.placeholder" data-t-aria-label="tarjetas.campoNombre">
+                  <label class="burbuja__otra burbuja__nueva-pct">
+                    <input class="burbuja__campo" type="text" id="tarjetas-pct" inputmode="decimal" autocomplete="off" spellcheck="false" placeholder="0" aria-label="Su comisión, en tanto por ciento" data-t-aria-label="tarjetas.campoPct">
+                    <span aria-hidden="true">%</span>
+                  </label>
+                  <button class="burbuja__rapida" type="submit" aria-label="Añadir la tarjeta" data-t-aria-label="tarjetas.anadir">+</button>
+                </form>
+              </div>
             </div>
             <div class="burbuja__fila">
               <span class="burbuja__nombre" title="Impuesto de venta" data-t="impuesto.nombre" data-t-title="impuesto.titulo">Impuesto</span>
@@ -290,6 +305,7 @@
               </label>
             </div>
             <p class="burbuja__nota" data-t="comision.nota">Las tarjetas cobran del 1 al 3 %. El impuesto, si la etiqueta va sin él, como en EE. UU. o Canadá.</p>
+            </div>
           </div>
         </div>
 
@@ -953,6 +969,7 @@
           <span class="gastos__sugerencia" id="gastos-sugerencia" aria-hidden="true"><span class="gastos__escrito"></span><span class="gastos__resto"></span></span>
         </span>
         <button class="gastos__apuntar" type="submit" id="gastos-apuntar"></button>
+        <button class="presupuesto__sugerido gastos__mejor" type="button" id="gastos-mejor" hidden></button>
       </form>
       <div class="noches" id="noches" title="Lo reparto en un gasto por noche, desde hoy" hidden>
         <span class="noches__nombre" id="noches-nombre">Noches</span>

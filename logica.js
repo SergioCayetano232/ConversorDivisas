@@ -1928,6 +1928,46 @@ const PAGO_POR_DEFECTO = "tarjeta";
 const leerPago = (pago) => (PAGOS.includes(pago) ? pago : PAGO_POR_DEFECTO);
 const comisionDelPago = (pago, comision) => (pago === "efectivo" ? 0 : comision);
 
+// Una tarjeta es un nombre y su comisión, y la elegida es la que tiene la comisión
+// puesta: así la web, la barra y los gastos siguen leyendo un solo número.
+const TARJETAS_MAX = 4;
+const NOMBRE_TARJETA_MAX = 14;
+
+// Dos al mismo porcentaje no: serían la misma cuenta y no sabría cuál llevas.
+function anadirTarjeta(lista, nombre, comision) {
+  const limpio = String(nombre ?? "").replace(/\s+/g, " ").trim().slice(0, NOMBRE_TARJETA_MAX);
+  if (!limpio || typeof comision !== "number" || !(comision >= 0 && comision <= COMISION_MAX) || lista.length >= TARJETAS_MAX) return null;
+  const pct = redondearComision(comision);
+  if (lista.some((t) => t.comision === pct || normalizar(t.nombre) === normalizar(limpio))) return null;
+  return [...lista, { nombre: limpio, comision: pct }];
+}
+
+function leerTarjetas(guardado) {
+  if (!Array.isArray(guardado)) return [];
+  return guardado.reduce((lista, t) => anadirTarjeta(lista, t?.nombre, t?.comision) ?? lista, []);
+}
+
+const quitarTarjeta = (lista, nombre) => lista.filter((t) => t.nombre !== nombre);
+
+const tarjetaActual = (lista, comision) => lista.find((t) => t.comision === comision) ?? null;
+
+// Con menos de dos, tarjeta y efectivo como siempre. Con la comisión puesta a
+// mano no hay ninguna elegida, y empieza por la primera.
+function siguientePago({ pago, comision }, tarjetas) {
+  if (tarjetas.length < 2) return { pago: pago === "efectivo" ? "tarjeta" : "efectivo", comision };
+  if (pago === "efectivo") return { pago: "tarjeta", comision: tarjetas[0].comision };
+  const i = tarjetas.findIndex((t) => t.comision === comision);
+  return i === tarjetas.length - 1 ? { pago: "efectivo", comision } : { pago: "tarjeta", comision: tarjetas[i + 1].comision };
+}
+
+// Por menos de un céntimo no merece la pena decir nada.
+function mejorTarjeta(tarjetas, comision, base) {
+  if (tarjetas.length < 2 || !(base > 0)) return null;
+  const tarjeta = tarjetas.reduce((mejor, t) => (t.comision < mejor.comision ? t : mejor));
+  const ahorro = Math.round((conComision(base, comision) - conComision(base, tarjeta.comision)) * 100) / 100;
+  return ahorro >= 0.01 ? { tarjeta, ahorro } : null;
+}
+
 const categoriaBuena = (c) => (esCategoria(c) ? c : CATEGORIA_POR_DEFECTO);
 
 const esGastoBueno = (g) => Boolean(g) && typeof g.id === "string" && isValidCode(g.from) && isValidCode(g.to)
@@ -7108,6 +7148,7 @@ function limpiarCopia(crudo) {
   if (Array.isArray(d.historialConversiones)) datos.historialConversiones = leerHistorial(d.historialConversiones);
   if (d.rangoGrafico !== undefined) datos.rangoGrafico = leerRango(d.rangoGrafico);
   if (d.comisionBanco !== undefined) datos.comisionBanco = leerComision(d.comisionBanco);
+  if (Array.isArray(d.tarjetasBanco)) datos.tarjetasBanco = leerTarjetas(d.tarjetasBanco);
   if (d.impuestoVenta !== undefined) datos.impuestoVenta = leerImpuesto(d.impuestoVenta);
   if (leerCafe(d.precioCafe)) datos.precioCafe = leerCafe(d.precioCafe);
   if (leerCafe(d.sueldoHora)) datos.sueldoHora = leerCafe(d.sueldoHora);
@@ -7126,7 +7167,7 @@ function limpiarCopia(crudo) {
 // los viajes, para que no vuelvan a aparecer mezcladas.
 const CLAVES_COPIA = [
   "viajes", "gastosViaje", "presupuestoViaje", "lastPair", "paresRecientes", "divisasExtra", "avisos",
-  "historialConversiones", "rangoGrafico", "comisionBanco", "impuestoVenta", "pagoGasto", "cuentaReparto", "insigniaActiva", "tasaAlReves", "idioma",
+  "historialConversiones", "rangoGrafico", "comisionBanco", "tarjetasBanco", "impuestoVenta", "pagoGasto", "cuentaReparto", "insigniaActiva", "tasaAlReves", "idioma",
   "recordatorioActivo", "recordatorioHora", "precioCafe", "sueldoHora", "categoriasPropias",
 ];
 
@@ -7135,7 +7176,7 @@ const CLAVES_COPIA = [
 // pisarse los gastos entre dos ordenadores sería peor. Los avisos de tasa
 // tampoco: saltarían en cada ordenador que tengas abierto.
 const CLAVES_SYNC = [
-  "comisionBanco", "impuestoVenta", "precioCafe", "sueldoHora", "pagoGasto", "cuentaReparto", "divisasExtra",
+  "comisionBanco", "tarjetasBanco", "impuestoVenta", "precioCafe", "sueldoHora", "pagoGasto", "cuentaReparto", "divisasExtra",
   "paresRecientes", "rangoGrafico", "insigniaActiva", "tasaAlReves", "idioma", "recordatorioActivo", "recordatorioHora",
 ];
 
@@ -7306,6 +7347,7 @@ if (typeof module !== "undefined") {
     RETIRADAS_MAX, leerRetiradas, crearRetirada, cambioDelCajero, sobreElBce, alCambioDelCajero, apuntarRetirada, quitarRetirada, efectivoQueda, EFECTIVO_POCO, tonoEfectivo, redondoDeCajero, cuantoSacar, loQueSobra, gastadoHoy, nombreDia,
     CATEGORIAS, CATEGORIA_POR_DEFECTO, CATEGORIAS_PROPIAS_MAX, NOMBRE_CATEGORIA_MAX, esCategoria, leerCategoriasPropias, ponerCategoriasPropias, todasCategorias, nombreCategoria, emojiCategoria, crearCategoriaPropia, quitarCategoriaPropia, sinCategoria, adivinarCategoria, PAGOS, PAGO_POR_DEFECTO, leerPago, comisionDelPago, desglose, conceptosUsados, completarConcepto,
     EMOJI_CATEGORIA, destacados, resumenParaCompartir, FINDE_MINIMO, findeContraSemana, ESTRELLA_MINIMO, conceptoEstrella,
+    TARJETAS_MAX, NOMBRE_TARJETA_MAX, anadirTarjeta, leerTarjetas, quitarTarjeta, tarjetaActual, siguientePago, mejorTarjeta,
     COPIA_APP, COPIA_VERSION, CLAVES_COPIA, CLAVES_SYNC, limpiarSync, cambiosSync, mezclaInicial, limpiarCopia, crearCopia, leerCopia, resumenCopia,
     crearPaquete, leerPaquete, quienEsQuien, mapaValido, gastosParaJuntar, juntarGastos,
     puedeSerDeEmpresa, pasarAEmpresa, sacarDeEmpresa, notaDeGastos,

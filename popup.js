@@ -183,6 +183,11 @@ const el = {
   gastosForm: document.getElementById("gastos-form"),
   gastosConcepto: document.getElementById("gastos-concepto"),
   gastosPago: document.getElementById("gastos-pago"),
+  gastosMejor: document.getElementById("gastos-mejor"),
+  tarjetasLista: document.getElementById("tarjetas-lista"),
+  tarjetasForm: document.getElementById("tarjetas-form"),
+  tarjetasNombre: document.getElementById("tarjetas-nombre"),
+  tarjetasPct: document.getElementById("tarjetas-pct"),
   gastosPagador: document.getElementById("gastos-pagador"),
   presupuestoEsto: document.getElementById("presupuesto-esto"),
   presupuestoEstoTexto: document.getElementById("presupuesto-esto-texto"),
@@ -258,6 +263,7 @@ const el = {
   alli: document.getElementById("alli"),
   alliHora: document.getElementById("alli-hora"),
   burbuja: document.getElementById("comision-burbuja"),
+  burbujaDentro: document.getElementById("comision-dentro"),
   comisionRapidas: document.getElementById("comision-rapidas"),
   comisionCampo: document.getElementById("comision-campo"),
   chuletaTabla: document.getElementById("chuleta-tabla"),
@@ -329,6 +335,7 @@ let parDelUmbral = null;
 let modoCompra = false;
 let modoMejor = false;
 let comision = 0;
+let tarjetas = [];
 let impuesto = 0;
 let cafe = null;
 let sueldo = null;
@@ -445,6 +452,7 @@ const EXTRAS_KEY = "divisasExtra";
 const VISTA_KEY = "vistaPanel";
 const AVISOS_KEY = "avisos";
 const COMISION_KEY = "comisionBanco";
+const TARJETAS_KEY = "tarjetasBanco";
 const IMPUESTO_KEY = "impuestoVenta";
 const CAFE_KEY = "precioCafe";
 const SUELDO_KEY = "sueldoHora";
@@ -573,6 +581,16 @@ async function cargarComision() {
   } catch (error) {
     console.warn("No se pudo leer la comisión", error);
     return 0;
+  }
+}
+
+async function cargarTarjetas() {
+  try {
+    const guardado = await chrome.storage.local.get(TARJETAS_KEY);
+    return leerTarjetas(guardado[TARJETAS_KEY]);
+  } catch (error) {
+    console.warn("No se pudieron leer las tarjetas", error);
+    return [];
   }
 }
 
@@ -2146,6 +2164,8 @@ function ponerComision(pct) {
   pintarBotonGasto();
   pintarAvisoComision();
   pintarAhorro();
+  pintarPago();
+  pintarTarjetas();
   for (const boton of el.comisionRapidas.children) {
     boton.setAttribute("aria-pressed", String(Number(boton.dataset.pct) === pct));
   }
@@ -2157,6 +2177,90 @@ function ponerComision(pct) {
   } catch (error) {
     console.warn("No se pudo guardar la comisión", error);
   }
+}
+
+const textoTarjeta = (t) => `${t.nombre} ${tr("pct", { n: nfComision.format(t.comision) })}`;
+
+function pintarTarjetas() {
+  const actual = tarjetaActual(tarjetas, comision);
+  el.tarjetasLista.replaceChildren(...tarjetas.map((t, i) => {
+    const caja = document.createElement("span");
+    caja.className = "burbuja__mia";
+    const elegir = document.createElement("button");
+    elegir.type = "button";
+    elegir.className = "burbuja__rapida";
+    elegir.style.setProperty("--i", i);
+    elegir.textContent = textoTarjeta(t);
+    elegir.setAttribute("aria-pressed", String(t === actual));
+    elegir.addEventListener("click", () => {
+      elegirTarjeta(t);
+      cerrarBurbuja()?.focus();
+    });
+    const quitar = document.createElement("button");
+    quitar.type = "button";
+    quitar.className = "burbuja__quitar";
+    quitar.textContent = "✕";
+    quitar.setAttribute("aria-label", tr("tarjetas.quitar", { nombre: t.nombre }));
+    quitar.addEventListener("click", (event) => {
+      // Si llega al clic de fuera, el botón ya no está y cerraría la burbuja.
+      event.stopPropagation();
+      guardarTarjetas(quitarTarjeta(tarjetas, t.nombre));
+      el.tarjetasNombre.focus();
+    });
+    caja.append(elegir, quitar);
+    return caja;
+  }));
+  el.tarjetasForm.hidden = tarjetas.length >= TARJETAS_MAX;
+}
+
+function guardarTarjetas(lista) {
+  tarjetas = lista;
+  pintarTarjetas();
+  pintarPago();
+  pintarBotonGasto();
+  try {
+    chrome.storage.local.set({ [TARJETAS_KEY]: tarjetas });
+  } catch (error) {
+    console.warn("No se pudieron guardar las tarjetas", error);
+  }
+}
+
+// Si eliges una tarjeta es que pagas con ella, aunque vinieras del efectivo.
+function elegirTarjeta(t) {
+  ponerComision(t.comision);
+  if (pagoNuevo === "efectivo") ponerPago("tarjeta");
+}
+
+function onAnadirTarjeta(event) {
+  event.preventDefault();
+  const pct = leerPorcentaje(el.tarjetasPct.value);
+  if (pct === null) {
+    restartAnimation(el.tarjetasPct, "is-mal");
+    el.tarjetasPct.focus();
+    return;
+  }
+  const lista = anadirTarjeta(tarjetas, el.tarjetasNombre.value, pct);
+  if (!lista) {
+    el.tarjetasNombre.title = tr("tarjetas.noCabe");
+    restartAnimation(el.tarjetasNombre, "is-mal");
+    el.tarjetasNombre.focus();
+    return;
+  }
+  el.tarjetasNombre.value = "";
+  el.tarjetasPct.value = "";
+  el.tarjetasNombre.title = "";
+  guardarTarjetas(lista);
+  (lista.length < TARJETAS_MAX ? el.tarjetasNombre : el.tarjetasLista.querySelector("button")).focus();
+}
+
+function pintarMejorTarjeta() {
+  const base = rate === null ? null : leerImporte(el.result.value);
+  const mejor = pagoNuevo === "tarjeta" ? mejorTarjeta(tarjetas, comision, base) : null;
+  el.gastosMejor.hidden = !mejor;
+  if (!mejor) return;
+  el.gastosMejor.textContent = tr("tarjetas.mejor", { nombre: mejor.tarjeta.nombre, ahorro: `${nf.format(mejor.ahorro)} ${el.to.value}` });
+  el.gastosMejor.title = tr("tarjetas.mejorTitulo");
+  el.gastosMejor.onclick = () => elegirTarjeta(mejor.tarjeta);
 }
 
 function ponerImpuesto(pct) {
@@ -2236,6 +2340,9 @@ function abrirBurbuja() {
   pintarCampoCafe();
   pintarCampoSueldo();
   el.burbuja.hidden = false;
+  // El resultado recorta lo que se le sale, y las últimas filas se quedaban sin poder tocarse.
+  const hueco = el.burbuja.closest(".result").getBoundingClientRect().bottom - el.comision.getBoundingClientRect().bottom;
+  el.burbujaDentro.style.maxHeight = `${Math.max(Math.round(hueco) - 38, 100)}px`;
   el.comision.setAttribute("aria-expanded", "true");
   (rapida ? el.comisionRapidas.querySelector('[aria-pressed="true"]') : el.comisionCampo).focus();
 }
@@ -2596,10 +2703,27 @@ function onTeclaConcepto(event) {
   }
 }
 
+// La tarjeta solo se nombra si hay de dónde elegir.
+function tarjetaDelPago() {
+  return pagoNuevo === "tarjeta" && tarjetas.length > 1 ? tarjetaActual(tarjetas, comision) : null;
+}
+
+function nombrePago() {
+  const tarjeta = tarjetaDelPago();
+  return tarjeta ? tr("pago.conTarjeta", { nombre: tarjeta.nombre, pct: tr("pct", { n: nfComision.format(tarjeta.comision) }) }) : tr(`pago.${pagoNuevo}`);
+}
+
 function pintarPago(conGiro = false) {
   el.gastosPago.innerHTML = ICONOS_PAGO[pagoNuevo];
   el.gastosPago.dataset.pago = pagoNuevo;
-  const nombre = tr(`pago.${pagoNuevo}`);
+  const tarjeta = tarjetaDelPago();
+  if (tarjeta) {
+    const letra = document.createElement("span");
+    letra.className = "gastos__pago-letra";
+    letra.textContent = [...tarjeta.nombre][0].toUpperCase();
+    el.gastosPago.append(letra);
+  }
+  const nombre = nombrePago();
   // Con Alt: cuando lo quieres cambiar sueles estar escribiendo el concepto.
   el.gastosPago.title = `${nombre} (${textoAtajo("KeyE", esMac)})`;
   el.gastosPago.setAttribute("aria-label", tr("pago.elegir", { nombre }));
@@ -2608,7 +2732,13 @@ function pintarPago(conGiro = false) {
 
 // Lo dejo como lo pusiste: si pagas en efectivo, sueles hacerlo varias veces seguidas.
 function onCambiarPago() {
-  pagoNuevo = pagoNuevo === "efectivo" ? "tarjeta" : "efectivo";
+  const siguiente = siguientePago({ pago: pagoNuevo, comision }, tarjetas);
+  if (siguiente.comision !== comision) ponerComision(siguiente.comision);
+  ponerPago(siguiente.pago);
+}
+
+function ponerPago(pago) {
+  pagoNuevo = pago;
   pintarPago(true);
   pintarBotonGasto();
   pintarEfectivo();
@@ -2944,6 +3074,7 @@ function pintarGastoRaro(gasto, entero = gasto) {
 }
 
 function pintarBotonGasto() {
+  pintarMejorTarjeta();
   const gasto = gastoDePantalla();
   pintarNoches();
   pintarLoQueSeLleva(gasto);
@@ -6615,7 +6746,7 @@ function apuntarDesdeAtajo() {
 
 // Se queda en efectivo, como con el botón: el siguiente suele ir igual.
 function apuntarEnEfectivo() {
-  if (pagoNuevo !== "efectivo") onCambiarPago();
+  if (pagoNuevo !== "efectivo") ponerPago("efectivo");
   apuntarDesdeAtajo();
 }
 
@@ -6794,7 +6925,7 @@ function onAtajo(event) {
       : event.altKey ? textoAtajo(event.code, esMac) : event.code.replace(/^Key|^Digit/, "");
     const prefijo = accion === "copiarFrase" || accion === "imprimirChuleta" || accion === "copiarTasaAlReves" || accion === "csvViajes" || accion === "apuntarEfectivo" || accion === "copiarHoy" || accion === "copiarMasCaro" || accion === "copiarFraseSimbolo" ? (esMac ? "⇧" : "Shift+") : "";
     // El de pagar, el discreto y la tasa dicen cómo han quedado, que "cambiar" no te dice a qué.
-    const dice = accion === "pago" ? tr("pago.ahora", { nombre: tr(`pago.${pagoNuevo}`) })
+    const dice = accion === "pago" ? tr("pago.ahora", { nombre: nombrePago() })
       : accion === "discreto" ? tr(discreto ? "discreto.puesto" : "discreto.quitado")
       : accion === "girarTasa" ? el.rateLine.textContent || queHace(accion)
       : accion === "copiarTasa" || accion === "copiarTasaAlReves" ? tr("copiado.tasa", { tasa: tasaParaCopiar(accion === "copiarTasaAlReves") })
@@ -7740,6 +7871,7 @@ function bindEvents() {
   el.gastosConcepto.addEventListener("click", () => pintarSugerencia(sugerenciaConcepto()));
   el.gastosCategoria.addEventListener("click", () => (el.categorias.hidden ? abrirCategorias() : cerrarCategorias()));
   el.gastosPago.addEventListener("click", onCambiarPago);
+  el.tarjetasForm.addEventListener("submit", onAnadirTarjeta);
   el.gastosCategoria.addEventListener("animationend", () => el.gastosCategoria.classList.remove("is-cambiada"));
   el.gastosVaciar.addEventListener("click", onVaciarGastos);
   el.deshacerBoton.addEventListener("click", onDeshacer);
@@ -8026,15 +8158,16 @@ async function init() {
   const idiomaCambiado = await cargarIdioma();
   traducirPagina();
   if (idiomaCambiado) saludarIdioma();
-  const [pair, rango, guardados, pendiente, guardadas, vistaGuardada, avisosGuardados, comisionGuardada, fechaGuardada, historialGuardado, viajesGuardados, repartoGuardado, alRevesGuardado, pagoGuardado, cantidadGuardada, impuestoGuardado, cafeGuardado, sueldoGuardado, discretoGuardado] = await Promise.all([
+  const [pair, rango, guardados, pendiente, guardadas, vistaGuardada, avisosGuardados, comisionGuardada, fechaGuardada, historialGuardado, viajesGuardados, repartoGuardado, alRevesGuardado, pagoGuardado, cantidadGuardada, impuestoGuardado, cafeGuardado, sueldoGuardado, discretoGuardado, tarjetasGuardadas] = await Promise.all([
     loadPair(), cargarRango(), cargarRecientes(), tomarPendiente(), cargarExtras(), cargarVista(), cargarAvisos(),
     cargarComision(), cargarFecha(), cargarHistorial(), cargarViajes(), cargarReparto(), cargarTasaAlReves(), cargarPago(),
-    cargarCantidad(), cargarImpuesto(), cargarCafe(), cargarSueldo(), cargarDiscreto(),
+    cargarCantidad(), cargarImpuesto(), cargarCafe(), cargarSueldo(), cargarDiscreto(), cargarTarjetas(),
   ]);
   discreto = discretoGuardado;
   pintarDiscreto();
   pagoNuevo = pagoGuardado;
-  pintarPago();
+  tarjetas = tarjetasGuardadas;
+  pintarTarjetas();
   tasaAlReves = alRevesGuardado;
   reparto = repartoGuardado;
   historial = historialGuardado;
@@ -8044,6 +8177,8 @@ async function init() {
   pintarCategoriaNueva();
   pintarGastos();
   comision = comisionGuardada;
+  pintarPago();
+  pintarTarjetas();
   impuesto = impuestoGuardado;
   cafe = cafeGuardado;
   sueldo = sueldoGuardado;

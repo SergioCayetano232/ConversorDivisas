@@ -269,7 +269,11 @@ que necesitaba una conversión rápida. Ahora es un clic en la barra del navegad
 - La comisión de tu banco: pones el % que te cobra la tarjeta (0, 1, 2, 3 o el
   que quieras) y al lado del resultado sale lo que pagarías de verdad. También
   va sumada en la chuleta y en las otras divisas. Se queda guardada para la
-  próxima vez
+  próxima vez. Si llevas varias tarjetas (hasta cuatro), las apuntas en esa misma
+  burbuja con su comisión ("Revolut 0 %", "BBVA 3 %"): el botón de tarjeta/efectivo
+  va pasando por ellas, con la inicial de la que llevas, y si tienes una más barata
+  te lo dice antes de apuntar ("💳 Con Revolut te ahorras 1,70 EUR"), y pulsándolo
+  se pone
 - El impuesto de venta, en la misma burbuja que la comisión: en Estados Unidos
   y Canadá la etiqueta va sin él, así que pones el tuyo (5, 8, 10 % o el 8,875
   de Nueva York) y la pastilla te da lo que pasa por caja, con la comisión

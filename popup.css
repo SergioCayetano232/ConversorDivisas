@@ -6405,6 +6405,36 @@ body::after {
   border-color: var(--brass-dim);
 }
 
+.gastos__pago {
+  position: relative;
+}
+
+/* Con varias tarjetas, la inicial de la que llevas, en la esquina. */
+.gastos__pago-letra {
+  position: absolute;
+  right: -3px;
+  bottom: -3px;
+  display: grid;
+  place-items: center;
+  min-width: 11px;
+  height: 11px;
+  padding: 0 2px;
+  border-radius: 6px;
+  background: var(--brass);
+  color: var(--graphite);
+  font-size: 8px;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.gastos__mejor {
+  flex: 0 0 100%;
+}
+
+.gastos__nuevo:has(.gastos__mejor:not([hidden])) {
+  flex-wrap: wrap;
+}
+
 .gastos__pago:active {
   transform: scale(0.9);
 }
@@ -7650,6 +7680,83 @@ body::after {
 
 .burbuja--doble .burbuja__rapida {
   padding: 0 5px;
+}
+
+/* El scroll va aquí y no en la burbuja, que se comería la flechita de arriba. */
+.burbuja__dentro {
+  margin: -3px;
+  padding: 3px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+.burbuja__fila--tarjetas {
+  align-items: flex-start;
+}
+
+.burbuja__fila--tarjetas .burbuja__nombre {
+  line-height: 22px;
+}
+
+.burbuja__tarjetas {
+  flex: 1;
+  min-width: 0;
+  display: grid;
+  gap: 4px;
+}
+
+.burbuja__mias {
+  flex-wrap: wrap;
+}
+
+.burbuja__mias:empty {
+  display: none;
+}
+
+.burbuja__mia {
+  display: inline-flex;
+  align-items: center;
+}
+
+.burbuja__quitar {
+  width: 14px;
+  height: 22px;
+  padding: 0;
+  background: none;
+  border: none;
+  color: var(--muted);
+  font-size: 9px;
+  cursor: pointer;
+  transition: color var(--fast) var(--ease);
+}
+
+.burbuja__quitar:hover {
+  color: var(--cinnabar);
+}
+
+.burbuja__quitar:focus-visible {
+  outline: 2px solid var(--brass);
+  outline-offset: 1px;
+}
+
+.burbuja__nueva {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.burbuja__nueva[hidden] {
+  display: none;
+}
+
+.burbuja__campo--nombre {
+  flex: 1;
+  font-family: inherit;
+  text-align: left;
+}
+
+.burbuja__nueva-pct {
+  flex: 0 0 46px;
 }
 
 .burbuja__nombre {
