@@ -48,7 +48,6 @@ const el = {
   grupoDeshacer: document.getElementById("grupo-deshacer"),
 };
 
-const API_HISTORY = "https://api.frankfurter.dev/v1";
 
 let pendiente = null;
 
@@ -300,9 +299,9 @@ function ponerViaje(viajes, id, lastPair) {
 async function tasasDelBanco(from, desde, hasta) {
   const [a, m, d] = desde.split("-").map(Number);
   const antes = isoLocal(new Date(a, m - 1, d - 7));
-  const respuesta = await fetch(`${API_HISTORY}/${antes}..${hasta}?base=${from}&symbols=EUR`);
+  const respuesta = await fetch(urlSerie(from, "EUR", antes, hasta));
   if (!respuesta.ok) throw new Error(`HTTP ${respuesta.status}`);
-  const datos = await respuesta.json();
+  const datos = aFormatoV1(await respuesta.json(), true);
   return Object.fromEntries(Object.entries(datos.rates ?? {}).map(([dia, r]) => [dia, r.EUR]));
 }
 

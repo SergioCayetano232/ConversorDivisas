@@ -1,6 +1,6 @@
 const { test } = require("node:test");
 const assert = require("node:assert");
-const { filtrarDivisas, normalizar, CURRENCIES, nombreDe } = require("../logica.js");
+const { filtrarDivisas, normalizar, CURRENCIES, DIVISAS_BCE, nombreDe } = require("../logica.js");
 
 const codigos = (q) => filtrarDivisas(q).map((c) => c.code);
 
@@ -11,13 +11,13 @@ test("busca por código", () => {
 });
 
 test("busca por nombre", () => {
-  assert.deepEqual(codigos("libra"), ["GBP"]);
+  assert.deepEqual(codigos("libra"), ["GBP", "EGP"]);
   assert.deepEqual(codigos("yen"), ["JPY"]);
   assert.deepEqual(codigos("corona"), ["SEK", "NOK", "DKK", "CZK", "ISK"]);
 });
 
 test("da igual la tilde y las mayúsculas", () => {
-  const esperado = ["USD", "CAD", "AUD", "HKD", "NZD", "SGD"];
+  const esperado = ["USD", "CAD", "AUD", "HKD", "NZD", "SGD", "TWD"];
   assert.deepEqual(codigos("dolar"), esperado);
   assert.deepEqual(codigos("dólar"), esperado);
   assert.deepEqual(codigos("DOLAR"), esperado);
@@ -50,8 +50,8 @@ test("nombreDe encuentra el nombre, y aguanta lo que no existe", () => {
 });
 
 test("encuentra las divisas nuevas", () => {
-  assert.deepEqual(codigos("rupia"), ["IDR", "INR"]);
-  assert.deepEqual(codigos("peso"), ["MXN", "PHP"]);
+  assert.deepEqual(codigos("rupia"), ["IDR", "INR", "LKR", "NPR"]);
+  assert.deepEqual(codigos("peso"), ["MXN", "PHP", "ARS", "COP", "CLP", "UYU", "DOP"]);
   assert.deepEqual(codigos("sequel"), ["ILS"]);
   assert.deepEqual(codigos("krw"), ["KRW"]);
 });
@@ -61,7 +61,7 @@ test("son justo las que publica el BCE, sin repetir", () => {
   const bce = ["AUD", "BRL", "CAD", "CHF", "CNY", "CZK", "DKK", "EUR", "GBP", "HKD", "HUF", "IDR",
     "ILS", "INR", "ISK", "JPY", "KRW", "MXN", "MYR", "NOK", "NZD", "PHP", "PLN", "RON", "SEK",
     "SGD", "THB", "TRY", "USD", "ZAR"];
-  const nuestras = CURRENCIES.map((c) => c.code);
+  const nuestras = DIVISAS_BCE.map((c) => c.code);
   assert.equal(new Set(nuestras).size, nuestras.length, "hay alguna repetida");
   assert.deepEqual([...nuestras].sort(), bce);
 });

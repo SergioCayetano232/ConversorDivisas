@@ -3,8 +3,6 @@
 const idiomaDeChrome = chrome.i18n?.getUILanguage?.() ?? navigator.language;
 ponerIdioma(idiomaPara(idiomaDeChrome));
 
-const API = "https://api.frankfurter.dev/v1/latest";
-const API_HISTORY = "https://api.frankfurter.dev/v1";
 
 
 const el = {
@@ -434,7 +432,7 @@ const formatoNumero = (opciones) => ({ format: (n) => numeros(opciones).format(n
 
 const nf = formatoNumero({ minimumFractionDigits: 2, maximumFractionDigits: 2 });
 const nfDias = formatoNumero({ maximumFractionDigits: 1 });
-const nfRate = formatoNumero({ minimumFractionDigits: 4, maximumFractionDigits: 4 });
+const nfRate = { format: (n) => tasaLegible(n) };
 const nfEntero = formatoNumero({ maximumFractionDigits: 0 });
 const nfComision = formatoNumero({ maximumFractionDigits: 2 });
 const nfCajero = formatoNumero({ maximumFractionDigits: 1 });
@@ -956,7 +954,7 @@ function populateSelects(pair) {
 const TIMEOUT_MS = 8000;
 
 async function fetchRate(from, to) {
-  const url = `${API}?base=${from}&symbols=${to}`;
+  const url = urlTasa(from, to);
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), TIMEOUT_MS);
 
@@ -964,7 +962,7 @@ async function fetchRate(from, to) {
     const response = await fetch(url, { signal: controller.signal });
     if (!response.ok) throw new Error(`HTTP ${response.status}`);
 
-    const data = await response.json();
+    const data = aFormatoV1(await response.json());
     const value = data.rates?.[to];
     if (typeof value !== "number") throw new Error("Respuesta inesperada");
 
@@ -982,11 +980,7 @@ async function fetchTodas(from) {
   const timer = setTimeout(() => controller.abort(), TIMEOUT_MS);
 
   try {
-    const response = await fetch(`${API}?base=${from}`, { signal: controller.signal });
-    if (!response.ok) throw new Error(`HTTP ${response.status}`);
-    const data = await response.json();
-    if (!data.rates || typeof data.rates !== "object") throw new Error("Respuesta inesperada");
-    return data.rates;
+    return await pedirTodas(from, null, controller.signal);
   } finally {
     clearTimeout(timer);
   }
@@ -999,11 +993,7 @@ async function fetchSemana(from) {
   const timer = setTimeout(() => controller.abort(), TIMEOUT_MS);
 
   try {
-    const response = await fetch(`${API_HISTORY}/${startDateFor(7)}..?base=${from}`, { signal: controller.signal });
-    if (!response.ok) throw new Error(`HTTP ${response.status}`);
-    const data = await response.json();
-    if (!data.rates || typeof data.rates !== "object") throw new Error("Respuesta inesperada");
-    return data.rates;
+    return await pedirTodas(from, startDateFor(7), controller.signal);
   } finally {
     clearTimeout(timer);
   }
@@ -1014,9 +1004,9 @@ async function fetchDia(from, to, dia) {
   const timer = setTimeout(() => controller.abort(), TIMEOUT_MS);
 
   try {
-    const response = await fetch(`${API_HISTORY}/${dia}?base=${from}&symbols=${to}`, { signal: controller.signal });
+    const response = await fetch(urlTasaDia(from, to, dia), { signal: controller.signal });
     if (!response.ok) throw new Error(`HTTP ${response.status}`);
-    const data = await response.json();
+    const data = aFormatoV1(await response.json());
     const value = data.rates?.[to];
     if (typeof value !== "number") throw new Error("Respuesta inesperada");
     return { rate: value, date: data.date };
@@ -1026,7 +1016,7 @@ async function fetchDia(from, to, dia) {
 }
 
 async function fetchHistory(from, to, desde) {
-  const url = `${API_HISTORY}/${startDateFor(desde)}..?base=${from}&symbols=${to}`;
+  const url = urlSerie(from, to, startDateFor(desde));
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), TIMEOUT_MS);
 
@@ -1034,7 +1024,7 @@ async function fetchHistory(from, to, desde) {
     const response = await fetch(url, { signal: controller.signal });
     if (!response.ok) throw new Error(`HTTP ${response.status}`);
 
-    const data = await response.json();
+    const data = aFormatoV1(await response.json(), true);
     // La API devuelve un objeto por fecha; el BCE no publica fines de semana
     // ni festivos, así que el número de puntos varía entre peticiones.
     return Object.keys(data.rates ?? {})
@@ -7072,6 +7062,14 @@ function onDarLaVueltaATasa() {
 }
 
 function renderUpdated() {
+  // Lo del BCE (las 16:00, sus festivos) no vale para las que no publica él.
+  if (parDeMercado(el.from.value, el.to.value)) {
+    el.updated.textContent = rateDate ? tr("mercado.fecha", { fecha: fechaCorta(rateDate) }) : "";
+    el.updated.classList.toggle("is-hoy", Boolean(rateDate) && rateDate >= hoy());
+    el.updated.title = tr("mercado.titulo");
+    el.tasaVieja.hidden = true;
+    return;
+  }
   el.updated.textContent = textoActualizado(rateDate);
   // La de hoy lleva su puntito verde; la vieja ya sale en ámbar.
   el.updated.classList.toggle("is-hoy", rateDate === hoy());

@@ -6,7 +6,7 @@ if (typeof module !== "undefined" && typeof tr === "undefined") {
   Object.assign(globalThis, require("./textos.js"));
 }
 
-const CURRENCIES = [
+const DIVISAS_BCE = [
   { code: "EUR", name: "Euro", en: "Euro" },
   { code: "USD", name: "Dólar estadounidense", en: "US dollar" },
   { code: "GBP", name: "Libra esterlina", en: "British pound" },
@@ -41,6 +41,103 @@ const CURRENCIES = [
   { code: "THB", name: "Baht tailandés", en: "Thai baht" },
   { code: "ZAR", name: "Rand sudafricano", en: "South African rand" },
 ];
+
+// Las que no publica el BCE. Van con la v2 de Frankfurter, que las saca de otros
+// bancos centrales. Cuba no está: su tasa oficial no se parece a la de la calle.
+const DIVISAS_MERCADO = [
+  { code: "VND", name: "Dong vietnamita", en: "Vietnamese dong" },
+  { code: "ARS", name: "Peso argentino", en: "Argentine peso" },
+  { code: "MAD", name: "Dírham marroquí", en: "Moroccan dirham" },
+  { code: "PEN", name: "Sol peruano", en: "Peruvian sol" },
+  { code: "COP", name: "Peso colombiano", en: "Colombian peso" },
+  { code: "CLP", name: "Peso chileno", en: "Chilean peso" },
+  { code: "EGP", name: "Libra egipcia", en: "Egyptian pound" },
+  { code: "AED", name: "Dírham de los Emiratos", en: "UAE dirham" },
+  { code: "TWD", name: "Dólar taiwanés", en: "New Taiwan dollar" },
+  { code: "UYU", name: "Peso uruguayo", en: "Uruguayan peso" },
+  { code: "CRC", name: "Colón costarricense", en: "Costa Rican colón" },
+  { code: "DOP", name: "Peso dominicano", en: "Dominican peso" },
+  { code: "TND", name: "Dinar tunecino", en: "Tunisian dinar" },
+  { code: "KES", name: "Chelín keniano", en: "Kenyan shilling" },
+  { code: "LKR", name: "Rupia de Sri Lanka", en: "Sri Lankan rupee" },
+  { code: "NPR", name: "Rupia nepalí", en: "Nepalese rupee" },
+  { code: "KHR", name: "Riel camboyano", en: "Cambodian riel" },
+  { code: "JOD", name: "Dinar jordano", en: "Jordanian dinar" },
+  { code: "QAR", name: "Riyal catarí", en: "Qatari riyal" },
+  { code: "SAR", name: "Riyal saudí", en: "Saudi riyal" },
+  { code: "GEL", name: "Lari georgiano", en: "Georgian lari" },
+  { code: "RSD", name: "Dinar serbio", en: "Serbian dinar" },
+  { code: "BOB", name: "Boliviano", en: "Bolivian boliviano" },
+  { code: "GTQ", name: "Quetzal guatemalteco", en: "Guatemalan quetzal" },
+  { code: "PYG", name: "Guaraní paraguayo", en: "Paraguayan guaraní" },
+];
+
+const CURRENCIES = [...DIVISAS_BCE, ...DIVISAS_MERCADO];
+
+// Además de códigos son palabras: "SHOWER GEL 250" no son laris.
+const CODIGOS_QUE_SON_PALABRA = new Set(["PEN", "MAD", "COP", "GEL", "BOB"]);
+
+const esDeMercado = (code) => DIVISAS_MERCADO.some((c) => c.code === code);
+const parDeMercado = (from, to) => esDeMercado(from) || esDeMercado(to);
+
+// Las 30 del BCE siguen por la v1 aunque la v2 también las tenga: da otra cifra
+// (1,1185 en vez de 1,1193) y las cuentas de antes no cuadrarían.
+const API_V1 = "https://api.frankfurter.dev/v1";
+const API_V2 = "https://api.frankfurter.dev/v2";
+
+const urlTasa = (from, to) => (parDeMercado(from, to)
+  ? `${API_V2}/rates?base=${from}&quotes=${to}`
+  : `${API_V1}/latest?base=${from}&symbols=${to}`);
+
+const urlTasaDia = (from, to, dia) => (parDeMercado(from, to)
+  ? `${API_V2}/rates?date=${dia}&base=${from}&quotes=${to}`
+  : `${API_V1}/${dia}?base=${from}&symbols=${to}`);
+
+const urlSerie = (from, to, desde, hasta = "") => (parDeMercado(from, to)
+  ? `${API_V2}/rates?from=${desde}${hasta ? `&to=${hasta}` : ""}&base=${from}&quotes=${to}`
+  : `${API_V1}/${desde}..${hasta}?base=${from}&symbols=${to}`);
+
+// Primero la que manda; la segunda, si la hay, solo añade las de mercado.
+function urlsTodas(from, desde = null) {
+  const v2 = (lista) => `${API_V2}/rates?${desde ? `from=${desde}&` : ""}base=${from}&quotes=${lista.map((c) => c.code).filter((c) => c !== from).join(",")}`;
+  if (esDeMercado(from)) return [v2(CURRENCIES)];
+  return [desde ? `${API_V1}/${desde}..?base=${from}` : `${API_V1}/latest?base=${from}`, v2(DIVISAS_MERCADO)];
+}
+
+// La v2 da una lista de filas y la v1 un objeto. Lo dejo todo como la v1, que es
+// lo que espera el resto. Cada divisa puede venir de un día distinto: me quedo el último.
+function aFormatoV1(datos, serie = false) {
+  if (!Array.isArray(datos)) return datos;
+  if (serie) {
+    const rates = {};
+    for (const { date, quote, rate } of datos) (rates[date] ??= {})[quote] = rate;
+    return { rates };
+  }
+  return {
+    date: datos.map((f) => f.date).sort().at(-1),
+    rates: Object.fromEntries(datos.map((f) => [f.quote, f.rate])),
+  };
+}
+
+function juntarTasas(principal, extra, serie = false) {
+  const a = principal?.rates ?? {};
+  const b = extra?.rates ?? {};
+  if (!serie) return { ...a, ...b };
+  return Object.fromEntries([...new Set([...Object.keys(a), ...Object.keys(b)])].map((dia) => [dia, { ...a[dia], ...b[dia] }]));
+}
+
+// Si la v2 falla, las 30 de siempre siguen saliendo.
+async function pedirTodas(from, desde, signal) {
+  const pedir = async (url) => {
+    const respuesta = await fetch(url, { signal });
+    if (!respuesta.ok) throw new Error(`HTTP ${respuesta.status}`);
+    return aFormatoV1(await respuesta.json(), Boolean(desde));
+  };
+  const [principal, extra] = await Promise.allSettled(urlsTodas(from, desde).map(pedir));
+  if (principal.status === "rejected") throw principal.reason;
+  if (!principal.value?.rates || typeof principal.value.rates !== "object") throw new Error("Respuesta inesperada");
+  return juntarTasas(principal.value, extra?.status === "fulfilled" ? extra.value : null, Boolean(desde));
+}
 
 const isValidCode = (code) => CURRENCIES.some((c) => c.code === code);
 
@@ -582,6 +679,19 @@ function horaBce(fechaIso) {
 // La hora de allí va por una ciudad de cada divisa. En Indonesia pongo Bali y
 // no Yakarta: es adonde va casi todo el mundo, y lleva una hora más.
 const ZONAS = {
+  VND: ["Asia/Ho_Chi_Minh", "Hanói", "Hanoi"], ARS: ["America/Argentina/Buenos_Aires", "Buenos Aires", "Buenos Aires"],
+  MAD: ["Africa/Casablanca", "Rabat", "Rabat"], PEN: ["America/Lima", "Lima", "Lima"],
+  COP: ["America/Bogota", "Bogotá", "Bogotá"], CLP: ["America/Santiago", "Santiago", "Santiago"],
+  EGP: ["Africa/Cairo", "El Cairo", "Cairo"], AED: ["Asia/Dubai", "Dubái", "Dubai"],
+  TWD: ["Asia/Taipei", "Taipéi", "Taipei"], UYU: ["America/Montevideo", "Montevideo", "Montevideo"],
+  CRC: ["America/Costa_Rica", "San José", "San José"], DOP: ["America/Santo_Domingo", "Santo Domingo", "Santo Domingo"],
+  TND: ["Africa/Tunis", "Túnez", "Tunis"], KES: ["Africa/Nairobi", "Nairobi", "Nairobi"],
+  LKR: ["Asia/Colombo", "Colombo", "Colombo"], NPR: ["Asia/Kathmandu", "Katmandú", "Kathmandu"],
+  KHR: ["Asia/Phnom_Penh", "Nom Pen", "Phnom Penh"], JOD: ["Asia/Amman", "Amán", "Amman"],
+  QAR: ["Asia/Qatar", "Doha", "Doha"], SAR: ["Asia/Riyadh", "Riad", "Riyadh"],
+  GEL: ["Asia/Tbilisi", "Tiflis", "Tbilisi"], RSD: ["Europe/Belgrade", "Belgrado", "Belgrade"],
+  BOB: ["America/La_Paz", "La Paz", "La Paz"], GTQ: ["America/Guatemala", "Guatemala", "Guatemala City"],
+  PYG: ["America/Asuncion", "Asunción", "Asunción"],
   EUR: ["Europe/Paris", "París", "Paris"], USD: ["America/New_York", "Nueva York", "New York"],
   GBP: ["Europe/London", "Londres", "London"], JPY: ["Asia/Tokyo", "Tokio", "Tokyo"],
   CHF: ["Europe/Zurich", "Zúrich", "Zurich"], CAD: ["America/Toronto", "Toronto", "Toronto"],
@@ -1542,7 +1652,7 @@ function leerSeleccion(texto) {
 // Para la página entera no vale cualquier número como en la selección: aquí
 // solo cuenta si lleva la divisa pegada, delante o detrás. Los símbolos largos
 // primero, que si no "US$" se quedaba en "$".
-const CODIGOS = CURRENCIES.map((c) => c.code).join("|");
+const CODIGOS = CURRENCIES.map((c) => c.code).filter((c) => !CODIGOS_QUE_SON_PALABRA.has(c)).join("|");
 const DIVISA_DELANTE = `R\\$|US\\$|MX\\$|CA?\\$|AU?\\$|HK\\$|NZ\\$|S\\$|CN¥|[$€£¥₹₩₪฿₱₺]|\\b(?:${CODIGOS})\\b`;
 const DIVISA_DETRAS = `[$€£¥₹₩₪฿₱₺円元]|zł|Kč|\\b(?:${CODIGOS})\\b|\\b[Ee]uros?\\b`;
 // Detrás de una letra o de otra cifra no empieza un precio: "A4 €" no son 4 €.
@@ -1623,7 +1733,7 @@ function precioUnidadBarra({ cantidad, from, to, unidad }, rate) {
 const PAGO_POR_PALABRA = { efectivo: "efectivo", cash: "efectivo", metalico: "efectivo", tarjeta: "tarjeta", card: "tarjeta" };
 
 const esDeCantidad = (palabra) => /^[\d.,+\-*/()%]+[km]?$/i.test(palabra) || /^[€$£¥₹₩₪฿₱₺]$/.test(palabra)
-  || (/^[a-z]{3}$/i.test(palabra) && isValidCode(palabra.toUpperCase()));
+  || (/^[a-z]{3}$/i.test(palabra) && isValidCode(palabra.toUpperCase()) && (palabra === palabra.toUpperCase() || !CODIGOS_QUE_SON_PALABRA.has(palabra.toUpperCase())));
 
 function leerGastoBarra(texto, par) {
   if (typeof texto !== "string" || !/^\s*\+/.test(texto)) return null;
@@ -4155,6 +4265,13 @@ function textoCambioDia({ cambio, sentido }) {
 
 const tasaLarga = (n) => numeros({ minimumFractionDigits: 4, maximumFractionDigits: 4 }).format(n);
 
+// Con cuatro decimales, el dong se queda en "1 VND = 0,0000 EUR".
+function tasaLegible(n) {
+  if (!Number.isFinite(n) || n <= 0 || n >= 0.001) return tasaLarga(n);
+  const decimales = Math.min(3 - Math.floor(Math.log10(n)), 8);
+  return numeros({ minimumFractionDigits: decimales, maximumFractionDigits: decimales }).format(n);
+}
+
 // Al revés, el yen se queda en "1 JPY = 0,0061 EUR" y con cuatro decimales casi
 // no se lee: le pongo los que hagan falta para ver cuatro cifras.
 function lineaTasa(rate, from, to, alReves = false) {
@@ -4166,13 +4283,15 @@ function lineaTasa(rate, from, to, alReves = false) {
 }
 
 // Con la fecha se entiende por qué el sábado no se mueve: el BCE no publica.
+const textoDeLaFecha = (par, fecha) => tr(parDeMercado(par.from, par.to) ? "mercado.fecha" : "insignia.fecha", { fecha: fechaCorta(fecha) });
+
 function tituloInsignia(par, rate, cambio, fecha = null) {
   const tasa = `1 ${par.from} = ${tasaLarga(rate)} ${par.to}`;
   const pct = cambio === null ? null : numeros({
     style: "percent", minimumFractionDigits: 2, maximumFractionDigits: 2, signDisplay: "exceptZero",
   }).format(cambio);
   const linea = pct === null ? tasa : tr("insignia.cambio", { tasa, cambio: pct });
-  return fecha ? `${linea}\n${tr("insignia.fecha", { fecha: fechaCorta(fecha) })}` : linea;
+  return fecha ? `${linea}\n${textoDeLaFecha(par, fecha)}` : linea;
 }
 
 // Lo de hoy del viaje abierto, para verlo pasando el ratón por el icono. Con
@@ -6494,7 +6613,7 @@ function resumenTasaBarra(par, puntos) {
   const cambio = cambioDelDia(puntos);
   return {
     principal: cambio ? `${tasa} · ${textoCambioDia(cambio)}` : tasa,
-    detalle: [lineaTasa(ultimo.valor, par.from, par.to, true), tr("insignia.fecha", { fecha: fechaCorta(ultimo.fecha) })],
+    detalle: [lineaTasa(ultimo.valor, par.from, par.to, true), textoDeLaFecha(par, ultimo.fecha)],
   };
 }
 
@@ -7333,6 +7452,7 @@ if (typeof module !== "undefined") {
     esFijo, delDiaADia, marcarFijo,
     numeroBanco, fechaBanco, leerCsvBanco, conceptoBanco, tasaDeEseDia, gastosDelBanco,
     TAX_FREE, taxFree,
+    tasaLegible, DIVISAS_BCE, DIVISAS_MERCADO, esDeMercado, parDeMercado, urlTasa, urlTasaDia, urlSerie, urlsTodas, aFormatoV1, juntarTasas, pedirTodas,
     CURRENCIES, isValidCode, nombreDe, parseAmount, isoLocal, hoy, isFresh,
     evaluar, completar, leerImporte, UNIDADES, quitarUnidad, nombreUnidad, porUnidadMetrica, esOperacion, pasoCantidad, pasoPorDiez, RUEDA_PASO, pasosRueda, cifraCompleta, leerCantidad,
     normalizar, filtrarDivisas, buildPaths, startDateFor, errorMessageFor,

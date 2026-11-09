@@ -1,9 +1,9 @@
 const { test } = require("node:test");
 const assert = require("node:assert");
-const { CURRENCIES, PROPINA_HABITUAL, PROPINA_MAX, PROPINAS_RAPIDAS, propinaHabitual } = require("../logica.js");
+const { DIVISAS_BCE, PROPINA_HABITUAL, PROPINA_MAX, PROPINAS_RAPIDAS, propinaHabitual } = require("../logica.js");
 
 test("todas las divisas tienen su propina, y ninguna de más", () => {
-  assert.deepEqual(Object.keys(PROPINA_HABITUAL).sort(), CURRENCIES.map((c) => c.code).sort());
+  assert.deepEqual(Object.keys(PROPINA_HABITUAL).sort(), DIVISAS_BCE.map((c) => c.code).sort());
 });
 
 test("todas caben en lo que deja poner el campo", () => {

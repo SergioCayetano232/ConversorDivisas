@@ -1,9 +1,9 @@
 const { test } = require("node:test");
 const assert = require("node:assert");
-const { BILLETES, CURRENCIES, pagosPosibles, vuelta, pagoJusto } = require("../logica.js");
+const { BILLETES, DIVISAS_BCE, pagosPosibles, vuelta, pagoJusto } = require("../logica.js");
 
 test("hay billetes para todas las divisas, de menor a mayor", () => {
-  for (const { code } of CURRENCIES) {
+  for (const { code } of DIVISAS_BCE) {
     const b = BILLETES[code];
     assert.ok(b?.length, code);
     assert.deepEqual([...b].sort((x, y) => x - y), b, code);

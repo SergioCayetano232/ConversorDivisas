@@ -9,7 +9,8 @@ que necesitaba una conversión rápida. Ahora es un clic en la barra del navegad
 
 ## Qué hace
 
-- Convierte entre las 30 divisas que publica el Banco Central Europeo
+- Convierte entre 55 divisas: las 30 que publica el Banco Central Europeo y 25
+  más de los sitios a los que se viaja (Vietnam, Marruecos, Perú, Argentina…)
 - Escribes en cualquiera de las dos cantidades y calcula la otra. Si el
   redondeo a dos decimales se come algo (100 yenes son 0,57 EUR), pasando el
   ratón por la cifra la ves entera: 0,565012 EUR
@@ -493,14 +494,16 @@ npm test
 Para lo demás, editas un archivo, le das a recargar en `chrome://extensions` y
 ya está.
 
-Las tasas vienen de [Frankfurter](https://frankfurter.dev), que es gratuita, no
-pide API key y saca los datos del BCE. Como el BCE publica una vez al día
+Las tasas vienen de [Frankfurter](https://frankfurter.dev), que es gratuita y no
+pide API key. Las 30 del BCE van por su v1 y las otras 25 por la v2, que las saca
+de otros bancos centrales; de esas no hay enchufes, emergencias, billetes ni
+propina habitual, que prefiero no poner un teléfono que no sé si es bueno. Como el BCE publica una vez al día
 laborable, el gráfico no tiene puntos en fines de semana ni festivos, y las
 tasas guardadas valen hasta el día siguiente.
 
 ## Divisas soportadas
 
-Las 30 que publica el BCE. Primero las de siempre:
+Primero las 30 que publica el BCE. Las de siempre:
 
 EUR, USD, GBP, JPY, CHF, CAD, AUD, CNY, MXN, BRL, SEK, NOK, DKK, PLN y TRY.
 
@@ -508,9 +511,16 @@ Y detrás el resto:
 
 CZK, HKD, HUF, IDR, ILS, INR, ISK, KRW, MYR, NZD, PHP, RON, SGD, THB y ZAR.
 
-Si el BCE añade alguna, basta con meter una línea en el array `CURRENCIES` de
+Y luego las que no publica el BCE, con tasa de su banco central:
+
+VND, ARS, MAD, PEN, COP, CLP, EGP, AED, TWD, UYU, CRC, DOP, TND, KES, LKR, NPR,
+KHR, JOD, QAR, SAR, GEL, RSD, BOB, GTQ y PYG. La de Cuba no está a propósito: su
+tasa oficial no se parece a la de la calle.
+
+Si el BCE añade alguna, basta con meter una línea en el array `DIVISAS_BCE` de
 `logica.js`, con el nombre en español y en inglés (hay un test que comprueba
-que la lista es justo la del BCE, así que habrá que tocarlo también). Para que
+que la lista es justo la del BCE, así que habrá que tocarlo también). Las demás van en
+`DIVISAS_MERCADO`. Para que
 la tarjeta del clic derecho la reconozca por su símbolo o su nombre, va en
 `PISTAS`, en el mismo archivo.
 

@@ -1,6 +1,6 @@
 const { test } = require("node:test");
 const assert = require("node:assert");
-const { EMERGENCIAS, leerEmergencias, textoEmergencias, CURRENCIES } = require("../logica.js");
+const { EMERGENCIAS, leerEmergencias, textoEmergencias, DIVISAS_BCE } = require("../logica.js");
 const { ponerIdioma } = require("../textos.js");
 
 test("entiende emergencias, emergency y sos, con divisa o sin ella", () => {
@@ -15,7 +15,7 @@ test("entiende emergencias, emergency y sos, con divisa o sin ella", () => {
 });
 
 test("están las 30 divisas", () => {
-  assert.deepEqual(Object.keys(EMERGENCIAS).sort(), CURRENCIES.map((c) => c.code).sort());
+  assert.deepEqual(Object.keys(EMERGENCIAS).sort(), DIVISAS_BCE.map((c) => c.code).sort());
 });
 
 test("un número para todo", () => {

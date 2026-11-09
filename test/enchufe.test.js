@@ -1,6 +1,6 @@
 const { test } = require("node:test");
 const assert = require("node:assert");
-const { ENCHUFES, leerEnchufe, enchufeDe, textoEnchufe, CURRENCIES } = require("../logica.js");
+const { ENCHUFES, leerEnchufe, enchufeDe, textoEnchufe, DIVISAS_BCE } = require("../logica.js");
 const { ponerIdioma } = require("../textos.js");
 
 test("entiende enchufe y plug, con divisa o sin ella", () => {
@@ -15,7 +15,7 @@ test("entiende enchufe y plug, con divisa o sin ella", () => {
 });
 
 test("están las 30 divisas", () => {
-  assert.deepEqual(Object.keys(ENCHUFES).sort(), CURRENCIES.map((c) => c.code).sort());
+  assert.deepEqual(Object.keys(ENCHUFES).sort(), DIVISAS_BCE.map((c) => c.code).sort());
 });
 
 test("de España a Japón: adaptador y otro voltaje", () => {

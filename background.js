@@ -18,14 +18,12 @@ async function aplicarIdioma() {
   return guardado ?? "auto";
 }
 
-const API = "https://api.frankfurter.dev/v1/latest";
-const API_HISTORY = "https://api.frankfurter.dev/v1";
 const TIMEOUT_MS = 8000;
 
 // Pedidos en el momento y no guardados al arrancar: numeros() ya los cachea, y
 // así siguen el idioma aunque cambie con el service worker vivo.
 const nf = { format: (n) => numeros({ minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(n) };
-const nfRate = { format: (n) => numeros({ minimumFractionDigits: 4, maximumFractionDigits: 4 }).format(n) };
+const nfRate = { format: (n) => tasaLegible(n) };
 
 // Los títulos van en el idioma de ahora, así que al cambiarlo los rehago todos.
 // Y todos de golpe: al actualizar la extensión los de antes pueden seguir ahí, y
@@ -197,10 +195,9 @@ async function serieCorta(from, to, dias = 10) {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), TIMEOUT_MS);
   try {
-    const url = `${API_HISTORY}/${startDateFor(dias)}..?base=${from}&symbols=${to}`;
-    const response = await fetch(url, { signal: controller.signal });
+    const response = await fetch(urlSerie(from, to, startDateFor(dias)), { signal: controller.signal });
     if (!response.ok) throw new Error(`HTTP ${response.status}`);
-    const data = await response.json();
+    const data = aFormatoV1(await response.json(), true);
     return Object.keys(data.rates ?? {})
       .sort()
       .map((fecha) => ({ fecha, valor: data.rates[fecha]?.[to] }))
@@ -288,9 +285,9 @@ async function tasa(from, to) {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), TIMEOUT_MS);
   try {
-    const response = await fetch(`${API}?base=${from}&symbols=${to}`, { signal: controller.signal });
+    const response = await fetch(urlTasa(from, to), { signal: controller.signal });
     if (!response.ok) throw new Error(`HTTP ${response.status}`);
-    const data = await response.json();
+    const data = aFormatoV1(await response.json());
     const value = data.rates?.[to];
     if (typeof value !== "number") throw new Error("Respuesta inesperada");
     return { rate: value, date: data.date };
@@ -936,7 +933,7 @@ async function sugerirEnBarra(texto, sugerir) {
     sugerir([]);
     const code = emergencias.code ?? (await leerPar()).from;
     if (actual !== barraId) return;
-    chrome.omnibox.setDefaultSuggestion({ description: `<match>${escaparXml(textoEmergencias(code))}</match>` });
+    chrome.omnibox.setDefaultSuggestion({ description: `<match>${escaparXml(textoEmergencias(code) || tr("emergencias.sinDatos"))}</match>` });
     return;
   }
   const enchufe = leerEnchufe(texto);
@@ -945,7 +942,7 @@ async function sugerirEnBarra(texto, sugerir) {
     // Sin divisa, la de arriba, que es la de allí; la tuya es la de abajo.
     const par = await leerPar();
     if (actual !== barraId) return;
-    const linea = textoEnchufe(enchufeDe(enchufe.code ?? par.from, par.to));
+    const linea = textoEnchufe(enchufeDe(enchufe.code ?? par.from, par.to)) || tr("enchufe.sinDatos");
     chrome.omnibox.setDefaultSuggestion({ description: `<match>${escaparXml(linea)}</match>` });
     return;
   }
@@ -1270,10 +1267,7 @@ async function todasLasTasas(base) {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), TIMEOUT_MS);
   try {
-    const response = await fetch(`${API}?base=${base}`, { signal: controller.signal });
-    if (!response.ok) throw new Error(`HTTP ${response.status}`);
-    const data = await response.json();
-    return data.rates ?? {};
+    return await pedirTodas(base, null, controller.signal);
   } finally {
     clearTimeout(timer);
   }

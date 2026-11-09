@@ -49,7 +49,7 @@ function crearCara(filas, de, a, nota) {
 
 function pintar(datos) {
   const { ida, vuelta } = chuletaParaImprimir(datos);
-  const fecha = datos.fecha ? tr("imprimir.fecha", { fecha: fechaCorta(datos.fecha) }) : "";
+  const fecha = datos.fecha ? tr(parDeMercado(datos.from, datos.to) ? "mercado.fecha" : "imprimir.fecha", { fecha: fechaCorta(datos.fecha) }) : "";
   const conComision = datos.comision > 0
     ? tr("imprimir.comision", { pct: tr("pct", { n: numeros({ maximumFractionDigits: 2 }).format(datos.comision) }) })
     : tr("imprimir.sinComision");
