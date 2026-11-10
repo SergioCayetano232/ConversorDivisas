@@ -1419,6 +1419,27 @@ const BILLETES = {
   THB: [20, 50, 100, 500, 1000], ZAR: [10, 20, 50, 100, 200],
 };
 
+// "cd billetes jpy": los de allí y lo que vale cada uno en la tuya, para no
+// tener que pensarlo con el billete en la mano.
+const HAY_BILLETES = /^\s*(?:billetes?|banknotes?|bills?)(?:\s+([a-z]{3}))?\s*$/i;
+
+function leerBilletes(texto) {
+  const m = String(texto ?? "").match(HAY_BILLETES);
+  if (!m) return null;
+  const code = m[1]?.toUpperCase() ?? null;
+  return code && !isValidCode(code) ? null : { code };
+}
+
+function textoBilletes(code, tuya = null, tasa = null) {
+  const billetes = BILLETES[code];
+  if (!billetes) return "";
+  const enteros = numeros({ maximumFractionDigits: 0 });
+  const conTasa = tuya && tuya !== code && Number.isFinite(tasa) && tasa > 0;
+  const dinero = numeros({ minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  const lista = billetes.map((b) => (conTasa ? `${enteros.format(b)} ≈ ${dinero.format(b * tasa)}` : enteros.format(b)));
+  return `${banderaDivisa(code)} ${tr("billetes.titulo")}: ${lista.join(" · ")} ${conTasa ? tuya : code}`;
+}
+
 const PAGOS_MAX = 3;
 
 // Con qué puedes pagar: lo justo hacia arriba con cada billete (37,20 € son
@@ -7511,7 +7532,7 @@ if (typeof module !== "undefined") {
     COMISION_MAX, COMISIONES_RAPIDAS, leerComision, leerPorcentaje, conComision,
     IMPUESTO_MAX, IMPUESTOS_RAPIDOS, leerImpuesto, leerImpuestoEscrito, loQuePagas,
     COMPARAR_IGUAL, compararPrecios, inclinacion, ZONAS, desfase, esNoche, horaAlli, SIGLAS_ZONA, leerHoraZona, convertirHoraZona, textoHoraZona, textoDiferencia, relojDe, tituloHoraAlli, leerCafe, enCafes, textoCafes, HORAS_JORNADA, enHoras, textoHoras,
-    PROPINAS_RAPIDAS, PROPINA_HABITUAL, propinaHabitual, leerPropina, textoPropina, ENCHUFES, leerEnchufe, enchufeDe, textoEnchufe, EMERGENCIAS, leerEmergencias, textoEmergencias, PROPINA_MAX, PERSONAS_MAX, CUENTA_POR_DEFECTO, leerCuenta, redondoHaciaArriba, repartirCuenta, cuentaParaCompartir, gastoDeLaCuenta, BILLETES, PAGOS_MAX, pagosPosibles, vuelta, pagoJusto,
+    PROPINAS_RAPIDAS, PROPINA_HABITUAL, propinaHabitual, leerPropina, textoPropina, ENCHUFES, leerEnchufe, enchufeDe, textoEnchufe, EMERGENCIAS, leerEmergencias, textoEmergencias, PROPINA_MAX, PERSONAS_MAX, CUENTA_POR_DEFECTO, leerCuenta, redondoHaciaArriba, repartirCuenta, cuentaParaCompartir, gastoDeLaCuenta, BILLETES, leerBilletes, textoBilletes, PAGOS_MAX, pagosPosibles, vuelta, pagoJusto,
     MARGENES, tasaOfrecida, analizarCambio,
     domingoDePascua, hayTasaEl, tasaVieja, textoTasaVieja, horaBce, textoActualizado, proximaTasa, textoProximaTasa,
     FECHA_MINIMA, fechaLarga, fechaValida, diaDelGrafico, mesesAtras, FECHAS_RAPIDAS, leerFecha, cambioDesde, notaDiaHabil,
