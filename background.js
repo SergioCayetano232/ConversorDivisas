@@ -573,6 +573,7 @@ async function sugerirEnBarra(texto, sugerir) {
   if (esSemanaBarra(texto)) return sugerirHoy(sugerir, actual, resumenSemanaBarra);
   if (esMesBarra(texto)) return sugerirHoy(sugerir, actual, resumenMesBarra);
   if (esViajeBarra(texto)) return sugerirHoy(sugerir, actual, resumenViajeBarra);
+  if (esCaroBarra(texto)) return sugerirHoy(sugerir, actual, resumenCaroBarra);
   if (esTodosBarra(texto)) return sugerirHoy(sugerir, actual, resumenTodosBarra, (viajes) => viajes);
   const horaZona = leerHoraZona(texto);
   if (horaZona) {
@@ -1215,7 +1216,7 @@ async function abrirDesdeBarra(texto) {
     await apuntarDesdeBarra(texto);
     return;
   }
-  if (esHoyBarra(texto) || esAyerBarra(texto) || esAnteayerBarra(texto) || esSemanaBarra(texto) || esMesBarra(texto) || esViajeBarra(texto) || esTodosBarra(texto)) {
+  if (esHoyBarra(texto) || esAyerBarra(texto) || esAnteayerBarra(texto) || esSemanaBarra(texto) || esMesBarra(texto) || esViajeBarra(texto) || esCaroBarra(texto) || esTodosBarra(texto)) {
     await abrirConGastos();
     return;
   }
