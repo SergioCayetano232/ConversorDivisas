@@ -23,6 +23,10 @@ que necesitaba una conversión rápida. Ahora es un clic en la barra del navegad
 - Si pegas un precio con su divisa ("1.299,00 £", "$49.99"), pone la cantidad
   y cambia la divisa a la vez. Pegado abajo, cambia la de destino. Y si
   pegas sin estar en ningún campo, va a la cantidad, sea un precio o un número a secas
+- Pegar una columna de precios, de una hoja de cálculo o de las líneas de un
+  tique, y que se sumen: en la cantidad se queda la cuenta ("12,50 + 3,20 +
+  8,00 = 23,70"), y si cada línea lleva su divisa ("£4.50"), cambia el par. Los
+  descuentos con su menos restan. Si alguna línea tiene texto, se pega como siempre
 - Buscas la divisa escribiendo: pones "mex" y sale el peso mexicano
 - Un botón para dar la vuelta al par sin tocar los dos desplegables
 - Un botón para copiar el resultado. Con Shift (clic o `Shift+C`) copia la

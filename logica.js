@@ -4247,6 +4247,40 @@ function leerPegado(texto, lado, par) {
   return { cantidad, ...destinoPara(divisa, par) };
 }
 
+// Una columna de una hoja o las líneas de un tique: cada línea, un precio. Se
+// pega como la suma, para que se vean las partes. Si hay una línea que no es un
+// precio, o dos divisas distintas, mejor pegarlo como siempre.
+const COLUMNA_MAX = 50;
+
+function leerColumna(texto, par) {
+  const lineas = String(texto ?? "").split(/\r?\n|\t/).map((l) => l.trim()).filter(Boolean);
+  if (lineas.length < 2 || lineas.length > COLUMNA_MAX) return null;
+  let divisa = null;
+  const cantidades = [];
+  for (const linea of lineas) {
+    const precio = precioEntero(linea);
+    if (precio) {
+      if (divisa && precio.divisa !== divisa) return null;
+      divisa = precio.divisa;
+      cantidades.push(precio.cantidad);
+      continue;
+    }
+    // Un descuento del tique viene con su menos delante.
+    if (!/^[-−]?\s*\d[\d.,'  ]*$/.test(linea)) return null;
+    const n = leerNumero(linea.replace("−", "-"));
+    if (!Number.isFinite(n)) return null;
+    cantidades.push(n);
+  }
+  const cantidad = Math.round(cantidades.reduce((a, b) => a + b, 0) * 100) / 100;
+  if (cantidad < 0) return null;
+  return { cantidades, cantidad, ...destinoPara(divisa, par) };
+}
+
+function cuentaDeColumna(cantidades) {
+  const dinero = numeros({ minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  return cantidades.map((n, i) => (i === 0 ? dinero.format(n) : `${n < 0 ? "-" : "+"} ${dinero.format(Math.abs(n))}`)).join(" ");
+}
+
 function textoInsignia(rate) {
   if (typeof rate !== "number" || !Number.isFinite(rate) || rate <= 0) return "";
   const es = (n, dec) => n.toFixed(dec).replace(".", separadorDecimal());
@@ -7527,7 +7561,7 @@ if (typeof module !== "undefined") {
     RECIENTES_MAX, FIJOS_MAX, apuntarReciente, fijarReciente, leerRecientes, recientesVisibles,
     RANGOS, RANGO_POR_DEFECTO, leerRango, siguienteRango, coordenadas, alturaEn, MOMENTO_UMBRAL, momento, textoMomento,
     SEMANAS_MINIMAS, mejorDiaSemana, nombreDiaSemana, textoDiaSemana, indiceCercano, extremos, fechaCorta, largoEnPantalla,
-    leerNumero, divisaDe, leerSeleccion, destinoPara, leerPegado, leerPegadoSuelto, buscarPrecios, precioEntero, leerOmnibox, precioUnidadBarra, leerGastoBarra, gastoDeBarra, gastoDeTarjeta, escaparXml,
+    leerNumero, divisaDe, leerSeleccion, destinoPara, leerPegado, leerPegadoSuelto, leerColumna, cuentaDeColumna, buscarPrecios, precioEntero, leerOmnibox, precioUnidadBarra, leerGastoBarra, gastoDeBarra, gastoDeTarjeta, escaparXml,
     divisaDeIdioma, parPorIdioma, banderaDe, banderaDivisa,
     HISTORIAL_MAX, leerHistorial, apuntarConversion, quitarConversion, haceCuanto, ultimoDeHoy, textoParaCopiar, fraseParaCopiar, gastoParaCopiar, ultimoGasto, gastoMasCaro, totalParaCopiar, hoyParaCopiar, simboloDe, textoConSimbolo, fraseConSimbolo,
     celdaCsv, csvHistorial, csvGastos, csvViajes,

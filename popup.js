@@ -7364,7 +7364,8 @@ function onPegar(event) {
   const campo = event.currentTarget;
   const lado = campo === el.result ? "result" : "amount";
   const antes = { from: el.from.value, to: el.to.value };
-  const pegado = leerPegado(event.clipboardData?.getData("text") ?? "", lado, antes);
+  const texto = event.clipboardData?.getData("text") ?? "";
+  const pegado = (lado === "amount" && pegadoDeColumna(texto, antes)) || leerPegado(texto, lado, antes);
   if (!pegado) return;
   event.preventDefault();
   ponerPegado(campo, pegado);
@@ -7374,11 +7375,19 @@ function onPegar(event) {
 function onPegarFuera(event) {
   const t = event.target;
   if (t instanceof HTMLInputElement || t instanceof HTMLTextAreaElement || t.isContentEditable) return;
-  const pegado = leerPegadoSuelto(event.clipboardData?.getData("text") ?? "", { from: el.from.value, to: el.to.value });
+  const texto = event.clipboardData?.getData("text") ?? "";
+  const par = { from: el.from.value, to: el.to.value };
+  const pegado = pegadoDeColumna(texto, par) || leerPegadoSuelto(texto, par);
   if (!pegado) return;
   event.preventDefault();
   ponerPegado(el.amount, pegado);
   el.amount.focus();
+}
+
+// Varias líneas con precios: la cantidad se queda con la suma escrita como cuenta.
+function pegadoDeColumna(texto, par) {
+  const columna = leerColumna(texto, par);
+  return columna && { ...columna, texto: cuentaDeColumna(columna.cantidades) };
 }
 
 function ponerPegado(campo, pegado) {
@@ -7393,14 +7402,15 @@ function ponerPegado(campo, pegado) {
 
   buscadores.from.poner(pegado.from);
   buscadores.to.poner(pegado.to);
-  campo.value = nf.format(pegado.cantidad);
+  campo.value = pegado.texto ?? nf.format(pegado.cantidad);
   if (lado === "result") onResultInput();
   else onAmountInput();
   restartAnimation(campo, "is-cambiado");
   marcarTocado();
 
   const divisa = lado === "result" ? pegado.to : pegado.from;
-  soltarEtiqueta(campo, divisa);
+  // Con una columna la etiqueta caería encima del total de la cuenta.
+  if (!pegado.texto) soltarEtiqueta(campo, divisa);
   if (cambia) {
     restartAnimation(lado === "result" ? el.to : el.from, "is-cambiado");
     if (vuelta) restartAnimation(el.swap, "is-swapping");
