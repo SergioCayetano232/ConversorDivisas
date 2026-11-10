@@ -1288,6 +1288,36 @@ const PROPINA_HABITUAL = {
 
 const propinaHabitual = (code) => PROPINA_HABITUAL[code] ?? null;
 
+// "cd propina", "cd propina 60" o "cd tip 60 usd": la de allí y, con la cuenta,
+// cuánto es. Sin divisa, la de arriba, igual que el enchufe.
+const HAY_PROPINA = /^\s*(?:propinas?|tips?)(?:\s+(\d+(?:[.,]\d+)*))?(?:\s+([a-z]{3}))?\s*$/i;
+
+function leerPropina(texto) {
+  const m = String(texto ?? "").match(HAY_PROPINA);
+  if (!m) return null;
+  const code = m[2]?.toUpperCase() ?? null;
+  // Una divisa de las que no tengo la propina vale: así dice que no la tengo.
+  if (code && !isValidCode(code)) return null;
+  const cuenta = m[1] ? leerNumero(m[1]) : null;
+  if (m[1] && !(cuenta > 0)) return null;
+  return { code, cuenta };
+}
+
+function textoPropina(code, cuenta = null) {
+  const pct = propinaHabitual(code);
+  if (pct === null) return "";
+  if (pct === 0) return `${banderaDivisa(code)} ${tr("cuenta.habitualNada")}`;
+  const dinero = numeros({ minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  const tanto = tr("pct", { n: numeros({ maximumFractionDigits: 2 }).format(pct) });
+  // Redondeo la propina antes de sumar, para que la cuenta cuadre al céntimo.
+  const propina = Math.round(cuenta * pct) / 100;
+  const partes = [cuenta
+    ? tr("propina.conCuenta", { pct: tanto, cuenta: dinero.format(cuenta), propina: dinero.format(propina), total: `${dinero.format(cuenta + propina)} ${code}` })
+    : tr("propina.habitual", { pct: tanto })];
+  if (code === "GBP") partes.push(tr("propina.servicio"));
+  return `${banderaDivisa(code)} ${partes.join(" · ")}`;
+}
+
 // "cd enchufe jpy": qué enchufe hay allí y si entra el tuyo. Por la divisa, así
 // que el euro va con el de casi toda la zona y aviso aparte de los de la G.
 // Pongo la C donde el europeo entra aunque no sea el oficial (Suiza, Israel…).
@@ -7481,7 +7511,7 @@ if (typeof module !== "undefined") {
     COMISION_MAX, COMISIONES_RAPIDAS, leerComision, leerPorcentaje, conComision,
     IMPUESTO_MAX, IMPUESTOS_RAPIDOS, leerImpuesto, leerImpuestoEscrito, loQuePagas,
     COMPARAR_IGUAL, compararPrecios, inclinacion, ZONAS, desfase, esNoche, horaAlli, SIGLAS_ZONA, leerHoraZona, convertirHoraZona, textoHoraZona, textoDiferencia, relojDe, tituloHoraAlli, leerCafe, enCafes, textoCafes, HORAS_JORNADA, enHoras, textoHoras,
-    PROPINAS_RAPIDAS, PROPINA_HABITUAL, propinaHabitual, ENCHUFES, leerEnchufe, enchufeDe, textoEnchufe, EMERGENCIAS, leerEmergencias, textoEmergencias, PROPINA_MAX, PERSONAS_MAX, CUENTA_POR_DEFECTO, leerCuenta, redondoHaciaArriba, repartirCuenta, cuentaParaCompartir, gastoDeLaCuenta, BILLETES, PAGOS_MAX, pagosPosibles, vuelta, pagoJusto,
+    PROPINAS_RAPIDAS, PROPINA_HABITUAL, propinaHabitual, leerPropina, textoPropina, ENCHUFES, leerEnchufe, enchufeDe, textoEnchufe, EMERGENCIAS, leerEmergencias, textoEmergencias, PROPINA_MAX, PERSONAS_MAX, CUENTA_POR_DEFECTO, leerCuenta, redondoHaciaArriba, repartirCuenta, cuentaParaCompartir, gastoDeLaCuenta, BILLETES, PAGOS_MAX, pagosPosibles, vuelta, pagoJusto,
     MARGENES, tasaOfrecida, analizarCambio,
     domingoDePascua, hayTasaEl, tasaVieja, textoTasaVieja, horaBce, textoActualizado, proximaTasa, textoProximaTasa,
     FECHA_MINIMA, fechaLarga, fechaValida, diaDelGrafico, mesesAtras, FECHAS_RAPIDAS, leerFecha, cambioDesde, notaDiaHabil,
