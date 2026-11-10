@@ -196,9 +196,14 @@ const OPERADORES = { "+": "+", "-": "-", "−": "-", "*": "*", "×": "*", x: "*"
 const HAY_OPERACION = /[-+−*×xX/÷:()%]/;
 
 // "2k" y "1,5m", como se escriben los precios de pisos y coches. La letra va
-// pegada al número y sola: "2 km" no es nada.
+// pegada al número y sola: "2 km" no es nada. Y con la palabra, "20 mil" o
+// "1,5 millones", que es como lo dice la gente. "miles" no, que son millas.
 const MULTIPLOS = { k: 1e3, m: 1e6 };
-const HAY_MULTIPLO = /\d\s*[km](?![a-z])/i;
+const PALABRAS_MULTIPLO = "mill[oó]n(?:es)?|millions?|mil|thousands?";
+const PALABRA_MULTIPLO = `${PALABRAS_MULTIPLO}|[km]`;
+const HAY_MULTIPLO = new RegExp(`\\d\\s*(?:${PALABRA_MULTIPLO})(?![a-zñáéíóú])`, "i");
+const LEER_MULTIPLO = new RegExp(`^\\s*(${PALABRA_MULTIPLO})(?![a-zñáéíóú])`, "i");
+const multiplo = (palabra) => (/^(k|mil$|thousand)/i.test(palabra) ? MULTIPLOS.k : MULTIPLOS.m);
 
 function trocear(texto) {
   const fichas = [];
@@ -216,9 +221,9 @@ function trocear(texto) {
       const v = parseAmount(num[0]);
       if (v === null) return null;
       i += num[0].length;
-      const letra = texto.slice(i).match(/^\s*([km])(?![a-z])/i);
+      const letra = texto.slice(i).match(LEER_MULTIPLO);
       if (letra) i += letra[0].length;
-      fichas.push({ tipo: "num", v: letra ? v * MULTIPLOS[letra[1].toLowerCase()] : v });
+      fichas.push({ tipo: "num", v: letra ? v * multiplo(letra[1]) : v });
     } else if (OPERADORES[c]) {
       fichas.push({ tipo: "op", v: OPERADORES[c] });
       i++;
@@ -1783,14 +1788,17 @@ function precioUnidadBarra({ cantidad, from, to, unidad }, rate) {
 // del principio que parece cantidad o divisa es la cantidad; lo demás, el concepto.
 const PAGO_POR_PALABRA = { efectivo: "efectivo", cash: "efectivo", metalico: "efectivo", tarjeta: "tarjeta", card: "tarjeta" };
 
-const esDeCantidad = (palabra) => /^[\d.,+\-*/()%]+[km]?$/i.test(palabra) || /^[€$£¥₹₩₪฿₱₺]$/.test(palabra)
+// "+ 20 mil taxi": el "mil" va con la cantidad si va justo detrás del número.
+const CON_MULTIPLO = new RegExp(`^[\\d.,+\\-*/()%]+(?:${PALABRA_MULTIPLO})?$`, "i");
+const SOLO_MULTIPLO = new RegExp(`^(?:${PALABRAS_MULTIPLO})$`, "i");
+const esDeCantidad = (palabra, anterior = "") => CON_MULTIPLO.test(palabra) || (/\d$/.test(anterior) && SOLO_MULTIPLO.test(palabra)) || /^[€$£¥₹₩₪฿₱₺]$/.test(palabra)
   || (/^[a-z]{3}$/i.test(palabra) && isValidCode(palabra.toUpperCase()) && (palabra === palabra.toUpperCase() || !CODIGOS_QUE_SON_PALABRA.has(palabra.toUpperCase())));
 
 function leerGastoBarra(texto, par) {
   if (typeof texto !== "string" || !/^\s*\+/.test(texto)) return null;
   const palabras = texto.replace(/^\s*\+/, "").replace(/([€$£¥₹₩₪฿₱₺])/g, " $1 ").trim().split(/\s+/).filter(Boolean);
   let i = 0;
-  while (i < palabras.length && (esDeCantidad(palabras[i])
+  while (i < palabras.length && (esDeCantidad(palabras[i], palabras[i - 1])
     || (ENLACES.has(palabras[i].toLowerCase()) && i > 0 && esDeCantidad(palabras[i + 1] ?? "") && /[a-z]/i.test(palabras[i + 1])))) i += 1;
   const leido = leerOmnibox(palabras.slice(0, i).join(" "), par);
   if (!leido) return null;

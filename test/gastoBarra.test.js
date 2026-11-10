@@ -52,3 +52,14 @@ test("un concepto ya usado se queda con su categoría y cómo lo escribiste", ()
 test("sin tasa no se apunta", () => {
   assert.equal(gastoDeBarra(leerGastoBarra("+ 500 cena", par), { ...base, tasa: null }), null);
 });
+
+test("el mil va con la cantidad solo si va detrás del número", () => {
+  const yen = { from: "JPY", to: "EUR" };
+  assert.deepEqual(leerGastoBarra("+ 20 mil taxi", yen), { cantidad: 20000, from: "JPY", to: "EUR", concepto: "taxi", pago: null });
+  assert.equal(leerGastoBarra("+ 20mil taxi", yen).cantidad, 20000);
+  assert.equal(leerGastoBarra("+ 1,5 millones casa", yen).cantidad, 1500000);
+  const hojas = leerGastoBarra("+ 20 eur mil hojas", yen);
+  assert.equal(hojas.cantidad, 20);
+  assert.equal(hojas.concepto, "mil hojas");
+  assert.equal(leerGastoBarra("+ 20 millas", yen).concepto, "millas");
+});

@@ -159,3 +159,19 @@ test("la cantidad guardada vuelve al céntimo, y si no vale no vuelve", () => {
   assert.equal(leerCantidad(-5), null);
   assert.equal(leerCantidad(NaN), null);
 });
+
+test("también con la palabra: mil, millones, thousand, million", () => {
+  assert.equal(evaluar("20 mil"), 20000);
+  assert.equal(evaluar("20mil"), 20000);
+  assert.equal(evaluar("1,5 millones"), 1500000);
+  assert.equal(evaluar("1 millón"), 1000000);
+  assert.equal(evaluar("1 millon"), 1000000);
+  assert.equal(evaluar("3 thousand"), 3000);
+  assert.equal(evaluar("2 million"), 2000000);
+  assert.equal(evaluar("20 mil + 500"), 20500);
+  assert.ok(esOperacion("20 mil"));
+});
+
+test("las millas no son miles, ni vale la palabra suelta", () => {
+  for (const t of ["10 miles", "5 milla", "2 mils", "20 mill", "mil", "2 milanesas"]) assert.equal(evaluar(t), null, t);
+});
