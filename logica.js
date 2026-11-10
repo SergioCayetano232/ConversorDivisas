@@ -1792,6 +1792,43 @@ function leerOmnibox(texto, par) {
   return leido;
 }
 
+// "cd 20 usd + 15 gbp": lo que llevas en la cartera de varios viajes, todo en
+// la tuya (la de abajo) o en la que digas al final ("… a eur"). Cada trozo, con
+// su divisa; si a alguno le falta, no sé de qué es y mejor no inventar.
+const HAY_DESTINO_MEZCLA = /\s+(?:a|to|en|in|->|→|=)\s+([a-z]{3})\s*$/i;
+
+function leerMezcla(texto, par) {
+  if (typeof texto !== "string" || !texto.includes("+")) return null;
+  const destino = texto.match(HAY_DESTINO_MEZCLA);
+  const to = destino ? destino[1].toUpperCase() : par.to;
+  if (!isValidCode(to)) return null;
+  const trozos = (destino ? texto.slice(0, destino.index) : texto).split("+");
+  if (trozos.length < 2) return null;
+  const partes = [];
+  for (const trozo of trozos) {
+    const palabras = trozo.replace(/([€$£¥₹₩₪฿₱₺])/g, " $1 ").trim().split(/\s+/).filter(Boolean);
+    const divisas = palabras.map((p) => (isValidCode(p.toUpperCase()) ? p.toUpperCase() : /[a-z€$£¥₹₩₪฿₱₺]/i.test(p) ? divisaDe(p) : null));
+    if (divisas.filter(Boolean).length !== 1) return null;
+    const cantidad = leerImporte(palabras.filter((_, i) => !divisas[i]).join(" "));
+    if (!(cantidad > 0)) return null;
+    partes.push({ cantidad, divisa: divisas.find(Boolean) });
+  }
+  return { partes, to };
+}
+
+// Las tasas, desde la de destino: una sola petición para todas las partes.
+function textoMezcla({ partes, to }, rates) {
+  const dinero = numeros({ minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  const valores = partes.map(({ cantidad, divisa }) => (divisa === to ? cantidad : cantidad / rates?.[divisa]));
+  if (!valores.every((v) => Number.isFinite(v))) return null;
+  // Cada parte al céntimo antes de sumar, para que lo que se ve cuadre con el total.
+  const total = valores.reduce((a, b) => a + Math.round(b * 100), 0) / 100;
+  return {
+    principal: `${partes.map((p) => `${dinero.format(p.cantidad)} ${p.divisa}`).join(" + ")} = ${dinero.format(total)} ${to}`,
+    detalle: `${valores.map((v) => dinero.format(v)).join(" + ")} ${to}`,
+  };
+}
+
 // "3,50 usd/gal = 0,80 EUR/l": en la gasolinera lo que quieres saber es el
 // litro. El galón convertido va detrás, por si el precio de aquí lo tienes así.
 function precioUnidadBarra({ cantidad, from, to, unidad }, rate) {
@@ -7590,7 +7627,7 @@ if (typeof module !== "undefined") {
     RECIENTES_MAX, FIJOS_MAX, apuntarReciente, fijarReciente, leerRecientes, recientesVisibles,
     RANGOS, RANGO_POR_DEFECTO, leerRango, siguienteRango, coordenadas, alturaEn, MOMENTO_UMBRAL, momento, textoMomento,
     SEMANAS_MINIMAS, mejorDiaSemana, nombreDiaSemana, textoDiaSemana, indiceCercano, extremos, fechaCorta, largoEnPantalla,
-    leerNumero, divisaDe, leerSeleccion, sumarSeleccion, notaDeSuma, destinoPara, leerPegado, leerPegadoSuelto, leerColumna, cuentaDeColumna, buscarPrecios, precioEntero, leerOmnibox, precioUnidadBarra, leerGastoBarra, gastoDeBarra, gastoDeTarjeta, escaparXml,
+    leerNumero, divisaDe, leerSeleccion, sumarSeleccion, notaDeSuma, destinoPara, leerPegado, leerPegadoSuelto, leerColumna, cuentaDeColumna, buscarPrecios, precioEntero, leerOmnibox, leerMezcla, textoMezcla, precioUnidadBarra, leerGastoBarra, gastoDeBarra, gastoDeTarjeta, escaparXml,
     divisaDeIdioma, parPorIdioma, banderaDe, banderaDivisa,
     HISTORIAL_MAX, leerHistorial, apuntarConversion, quitarConversion, haceCuanto, ultimoDeHoy, textoParaCopiar, fraseParaCopiar, gastoParaCopiar, ultimoGasto, gastoMasCaro, totalParaCopiar, hoyParaCopiar, simboloDe, textoConSimbolo, fraseConSimbolo,
     celdaCsv, csvHistorial, csvGastos, csvViajes,
