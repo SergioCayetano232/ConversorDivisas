@@ -296,7 +296,9 @@ que necesitaba una conversión rápida. Ahora es un clic en la barra del navegad
   lo da por igual
 - Seleccionas un precio en cualquier web, clic derecho, **Convertir**, y te sale
   el resultado en una tarjeta al lado del texto. Entiende "1.299,00 €",
-  "$1,049.99", "R$ 10,50" o "20 euros". Sin ratón, con `Alt+Shift+C` (`⌥⇧C`
+  "$1,049.99", "R$ 10,50" o "20 euros". Si seleccionas varios, como el carrito
+  de una tienda, los suma y te dice cuáles ("Suma de 3 precios: 12,50 + 39,99 +
+  3,95"), siempre que vayan en la misma divisa. Sin ratón, con `Alt+Shift+C` (`⌥⇧C`
   en Mac), también dentro de un campo de texto. Con **+ Gasto** lo apuntas en el
   viaje abierto, con un concepto si quieres, para el hotel o el vuelo que pagas
   en la web: va con tarjeta y con tu comisión. Si el precio ya está en tu divisa,

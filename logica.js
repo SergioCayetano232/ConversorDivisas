@@ -1705,6 +1705,27 @@ function leerSeleccion(texto) {
   return { cantidad, divisa: divisaDe(texto) };
 }
 
+// Varios precios seleccionados, como la lista de la compra de una web: se suman
+// si van en la misma divisa. Con dos distintas no sé sumarlos sin otra tasa, y
+// me quedo con el primero, como siempre.
+function sumarSeleccion(texto) {
+  const precios = buscarPrecios(texto);
+  if (precios.length < 2 || precios.some((p) => p.divisa !== precios[0].divisa)) return null;
+  const cantidades = precios.map((p) => p.cantidad);
+  const cantidad = Math.round(cantidades.reduce((a, b) => a + b, 0) * 100) / 100;
+  return { cantidades, cantidad, divisa: precios[0].divisa };
+}
+
+// Las partes solo si caben; con muchas, cuántas son.
+const PARTES_A_LA_VISTA = 5;
+
+function notaDeSuma(cantidades) {
+  const dinero = numeros({ minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  if (cantidades.length > PARTES_A_LA_VISTA) return tr("tarjeta.sumaMuchos", { n: cantidades.length });
+  // El "+" pegado a su número, que si la línea se parte no se quede colgando.
+  return tr("tarjeta.suma", { n: cantidades.length, partes: cantidades.map((n) => dinero.format(n)).join(" +\u00a0") });
+}
+
 // Para la página entera no vale cualquier número como en la selección: aquí
 // solo cuenta si lleva la divisa pegada, delante o detrás. Los símbolos largos
 // primero, que si no "US$" se quedaba en "$".
@@ -7569,7 +7590,7 @@ if (typeof module !== "undefined") {
     RECIENTES_MAX, FIJOS_MAX, apuntarReciente, fijarReciente, leerRecientes, recientesVisibles,
     RANGOS, RANGO_POR_DEFECTO, leerRango, siguienteRango, coordenadas, alturaEn, MOMENTO_UMBRAL, momento, textoMomento,
     SEMANAS_MINIMAS, mejorDiaSemana, nombreDiaSemana, textoDiaSemana, indiceCercano, extremos, fechaCorta, largoEnPantalla,
-    leerNumero, divisaDe, leerSeleccion, destinoPara, leerPegado, leerPegadoSuelto, leerColumna, cuentaDeColumna, buscarPrecios, precioEntero, leerOmnibox, precioUnidadBarra, leerGastoBarra, gastoDeBarra, gastoDeTarjeta, escaparXml,
+    leerNumero, divisaDe, leerSeleccion, sumarSeleccion, notaDeSuma, destinoPara, leerPegado, leerPegadoSuelto, leerColumna, cuentaDeColumna, buscarPrecios, precioEntero, leerOmnibox, precioUnidadBarra, leerGastoBarra, gastoDeBarra, gastoDeTarjeta, escaparXml,
     divisaDeIdioma, parPorIdioma, banderaDe, banderaDivisa,
     HISTORIAL_MAX, leerHistorial, apuntarConversion, quitarConversion, haceCuanto, ultimoDeHoy, textoParaCopiar, fraseParaCopiar, gastoParaCopiar, ultimoGasto, gastoMasCaro, totalParaCopiar, hoyParaCopiar, simboloDe, textoConSimbolo, fraseConSimbolo,
     celdaCsv, csvHistorial, csvGastos, csvViajes,

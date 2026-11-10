@@ -318,7 +318,8 @@ function paraLaTarjeta(datos) {
 }
 
 async function calcular(texto) {
-  const leido = leerSeleccion(texto);
+  const suma = sumarSeleccion(texto);
+  const leido = suma ?? leerSeleccion(texto);
   if (!leido) return { estado: "nada", original: texto, mensaje: tr("tarjeta.nada") };
 
   const { from, to } = destinoPara(leido.divisa, await leerPar());
@@ -328,7 +329,7 @@ async function calcular(texto) {
     return {
       estado: "ok",
       original: `${nf.format(leido.cantidad)} ${from}`,
-      nota: leido.divisa ? "" : tr("tarjeta.sinDivisa", { from }),
+      nota: suma ? notaDeSuma(suma.cantidades) : leido.divisa ? "" : tr("tarjeta.sinDivisa", { from }),
       resultado,
       copia: textoParaCopiar(resultado),
       frase: fraseParaCopiar({ cantidad: leido.cantidad, from, valor: resultado, to }),
@@ -359,7 +360,7 @@ async function convertirSeleccion(info, tab) {
   } catch (error) {
     // En chrome://, la Web Store o el visor de PDF no se puede inyectar nada.
     // Ahí abro el popup con la cantidad ya puesta.
-    const leido = leerSeleccion(info.selectionText);
+    const leido = sumarSeleccion(info.selectionText) ?? leerSeleccion(info.selectionText);
     if (leido) {
       const par = destinoPara(leido.divisa, await leerPar());
       await chrome.storage.session.set({ pendiente: { cantidad: leido.cantidad, ...par } });
