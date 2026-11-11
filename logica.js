@@ -1508,6 +1508,40 @@ function textoGracias(code) {
   return `${inicio} 👋 ${hola} · 🙏 ${gracias} · 🧾 ${cuenta}`;
 }
 
+// "cd cajero": si allí te apañas con la tarjeta o hay que llevar billetes, y lo
+// que conviene saber de algunos sitios. "efectivo" no vale de palabra: ya la uso
+// al apuntar un gasto desde la barra.
+const PAGO_ALLI = {
+  tarjeta: ["USD", "GBP", "CHF", "CAD", "AUD", "NZD", "SEK", "NOK", "DKK", "ISK", "PLN", "CZK", "HUF", "RON",
+    "KRW", "SGD", "HKD", "ILS", "AED", "QAR", "SAR", "BRL", "CLP", "UYU", "CRC", "TRY", "ZAR", "GEL"],
+  mixto: ["EUR", "JPY", "CNY", "MXN", "MYR", "THB", "IDR", "PHP", "INR", "VND", "TWD", "ARS", "PEN", "COP",
+    "DOP", "RSD", "JOD", "KES", "LKR", "KHR", "GTQ", "PYG"],
+  efectivo: ["MAD", "TND", "EGP", "NPR", "BOB"],
+};
+const CAJERO_NOTA = new Set(["EUR", "JPY", "CNY", "THB", "VND", "KHR", "KES", "MXN", "SEK", "NOK", "DKK"]);
+
+const HAY_CAJERO = /^\s*(?:cajeros?|atm|pagar)(?:\s+([a-z]{3}))?\s*$/i;
+
+function pagoAlli(code) {
+  return Object.keys(PAGO_ALLI).find((k) => PAGO_ALLI[k].includes(code)) ?? null;
+}
+
+function leerCajero(texto) {
+  const m = String(texto ?? "").match(HAY_CAJERO);
+  if (!m) return null;
+  const code = m[1]?.toUpperCase() ?? null;
+  return code && !pagoAlli(code) ? null : { code };
+}
+
+function textoCajero(code) {
+  const pago = pagoAlli(code);
+  if (!pago) return "";
+  const icono = { tarjeta: "💳", mixto: "💳💵", efectivo: "💵" }[pago];
+  const partes = [tr(`cajero.${pago}`)];
+  if (CAJERO_NOTA.has(code)) partes.push(tr(`cajero.nota.${code}`));
+  return `${banderaDivisa(code)} ${icono} ${partes.join(" · ")}`;
+}
+
 // "cd conducir": por qué lado se va y si hace falta el permiso internacional.
 // Fuera del Espacio Económico Europeo, Suiza y Reino Unido digo que lo lleves
 // siempre: hay sitios que no lo piden, pero en un control te ahorra el lío.
@@ -7823,7 +7857,7 @@ if (typeof module !== "undefined") {
     COMISION_MAX, COMISIONES_RAPIDAS, leerComision, leerPorcentaje, conComision,
     IMPUESTO_MAX, IMPUESTOS_RAPIDOS, leerImpuesto, leerImpuestoEscrito, loQuePagas,
     COMPARAR_IGUAL, compararPrecios, inclinacion, ZONAS, desfase, esNoche, horaAlli, SIGLAS_ZONA, leerHoraZona, convertirHoraZona, textoHoraZona, textoDiferencia, relojDe, tituloHoraAlli, leerCafe, enCafes, textoCafes, HORAS_JORNADA, enHoras, textoHoras,
-    PROPINAS_RAPIDAS, PROPINA_HABITUAL, propinaHabitual, leerPropina, textoPropina, ENCHUFES, leerEnchufe, enchufeDe, textoEnchufe, EMERGENCIAS, leerEmergencias, textoEmergencias, AGUA, leerAgua, textoAgua, POR_LA_IZQUIERDA, CARNE_EUROPEO, leerConducir, textoConducir, PREFIJOS, leerPrefijo, textoPrefijo, FRASES, leerGracias, textoGracias, IVA, leerIva, textoIva, PROPINA_MAX, PERSONAS_MAX, CUENTA_POR_DEFECTO, leerCuenta, redondoHaciaArriba, repartirCuenta, cuentaParaCompartir, gastoDeLaCuenta, BILLETES, leerBilletes, textoBilletes, PAGOS_MAX, pagosPosibles, vuelta, pagoJusto,
+    PROPINAS_RAPIDAS, PROPINA_HABITUAL, propinaHabitual, leerPropina, textoPropina, ENCHUFES, leerEnchufe, enchufeDe, textoEnchufe, EMERGENCIAS, leerEmergencias, textoEmergencias, AGUA, leerAgua, textoAgua, POR_LA_IZQUIERDA, CARNE_EUROPEO, leerConducir, textoConducir, PREFIJOS, leerPrefijo, textoPrefijo, FRASES, leerGracias, textoGracias, IVA, leerIva, textoIva, PAGO_ALLI, CAJERO_NOTA, leerCajero, textoCajero, PROPINA_MAX, PERSONAS_MAX, CUENTA_POR_DEFECTO, leerCuenta, redondoHaciaArriba, repartirCuenta, cuentaParaCompartir, gastoDeLaCuenta, BILLETES, leerBilletes, textoBilletes, PAGOS_MAX, pagosPosibles, vuelta, pagoJusto,
     MARGENES, tasaOfrecida, analizarCambio,
     domingoDePascua, hayTasaEl, tasaVieja, textoTasaVieja, horaBce, textoActualizado, proximaTasa, textoProximaTasa,
     FECHA_MINIMA, fechaLarga, fechaValida, diaDelGrafico, mesesAtras, FECHAS_RAPIDAS, leerFecha, cambioDesde, notaDiaHabil,
