@@ -1454,6 +1454,60 @@ function textoPrefijo(code) {
   return `${banderaDivisa(code)} 📞 ${[prefijo].flat().join(" · ")}`;
 }
 
+// "cd gracias": hola, gracias y la cuenta allí, escrito como suena. Donde se
+// habla español o inglés no hace falta tabla, salvo la cuenta de EE. UU., que es "check".
+const ESPANOL = ["Hola", "Gracias", "La cuenta, por favor"];
+const INGLES = ["Hello", "Thank you", "The bill, please"];
+const FRASES = {
+  MXN: "es", ARS: "es", PEN: "es", COP: "es", CLP: "es", UYU: "es", CRC: "es", DOP: "es", BOB: "es", GTQ: "es", PYG: "es",
+  GBP: "en", AUD: "en", NZD: "en", SGD: "en", ZAR: "en",
+  USD: ["Hello", "Thank you", "The check, please"], CAD: ["Hello", "Thank you", "The check, please"],
+  JPY: ["Konnichiwa", "Arigatō", "Okaikei onegaishimasu"],
+  CHF: ["Grüezi", "Merci", "Zahlen, bitte"],
+  CNY: ["Nǐ hǎo", "Xièxie", "Mǎidān"], TWD: ["Nǐ hǎo", "Xièxie", "Mǎidān"],
+  HKD: ["Nei hou", "M goi", "Maai daan"],
+  BRL: ["Olá", "Obrigado", "A conta, por favor"],
+  SEK: ["Hej", "Tack", "Notan, tack"], NOK: ["Hei", "Takk", "Regningen, takk"], DKK: ["Hej", "Tak", "Regningen, tak"],
+  ISK: ["Halló", "Takk", "Reikninginn, takk"],
+  PLN: ["Dzień dobry", "Dziękuję", "Poproszę rachunek"], CZK: ["Dobrý den", "Děkuji", "Zaplatím, prosím"],
+  HUF: ["Jó napot", "Köszönöm", "A számlát, kérem"], RON: ["Bună ziua", "Mulțumesc", "Nota, vă rog"],
+  RSD: ["Zdravo", "Hvala", "Račun, molim"], GEL: ["Gamarjoba", "Madloba", "Angarishi, tu sheidzleba"],
+  TRY: ["Merhaba", "Teşekkürler", "Hesap, lütfen"],
+  ILS: ["Shalom", "Todá", "Heshbón, bevakashá"],
+  AED: ["Marhaba", "Shukran", "Al-hisab, min fadlak"], QAR: ["Marhaba", "Shukran", "Al-hisab, min fadlak"],
+  SAR: ["Marhaba", "Shukran", "Al-hisab, min fadlak"], JOD: ["Marhaba", "Shukran", "Al-hisab, min fadlak"],
+  EGP: ["Ahlan", "Shukran", "El hesab, law samaht"], MAD: ["Salam", "Shukran", "L'hsab, afak"],
+  TND: ["Aslema", "Yaishek", "L'addition, s'il vous plaît"],
+  INR: ["Namaste", "Dhanyavaad", "Bill dijiye"], NPR: ["Namaste", "Dhanyabad", "Bill dinus"],
+  LKR: ["Ayubowan", "Stuti", "Bill eka denna"],
+  IDR: ["Halo", "Terima kasih", "Minta bon"], MYR: ["Helo", "Terima kasih", "Minta bil"],
+  PHP: ["Kumusta", "Salamat", "Bill po"], KRW: ["Annyeonghaseyo", "Gamsahamnida", "Gyesanhalgeyo"],
+  THB: ["Sawasdee", "Khob khun", "Check bin"], VND: ["Xin chào", "Cảm ơn", "Tính tiền"],
+  KHR: ["Suostei", "Arkun", "Som kit luy"], KES: ["Jambo", "Asante", "Bili, tafadhali"],
+  // El euro no tiene un idioma: solo el gracias de los sitios a los que más se va.
+  EUR: ["🇫🇷 Merci", "🇩🇪 Danke", "🇮🇹 Grazie", "🇵🇹 Obrigado", "🇳🇱 Dank je", "🇬🇷 Efcharistó"],
+};
+
+const HAY_GRACIAS = /^\s*(?:gracias|hola|frases|thanks|hello)(?:\s+([a-z]{3}))?\s*$/i;
+
+function leerGracias(texto) {
+  const m = String(texto ?? "").match(HAY_GRACIAS);
+  if (!m) return null;
+  const code = m[1]?.toUpperCase() ?? null;
+  return code && !FRASES[code] ? null : { code };
+}
+
+function textoGracias(code) {
+  const frases = FRASES[code];
+  if (!frases) return "";
+  const inicio = `${banderaDivisa(code)} 💬`;
+  if (code === "EUR") return `${inicio} 🙏 ${frases.join(" · ")}`;
+  if (frases === idiomaActual()) return `${inicio} ${tr(`gracias.${frases}`)}`;
+  const lista = typeof frases === "string" ? (frases === "es" ? ESPANOL : INGLES) : frases;
+  const [hola, gracias, cuenta] = lista;
+  return `${inicio} 👋 ${hola} · 🙏 ${gracias} · 🧾 ${cuenta}`;
+}
+
 // "cd conducir": por qué lado se va y si hace falta el permiso internacional.
 // Fuera del Espacio Económico Europeo, Suiza y Reino Unido digo que lo lleves
 // siempre: hay sitios que no lo piden, pero en un control te ahorra el lío.
@@ -7730,7 +7784,7 @@ if (typeof module !== "undefined") {
     COMISION_MAX, COMISIONES_RAPIDAS, leerComision, leerPorcentaje, conComision,
     IMPUESTO_MAX, IMPUESTOS_RAPIDOS, leerImpuesto, leerImpuestoEscrito, loQuePagas,
     COMPARAR_IGUAL, compararPrecios, inclinacion, ZONAS, desfase, esNoche, horaAlli, SIGLAS_ZONA, leerHoraZona, convertirHoraZona, textoHoraZona, textoDiferencia, relojDe, tituloHoraAlli, leerCafe, enCafes, textoCafes, HORAS_JORNADA, enHoras, textoHoras,
-    PROPINAS_RAPIDAS, PROPINA_HABITUAL, propinaHabitual, leerPropina, textoPropina, ENCHUFES, leerEnchufe, enchufeDe, textoEnchufe, EMERGENCIAS, leerEmergencias, textoEmergencias, AGUA, leerAgua, textoAgua, POR_LA_IZQUIERDA, CARNE_EUROPEO, leerConducir, textoConducir, PREFIJOS, leerPrefijo, textoPrefijo, PROPINA_MAX, PERSONAS_MAX, CUENTA_POR_DEFECTO, leerCuenta, redondoHaciaArriba, repartirCuenta, cuentaParaCompartir, gastoDeLaCuenta, BILLETES, leerBilletes, textoBilletes, PAGOS_MAX, pagosPosibles, vuelta, pagoJusto,
+    PROPINAS_RAPIDAS, PROPINA_HABITUAL, propinaHabitual, leerPropina, textoPropina, ENCHUFES, leerEnchufe, enchufeDe, textoEnchufe, EMERGENCIAS, leerEmergencias, textoEmergencias, AGUA, leerAgua, textoAgua, POR_LA_IZQUIERDA, CARNE_EUROPEO, leerConducir, textoConducir, PREFIJOS, leerPrefijo, textoPrefijo, FRASES, leerGracias, textoGracias, PROPINA_MAX, PERSONAS_MAX, CUENTA_POR_DEFECTO, leerCuenta, redondoHaciaArriba, repartirCuenta, cuentaParaCompartir, gastoDeLaCuenta, BILLETES, leerBilletes, textoBilletes, PAGOS_MAX, pagosPosibles, vuelta, pagoJusto,
     MARGENES, tasaOfrecida, analizarCambio,
     domingoDePascua, hayTasaEl, tasaVieja, textoTasaVieja, horaBce, textoActualizado, proximaTasa, textoProximaTasa,
     FECHA_MINIMA, fechaLarga, fechaValida, diaDelGrafico, mesesAtras, FECHAS_RAPIDAS, leerFecha, cambioDesde, notaDiaHabil,
