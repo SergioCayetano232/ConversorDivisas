@@ -1426,6 +1426,30 @@ function textoAgua(code) {
   return `${banderaDivisa(code)} ${agua === "si" ? "🚰" : "🚱"} ${tr(`agua.${agua}`)}`;
 }
 
+// "cd conducir": por qué lado se va y si hace falta el permiso internacional.
+// Fuera del Espacio Económico Europeo, Suiza y Reino Unido digo que lo lleves
+// siempre: hay sitios que no lo piden, pero en un control te ahorra el lío.
+const POR_LA_IZQUIERDA = new Set(["GBP", "JPY", "AUD", "NZD", "HKD", "SGD", "MYR", "IDR", "INR", "THB", "ZAR", "KES", "LKR", "NPR"]);
+const CARNE_EUROPEO = new Set(["EUR", "GBP", "CHF", "SEK", "NOK", "DKK", "PLN", "CZK", "HUF", "ISK", "RON"]);
+
+const HAY_CONDUCIR = /^\s*(?:conducir|conduce|coche|drive|driving)(?:\s+([a-z]{3}))?\s*$/i;
+
+function leerConducir(texto) {
+  const m = String(texto ?? "").match(HAY_CONDUCIR);
+  if (!m) return null;
+  const code = m[1]?.toUpperCase() ?? null;
+  return code && !isValidCode(code) ? null : { code };
+}
+
+function textoConducir(code) {
+  if (!isValidCode(code)) return "";
+  const partes = [tr(POR_LA_IZQUIERDA.has(code) ? "conducir.izquierda" : "conducir.derecha")];
+  // Irlanda, Malta y Chipre van por la izquierda aunque tengan el euro.
+  if (code === "EUR") partes.push(tr("conducir.euro"));
+  partes.push(tr(CARNE_EUROPEO.has(code) ? "conducir.carne" : "conducir.permiso"));
+  return `${banderaDivisa(code)} 🚗 ${partes.join(" · ")}`;
+}
+
 function textoEnchufe(e) {
   if (!e) return "";
   const partes = [
@@ -7678,7 +7702,7 @@ if (typeof module !== "undefined") {
     COMISION_MAX, COMISIONES_RAPIDAS, leerComision, leerPorcentaje, conComision,
     IMPUESTO_MAX, IMPUESTOS_RAPIDOS, leerImpuesto, leerImpuestoEscrito, loQuePagas,
     COMPARAR_IGUAL, compararPrecios, inclinacion, ZONAS, desfase, esNoche, horaAlli, SIGLAS_ZONA, leerHoraZona, convertirHoraZona, textoHoraZona, textoDiferencia, relojDe, tituloHoraAlli, leerCafe, enCafes, textoCafes, HORAS_JORNADA, enHoras, textoHoras,
-    PROPINAS_RAPIDAS, PROPINA_HABITUAL, propinaHabitual, leerPropina, textoPropina, ENCHUFES, leerEnchufe, enchufeDe, textoEnchufe, EMERGENCIAS, leerEmergencias, textoEmergencias, AGUA, leerAgua, textoAgua, PROPINA_MAX, PERSONAS_MAX, CUENTA_POR_DEFECTO, leerCuenta, redondoHaciaArriba, repartirCuenta, cuentaParaCompartir, gastoDeLaCuenta, BILLETES, leerBilletes, textoBilletes, PAGOS_MAX, pagosPosibles, vuelta, pagoJusto,
+    PROPINAS_RAPIDAS, PROPINA_HABITUAL, propinaHabitual, leerPropina, textoPropina, ENCHUFES, leerEnchufe, enchufeDe, textoEnchufe, EMERGENCIAS, leerEmergencias, textoEmergencias, AGUA, leerAgua, textoAgua, POR_LA_IZQUIERDA, CARNE_EUROPEO, leerConducir, textoConducir, PROPINA_MAX, PERSONAS_MAX, CUENTA_POR_DEFECTO, leerCuenta, redondoHaciaArriba, repartirCuenta, cuentaParaCompartir, gastoDeLaCuenta, BILLETES, leerBilletes, textoBilletes, PAGOS_MAX, pagosPosibles, vuelta, pagoJusto,
     MARGENES, tasaOfrecida, analizarCambio,
     domingoDePascua, hayTasaEl, tasaVieja, textoTasaVieja, horaBce, textoActualizado, proximaTasa, textoProximaTasa,
     FECHA_MINIMA, fechaLarga, fechaValida, diaDelGrafico, mesesAtras, FECHAS_RAPIDAS, leerFecha, cambioDesde, notaDiaHabil,
