@@ -1397,6 +1397,35 @@ function textoEmergencias(code) {
   return `${banderaDivisa(code)} 🚨 ${lista}`;
 }
 
+// "cd agua": si se puede beber la del grifo. En Turquía o Brasil es potable en
+// las ciudades, pero fuera de ahí no me la jugaría.
+const AGUA = {
+  si: ["EUR", "USD", "GBP", "JPY", "CHF", "CAD", "AUD", "SEK", "NOK", "DKK", "PLN", "CZK", "HUF", "ISK",
+    "KRW", "NZD", "SGD", "HKD", "ILS", "RON", "AED", "QAR", "UYU", "CLP", "ARS", "RSD", "CRC"],
+  ciudades: ["TRY", "BRL", "ZAR", "MYR", "COP", "GEL", "SAR"],
+  no: ["CNY", "MXN", "IDR", "INR", "PHP", "THB", "VND", "MAD", "PEN", "EGP", "TWD", "DOP", "TND", "KES",
+    "LKR", "NPR", "KHR", "JOD", "BOB", "GTQ", "PYG"],
+};
+
+const HAY_AGUA = /^\s*(?:agua|grifo|water)(?:\s+([a-z]{3}))?\s*$/i;
+
+function aguaDe(code) {
+  return Object.keys(AGUA).find((k) => AGUA[k].includes(code)) ?? null;
+}
+
+function leerAgua(texto) {
+  const m = String(texto ?? "").match(HAY_AGUA);
+  if (!m) return null;
+  const code = m[1]?.toUpperCase() ?? null;
+  return code && !aguaDe(code) ? null : { code };
+}
+
+function textoAgua(code) {
+  const agua = aguaDe(code);
+  if (!agua) return "";
+  return `${banderaDivisa(code)} ${agua === "si" ? "🚰" : "🚱"} ${tr(`agua.${agua}`)}`;
+}
+
 function textoEnchufe(e) {
   if (!e) return "";
   const partes = [
@@ -7649,7 +7678,7 @@ if (typeof module !== "undefined") {
     COMISION_MAX, COMISIONES_RAPIDAS, leerComision, leerPorcentaje, conComision,
     IMPUESTO_MAX, IMPUESTOS_RAPIDOS, leerImpuesto, leerImpuestoEscrito, loQuePagas,
     COMPARAR_IGUAL, compararPrecios, inclinacion, ZONAS, desfase, esNoche, horaAlli, SIGLAS_ZONA, leerHoraZona, convertirHoraZona, textoHoraZona, textoDiferencia, relojDe, tituloHoraAlli, leerCafe, enCafes, textoCafes, HORAS_JORNADA, enHoras, textoHoras,
-    PROPINAS_RAPIDAS, PROPINA_HABITUAL, propinaHabitual, leerPropina, textoPropina, ENCHUFES, leerEnchufe, enchufeDe, textoEnchufe, EMERGENCIAS, leerEmergencias, textoEmergencias, PROPINA_MAX, PERSONAS_MAX, CUENTA_POR_DEFECTO, leerCuenta, redondoHaciaArriba, repartirCuenta, cuentaParaCompartir, gastoDeLaCuenta, BILLETES, leerBilletes, textoBilletes, PAGOS_MAX, pagosPosibles, vuelta, pagoJusto,
+    PROPINAS_RAPIDAS, PROPINA_HABITUAL, propinaHabitual, leerPropina, textoPropina, ENCHUFES, leerEnchufe, enchufeDe, textoEnchufe, EMERGENCIAS, leerEmergencias, textoEmergencias, AGUA, leerAgua, textoAgua, PROPINA_MAX, PERSONAS_MAX, CUENTA_POR_DEFECTO, leerCuenta, redondoHaciaArriba, repartirCuenta, cuentaParaCompartir, gastoDeLaCuenta, BILLETES, leerBilletes, textoBilletes, PAGOS_MAX, pagosPosibles, vuelta, pagoJusto,
     MARGENES, tasaOfrecida, analizarCambio,
     domingoDePascua, hayTasaEl, tasaVieja, textoTasaVieja, horaBce, textoActualizado, proximaTasa, textoProximaTasa,
     FECHA_MINIMA, fechaLarga, fechaValida, diaDelGrafico, mesesAtras, FECHAS_RAPIDAS, leerFecha, cambioDesde, notaDiaHabil,
