@@ -1426,6 +1426,34 @@ function textoAgua(code) {
   return `${banderaDivisa(code)} ${agua === "si" ? "🚰" : "🚱"} ${tr(`agua.${agua}`)}`;
 }
 
+// "cd prefijo": el código para llamar allí. El euro no tiene uno, así que van
+// los de los países a los que más se viaja. La República Dominicana comparte el +1.
+const PREFIJOS = {
+  EUR: ["🇪🇸 +34", "🇫🇷 +33", "🇩🇪 +49", "🇮🇹 +39", "🇵🇹 +351", "🇳🇱 +31", "🇬🇷 +30", "🇮🇪 +353"],
+  USD: "+1", GBP: "+44", JPY: "+81", CHF: "+41", CAD: "+1", AUD: "+61", CNY: "+86", MXN: "+52",
+  BRL: "+55", SEK: "+46", NOK: "+47", DKK: "+45", PLN: "+48", TRY: "+90", CZK: "+420", HKD: "+852",
+  HUF: "+36", IDR: "+62", ILS: "+972", INR: "+91", ISK: "+354", KRW: "+82", MYR: "+60", NZD: "+64",
+  PHP: "+63", RON: "+40", SGD: "+65", THB: "+66", ZAR: "+27", VND: "+84", ARS: "+54", MAD: "+212",
+  PEN: "+51", COP: "+57", CLP: "+56", EGP: "+20", AED: "+971", TWD: "+886", UYU: "+598", CRC: "+506",
+  DOP: "+1 809", TND: "+216", KES: "+254", LKR: "+94", NPR: "+977", KHR: "+855", JOD: "+962",
+  QAR: "+974", SAR: "+966", GEL: "+995", RSD: "+381", BOB: "+591", GTQ: "+502", PYG: "+595",
+};
+
+const HAY_PREFIJO = /^\s*(?:prefijo|prefix|llamar)(?:\s+([a-z]{3}))?\s*$/i;
+
+function leerPrefijo(texto) {
+  const m = String(texto ?? "").match(HAY_PREFIJO);
+  if (!m) return null;
+  const code = m[1]?.toUpperCase() ?? null;
+  return code && !PREFIJOS[code] ? null : { code };
+}
+
+function textoPrefijo(code) {
+  const prefijo = PREFIJOS[code];
+  if (!prefijo) return "";
+  return `${banderaDivisa(code)} 📞 ${[prefijo].flat().join(" · ")}`;
+}
+
 // "cd conducir": por qué lado se va y si hace falta el permiso internacional.
 // Fuera del Espacio Económico Europeo, Suiza y Reino Unido digo que lo lleves
 // siempre: hay sitios que no lo piden, pero en un control te ahorra el lío.
@@ -7702,7 +7730,7 @@ if (typeof module !== "undefined") {
     COMISION_MAX, COMISIONES_RAPIDAS, leerComision, leerPorcentaje, conComision,
     IMPUESTO_MAX, IMPUESTOS_RAPIDOS, leerImpuesto, leerImpuestoEscrito, loQuePagas,
     COMPARAR_IGUAL, compararPrecios, inclinacion, ZONAS, desfase, esNoche, horaAlli, SIGLAS_ZONA, leerHoraZona, convertirHoraZona, textoHoraZona, textoDiferencia, relojDe, tituloHoraAlli, leerCafe, enCafes, textoCafes, HORAS_JORNADA, enHoras, textoHoras,
-    PROPINAS_RAPIDAS, PROPINA_HABITUAL, propinaHabitual, leerPropina, textoPropina, ENCHUFES, leerEnchufe, enchufeDe, textoEnchufe, EMERGENCIAS, leerEmergencias, textoEmergencias, AGUA, leerAgua, textoAgua, POR_LA_IZQUIERDA, CARNE_EUROPEO, leerConducir, textoConducir, PROPINA_MAX, PERSONAS_MAX, CUENTA_POR_DEFECTO, leerCuenta, redondoHaciaArriba, repartirCuenta, cuentaParaCompartir, gastoDeLaCuenta, BILLETES, leerBilletes, textoBilletes, PAGOS_MAX, pagosPosibles, vuelta, pagoJusto,
+    PROPINAS_RAPIDAS, PROPINA_HABITUAL, propinaHabitual, leerPropina, textoPropina, ENCHUFES, leerEnchufe, enchufeDe, textoEnchufe, EMERGENCIAS, leerEmergencias, textoEmergencias, AGUA, leerAgua, textoAgua, POR_LA_IZQUIERDA, CARNE_EUROPEO, leerConducir, textoConducir, PREFIJOS, leerPrefijo, textoPrefijo, PROPINA_MAX, PERSONAS_MAX, CUENTA_POR_DEFECTO, leerCuenta, redondoHaciaArriba, repartirCuenta, cuentaParaCompartir, gastoDeLaCuenta, BILLETES, leerBilletes, textoBilletes, PAGOS_MAX, pagosPosibles, vuelta, pagoJusto,
     MARGENES, tasaOfrecida, analizarCambio,
     domingoDePascua, hayTasaEl, tasaVieja, textoTasaVieja, horaBce, textoActualizado, proximaTasa, textoProximaTasa,
     FECHA_MINIMA, fechaLarga, fechaValida, diaDelGrafico, mesesAtras, FECHAS_RAPIDAS, leerFecha, cambioDesde, notaDiaHabil,
