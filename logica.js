@@ -1542,6 +1542,44 @@ function textoCajero(code) {
   return `${banderaDivisa(code)} ${icono} ${partes.join(" · ")}`;
 }
 
+// "cd visado": con pasaporte español, si hace falta y cuántos días te dejan.
+// Es de noviembre de 2026 y esto cambia, por eso siempre manda a Exteriores.
+// [tipo, días, nombre del permiso que se pide antes por internet]
+const VISADOS = {
+  EUR: ["dni"], CHF: ["dni"], NOK: ["dni"], ISK: ["dni"], SEK: ["dni"], DKK: ["dni"], PLN: ["dni"],
+  CZK: ["dni"], HUF: ["dni"], RON: ["dni"],
+  USD: ["permiso", 90, "ESTA"], CAD: ["permiso", 180, "eTA"], GBP: ["permiso", 180, "ETA"],
+  AUD: ["permiso", 90, "eVisitor"], NZD: ["permiso", 90, "NZeTA"], ILS: ["permiso", 90, "ETA-IL"],
+  KES: ["permiso", 90, "eTA"], LKR: ["permiso", 30, "ETA"],
+  JPY: ["libre", 90], CNY: ["libre", 30], MXN: ["libre", 180], BRL: ["libre", 90], TRY: ["libre", 90],
+  HKD: ["libre", 90], KRW: ["libre", 90], MYR: ["libre", 90], PHP: ["libre", 30], SGD: ["libre", 90],
+  THB: ["libre", 60], ZAR: ["libre", 90], VND: ["libre", 45], ARS: ["libre", 90], MAD: ["libre", 90],
+  PEN: ["libre", 90], COP: ["libre", 90], CLP: ["libre", 90], AED: ["libre", 90], TWD: ["libre", 90],
+  UYU: ["libre", 90], CRC: ["libre", 180], DOP: ["libre", 30], TND: ["libre", 90], QAR: ["libre", 90],
+  GEL: ["libre", 365], RSD: ["libre", 90], BOB: ["libre", 90], GTQ: ["libre", 90], PYG: ["libre", 90],
+  IDR: ["llegada", 30], EGP: ["llegada", 30], KHR: ["llegada", 30], JOD: ["llegada", 30], SAR: ["llegada", 90],
+  NPR: ["llegada", 90], INR: ["evisa", 30],
+};
+
+const HAY_VISADO = /^\s*(?:visados?|visas?)(?:\s+([a-z]{3}))?\s*$/i;
+
+function leerVisado(texto) {
+  const m = String(texto ?? "").match(HAY_VISADO);
+  if (!m) return null;
+  const code = m[1]?.toUpperCase() ?? null;
+  return code && !VISADOS[code] ? null : { code };
+}
+
+function textoVisado(code) {
+  const visado = VISADOS[code];
+  if (!visado) return "";
+  const [tipo, dias, permiso] = visado;
+  const partes = [tr(`visado.${tipo}`, { dias, permiso })];
+  // Dentro de Schengen y la UE no hay nada que comprobar.
+  if (tipo !== "dni") partes.push(tr("visado.comprueba"));
+  return `${banderaDivisa(code)} 🛂 ${partes.join(" · ")}`;
+}
+
 // "cd llegar": lo de enchufe, agua, emergencias, coche y prefijo en una línea,
 // para mirarlo nada más aterrizar. Cada cosa sale solo si la tengo de ese país.
 const HAY_LLEGAR = /^\s*(?:llegar|llegada|aterrizar|arrival|arrive)(?:\s+([a-z]{3}))?\s*$/i;
@@ -7885,7 +7923,7 @@ if (typeof module !== "undefined") {
     COMISION_MAX, COMISIONES_RAPIDAS, leerComision, leerPorcentaje, conComision,
     IMPUESTO_MAX, IMPUESTOS_RAPIDOS, leerImpuesto, leerImpuestoEscrito, loQuePagas,
     COMPARAR_IGUAL, compararPrecios, inclinacion, ZONAS, desfase, esNoche, horaAlli, SIGLAS_ZONA, leerHoraZona, convertirHoraZona, textoHoraZona, textoDiferencia, relojDe, tituloHoraAlli, leerCafe, enCafes, textoCafes, HORAS_JORNADA, enHoras, textoHoras,
-    PROPINAS_RAPIDAS, PROPINA_HABITUAL, propinaHabitual, leerPropina, textoPropina, ENCHUFES, leerEnchufe, enchufeDe, textoEnchufe, EMERGENCIAS, leerEmergencias, textoEmergencias, AGUA, leerAgua, textoAgua, POR_LA_IZQUIERDA, CARNE_EUROPEO, leerConducir, textoConducir, PREFIJOS, leerPrefijo, textoPrefijo, FRASES, leerGracias, textoGracias, IVA, leerIva, textoIva, PAGO_ALLI, CAJERO_NOTA, leerCajero, textoCajero, leerLlegar, textoLlegar, PROPINA_MAX, PERSONAS_MAX, CUENTA_POR_DEFECTO, leerCuenta, redondoHaciaArriba, repartirCuenta, cuentaParaCompartir, gastoDeLaCuenta, BILLETES, leerBilletes, textoBilletes, PAGOS_MAX, pagosPosibles, vuelta, pagoJusto,
+    PROPINAS_RAPIDAS, PROPINA_HABITUAL, propinaHabitual, leerPropina, textoPropina, ENCHUFES, leerEnchufe, enchufeDe, textoEnchufe, EMERGENCIAS, leerEmergencias, textoEmergencias, AGUA, leerAgua, textoAgua, POR_LA_IZQUIERDA, CARNE_EUROPEO, leerConducir, textoConducir, PREFIJOS, leerPrefijo, textoPrefijo, FRASES, leerGracias, textoGracias, IVA, leerIva, textoIva, PAGO_ALLI, CAJERO_NOTA, leerCajero, textoCajero, leerLlegar, textoLlegar, VISADOS, leerVisado, textoVisado, PROPINA_MAX, PERSONAS_MAX, CUENTA_POR_DEFECTO, leerCuenta, redondoHaciaArriba, repartirCuenta, cuentaParaCompartir, gastoDeLaCuenta, BILLETES, leerBilletes, textoBilletes, PAGOS_MAX, pagosPosibles, vuelta, pagoJusto,
     MARGENES, tasaOfrecida, analizarCambio,
     domingoDePascua, hayTasaEl, tasaVieja, textoTasaVieja, horaBce, textoActualizado, proximaTasa, textoProximaTasa,
     FECHA_MINIMA, fechaLarga, fechaValida, diaDelGrafico, mesesAtras, FECHAS_RAPIDAS, leerFecha, cambioDesde, notaDiaHabil,
