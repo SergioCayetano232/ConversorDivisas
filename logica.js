@@ -1542,6 +1542,34 @@ function textoCajero(code) {
   return `${banderaDivisa(code)} ${icono} ${partes.join(" · ")}`;
 }
 
+// "cd llegar": lo de enchufe, agua, emergencias, coche y prefijo en una línea,
+// para mirarlo nada más aterrizar. Cada cosa sale solo si la tengo de ese país.
+const HAY_LLEGAR = /^\s*(?:llegar|llegada|aterrizar|arrival|arrive)(?:\s+([a-z]{3}))?\s*$/i;
+
+function leerLlegar(texto) {
+  const m = String(texto ?? "").match(HAY_LLEGAR);
+  if (!m) return null;
+  const code = m[1]?.toUpperCase() ?? null;
+  return code && !isValidCode(code) ? null : { code };
+}
+
+function textoLlegar(alli, aqui) {
+  if (!isValidCode(alli)) return "";
+  const partes = [];
+  const enchufe = enchufeDe(alli, aqui);
+  if (enchufe) {
+    const adaptador = enchufe.entra === false ? ` (${tr("llegar.adaptador")})` : "";
+    partes.push(`🔌 ${enchufe.tipos.join("/")} ${enchufe.voltios.join("/")} V${adaptador}`);
+  }
+  const agua = aguaDe(alli);
+  if (agua) partes.push(`${agua === "si" ? "🚰" : "🚱"} ${tr(`llegar.agua.${agua}`)}`);
+  if (EMERGENCIAS[alli]) partes.push(`🚨 ${EMERGENCIAS[alli].map(([n]) => n).join("/")}`);
+  partes.push(`🚗 ${tr(POR_LA_IZQUIERDA.has(alli) ? "llegar.izquierda" : "llegar.derecha")}`);
+  // El euro tiene ocho prefijos: para eso está cd prefijo.
+  if (typeof PREFIJOS[alli] === "string") partes.push(`📞 ${PREFIJOS[alli]}`);
+  return `${banderaDivisa(alli)} ${partes.join(" · ")}`;
+}
+
 // "cd conducir": por qué lado se va y si hace falta el permiso internacional.
 // Fuera del Espacio Económico Europeo, Suiza y Reino Unido digo que lo lleves
 // siempre: hay sitios que no lo piden, pero en un control te ahorra el lío.
@@ -7857,7 +7885,7 @@ if (typeof module !== "undefined") {
     COMISION_MAX, COMISIONES_RAPIDAS, leerComision, leerPorcentaje, conComision,
     IMPUESTO_MAX, IMPUESTOS_RAPIDOS, leerImpuesto, leerImpuestoEscrito, loQuePagas,
     COMPARAR_IGUAL, compararPrecios, inclinacion, ZONAS, desfase, esNoche, horaAlli, SIGLAS_ZONA, leerHoraZona, convertirHoraZona, textoHoraZona, textoDiferencia, relojDe, tituloHoraAlli, leerCafe, enCafes, textoCafes, HORAS_JORNADA, enHoras, textoHoras,
-    PROPINAS_RAPIDAS, PROPINA_HABITUAL, propinaHabitual, leerPropina, textoPropina, ENCHUFES, leerEnchufe, enchufeDe, textoEnchufe, EMERGENCIAS, leerEmergencias, textoEmergencias, AGUA, leerAgua, textoAgua, POR_LA_IZQUIERDA, CARNE_EUROPEO, leerConducir, textoConducir, PREFIJOS, leerPrefijo, textoPrefijo, FRASES, leerGracias, textoGracias, IVA, leerIva, textoIva, PAGO_ALLI, CAJERO_NOTA, leerCajero, textoCajero, PROPINA_MAX, PERSONAS_MAX, CUENTA_POR_DEFECTO, leerCuenta, redondoHaciaArriba, repartirCuenta, cuentaParaCompartir, gastoDeLaCuenta, BILLETES, leerBilletes, textoBilletes, PAGOS_MAX, pagosPosibles, vuelta, pagoJusto,
+    PROPINAS_RAPIDAS, PROPINA_HABITUAL, propinaHabitual, leerPropina, textoPropina, ENCHUFES, leerEnchufe, enchufeDe, textoEnchufe, EMERGENCIAS, leerEmergencias, textoEmergencias, AGUA, leerAgua, textoAgua, POR_LA_IZQUIERDA, CARNE_EUROPEO, leerConducir, textoConducir, PREFIJOS, leerPrefijo, textoPrefijo, FRASES, leerGracias, textoGracias, IVA, leerIva, textoIva, PAGO_ALLI, CAJERO_NOTA, leerCajero, textoCajero, leerLlegar, textoLlegar, PROPINA_MAX, PERSONAS_MAX, CUENTA_POR_DEFECTO, leerCuenta, redondoHaciaArriba, repartirCuenta, cuentaParaCompartir, gastoDeLaCuenta, BILLETES, leerBilletes, textoBilletes, PAGOS_MAX, pagosPosibles, vuelta, pagoJusto,
     MARGENES, tasaOfrecida, analizarCambio,
     domingoDePascua, hayTasaEl, tasaVieja, textoTasaVieja, horaBce, textoActualizado, proximaTasa, textoProximaTasa,
     FECHA_MINIMA, fechaLarga, fechaValida, diaDelGrafico, mesesAtras, FECHAS_RAPIDAS, leerFecha, cambioDesde, notaDiaHabil,
