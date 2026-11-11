@@ -7332,6 +7332,45 @@ const sinTaxFree = (from, to) => !TAX_FREE[from] || (DIVISAS_UE.has(from) && DIV
 // que te pueden devolver; las agencias se quedan una parte.
 const ivaDentro = (importe, iva) => (importe * iva) / (100 + iva);
 
+// "cd iva 120 jpy": el IVA de allí y lo que es impuesto en ese precio. Los del
+// tax free salen de su tabla para no tener dos cifras distintas del mismo país.
+// En EE. UU. y Canadá no va dentro: lo suman en caja.
+const IVA = {
+  ...Object.fromEntries(Object.entries(TAX_FREE).map(([code, t]) => [code, t.iva])),
+  EUR: [["🇪🇸", 21], ["🇫🇷", 20], ["🇩🇪", 19], ["🇮🇹", 22], ["🇵🇹", 23], ["🇳🇱", 21], ["🇬🇷", 24], ["🇮🇪", 23]],
+  USD: "aparte", CAD: "aparte", BRL: "depende", INR: "depende", MYR: "depende",
+  GBP: 20, CNY: 13, MXN: 16, HKD: 0, IDR: 12, ILS: 18, NZD: 15, PHP: 12, RON: 21, ZAR: 15, VND: 10, ARS: 21,
+  MAD: 20, PEN: 18, COP: 19, CLP: 19, EGP: 14, AED: 5, TWD: 5, UYU: 22, CRC: 13, DOP: 18, TND: 19,
+  KES: 16, LKR: 18, NPR: 13, KHR: 10, JOD: 16, QAR: 0, SAR: 15, GEL: 18, RSD: 20, BOB: 13, GTQ: 12, PYG: 10,
+};
+
+const HAY_IVA = /^\s*(?:iva|vat|gst)(?:\s+(\d+(?:[.,]\d+)*))?(?:\s+([a-z]{3}))?\s*$/i;
+
+function leerIva(texto) {
+  const m = String(texto ?? "").match(HAY_IVA);
+  if (!m) return null;
+  const code = m[2]?.toUpperCase() ?? null;
+  if (code && IVA[code] === undefined) return null;
+  const precio = m[1] ? leerNumero(m[1]) : null;
+  if (m[1] && !(precio > 0)) return null;
+  return { code, precio };
+}
+
+function textoIva(code, precio = null) {
+  const iva = IVA[code];
+  if (iva === undefined) return "";
+  const inicio = `${banderaDivisa(code)} 🧾`;
+  const tanto = (n) => tr("pct", { n: numeros({ maximumFractionDigits: 2 }).format(n) });
+  if (Array.isArray(iva)) return `${inicio} ${iva.map(([bandera, n]) => `${bandera} ${tanto(n)}`).join(" · ")}`;
+  if (typeof iva === "string") return `${inicio} ${tr(`iva.${code === "CAD" ? "cad" : iva === "aparte" ? "usd" : "depende"}`)}`;
+  if (iva === 0) return `${inicio} ${tr("iva.nada")}`;
+  if (!precio) return `${inicio} ${tr("iva.tipo", { pct: tanto(iva) })}`;
+  const dinero = numeros({ minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  // Redondeo el impuesto y el resto sale de restar, para que la suma cuadre.
+  const impuesto = Math.round(ivaDentro(precio, iva) * 100) / 100;
+  return `${inicio} ${tr("iva.conPrecio", { pct: tanto(iva), precio: `${dinero.format(precio)} ${code}`, sin: dinero.format(precio - impuesto), iva: dinero.format(impuesto) })}`;
+}
+
 // Las compras, una por tique: no sé en qué tienda fue cada una, así que no las
 // junto aunque sean del mismo día. Mejor quedarme corto que prometer de más.
 function taxFree(gastos) {
@@ -7784,7 +7823,7 @@ if (typeof module !== "undefined") {
     COMISION_MAX, COMISIONES_RAPIDAS, leerComision, leerPorcentaje, conComision,
     IMPUESTO_MAX, IMPUESTOS_RAPIDOS, leerImpuesto, leerImpuestoEscrito, loQuePagas,
     COMPARAR_IGUAL, compararPrecios, inclinacion, ZONAS, desfase, esNoche, horaAlli, SIGLAS_ZONA, leerHoraZona, convertirHoraZona, textoHoraZona, textoDiferencia, relojDe, tituloHoraAlli, leerCafe, enCafes, textoCafes, HORAS_JORNADA, enHoras, textoHoras,
-    PROPINAS_RAPIDAS, PROPINA_HABITUAL, propinaHabitual, leerPropina, textoPropina, ENCHUFES, leerEnchufe, enchufeDe, textoEnchufe, EMERGENCIAS, leerEmergencias, textoEmergencias, AGUA, leerAgua, textoAgua, POR_LA_IZQUIERDA, CARNE_EUROPEO, leerConducir, textoConducir, PREFIJOS, leerPrefijo, textoPrefijo, FRASES, leerGracias, textoGracias, PROPINA_MAX, PERSONAS_MAX, CUENTA_POR_DEFECTO, leerCuenta, redondoHaciaArriba, repartirCuenta, cuentaParaCompartir, gastoDeLaCuenta, BILLETES, leerBilletes, textoBilletes, PAGOS_MAX, pagosPosibles, vuelta, pagoJusto,
+    PROPINAS_RAPIDAS, PROPINA_HABITUAL, propinaHabitual, leerPropina, textoPropina, ENCHUFES, leerEnchufe, enchufeDe, textoEnchufe, EMERGENCIAS, leerEmergencias, textoEmergencias, AGUA, leerAgua, textoAgua, POR_LA_IZQUIERDA, CARNE_EUROPEO, leerConducir, textoConducir, PREFIJOS, leerPrefijo, textoPrefijo, FRASES, leerGracias, textoGracias, IVA, leerIva, textoIva, PROPINA_MAX, PERSONAS_MAX, CUENTA_POR_DEFECTO, leerCuenta, redondoHaciaArriba, repartirCuenta, cuentaParaCompartir, gastoDeLaCuenta, BILLETES, leerBilletes, textoBilletes, PAGOS_MAX, pagosPosibles, vuelta, pagoJusto,
     MARGENES, tasaOfrecida, analizarCambio,
     domingoDePascua, hayTasaEl, tasaVieja, textoTasaVieja, horaBce, textoActualizado, proximaTasa, textoProximaTasa,
     FECHA_MINIMA, fechaLarga, fechaValida, diaDelGrafico, mesesAtras, FECHAS_RAPIDAS, leerFecha, cambioDesde, notaDiaHabil,
