@@ -1605,6 +1605,28 @@ function textoRoaming(code) {
   return `${banderaDivisa(code)} ${tipo === "ue" ? "📶" : "📵"} ${partes.join(" · ")}`;
 }
 
+// "cd sanitaria": si vale la Tarjeta Sanitaria Europea. Sirve en la UE, el EEE,
+// Suiza y Reino Unido; en el resto no queda otra que el seguro de viaje.
+const CON_TSE = new Set(["EUR", "SEK", "NOK", "DKK", "PLN", "CZK", "HUF", "ISK", "RON", "CHF", "GBP"]);
+
+const HAY_SANITARIA = /^\s*(?:sanitaria|sanidad|tse|ehic|seguro|m[eé]dico|health)(?:\s+([a-z]{3}))?\s*$/i;
+
+function leerSanitaria(texto) {
+  const m = String(texto ?? "").match(HAY_SANITARIA);
+  if (!m) return null;
+  const code = m[1]?.toUpperCase() ?? null;
+  return code && !isValidCode(code) ? null : { code };
+}
+
+function textoSanitaria(code) {
+  if (!isValidCode(code)) return "";
+  const partes = [tr(CON_TSE.has(code) ? "sanitaria.tse" : "sanitaria.seguro")];
+  if (code === "EUR") partes.push(tr("sanitaria.andorra"));
+  // Allí una urgencia sin seguro te puede costar miles.
+  if (code === "USD") partes.push(tr("sanitaria.caro"));
+  return `${banderaDivisa(code)} 🏥 ${partes.join(" · ")}`;
+}
+
 // "cd llegar": lo de enchufe, agua, emergencias, coche y prefijo en una línea,
 // para mirarlo nada más aterrizar. Cada cosa sale solo si la tengo de ese país.
 const HAY_LLEGAR = /^\s*(?:llegar|llegada|aterrizar|arrival|arrive)(?:\s+([a-z]{3}))?\s*$/i;
@@ -7948,7 +7970,7 @@ if (typeof module !== "undefined") {
     COMISION_MAX, COMISIONES_RAPIDAS, leerComision, leerPorcentaje, conComision,
     IMPUESTO_MAX, IMPUESTOS_RAPIDOS, leerImpuesto, leerImpuestoEscrito, loQuePagas,
     COMPARAR_IGUAL, compararPrecios, inclinacion, ZONAS, desfase, esNoche, horaAlli, SIGLAS_ZONA, leerHoraZona, convertirHoraZona, textoHoraZona, textoDiferencia, relojDe, tituloHoraAlli, leerCafe, enCafes, textoCafes, HORAS_JORNADA, enHoras, textoHoras,
-    PROPINAS_RAPIDAS, PROPINA_HABITUAL, propinaHabitual, leerPropina, textoPropina, ENCHUFES, leerEnchufe, enchufeDe, textoEnchufe, EMERGENCIAS, leerEmergencias, textoEmergencias, AGUA, leerAgua, textoAgua, POR_LA_IZQUIERDA, CARNE_EUROPEO, leerConducir, textoConducir, PREFIJOS, leerPrefijo, textoPrefijo, FRASES, leerGracias, textoGracias, IVA, leerIva, textoIva, PAGO_ALLI, CAJERO_NOTA, leerCajero, textoCajero, leerLlegar, textoLlegar, VISADOS, leerVisado, textoVisado, ROAMING, leerRoaming, textoRoaming, PROPINA_MAX, PERSONAS_MAX, CUENTA_POR_DEFECTO, leerCuenta, redondoHaciaArriba, repartirCuenta, cuentaParaCompartir, gastoDeLaCuenta, BILLETES, leerBilletes, textoBilletes, PAGOS_MAX, pagosPosibles, vuelta, pagoJusto,
+    PROPINAS_RAPIDAS, PROPINA_HABITUAL, propinaHabitual, leerPropina, textoPropina, ENCHUFES, leerEnchufe, enchufeDe, textoEnchufe, EMERGENCIAS, leerEmergencias, textoEmergencias, AGUA, leerAgua, textoAgua, POR_LA_IZQUIERDA, CARNE_EUROPEO, leerConducir, textoConducir, PREFIJOS, leerPrefijo, textoPrefijo, FRASES, leerGracias, textoGracias, IVA, leerIva, textoIva, PAGO_ALLI, CAJERO_NOTA, leerCajero, textoCajero, leerLlegar, textoLlegar, VISADOS, leerVisado, textoVisado, ROAMING, leerRoaming, textoRoaming, CON_TSE, leerSanitaria, textoSanitaria, PROPINA_MAX, PERSONAS_MAX, CUENTA_POR_DEFECTO, leerCuenta, redondoHaciaArriba, repartirCuenta, cuentaParaCompartir, gastoDeLaCuenta, BILLETES, leerBilletes, textoBilletes, PAGOS_MAX, pagosPosibles, vuelta, pagoJusto,
     MARGENES, tasaOfrecida, analizarCambio,
     domingoDePascua, hayTasaEl, tasaVieja, textoTasaVieja, horaBce, textoActualizado, proximaTasa, textoProximaTasa,
     FECHA_MINIMA, fechaLarga, fechaValida, diaDelGrafico, mesesAtras, FECHAS_RAPIDAS, leerFecha, cambioDesde, notaDiaHabil,
