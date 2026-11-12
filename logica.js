@@ -1661,6 +1661,40 @@ function textoTaxi(code) {
   return `${banderaDivisa(code)} 🚕 ${tr("taxi.apps", { apps: apps.join(", ") })}`;
 }
 
+// "cd regatear": si allí se regatea y, con un precio, por cuánto empezar y dónde
+// suele quedar. Donde se regatea mucho piden el doble o más; en los mercados de
+// Tailandia o México, algo menos.
+const REGATEO = {
+  mucho: { codes: ["MAD", "EGP", "TND", "INR", "NPR", "KHR", "VND", "JOD", "LKR"], empieza: [0.4, 0.5], queda: [0.6, 0.7] },
+  mercados: { codes: ["THB", "IDR", "PHP", "MYR", "CNY", "TRY", "MXN", "PEN", "BOB", "GTQ", "KES", "DOP", "COP", "AED", "QAR", "HKD"], empieza: [0.6, 0.7], queda: [0.75, 0.85] },
+};
+
+const HAY_REGATEAR = /^\s*(?:regatear|regateo|regatea|haggle|bargain)(?:\s+(\d+(?:[.,]\d+)*))?(?:\s+([a-z]{3}))?\s*$/i;
+
+function leerRegatear(texto) {
+  const m = String(texto ?? "").match(HAY_REGATEAR);
+  if (!m) return null;
+  const code = m[2]?.toUpperCase() ?? null;
+  if (code && !isValidCode(code)) return null;
+  const precio = m[1] ? leerNumero(m[1]) : null;
+  if (m[1] && !(precio > 0)) return null;
+  return { code, precio };
+}
+
+function textoRegatear(code, precio = null) {
+  if (!isValidCode(code)) return "";
+  const tipo = Object.keys(REGATEO).find((k) => REGATEO[k].codes.includes(code)) ?? "no";
+  const partes = [tr(`regatear.${tipo}`)];
+  if (precio && tipo !== "no") {
+    // En un puesto nadie regatea céntimos: por encima de 20 lo dejo en redondo.
+    const cifra = numeros({ maximumFractionDigits: precio >= 20 ? 0 : 2 });
+    const tramo = ([a, b]) => `${cifra.format(precio * a)}-${cifra.format(precio * b)}`;
+    const { empieza, queda } = REGATEO[tipo];
+    partes.push(tr("regatear.precio", { precio: `${cifra.format(precio)} ${code}`, empieza: tramo(empieza), queda: tramo(queda) }));
+  }
+  return `${banderaDivisa(code)} 🤝 ${partes.join(" · ")}`;
+}
+
 // "cd llegar": lo de enchufe, agua, emergencias, coche y prefijo en una línea,
 // para mirarlo nada más aterrizar. Cada cosa sale solo si la tengo de ese país.
 const HAY_LLEGAR = /^\s*(?:llegar|llegada|aterrizar|arrival|arrive)(?:\s+([a-z]{3}))?\s*$/i;
@@ -8004,7 +8038,7 @@ if (typeof module !== "undefined") {
     COMISION_MAX, COMISIONES_RAPIDAS, leerComision, leerPorcentaje, conComision,
     IMPUESTO_MAX, IMPUESTOS_RAPIDOS, leerImpuesto, leerImpuestoEscrito, loQuePagas,
     COMPARAR_IGUAL, compararPrecios, inclinacion, ZONAS, desfase, esNoche, horaAlli, SIGLAS_ZONA, leerHoraZona, convertirHoraZona, textoHoraZona, textoDiferencia, relojDe, tituloHoraAlli, leerCafe, enCafes, textoCafes, HORAS_JORNADA, enHoras, textoHoras,
-    PROPINAS_RAPIDAS, PROPINA_HABITUAL, propinaHabitual, leerPropina, textoPropina, ENCHUFES, leerEnchufe, enchufeDe, textoEnchufe, EMERGENCIAS, leerEmergencias, textoEmergencias, AGUA, leerAgua, textoAgua, POR_LA_IZQUIERDA, CARNE_EUROPEO, leerConducir, textoConducir, PREFIJOS, leerPrefijo, textoPrefijo, FRASES, leerGracias, textoGracias, IVA, leerIva, textoIva, PAGO_ALLI, CAJERO_NOTA, leerCajero, textoCajero, leerLlegar, textoLlegar, VISADOS, leerVisado, textoVisado, ROAMING, leerRoaming, textoRoaming, CON_TSE, leerSanitaria, textoSanitaria, APPS_TAXI, leerTaxi, textoTaxi, PROPINA_MAX, PERSONAS_MAX, CUENTA_POR_DEFECTO, leerCuenta, redondoHaciaArriba, repartirCuenta, cuentaParaCompartir, gastoDeLaCuenta, BILLETES, leerBilletes, textoBilletes, PAGOS_MAX, pagosPosibles, vuelta, pagoJusto,
+    PROPINAS_RAPIDAS, PROPINA_HABITUAL, propinaHabitual, leerPropina, textoPropina, ENCHUFES, leerEnchufe, enchufeDe, textoEnchufe, EMERGENCIAS, leerEmergencias, textoEmergencias, AGUA, leerAgua, textoAgua, POR_LA_IZQUIERDA, CARNE_EUROPEO, leerConducir, textoConducir, PREFIJOS, leerPrefijo, textoPrefijo, FRASES, leerGracias, textoGracias, IVA, leerIva, textoIva, PAGO_ALLI, CAJERO_NOTA, leerCajero, textoCajero, leerLlegar, textoLlegar, VISADOS, leerVisado, textoVisado, ROAMING, leerRoaming, textoRoaming, CON_TSE, leerSanitaria, textoSanitaria, APPS_TAXI, leerTaxi, textoTaxi, REGATEO, leerRegatear, textoRegatear, PROPINA_MAX, PERSONAS_MAX, CUENTA_POR_DEFECTO, leerCuenta, redondoHaciaArriba, repartirCuenta, cuentaParaCompartir, gastoDeLaCuenta, BILLETES, leerBilletes, textoBilletes, PAGOS_MAX, pagosPosibles, vuelta, pagoJusto,
     MARGENES, tasaOfrecida, analizarCambio,
     domingoDePascua, hayTasaEl, tasaVieja, textoTasaVieja, horaBce, textoActualizado, proximaTasa, textoProximaTasa,
     FECHA_MINIMA, fechaLarga, fechaValida, diaDelGrafico, mesesAtras, FECHAS_RAPIDAS, leerFecha, cambioDesde, notaDiaHabil,
