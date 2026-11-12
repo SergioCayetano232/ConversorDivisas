@@ -23,9 +23,9 @@ test("si el enchufe entra, no pide adaptador", () => {
   assert.equal(textoLlegar("CHF", "EUR"), "🇨🇭 🔌 C/J 230 V · 🚰 agua del grifo · 🚨 112/144 · 🚗 por la derecha · 📞 +41");
 });
 
-test("sin enchufe ni emergencias de ese país, sale lo demás", () => {
+test("sin emergencias de ese país, sale lo demás", () => {
   ponerIdioma("es");
-  assert.equal(textoLlegar("MAD", "EUR"), "🇲🇦 🚱 agua embotellada · 🚗 por la derecha · 📞 +212");
+  assert.equal(textoLlegar("MAD", "EUR"), "🇲🇦 🔌 C/E 220 V · 🚱 agua embotellada · 🚗 por la derecha · 📞 +212");
 });
 
 test("el euro, sin prefijo", () => {

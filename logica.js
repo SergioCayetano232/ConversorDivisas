@@ -1333,6 +1333,13 @@ const ENCHUFES = {
   CZK: ["CE", [230]], HKD: ["G", [220]], HUF: ["CF", [230]], IDR: ["CF", [230]], ILS: ["CH", [230]],
   INR: ["CDM", [230]], ISK: ["CF", [230]], KRW: ["CF", [220]], MYR: ["G", [240]], NZD: ["I", [230]],
   PHP: ["ABC", [220]], RON: ["CF", [230]], SGD: ["G", [230]], THB: ["ABCO", [230]], ZAR: ["CMN", [230]],
+  VND: ["AC", [220]], ARS: ["CI", [220]], MAD: ["CE", [220]], PEN: ["AC", [220]], COP: ["AB", [120]],
+  CLP: ["CL", [220]], EGP: ["CF", [220]], AED: ["G", [230]], TWD: ["AB", [110]], UYU: ["CFIL", [230]],
+  CRC: ["AB", [120]], DOP: ["AB", [120]], TND: ["CE", [230]], KES: ["G", [240]], LKR: ["DGM", [230]],
+  NPR: ["CDM", [230]], KHR: ["ACG", [230]], JOD: ["CDFGJ", [230]], QAR: ["DG", [240]], SAR: ["G", [230]],
+  GEL: ["CF", [220]], RSD: ["CF", [230]], GTQ: ["AB", [120]], PYG: ["C", [220]],
+  // En La Paz y El Alto quedan barrios a 115 V; en el resto, 230.
+  BOB: ["AC", [115, 230]],
 };
 
 const HAY_ENCHUFE = /^\s*(?:enchufes?|plugs?)(?:\s+([a-z]{3}))?\s*$/i;
