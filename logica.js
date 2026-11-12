@@ -1627,6 +1627,40 @@ function textoSanitaria(code) {
   return `${banderaDivisa(code)} 🏥 ${partes.join(" · ")}`;
 }
 
+// "cd taxi": las apps que funcionan allí. Es de noviembre de 2026; estas cambian
+// mucho de un año a otro (Uber se fue de Hungría y Dinamarca, por ejemplo).
+const APPS_TAXI = {
+  EUR: ["Uber", "Bolt", "FreeNow"], USD: ["Uber", "Lyft"], GBP: ["Uber", "Bolt", "FreeNow"],
+  JPY: ["GO", "Uber"], CHF: ["Uber"], CAD: ["Uber", "Lyft"], AUD: ["Uber", "DiDi"],
+  CNY: ["DiDi"], MXN: ["Uber", "DiDi"], BRL: ["Uber", "99"], SEK: ["Uber", "Bolt"], NOK: ["Uber", "Bolt"],
+  DKK: ["Dantaxi", "Viggo"], PLN: ["Uber", "Bolt", "FreeNow"], TRY: ["BiTaksi", "Uber"],
+  CZK: ["Uber", "Bolt", "Liftago"], HKD: ["Uber", "HKTaxi"], HUF: ["Bolt", "Főtaxi"],
+  IDR: ["Grab", "Gojek"], ILS: ["Gett"], INR: ["Uber", "Ola"], ISK: ["Hreyfill"], KRW: ["Kakao T", "Uber"],
+  MYR: ["Grab"], NZD: ["Uber"], PHP: ["Grab"], RON: ["Uber", "Bolt"], SGD: ["Grab", "Gojek"],
+  THB: ["Grab", "Bolt"], ZAR: ["Uber", "Bolt"], VND: ["Grab", "Xanh SM"], ARS: ["Uber", "Cabify", "DiDi"],
+  MAD: ["inDrive", "Heetch"], PEN: ["Uber", "Cabify", "DiDi"], COP: ["Uber", "DiDi", "Cabify"],
+  CLP: ["Uber", "Cabify", "DiDi"], EGP: ["Uber", "Careem"], AED: ["Careem", "Uber"], TWD: ["Uber", "55688"],
+  UYU: ["Uber", "Cabify"], CRC: ["Uber", "DiDi"], DOP: ["Uber"], TND: ["Bolt"], KES: ["Uber", "Bolt"],
+  LKR: ["PickMe", "Uber"], NPR: ["Pathao", "inDrive"], KHR: ["Grab", "PassApp"], JOD: ["Careem", "Uber"],
+  QAR: ["Uber", "Karwa"], SAR: ["Uber", "Careem"], GEL: ["Bolt"], RSD: ["CarGo"], BOB: ["inDrive", "Yango"],
+  GTQ: ["Uber", "inDrive"], PYG: ["Bolt", "Uber"],
+};
+
+const HAY_TAXI = /^\s*(?:taxis?|cab|rides?)(?:\s+([a-z]{3}))?\s*$/i;
+
+function leerTaxi(texto) {
+  const m = String(texto ?? "").match(HAY_TAXI);
+  if (!m) return null;
+  const code = m[1]?.toUpperCase() ?? null;
+  return code && !APPS_TAXI[code] ? null : { code };
+}
+
+function textoTaxi(code) {
+  const apps = APPS_TAXI[code];
+  if (!apps) return "";
+  return `${banderaDivisa(code)} 🚕 ${tr("taxi.apps", { apps: apps.join(", ") })}`;
+}
+
 // "cd llegar": lo de enchufe, agua, emergencias, coche y prefijo en una línea,
 // para mirarlo nada más aterrizar. Cada cosa sale solo si la tengo de ese país.
 const HAY_LLEGAR = /^\s*(?:llegar|llegada|aterrizar|arrival|arrive)(?:\s+([a-z]{3}))?\s*$/i;
@@ -7970,7 +8004,7 @@ if (typeof module !== "undefined") {
     COMISION_MAX, COMISIONES_RAPIDAS, leerComision, leerPorcentaje, conComision,
     IMPUESTO_MAX, IMPUESTOS_RAPIDOS, leerImpuesto, leerImpuestoEscrito, loQuePagas,
     COMPARAR_IGUAL, compararPrecios, inclinacion, ZONAS, desfase, esNoche, horaAlli, SIGLAS_ZONA, leerHoraZona, convertirHoraZona, textoHoraZona, textoDiferencia, relojDe, tituloHoraAlli, leerCafe, enCafes, textoCafes, HORAS_JORNADA, enHoras, textoHoras,
-    PROPINAS_RAPIDAS, PROPINA_HABITUAL, propinaHabitual, leerPropina, textoPropina, ENCHUFES, leerEnchufe, enchufeDe, textoEnchufe, EMERGENCIAS, leerEmergencias, textoEmergencias, AGUA, leerAgua, textoAgua, POR_LA_IZQUIERDA, CARNE_EUROPEO, leerConducir, textoConducir, PREFIJOS, leerPrefijo, textoPrefijo, FRASES, leerGracias, textoGracias, IVA, leerIva, textoIva, PAGO_ALLI, CAJERO_NOTA, leerCajero, textoCajero, leerLlegar, textoLlegar, VISADOS, leerVisado, textoVisado, ROAMING, leerRoaming, textoRoaming, CON_TSE, leerSanitaria, textoSanitaria, PROPINA_MAX, PERSONAS_MAX, CUENTA_POR_DEFECTO, leerCuenta, redondoHaciaArriba, repartirCuenta, cuentaParaCompartir, gastoDeLaCuenta, BILLETES, leerBilletes, textoBilletes, PAGOS_MAX, pagosPosibles, vuelta, pagoJusto,
+    PROPINAS_RAPIDAS, PROPINA_HABITUAL, propinaHabitual, leerPropina, textoPropina, ENCHUFES, leerEnchufe, enchufeDe, textoEnchufe, EMERGENCIAS, leerEmergencias, textoEmergencias, AGUA, leerAgua, textoAgua, POR_LA_IZQUIERDA, CARNE_EUROPEO, leerConducir, textoConducir, PREFIJOS, leerPrefijo, textoPrefijo, FRASES, leerGracias, textoGracias, IVA, leerIva, textoIva, PAGO_ALLI, CAJERO_NOTA, leerCajero, textoCajero, leerLlegar, textoLlegar, VISADOS, leerVisado, textoVisado, ROAMING, leerRoaming, textoRoaming, CON_TSE, leerSanitaria, textoSanitaria, APPS_TAXI, leerTaxi, textoTaxi, PROPINA_MAX, PERSONAS_MAX, CUENTA_POR_DEFECTO, leerCuenta, redondoHaciaArriba, repartirCuenta, cuentaParaCompartir, gastoDeLaCuenta, BILLETES, leerBilletes, textoBilletes, PAGOS_MAX, pagosPosibles, vuelta, pagoJusto,
     MARGENES, tasaOfrecida, analizarCambio,
     domingoDePascua, hayTasaEl, tasaVieja, textoTasaVieja, horaBce, textoActualizado, proximaTasa, textoProximaTasa,
     FECHA_MINIMA, fechaLarga, fechaValida, diaDelGrafico, mesesAtras, FECHAS_RAPIDAS, leerFecha, cambioDesde, notaDiaHabil,
