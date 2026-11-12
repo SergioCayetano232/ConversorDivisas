@@ -1386,6 +1386,25 @@ const EMERGENCIAS = {
   THB: [["191", "policia"], ["1669", "ambulancia"], ["199", "bomberos"]],
   CHF: [["112", "todo"], ["144", "ambulancia"]],
   ZAR: [["10111", "policia"], ["10177", "ambulancia"], ["112", "movil"]],
+  COP: [["123", "todo"]], UYU: [["911", "todo"]], CRC: [["911", "todo"]], DOP: [["911", "todo"]],
+  JOD: [["911", "todo"]], SAR: [["911", "todo"]], PYG: [["911", "todo"]], QAR: [["999", "todo"]],
+  KES: [["999", "todo"]], GEL: [["112", "todo"]],
+  TWD: [["110", "policia"], ["119", "ambulanciaBomberos"]],
+  MAD: [["19", "policia"], ["15", "ambulanciaBomberos"]],
+  // En Guatemala la ambulancia la llevan los bomberos voluntarios.
+  GTQ: [["110", "policia"], ["122", "ambulanciaBomberos"]],
+  VND: [["113", "policia"], ["115", "ambulancia"], ["114", "bomberos"]],
+  ARS: [["911", "policia"], ["107", "ambulancia"], ["100", "bomberos"]],
+  PEN: [["105", "policia"], ["106", "ambulancia"], ["116", "bomberos"]],
+  CLP: [["133", "policia"], ["131", "ambulancia"], ["132", "bomberos"]],
+  EGP: [["122", "policia"], ["123", "ambulancia"], ["180", "bomberos"]],
+  AED: [["999", "policia"], ["998", "ambulancia"], ["997", "bomberos"]],
+  TND: [["197", "policia"], ["190", "ambulancia"], ["198", "bomberos"]],
+  LKR: [["119", "policia"], ["1990", "ambulancia"], ["110", "bomberos"]],
+  NPR: [["100", "policia"], ["102", "ambulancia"], ["101", "bomberos"]],
+  KHR: [["117", "policia"], ["119", "ambulancia"], ["118", "bomberos"]],
+  RSD: [["192", "policia"], ["194", "ambulancia"], ["193", "bomberos"]],
+  BOB: [["110", "policia"], ["118", "ambulancia"], ["119", "bomberos"]],
 };
 
 const HAY_EMERGENCIAS = /^\s*(?:emergencias?|emergency|sos)(?:\s+([a-z]{3}))?\s*$/i;

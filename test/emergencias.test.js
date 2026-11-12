@@ -1,6 +1,6 @@
 const { test } = require("node:test");
 const assert = require("node:assert");
-const { EMERGENCIAS, leerEmergencias, textoEmergencias, DIVISAS_BCE } = require("../logica.js");
+const { EMERGENCIAS, leerEmergencias, textoEmergencias, CURRENCIES } = require("../logica.js");
 const { ponerIdioma } = require("../textos.js");
 
 test("entiende emergencias, emergency y sos, con divisa o sin ella", () => {
@@ -14,8 +14,18 @@ test("entiende emergencias, emergency y sos, con divisa o sin ella", () => {
   assert.equal(leerEmergencias(""), null);
 });
 
-test("están las 30 divisas", () => {
-  assert.deepEqual(Object.keys(EMERGENCIAS).sort(), DIVISAS_BCE.map((c) => c.code).sort());
+test("están las 55 divisas", () => {
+  assert.deepEqual(Object.keys(EMERGENCIAS).sort(), CURRENCIES.map((c) => c.code).sort());
+});
+
+test("Colombia, el 123 para todo", () => {
+  ponerIdioma("es");
+  assert.equal(textoEmergencias("COP"), "🇨🇴 🚨 123 para todo");
+});
+
+test("Vietnam, por separado", () => {
+  ponerIdioma("es");
+  assert.equal(textoEmergencias("VND"), "🇻🇳 🚨 113 policía · 115 ambulancia · 114 bomberos");
 });
 
 test("un número para todo", () => {

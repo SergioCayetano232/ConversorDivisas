@@ -137,9 +137,9 @@ test("convirtiendo en la barra vale en minúscula", () => {
   assert.equal(leerOmnibox("100000 vnd", par).from, "VND");
 });
 
-test("el enchufe ya lo tiene; sin emergencias ni lo demás no se inventa nada", () => {
+test("enchufe y emergencias ya los tiene; sin lo demás no se inventa nada", () => {
   assert.match(textoEnchufe(enchufeDe("VND", "EUR")), /^🇻🇳 Enchufe A\/C · 220 V/);
-  assert.equal(textoEmergencias("VND"), "");
+  assert.match(textoEmergencias("VND"), /^🇻🇳 🚨 113 policía/);
   assert.equal(pagoJusto(50, "VND"), null);
   assert.equal(propinaHabitual("VND"), null);
 });
