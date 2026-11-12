@@ -1695,6 +1695,163 @@ function textoRegatear(code, precio = null) {
   return `${banderaDivisa(code)} 🤝 ${partes.join(" · ")}`;
 }
 
+// "cd festivos": los de allí en los próximos 30 días, que es cuando te encuentras
+// los bancos y las tiendas cerrados. Solo los nacionales y los que cierra casi todo.
+// Las fechas: "12-25" fija, "P-2" días desde Pascua, "O+1" desde la ortodoxa,
+// "11/4/4" el cuarto jueves de noviembre (-1, el último) y "L:fitr" las de la tabla.
+const FESTIVOS = {
+  EUR: [["01-01", "anio"], ["05-01", "trabajo"], ["08-15", "asuncion"], ["11-01", "todos"], ["12-25", "navidad"]],
+  USD: [["01-01", "anio"], ["01/1/3", "festivo"], ["05/1/-1", "festivo"], ["07-04", "independencia"], ["09/1/1", "trabajo"], ["11/4/4", "accionGracias"], ["12-25", "navidad"]],
+  GBP: [["01-01", "anio"], ["P-2", "viernes"], ["P+1", "lunesPascua"], ["05/1/1", "festivo"], ["05/1/-1", "festivo"], ["08/1/-1", "festivo"], ["12-25", "navidad"], ["12-26", "sanEsteban"]],
+  JPY: [["01-01", "anio"], ["01-02", "anio"], ["01-03", "anio"], ["01/1/2", "festivo"], ["02-11", "nacional"], ["02-23", "festivo"], ["03-20", "festivo"], ["04-29", "golden"], ["05-03", "golden"], ["05-04", "golden"], ["05-05", "golden"], ["07/1/3", "festivo"], ["08-11", "festivo"], ["09/1/3", "festivo"], ["09-23", "festivo"], ["10/1/2", "festivo"], ["11-03", "festivo"], ["11-23", "festivo"]],
+  CHF: [["01-01", "anio"], ["P-2", "viernes"], ["P+1", "lunesPascua"], ["P+39", "ascension"], ["P+50", "pentecostes"], ["08-01", "nacional"], ["12-25", "navidad"], ["12-26", "sanEsteban"]],
+  CAD: [["01-01", "anio"], ["P-2", "viernes"], ["07-01", "nacional"], ["09/1/1", "trabajo"], ["10/1/2", "accionGracias"], ["12-25", "navidad"], ["12-26", "sanEsteban"]],
+  AUD: [["01-01", "anio"], ["01-26", "nacional"], ["P-2", "viernes"], ["P+1", "lunesPascua"], ["04-25", "festivo"], ["12-25", "navidad"], ["12-26", "sanEsteban"]],
+  CNY: [["01-01", "anio"], ["L:lunar", "lunar"], ["05-01", "trabajo"], ["10-01", "nacional"], ["10-02", "nacional"], ["10-03", "nacional"]],
+  MXN: [["01-01", "anio"], ["02/1/1", "festivo"], ["03/1/3", "festivo"], ["P-3", "jueves"], ["P-2", "viernes"], ["05-01", "trabajo"], ["09-16", "independencia"], ["11-02", "muertos"], ["11/1/3", "festivo"], ["12-12", "festivo"], ["12-25", "navidad"]],
+  BRL: [["01-01", "anio"], ["P-48", "carnaval"], ["P-47", "carnaval"], ["P-2", "viernes"], ["04-21", "festivo"], ["05-01", "trabajo"], ["P+60", "corpus"], ["09-07", "independencia"], ["10-12", "festivo"], ["11-02", "muertos"], ["11-15", "festivo"], ["11-20", "festivo"], ["12-25", "navidad"]],
+  SEK: [["01-01", "anio"], ["01-06", "reyes"], ["P-2", "viernes"], ["P+1", "lunesPascua"], ["05-01", "trabajo"], ["P+39", "ascension"], ["06-06", "nacional"], ["12-24", "nochebuena"], ["12-25", "navidad"], ["12-26", "sanEsteban"]],
+  NOK: [["01-01", "anio"], ["P-3", "jueves"], ["P-2", "viernes"], ["P+1", "lunesPascua"], ["05-01", "trabajo"], ["05-17", "nacional"], ["P+39", "ascension"], ["P+50", "pentecostes"], ["12-25", "navidad"], ["12-26", "sanEsteban"]],
+  DKK: [["01-01", "anio"], ["P-3", "jueves"], ["P-2", "viernes"], ["P+1", "lunesPascua"], ["P+39", "ascension"], ["P+50", "pentecostes"], ["06-05", "nacional"], ["12-24", "nochebuena"], ["12-25", "navidad"], ["12-26", "sanEsteban"]],
+  PLN: [["01-01", "anio"], ["01-06", "reyes"], ["P+1", "lunesPascua"], ["05-01", "trabajo"], ["05-03", "nacional"], ["P+60", "corpus"], ["08-15", "asuncion"], ["11-01", "todos"], ["11-11", "independencia"], ["12-24", "nochebuena"], ["12-25", "navidad"], ["12-26", "sanEsteban"]],
+  TRY: [["01-01", "anio"], ["04-23", "festivo"], ["05-01", "trabajo"], ["05-19", "festivo"], ["L:fitr", "fitr"], ["L:adha", "adha"], ["07-15", "festivo"], ["08-30", "festivo"], ["10-29", "nacional"]],
+  CZK: [["01-01", "anio"], ["P-2", "viernes"], ["P+1", "lunesPascua"], ["05-01", "trabajo"], ["05-08", "festivo"], ["07-05", "festivo"], ["07-06", "festivo"], ["09-28", "festivo"], ["10-28", "independencia"], ["11-17", "festivo"], ["12-24", "nochebuena"], ["12-25", "navidad"], ["12-26", "sanEsteban"]],
+  HKD: [["01-01", "anio"], ["L:lunar", "lunar"], ["P-2", "viernes"], ["P+1", "lunesPascua"], ["05-01", "trabajo"], ["07-01", "festivo"], ["10-01", "nacional"], ["12-25", "navidad"], ["12-26", "sanEsteban"]],
+  HUF: [["01-01", "anio"], ["03-15", "nacional"], ["P-2", "viernes"], ["P+1", "lunesPascua"], ["05-01", "trabajo"], ["P+50", "pentecostes"], ["08-20", "nacional"], ["10-23", "nacional"], ["11-01", "todos"], ["12-25", "navidad"], ["12-26", "sanEsteban"]],
+  IDR: [["01-01", "anio"], ["L:lunar", "lunar"], ["L:fitr", "fitr"], ["05-01", "trabajo"], ["L:adha", "adha"], ["06-01", "festivo"], ["08-17", "independencia"], ["12-25", "navidad"]],
+  ILS: [["L:pesaj", "pesaj"], ["L:roshHashana", "roshHashana"], ["L:yomKipur", "yomKipur"]],
+  INR: [["01-26", "nacional"], ["L:holi", "holi"], ["08-15", "independencia"], ["10-02", "festivo"], ["L:diwali", "diwali"]],
+  ISK: [["01-01", "anio"], ["P-3", "jueves"], ["P-2", "viernes"], ["P+1", "lunesPascua"], ["P+39", "ascension"], ["P+50", "pentecostes"], ["06-17", "nacional"], ["08/1/1", "festivo"], ["12-24", "nochebuena"], ["12-25", "navidad"], ["12-26", "sanEsteban"], ["12-31", "finDeAnio"]],
+  KRW: [["01-01", "anio"], ["L:lunar", "lunar"], ["03-01", "festivo"], ["05-05", "festivo"], ["06-06", "festivo"], ["08-15", "independencia"], ["L:chuseok", "chuseok"], ["10-03", "nacional"], ["10-09", "festivo"], ["12-25", "navidad"]],
+  MYR: [["L:lunar", "lunar"], ["L:fitr", "fitr"], ["05-01", "trabajo"], ["L:adha", "adha"], ["08-31", "nacional"], ["09-16", "festivo"], ["L:diwali", "diwali"], ["12-25", "navidad"]],
+  NZD: [["01-01", "anio"], ["01-02", "anio"], ["02-06", "nacional"], ["P-2", "viernes"], ["P+1", "lunesPascua"], ["04-25", "festivo"], ["06/1/1", "festivo"], ["10/1/4", "trabajo"], ["12-25", "navidad"], ["12-26", "sanEsteban"]],
+  PHP: [["01-01", "anio"], ["P-3", "jueves"], ["P-2", "viernes"], ["L:fitr", "fitr"], ["04-09", "festivo"], ["05-01", "trabajo"], ["06-12", "independencia"], ["08/1/-1", "festivo"], ["11-01", "todos"], ["11-30", "festivo"], ["12-25", "navidad"], ["12-30", "festivo"]],
+  RON: [["01-01", "anio"], ["01-02", "anio"], ["01-24", "festivo"], ["O-2", "viernes"], ["O+0", "pascua"], ["O+1", "lunesPascua"], ["05-01", "trabajo"], ["06-01", "festivo"], ["O+50", "pentecostes"], ["08-15", "asuncion"], ["11-30", "festivo"], ["12-01", "nacional"], ["12-25", "navidad"], ["12-26", "sanEsteban"]],
+  SGD: [["01-01", "anio"], ["L:lunar", "lunar"], ["P-2", "viernes"], ["L:fitr", "fitr"], ["05-01", "trabajo"], ["L:adha", "adha"], ["08-09", "nacional"], ["L:diwali", "diwali"], ["12-25", "navidad"]],
+  THB: [["01-01", "anio"], ["04-06", "festivo"], ["04-13", "songkran"], ["04-14", "songkran"], ["04-15", "songkran"], ["05-01", "trabajo"], ["07-28", "festivo"], ["08-12", "festivo"], ["10-13", "festivo"], ["10-23", "festivo"], ["12-05", "nacional"], ["12-10", "festivo"], ["12-31", "finDeAnio"]],
+  ZAR: [["01-01", "anio"], ["03-21", "festivo"], ["P-2", "viernes"], ["P+1", "lunesPascua"], ["04-27", "nacional"], ["05-01", "trabajo"], ["06-16", "festivo"], ["08-09", "festivo"], ["09-24", "festivo"], ["12-16", "festivo"], ["12-25", "navidad"], ["12-26", "sanEsteban"]],
+  VND: [["01-01", "anio"], ["L:lunar", "lunar"], ["04-30", "festivo"], ["05-01", "trabajo"], ["09-02", "nacional"]],
+  ARS: [["01-01", "anio"], ["P-48", "carnaval"], ["P-47", "carnaval"], ["03-24", "festivo"], ["04-02", "festivo"], ["P-2", "viernes"], ["05-01", "trabajo"], ["05-25", "nacional"], ["06-20", "festivo"], ["07-09", "independencia"], ["12-08", "inmaculada"], ["12-25", "navidad"]],
+  MAD: [["01-01", "anio"], ["01-11", "festivo"], ["L:fitr", "fitr"], ["05-01", "trabajo"], ["L:adha", "adha"], ["07-30", "nacional"], ["08-14", "festivo"], ["08-20", "festivo"], ["08-21", "festivo"], ["11-06", "festivo"], ["11-18", "independencia"]],
+  PEN: [["01-01", "anio"], ["P-3", "jueves"], ["P-2", "viernes"], ["05-01", "trabajo"], ["06-29", "festivo"], ["07-28", "independencia"], ["07-29", "independencia"], ["08-30", "festivo"], ["10-08", "festivo"], ["11-01", "todos"], ["12-08", "inmaculada"], ["12-25", "navidad"]],
+  COP: [["01-01", "anio"], ["P-3", "jueves"], ["P-2", "viernes"], ["05-01", "trabajo"], ["07-20", "independencia"], ["08-07", "festivo"], ["12-08", "inmaculada"], ["12-25", "navidad"]],
+  CLP: [["01-01", "anio"], ["P-2", "viernes"], ["P-1", "sabadoSanto"], ["05-01", "trabajo"], ["05-21", "festivo"], ["08-15", "asuncion"], ["09-18", "independencia"], ["09-19", "festivo"], ["11-01", "todos"], ["12-08", "inmaculada"], ["12-25", "navidad"]],
+  EGP: [["01-07", "navidadOrtodoxa"], ["01-25", "festivo"], ["L:fitr", "fitr"], ["04-25", "festivo"], ["05-01", "trabajo"], ["L:adha", "adha"], ["06-30", "festivo"], ["07-23", "nacional"], ["10-06", "festivo"]],
+  AED: [["01-01", "anio"], ["L:fitr", "fitr"], ["L:adha", "adha"], ["12-02", "nacional"], ["12-03", "nacional"]],
+  TWD: [["01-01", "anio"], ["L:lunar", "lunar"], ["02-28", "festivo"], ["04-04", "festivo"], ["10-10", "nacional"]],
+  UYU: [["01-01", "anio"], ["01-06", "reyes"], ["P-48", "carnaval"], ["P-47", "carnaval"], ["P-3", "jueves"], ["P-2", "viernes"], ["05-01", "trabajo"], ["07-18", "festivo"], ["08-25", "independencia"], ["12-25", "navidad"]],
+  CRC: [["01-01", "anio"], ["P-3", "jueves"], ["P-2", "viernes"], ["04-11", "festivo"], ["05-01", "trabajo"], ["07-25", "festivo"], ["08-15", "festivo"], ["09-15", "independencia"], ["12-25", "navidad"]],
+  DOP: [["01-01", "anio"], ["01-06", "reyes"], ["01-21", "festivo"], ["02-27", "independencia"], ["P-2", "viernes"], ["05-01", "trabajo"], ["P+60", "corpus"], ["08-16", "festivo"], ["09-24", "festivo"], ["11-06", "festivo"], ["12-25", "navidad"]],
+  TND: [["01-01", "anio"], ["03-20", "independencia"], ["L:fitr", "fitr"], ["04-09", "festivo"], ["05-01", "trabajo"], ["L:adha", "adha"], ["07-25", "festivo"], ["08-13", "festivo"], ["10-15", "festivo"], ["12-17", "festivo"]],
+  KES: [["01-01", "anio"], ["P-2", "viernes"], ["P+1", "lunesPascua"], ["L:fitr", "fitr"], ["05-01", "trabajo"], ["06-01", "festivo"], ["10-10", "festivo"], ["10-20", "festivo"], ["12-12", "independencia"], ["12-25", "navidad"], ["12-26", "sanEsteban"]],
+  LKR: [["02-04", "independencia"], ["04-13", "anioCingales"], ["04-14", "anioCingales"], ["05-01", "trabajo"], ["12-25", "navidad"]],
+  NPR: [["L:diwali", "diwali"], ["09-19", "nacional"]],
+  KHR: [["01-01", "anio"], ["01-07", "festivo"], ["04-14", "anioJemer"], ["04-15", "anioJemer"], ["04-16", "anioJemer"], ["05-01", "trabajo"], ["05-14", "festivo"], ["06-18", "festivo"], ["09-24", "festivo"], ["10-15", "festivo"], ["10-29", "festivo"], ["11-09", "independencia"]],
+  JOD: [["01-01", "anio"], ["L:fitr", "fitr"], ["05-01", "trabajo"], ["05-25", "independencia"], ["L:adha", "adha"], ["12-25", "navidad"]],
+  QAR: [["02/2/2", "festivo"], ["L:fitr", "fitr"], ["L:adha", "adha"], ["12-18", "nacional"]],
+  SAR: [["02-22", "festivo"], ["L:fitr", "fitr"], ["L:adha", "adha"], ["09-23", "nacional"]],
+  GEL: [["01-01", "anio"], ["01-02", "anio"], ["01-07", "navidadOrtodoxa"], ["01-19", "festivo"], ["03-03", "festivo"], ["03-08", "festivo"], ["04-09", "festivo"], ["O-2", "viernes"], ["O+0", "pascua"], ["O+1", "lunesPascua"], ["05-09", "festivo"], ["05-12", "festivo"], ["05-26", "independencia"], ["08-28", "festivo"], ["10-14", "festivo"], ["11-23", "festivo"]],
+  RSD: [["01-01", "anio"], ["01-02", "anio"], ["01-07", "navidadOrtodoxa"], ["02-15", "nacional"], ["02-16", "nacional"], ["O-2", "viernes"], ["O+0", "pascua"], ["O+1", "lunesPascua"], ["05-01", "trabajo"], ["05-02", "trabajo"], ["11-11", "festivo"]],
+  BOB: [["01-01", "anio"], ["01-22", "nacional"], ["P-48", "carnaval"], ["P-47", "carnaval"], ["P-2", "viernes"], ["05-01", "trabajo"], ["P+60", "corpus"], ["06-21", "festivo"], ["08-06", "independencia"], ["11-02", "muertos"], ["12-25", "navidad"]],
+  GTQ: [["01-01", "anio"], ["P-3", "jueves"], ["P-2", "viernes"], ["P-1", "sabadoSanto"], ["05-01", "trabajo"], ["06-30", "festivo"], ["09-15", "independencia"], ["10-20", "festivo"], ["11-01", "todos"], ["12-25", "navidad"]],
+  PYG: [["01-01", "anio"], ["03-01", "festivo"], ["P-3", "jueves"], ["P-2", "viernes"], ["05-01", "trabajo"], ["05-14", "independencia"], ["05-15", "independencia"], ["06-12", "festivo"], ["08-15", "festivo"], ["09-29", "festivo"], ["12-08", "inmaculada"], ["12-25", "navidad"]],
+};
+
+// Las que van con la luna no hay forma sencilla de calcularlas. Las del Ramadán y
+// el Cordero dependen de cuándo se vea la luna y pueden moverse un día.
+// Cuando se acabe la tabla, esas dejan de salir y el resto sigue igual.
+const FESTIVOS_LUNA = {
+  lunar: ["2026-02-17", "2027-02-06", "2028-01-26"],
+  fitr: ["2026-03-20", "2027-03-09", "2028-02-26"],
+  adha: ["2026-05-27", "2027-05-16", "2028-05-05"],
+  diwali: ["2026-11-08", "2027-10-29", "2028-10-17"],
+  holi: ["2026-03-04", "2027-03-22", "2028-03-11"],
+  chuseok: ["2026-09-25", "2027-09-15", "2028-10-03"],
+  pesaj: ["2026-04-02", "2027-04-22", "2028-04-11"],
+  roshHashana: ["2026-09-12", "2027-10-02", "2028-09-21"],
+  yomKipur: ["2026-09-21", "2027-10-11", "2028-09-30"],
+};
+
+// Lo que no cabe en una fecha: el sabbat en Israel, la luna llena en Sri Lanka.
+const FESTIVOS_NOTA = new Set(["EUR", "ILS", "LKR"]);
+const FESTIVOS_DIAS = 30;
+const FESTIVOS_MAX = 4;
+
+// La ortodoxa, con el calendario juliano y pasada al nuestro (13 días hasta 2099).
+function pascuaOrtodoxa(ano) {
+  const a = ano % 4, b = ano % 7, c = ano % 19;
+  const d = (19 * c + 15) % 30;
+  const e = (2 * a + 4 * b - d + 34) % 7;
+  const mes = Math.floor((d + e + 114) / 31);
+  const dia = ((d + e + 114) % 31) + 1;
+  return new Date(ano, mes - 1, dia + 13);
+}
+
+function fechaFestivo(regla, ano) {
+  if (regla.startsWith("L:")) {
+    const fecha = FESTIVOS_LUNA[regla.slice(2)]?.find((f) => f.startsWith(`${ano}-`));
+    return fecha ? new Date(ano, Number(fecha.slice(5, 7)) - 1, Number(fecha.slice(8))) : null;
+  }
+  if (/^[PO][+-]\d+$/.test(regla)) {
+    const base = regla[0] === "P" ? domingoDePascua(ano) : pascuaOrtodoxa(ano);
+    return new Date(base.getFullYear(), base.getMonth(), base.getDate() + Number(regla.slice(1)));
+  }
+  const semana = regla.match(/^(\d\d)\/(\d)\/(-?\d)$/);
+  if (semana) {
+    const [, mes, dia, n] = semana.map(Number);
+    if (n < 0) {
+      const ultimo = new Date(ano, mes, 0);
+      return new Date(ano, mes - 1, ultimo.getDate() - ((ultimo.getDay() - dia + 7) % 7));
+    }
+    const primero = new Date(ano, mes - 1, 1);
+    return new Date(ano, mes - 1, 1 + ((dia - primero.getDay() + 7) % 7) + (n - 1) * 7);
+  }
+  const [mes, dia] = regla.split("-").map(Number);
+  return new Date(ano, mes - 1, dia);
+}
+
+// Los que caen entre hoy y dentro de 30 días, ordenados. Miro también el año
+// que viene, que en diciembre la ventana se pasa de enero.
+function festivosProximos(code, hoy = new Date(), dias = FESTIVOS_DIAS) {
+  const reglas = FESTIVOS[code];
+  if (!reglas) return null;
+  const desde = new Date(hoy.getFullYear(), hoy.getMonth(), hoy.getDate());
+  const hasta = new Date(desde.getFullYear(), desde.getMonth(), desde.getDate() + dias);
+  const lista = [];
+  for (const ano of [desde.getFullYear(), desde.getFullYear() + 1]) {
+    for (const [regla, clave] of reglas) {
+      const fecha = fechaFestivo(regla, ano);
+      if (fecha && fecha >= desde && fecha <= hasta) lista.push({ fecha: isoLocal(fecha), clave });
+    }
+  }
+  return lista.sort((a, b) => a.fecha.localeCompare(b.fecha));
+}
+
+const HAY_FESTIVOS = /^\s*(?:festivos?|fiestas?|holidays?)(?:\s+([a-z]{3}))?\s*$/i;
+
+function leerFestivos(texto) {
+  const m = String(texto ?? "").match(HAY_FESTIVOS);
+  if (!m) return null;
+  const code = m[1]?.toUpperCase() ?? null;
+  return code && !FESTIVOS[code] ? null : { code };
+}
+
+function textoFestivos(code, hoy = new Date()) {
+  const lista = festivosProximos(code, hoy);
+  if (!lista) return "";
+  const formato = fechas({ weekday: "short", day: "numeric", month: "short" });
+  const dia = ({ fecha, clave }) => {
+    const [a, m, d] = fecha.split("-").map(Number);
+    return `${formato.format(new Date(a, m - 1, d)).replace(/\./g, "").replace(",", "")} ${tr(`festivos.${clave}`)}`;
+  };
+  const partes = [lista.length
+    ? tr("festivos.lista", { dias: FESTIVOS_DIAS, lista: lista.slice(0, FESTIVOS_MAX).map(dia).join(", ") })
+    : tr("festivos.ninguno", { dias: FESTIVOS_DIAS })];
+  if (lista.length > FESTIVOS_MAX) partes[0] += ` ${tr("festivos.mas", { n: lista.length - FESTIVOS_MAX })}`;
+  if (FESTIVOS_NOTA.has(code)) partes.push(tr(`festivos.nota.${code}`));
+  return `${banderaDivisa(code)} 📅 ${partes.join(" · ")}`;
+}
+
 // "cd llegar": lo de enchufe, agua, emergencias, coche y prefijo en una línea,
 // para mirarlo nada más aterrizar. Cada cosa sale solo si la tengo de ese país.
 const HAY_LLEGAR = /^\s*(?:llegar|llegada|aterrizar|arrival|arrive)(?:\s+([a-z]{3}))?\s*$/i;
@@ -8038,7 +8195,7 @@ if (typeof module !== "undefined") {
     COMISION_MAX, COMISIONES_RAPIDAS, leerComision, leerPorcentaje, conComision,
     IMPUESTO_MAX, IMPUESTOS_RAPIDOS, leerImpuesto, leerImpuestoEscrito, loQuePagas,
     COMPARAR_IGUAL, compararPrecios, inclinacion, ZONAS, desfase, esNoche, horaAlli, SIGLAS_ZONA, leerHoraZona, convertirHoraZona, textoHoraZona, textoDiferencia, relojDe, tituloHoraAlli, leerCafe, enCafes, textoCafes, HORAS_JORNADA, enHoras, textoHoras,
-    PROPINAS_RAPIDAS, PROPINA_HABITUAL, propinaHabitual, leerPropina, textoPropina, ENCHUFES, leerEnchufe, enchufeDe, textoEnchufe, EMERGENCIAS, leerEmergencias, textoEmergencias, AGUA, leerAgua, textoAgua, POR_LA_IZQUIERDA, CARNE_EUROPEO, leerConducir, textoConducir, PREFIJOS, leerPrefijo, textoPrefijo, FRASES, leerGracias, textoGracias, IVA, leerIva, textoIva, PAGO_ALLI, CAJERO_NOTA, leerCajero, textoCajero, leerLlegar, textoLlegar, VISADOS, leerVisado, textoVisado, ROAMING, leerRoaming, textoRoaming, CON_TSE, leerSanitaria, textoSanitaria, APPS_TAXI, leerTaxi, textoTaxi, REGATEO, leerRegatear, textoRegatear, PROPINA_MAX, PERSONAS_MAX, CUENTA_POR_DEFECTO, leerCuenta, redondoHaciaArriba, repartirCuenta, cuentaParaCompartir, gastoDeLaCuenta, BILLETES, leerBilletes, textoBilletes, PAGOS_MAX, pagosPosibles, vuelta, pagoJusto,
+    PROPINAS_RAPIDAS, PROPINA_HABITUAL, propinaHabitual, leerPropina, textoPropina, ENCHUFES, leerEnchufe, enchufeDe, textoEnchufe, EMERGENCIAS, leerEmergencias, textoEmergencias, AGUA, leerAgua, textoAgua, POR_LA_IZQUIERDA, CARNE_EUROPEO, leerConducir, textoConducir, PREFIJOS, leerPrefijo, textoPrefijo, FRASES, leerGracias, textoGracias, IVA, leerIva, textoIva, PAGO_ALLI, CAJERO_NOTA, leerCajero, textoCajero, leerLlegar, textoLlegar, VISADOS, leerVisado, textoVisado, ROAMING, leerRoaming, textoRoaming, CON_TSE, leerSanitaria, textoSanitaria, APPS_TAXI, leerTaxi, textoTaxi, REGATEO, leerRegatear, textoRegatear, FESTIVOS, FESTIVOS_LUNA, pascuaOrtodoxa, fechaFestivo, festivosProximos, leerFestivos, textoFestivos, PROPINA_MAX, PERSONAS_MAX, CUENTA_POR_DEFECTO, leerCuenta, redondoHaciaArriba, repartirCuenta, cuentaParaCompartir, gastoDeLaCuenta, BILLETES, leerBilletes, textoBilletes, PAGOS_MAX, pagosPosibles, vuelta, pagoJusto,
     MARGENES, tasaOfrecida, analizarCambio,
     domingoDePascua, hayTasaEl, tasaVieja, textoTasaVieja, horaBce, textoActualizado, proximaTasa, textoProximaTasa,
     FECHA_MINIMA, fechaLarga, fechaValida, diaDelGrafico, mesesAtras, FECHAS_RAPIDAS, leerFecha, cambioDesde, notaDiaHabil,
