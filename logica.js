@@ -6006,6 +6006,67 @@ function textoCamisa(leido) {
     : `${nombre} 🇺🇸🇬🇧 ${pulgadasCamisa(us)} = 🇪🇺 ${eu} · ${letra}`;
 }
 
+// "cd ropa 38": la talla de mujer entre Europa, Reino Unido y EE. UU., que es
+// donde más cambia. El 38 europeo es un 10 inglés y un 6 americano.
+// [eu, uk, us, letra]
+const ROPA = [
+  [32, 4, 0, "XXS"], [34, 6, 2, "XS"], [36, 8, 4, "S"], [38, 10, 6, "M"],
+  [40, 12, 8, "L"], [42, 14, 10, "XL"], [44, 16, 12, "XXL"], [46, 18, 14, "3XL"],
+];
+// "cd traje 50": las chaquetas de hombre, que fuera van por el pecho en pulgadas.
+// [eu, pecho, letra]
+const TRAJES = [
+  [44, 34, "XS"], [46, 36, "S"], [48, 38, "M"], [50, 40, "L"], [52, 42, "XL"], [54, 44, "XXL"], [56, 46, "3XL"],
+];
+
+const HAY_ROPA = /^\s*(ropa|vestidos?|dress(?:es)?|clothes|trajes?|chaquetas?|americanas?|suits?|jackets?)\s+(?:(eu|uk|us)\s*)?(\d{1,2}|xxs|xs|s|m|l|xl|xxl|3xl|xxxl)\s*$/i;
+const ES_TRAJE = /^(?:trajes?|chaquetas?|americanas?|suits?|jackets?)$/i;
+
+function leerRopa(texto) {
+  const m = String(texto ?? "").match(HAY_ROPA);
+  if (!m) return null;
+  const traje = ES_TRAJE.test(m[1]);
+  const de = m[2]?.toLowerCase() ?? null;
+  const dicho = m[3].toUpperCase().replace("XXXL", "3XL");
+  if (!/^\d+$/.test(dicho)) {
+    if (de) return null;
+    const fila = (traje ? TRAJES : ROPA).find((f) => f[f.length - 1] === dicho);
+    return fila ? { traje, letra: dicho, fila } : null;
+  }
+  const n = Number(dicho);
+  if (traje) {
+    // Los dos se solapan en el 44 y el 46; sin decir nada, lo grande es europeo.
+    if (de === "eu" || (!de && n >= 44)) {
+      const fila = TRAJES.find((f) => f[0] === n);
+      return fila ? { traje, de: "eu", fila } : null;
+    }
+    const fila = TRAJES.find((f) => f[1] === n);
+    return fila ? { traje, de: "us", fila } : null;
+  }
+  const col = { eu: 0, uk: 1, us: 2 }[de ?? "eu"];
+  const fila = ROPA.find((f) => f[col] === n);
+  return fila ? { traje, de: de ?? "eu", fila } : null;
+}
+
+function textoRopa(leido) {
+  if (!leido) return "";
+  const en = idiomaActual() === "en";
+  if (leido.traje) {
+    const [eu, pecho, letra] = leido.fila;
+    const nombre = en ? "Suit" : "Traje";
+    if (leido.letra) return `${nombre} ${letra} = 🇪🇺 ${eu} · 🇺🇸🇬🇧 ${pecho}`;
+    return leido.de === "eu"
+      ? `${nombre} 🇪🇺 ${eu} = 🇺🇸🇬🇧 ${pecho} · ${letra}`
+      : `${nombre} 🇺🇸🇬🇧 ${pecho} = 🇪🇺 ${eu} · ${letra}`;
+  }
+  const [eu, uk, us, letra] = leido.fila;
+  const nombre = en ? "Women's" : "Ropa de mujer";
+  const todas = { eu: `🇪🇺 ${eu}`, uk: `🇬🇧 ${uk}`, us: `🇺🇸 ${us}` };
+  if (leido.letra) return `${nombre} ${letra} = ${todas.eu} · ${todas.uk} · ${todas.us}`;
+  const resto = Object.keys(todas).filter((k) => k !== leido.de).map((k) => todas[k]);
+  return `${nombre} ${todas[leido.de]} = ${resto.join(" · ")} · ${letra}`;
+}
+
 // "cd 100 mbps", para saber si el wifi del hotel da para algo. Megabits, no
 // megabytes: ocho veces menos de lo que parece. El GB, de 1000 MB, como el operador.
 // "cd 20000 mah": si la batería externa puede subir al avión. Las aerolíneas
@@ -8243,7 +8304,7 @@ if (typeof module !== "undefined") {
     MARGENES, tasaOfrecida, analizarCambio,
     domingoDePascua, hayTasaEl, tasaVieja, textoTasaVieja, horaBce, textoActualizado, proximaTasa, textoProximaTasa,
     FECHA_MINIMA, fechaLarga, fechaValida, diaDelGrafico, mesesAtras, FECHAS_RAPIDAS, leerFecha, cambioDesde, notaDiaHabil,
-    textoInsignia, cambioDiario, sentidoDe, cambioDelDia, textoCambioDia, ULTIMA_VEZ_MINIMO, desdeLaUltimaVez, ultimoVisto, tituloInsignia, tituloHoy, leerGrados, convertirGrados, textoGrados, leerGas, convertirGas, textoGas, leerDistancia, convertirDistancia, textoDistancia, leerRitmo, convertirRitmo, textoRitmo, leerPeso, convertirPeso, textoPeso, leerOnzas, convertirOnzas, textoOnzas, leerOnzasTroy, convertirOnzasTroy, textoOnzasTroy, leerAltura, convertirAltura, textoAltura, leerVelocidad, convertirVelocidad, textoVelocidad, leerVolumen, convertirVolumen, textoVolumen, leerLongitud, convertirLongitud, textoLongitud, leerSuperficie, convertirSuperficie, textoSuperficie, leerMillasCuadradas, convertirMillasCuadradas, textoMillasCuadradas, leerYardasCuadradas, convertirYardasCuadradas, textoYardasCuadradas, leerPulgadasCuadradas, convertirPulgadasCuadradas, textoPulgadasCuadradas, leerConsumo, convertirConsumo, textoConsumo, leerElectrico, convertirElectrico, textoElectrico, leerPresion, convertirPresion, textoPresion, leerTazas, convertirTazas, textoTazas, TAZA_DE, leerTazaDe, textoTazaDe, leerCucharadas, convertirCucharadas, textoCucharadas, leerSticks, convertirSticks, textoSticks, leerYardas, convertirYardas, textoYardas, leerStone, convertirStone, textoStone, leerLibrasYOnzas, convertirLibrasYOnzas, textoLibrasYOnzas, leerOnzasLiquidas, convertirOnzasLiquidas, textoOnzasLiquidas, leerPintas, convertirPintas, textoPintas, leerGills, convertirGills, textoGills, leerCuartos, convertirCuartos, textoCuartos, leerNudos, convertirNudos, textoNudos, leerMetrosPorSegundo, convertirMetrosPorSegundo, textoMetrosPorSegundo, leerMillasNauticas, convertirMillasNauticas, textoMillasNauticas, leerBrazas, convertirBrazas, textoBrazas, leerLeguas, convertirLeguas, textoLeguas, leerManos, convertirManos, textoManos, leerFurlongs, convertirFurlongs, textoFurlongs, leerChains, convertirChains, textoChains, leerRods, convertirRods, textoRods, leerJin, convertirJin, textoJin, leerTsubo, convertirTsubo, textoTsubo, leerJo, convertirJo, textoJo, leerLakh, convertirLakh, textoLakh, leerTola, convertirTola, textoTola, leerTael, convertirTael, textoTael, leerMach, convertirMach, textoMach, leerThou, convertirThou, textoThou, leerGramaje, convertirGramaje, textoGramaje, leerMomme, convertirMomme, textoMomme, leerPood, convertirPood, textoPood, leerVersta, convertirVersta, textoVersta, leerAnioLuz, convertirAnioLuz, textoAnioLuz, leerAcrePie, convertirAcrePie, textoAcrePie, leerBigha, convertirBigha, textoBigha, leerMu, convertirMu, textoMu, leerMaund, convertirMaund, textoMaund, leerPicul, convertirPicul, textoPicul, leerShaku, convertirShaku, textoShaku, leerTalla, convertirTalla, textoTalla, leerAnillo, convertirAnillo, textoAnillo, CAMISAS, leerCamisa, textoCamisa, leerMah, convertirMah, textoMah, leerMbps, convertirMbps, textoMbps, leerGlucosa, convertirGlucosa, textoGlucosa, leerGo, convertirGo, textoGo, leerVara, convertirVara, textoVara, leerManzana, convertirManzana, textoManzana, leerRi, convertirRi, textoRi, leerDram, convertirDram, textoDram, leerFanega, convertirFanega, textoFanega, leerCodo, convertirCodo, textoCodo, leerAcres, convertirAcres, textoAcres, leerArpent, convertirArpent, textoArpent, leerCalorias, convertirCalorias, textoCalorias, leerPotencia, convertirPotencia, textoPotencia, leerBtu, convertirBtu, textoBtu, leerTherms, convertirTherms, textoTherms, leerInHg, convertirInHg, textoInHg, leerPiesCubicos, convertirPiesCubicos, textoPiesCubicos, leerYardasCubicas, convertirYardasCubicas, textoYardasCubicas, leerQuilates, convertirQuilates, textoQuilates, leerGrains, convertirGrains, textoGrains, leerPennyweight, convertirPennyweight, textoPennyweight, leerCwt, convertirCwt, textoCwt, leerCuerdas, convertirCuerdas, textoCuerdas, leerBushels, convertirBushels, textoBushels, leerPecks, convertirPecks, textoPecks, leerPulgadasCubicas, convertirPulgadasCubicas, textoPulgadasCubicas, leerBarriles, convertirBarriles, textoBarriles, leerParMotor, convertirParMotor, textoParMotor, leerToneladasCortas, convertirToneladasCortas, textoToneladasCortas, esHoyBarra, resumenHoyBarra, esAyerBarra, resumenAyerBarra, esAnteayerBarra, resumenAnteayerBarra, esSemanaBarra, resumenSemanaBarra, esMesBarra, resumenMesBarra, esTodosBarra, resumenTodosBarra, esViajeBarra, resumenViajeBarra, esCaroBarra, resumenCaroBarra, esTasaBarra, resumenTasaBarra, lineaTasa,
+    textoInsignia, cambioDiario, sentidoDe, cambioDelDia, textoCambioDia, ULTIMA_VEZ_MINIMO, desdeLaUltimaVez, ultimoVisto, tituloInsignia, tituloHoy, leerGrados, convertirGrados, textoGrados, leerGas, convertirGas, textoGas, leerDistancia, convertirDistancia, textoDistancia, leerRitmo, convertirRitmo, textoRitmo, leerPeso, convertirPeso, textoPeso, leerOnzas, convertirOnzas, textoOnzas, leerOnzasTroy, convertirOnzasTroy, textoOnzasTroy, leerAltura, convertirAltura, textoAltura, leerVelocidad, convertirVelocidad, textoVelocidad, leerVolumen, convertirVolumen, textoVolumen, leerLongitud, convertirLongitud, textoLongitud, leerSuperficie, convertirSuperficie, textoSuperficie, leerMillasCuadradas, convertirMillasCuadradas, textoMillasCuadradas, leerYardasCuadradas, convertirYardasCuadradas, textoYardasCuadradas, leerPulgadasCuadradas, convertirPulgadasCuadradas, textoPulgadasCuadradas, leerConsumo, convertirConsumo, textoConsumo, leerElectrico, convertirElectrico, textoElectrico, leerPresion, convertirPresion, textoPresion, leerTazas, convertirTazas, textoTazas, TAZA_DE, leerTazaDe, textoTazaDe, leerCucharadas, convertirCucharadas, textoCucharadas, leerSticks, convertirSticks, textoSticks, leerYardas, convertirYardas, textoYardas, leerStone, convertirStone, textoStone, leerLibrasYOnzas, convertirLibrasYOnzas, textoLibrasYOnzas, leerOnzasLiquidas, convertirOnzasLiquidas, textoOnzasLiquidas, leerPintas, convertirPintas, textoPintas, leerGills, convertirGills, textoGills, leerCuartos, convertirCuartos, textoCuartos, leerNudos, convertirNudos, textoNudos, leerMetrosPorSegundo, convertirMetrosPorSegundo, textoMetrosPorSegundo, leerMillasNauticas, convertirMillasNauticas, textoMillasNauticas, leerBrazas, convertirBrazas, textoBrazas, leerLeguas, convertirLeguas, textoLeguas, leerManos, convertirManos, textoManos, leerFurlongs, convertirFurlongs, textoFurlongs, leerChains, convertirChains, textoChains, leerRods, convertirRods, textoRods, leerJin, convertirJin, textoJin, leerTsubo, convertirTsubo, textoTsubo, leerJo, convertirJo, textoJo, leerLakh, convertirLakh, textoLakh, leerTola, convertirTola, textoTola, leerTael, convertirTael, textoTael, leerMach, convertirMach, textoMach, leerThou, convertirThou, textoThou, leerGramaje, convertirGramaje, textoGramaje, leerMomme, convertirMomme, textoMomme, leerPood, convertirPood, textoPood, leerVersta, convertirVersta, textoVersta, leerAnioLuz, convertirAnioLuz, textoAnioLuz, leerAcrePie, convertirAcrePie, textoAcrePie, leerBigha, convertirBigha, textoBigha, leerMu, convertirMu, textoMu, leerMaund, convertirMaund, textoMaund, leerPicul, convertirPicul, textoPicul, leerShaku, convertirShaku, textoShaku, leerTalla, convertirTalla, textoTalla, leerAnillo, convertirAnillo, textoAnillo, CAMISAS, leerCamisa, textoCamisa, ROPA, TRAJES, leerRopa, textoRopa, leerMah, convertirMah, textoMah, leerMbps, convertirMbps, textoMbps, leerGlucosa, convertirGlucosa, textoGlucosa, leerGo, convertirGo, textoGo, leerVara, convertirVara, textoVara, leerManzana, convertirManzana, textoManzana, leerRi, convertirRi, textoRi, leerDram, convertirDram, textoDram, leerFanega, convertirFanega, textoFanega, leerCodo, convertirCodo, textoCodo, leerAcres, convertirAcres, textoAcres, leerArpent, convertirArpent, textoArpent, leerCalorias, convertirCalorias, textoCalorias, leerPotencia, convertirPotencia, textoPotencia, leerBtu, convertirBtu, textoBtu, leerTherms, convertirTherms, textoTherms, leerInHg, convertirInHg, textoInHg, leerPiesCubicos, convertirPiesCubicos, textoPiesCubicos, leerYardasCubicas, convertirYardasCubicas, textoYardasCubicas, leerQuilates, convertirQuilates, textoQuilates, leerGrains, convertirGrains, textoGrains, leerPennyweight, convertirPennyweight, textoPennyweight, leerCwt, convertirCwt, textoCwt, leerCuerdas, convertirCuerdas, textoCuerdas, leerBushels, convertirBushels, textoBushels, leerPecks, convertirPecks, textoPecks, leerPulgadasCubicas, convertirPulgadasCubicas, textoPulgadasCubicas, leerBarriles, convertirBarriles, textoBarriles, leerParMotor, convertirParMotor, textoParMotor, leerToneladasCortas, convertirToneladasCortas, textoToneladasCortas, esHoyBarra, resumenHoyBarra, esAyerBarra, resumenAyerBarra, esAnteayerBarra, resumenAnteayerBarra, esSemanaBarra, resumenSemanaBarra, esMesBarra, resumenMesBarra, esTodosBarra, resumenTodosBarra, esViajeBarra, resumenViajeBarra, esCaroBarra, resumenCaroBarra, esTasaBarra, resumenTasaBarra, lineaTasa,
     AVISOS_MAX, AVISO_PCT_MAX, sentidoAviso, crearAviso, leerPorcentajeAviso, crearAvisoPorcentaje, crearCompra, leerAvisos, avisoCumplido, repartirAvisos, mensajeAviso, faltaParaAviso, cercaniaAviso, textoFalta,
     nivelPresupuesto, avisosPresupuesto, mensajePresupuesto,
     RECORDATORIO_HORA, RECORDATORIO_HORAS, leerHoraRecordatorio, viajesSinApuntar, tocaRecordar, mensajeRecordatorio, TAX_FREE_HORA, tocaTaxFree, mensajeTaxFree,
