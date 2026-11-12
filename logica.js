@@ -1852,6 +1852,50 @@ function textoFestivos(code, hoy = new Date()) {
   return `${banderaDivisa(code)} 📅 ${partes.join(" · ")}`;
 }
 
+// "cd horario": a qué hora se come y se cena allí y hasta cuándo abren las
+// tiendas. [comida, cena, cierre de las tiendas, qué hacen el domingo]
+const HORARIOS = {
+  EUR: ["12-14", "19-21", "19", "cierra"], USD: ["11:30-13:30", "17:30-20", "21", "abre"], GBP: ["12-14", "18-21", "20", "corto"], JPY: ["11:30-13:30", "18-21", "20", "abre"],
+  CHF: ["12-13:30", "18:30-20:30", "18:30", "cierra"], CAD: ["12-13", "17:30-20", "21", "abre"], AUD: ["12-14", "18-20:30", "17", "corto"], CNY: ["11:30-13", "17:30-20", "22", "abre"],
+  MXN: ["14-16", "20-22", "21", "abre"], BRL: ["12-14", "20-22", "22", "abre"], SEK: ["11-13", "17-19", "19", "corto"], NOK: ["11-13", "17-19", "18", "cierra"],
+  DKK: ["12-13", "18-20", "19", "corto"], PLN: ["13-15", "18-20", "21", "cierra"], TRY: ["12-14", "19-21", "22", "abre"], CZK: ["11:30-13:30", "18-20", "20", "abre"],
+  HKD: ["12-14", "19-21", "22", "abre"], HUF: ["12-14", "18-20", "19", "corto"], IDR: ["12-13", "18-20", "22", "abre"], ILS: ["12-14", "19-22", "20", "abre"],
+  INR: ["13-15", "20-22:30", "21", "abre"], ISK: ["12-13", "18-20", "18", "corto"], KRW: ["12-13", "18-20", "22", "abre"], MYR: ["12-14", "19-21", "22", "abre"],
+  NZD: ["12-14", "18-20:30", "17:30", "corto"], PHP: ["12-13", "19-21", "21", "abre"], RON: ["13-15", "19-21", "20", "corto"], SGD: ["12-14", "18:30-20:30", "22", "abre"],
+  THB: ["11:30-13:30", "18-20", "22", "abre"], ZAR: ["12-14", "18:30-20:30", "17", "corto"], VND: ["11-13", "18-20", "22", "abre"], ARS: ["13-15", "21-23", "20", "corto"],
+  MAD: ["13-15", "20-22", "21", "abre"], PEN: ["13-15", "19-21", "21", "abre"], COP: ["12-14", "19-21", "20", "abre"], CLP: ["13-15", "20-22", "21", "abre"],
+  EGP: ["14-17", "21-23", "23", "abre"], AED: ["13-15", "20-22", "22", "abre"], TWD: ["11:30-13:30", "17:30-19:30", "22", "abre"], UYU: ["13-15", "21-23", "20", "corto"],
+  CRC: ["12-13", "18-20", "20", "abre"], DOP: ["12-14", "19-21", "21", "corto"], TND: ["12:30-14:30", "20-22", "20", "corto"], KES: ["13-14", "19-21", "19", "corto"],
+  LKR: ["12-14", "19:30-21:30", "20", "abre"], NPR: ["10-11", "19-21", "20", "abre"], KHR: ["11-13", "18-20", "21", "abre"], JOD: ["14-16", "20-22", "22", "abre"],
+  QAR: ["13-15", "20-22", "22", "abre"], SAR: ["13-15", "21-23", "23", "abre"], GEL: ["13-15", "20-22", "21", "abre"], RSD: ["13-15", "19-21", "21", "corto"],
+  BOB: ["12-14", "19-21", "20", "corto"], GTQ: ["12-14", "19-21", "19", "corto"], PYG: ["12-14", "20-22", "20", "corto"],
+};
+
+// Lo que cambia el resto: el sabbat, el sábado de Nepal, los rezos en Arabia.
+const HORARIO_NOTA = new Set(["EUR", "ILS", "NPR", "SAR"]);
+
+const HAY_HORARIO = /^\s*(?:horarios?|cenar|comer|hours)(?:\s+([a-z]{3}))?\s*$/i;
+
+function leerHorario(texto) {
+  const m = String(texto ?? "").match(HAY_HORARIO);
+  if (!m) return null;
+  const code = m[1]?.toUpperCase() ?? null;
+  return code && !HORARIOS[code] ? null : { code };
+}
+
+function textoHorario(code) {
+  const horario = HORARIOS[code];
+  if (!horario) return "";
+  const [comida, cena, tiendas, domingo] = horario;
+  const partes = [
+    tr("horario.comida", { horas: comida }),
+    tr("horario.cena", { horas: cena }),
+    tr("horario.tiendas", { hora: tiendas }) + tr(`horario.domingo.${domingo}`),
+  ];
+  if (HORARIO_NOTA.has(code)) partes.push(tr(`horario.nota.${code}`));
+  return `${banderaDivisa(code)} 🕐 ${partes.join(" · ")}`;
+}
+
 // "cd llegar": lo de enchufe, agua, emergencias, coche y prefijo en una línea,
 // para mirarlo nada más aterrizar. Cada cosa sale solo si la tengo de ese país.
 const HAY_LLEGAR = /^\s*(?:llegar|llegada|aterrizar|arrival|arrive)(?:\s+([a-z]{3}))?\s*$/i;
@@ -8195,7 +8239,7 @@ if (typeof module !== "undefined") {
     COMISION_MAX, COMISIONES_RAPIDAS, leerComision, leerPorcentaje, conComision,
     IMPUESTO_MAX, IMPUESTOS_RAPIDOS, leerImpuesto, leerImpuestoEscrito, loQuePagas,
     COMPARAR_IGUAL, compararPrecios, inclinacion, ZONAS, desfase, esNoche, horaAlli, SIGLAS_ZONA, leerHoraZona, convertirHoraZona, textoHoraZona, textoDiferencia, relojDe, tituloHoraAlli, leerCafe, enCafes, textoCafes, HORAS_JORNADA, enHoras, textoHoras,
-    PROPINAS_RAPIDAS, PROPINA_HABITUAL, propinaHabitual, leerPropina, textoPropina, ENCHUFES, leerEnchufe, enchufeDe, textoEnchufe, EMERGENCIAS, leerEmergencias, textoEmergencias, AGUA, leerAgua, textoAgua, POR_LA_IZQUIERDA, CARNE_EUROPEO, leerConducir, textoConducir, PREFIJOS, leerPrefijo, textoPrefijo, FRASES, leerGracias, textoGracias, IVA, leerIva, textoIva, PAGO_ALLI, CAJERO_NOTA, leerCajero, textoCajero, leerLlegar, textoLlegar, VISADOS, leerVisado, textoVisado, ROAMING, leerRoaming, textoRoaming, CON_TSE, leerSanitaria, textoSanitaria, APPS_TAXI, leerTaxi, textoTaxi, REGATEO, leerRegatear, textoRegatear, FESTIVOS, FESTIVOS_LUNA, pascuaOrtodoxa, fechaFestivo, festivosProximos, leerFestivos, textoFestivos, PROPINA_MAX, PERSONAS_MAX, CUENTA_POR_DEFECTO, leerCuenta, redondoHaciaArriba, repartirCuenta, cuentaParaCompartir, gastoDeLaCuenta, BILLETES, leerBilletes, textoBilletes, PAGOS_MAX, pagosPosibles, vuelta, pagoJusto,
+    PROPINAS_RAPIDAS, PROPINA_HABITUAL, propinaHabitual, leerPropina, textoPropina, ENCHUFES, leerEnchufe, enchufeDe, textoEnchufe, EMERGENCIAS, leerEmergencias, textoEmergencias, AGUA, leerAgua, textoAgua, POR_LA_IZQUIERDA, CARNE_EUROPEO, leerConducir, textoConducir, PREFIJOS, leerPrefijo, textoPrefijo, FRASES, leerGracias, textoGracias, IVA, leerIva, textoIva, PAGO_ALLI, CAJERO_NOTA, leerCajero, textoCajero, leerLlegar, textoLlegar, VISADOS, leerVisado, textoVisado, ROAMING, leerRoaming, textoRoaming, CON_TSE, leerSanitaria, textoSanitaria, APPS_TAXI, leerTaxi, textoTaxi, REGATEO, leerRegatear, textoRegatear, FESTIVOS, FESTIVOS_LUNA, pascuaOrtodoxa, fechaFestivo, festivosProximos, leerFestivos, textoFestivos, HORARIOS, leerHorario, textoHorario, PROPINA_MAX, PERSONAS_MAX, CUENTA_POR_DEFECTO, leerCuenta, redondoHaciaArriba, repartirCuenta, cuentaParaCompartir, gastoDeLaCuenta, BILLETES, leerBilletes, textoBilletes, PAGOS_MAX, pagosPosibles, vuelta, pagoJusto,
     MARGENES, tasaOfrecida, analizarCambio,
     domingoDePascua, hayTasaEl, tasaVieja, textoTasaVieja, horaBce, textoActualizado, proximaTasa, textoProximaTasa,
     FECHA_MINIMA, fechaLarga, fechaValida, diaDelGrafico, mesesAtras, FECHAS_RAPIDAS, leerFecha, cambioDesde, notaDiaHabil,
