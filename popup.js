@@ -32,6 +32,18 @@ const el = {
   trendControles: document.getElementById("trend-controles"),
   vistas: document.getElementById("vistas"),
   botonesVista: document.querySelectorAll(".vista"),
+  suscripciones: document.getElementById("suscripciones"),
+  suscripcionesTotal: document.getElementById("suscripciones-total"),
+  suscripcionesLista: document.getElementById("suscripciones-lista"),
+  suscripcionesForm: document.getElementById("suscripciones-form"),
+  suscripcionesNombre: document.getElementById("suscripciones-nombre"),
+  suscripcionesImporte: document.getElementById("suscripciones-importe"),
+  suscripcionesDivisa: document.getElementById("suscripciones-divisa"),
+  suscripcionesPeriodo: document.getElementById("suscripciones-periodo"),
+  suscripcionesAlta: document.getElementById("suscripciones-alta"),
+  suscripcionesNota: document.getElementById("suscripciones-nota"),
+  suscripcionesAbrir: document.getElementById("suscripciones-abrir"),
+  suscripcionesCerrar: document.getElementById("suscripciones-cerrar"),
   extras: document.getElementById("extras"),
   rejilla: document.getElementById("extras-rejilla"),
   bandeja: document.getElementById("bandeja"),
@@ -467,6 +479,7 @@ const HISTORIAL_KEY = "historialConversiones";
 const GASTOS_KEY = "gastosViaje";
 const PRESUPUESTO_KEY = "presupuestoViaje";
 const VIAJES_KEY = "viajes";
+const SUSCRIPCIONES_KEY = "suscripciones";
 const TRAMO_APLICADO_KEY = "tramoAplicado";
 const CATEGORIAS_KEY = "categoriasPropias";
 const CELEBRADOS_KEY = "viajesCelebrados";
@@ -1320,6 +1333,7 @@ function pintarVista() {
   el.chuleta.hidden = vista !== "chuleta";
   el.fecha.hidden = vista !== "fecha";
   el.timo.hidden = vista !== "timo";
+  el.suscripciones.hidden = vista !== "suscripciones";
   pintarAvisoComision();
   el.vistas.dataset.vista = vista;
   for (const boton of el.botonesVista) {
@@ -1350,6 +1364,7 @@ function cambiarVista(nueva) {
     for (const fila of el.chuletaTabla.children) fila.classList.add("is-nueva");
   }
   if (vista === "fecha") refreshFecha();
+  if (vista === "suscripciones") abrirSuscripciones();
   try {
     chrome.storage.local.set({ [VISTA_KEY]: vista });
   } catch (error) {
@@ -1359,7 +1374,7 @@ function cambiarVista(nueva) {
 
 // El patrón de pestañas de siempre: con las flechas cambias, y el foco va con
 // la pestaña elegida.
-const VISTAS = ["evolucion", "extras", "avisos", "chuleta", "fecha", "timo"];
+const VISTAS = ["evolucion", "extras", "avisos", "chuleta", "fecha", "timo", "suscripciones"];
 
 function onTeclaVistas(event) {
   if (event.key !== "ArrowLeft" && event.key !== "ArrowRight") return;
@@ -1368,6 +1383,241 @@ function onTeclaVistas(event) {
   const nueva = VISTAS[(VISTAS.indexOf(vista) + paso + VISTAS.length) % VISTAS.length];
   cambiarVista(nueva);
   document.getElementById(`vista-${nueva}`).focus();
+}
+
+// Las suscripciones en otra divisa. Se cargan al entrar en la pestaña, que es
+// la única que las usa, y las tasas son las mismas "todas" que la rejilla.
+let suscripciones = [];
+let tasasSuscripciones = {};
+let periodoNuevo = "mes";
+let suscripcionNueva = null;
+// Con el formulario abierto la lista se aparta: no caben los dos en la pestaña.
+let anadiendoSuscripcion = false;
+
+const miDivisa = () => tuDivisa({ viajes: todosLosViajes(viajes), idiomas: navigator.languages, par: { from: el.from.value, to: el.to.value } });
+
+async function abrirSuscripciones() {
+  try {
+    suscripciones = leerSuscripciones((await chrome.storage.local.get(SUSCRIPCIONES_KEY))[SUSCRIPCIONES_KEY]);
+  } catch (error) {
+    console.warn("No se pudieron leer las suscripciones", error);
+  }
+  anadiendoSuscripcion = false;
+  prepararFormSuscripcion();
+  pintarSuscripciones();
+  await cargarTasasSuscripciones();
+  pintarSuscripciones();
+}
+
+async function guardarSuscripciones() {
+  try {
+    await chrome.storage.local.set({ [SUSCRIPCIONES_KEY]: suscripciones });
+  } catch (error) {
+    console.warn("No se pudieron guardar las suscripciones", error);
+  }
+}
+
+// Por defecto la de arriba, que si estás mirando dólares suele ser por eso.
+function prepararFormSuscripcion() {
+  if (!el.suscripcionesDivisa.options.length) {
+    el.suscripcionesDivisa.replaceChildren(...CURRENCIES.map((c) => new Option(`${banderaDivisa(c.code)} ${c.code}`, c.code)));
+  }
+  const tuya = miDivisa();
+  el.suscripcionesDivisa.value = el.from.value !== tuya ? el.from.value : el.to.value !== tuya ? el.to.value : "USD";
+  el.suscripcionesAlta.max = hoy();
+  el.suscripcionesAlta.min = FECHA_MINIMA;
+  el.suscripcionesAlta.value = hoy();
+  el.suscripcionesNombre.value = "";
+  el.suscripcionesImporte.value = "";
+  for (const campo of [el.suscripcionesNombre, el.suscripcionesImporte, el.suscripcionesDivisa]) campo.classList.remove("is-mal");
+  notaSuscripcion(null);
+  pintarPeriodo();
+}
+
+function pintarPeriodo() {
+  el.suscripcionesPeriodo.dataset.periodo = periodoNuevo;
+  el.suscripcionesPeriodo.textContent = tr(`suscripciones.${periodoNuevo}`);
+  el.suscripcionesPeriodo.title = tr("suscripciones.periodoTitulo");
+  el.suscripcionesPeriodo.setAttribute("aria-label", `${tr(`suscripciones.${periodoNuevo}Largo`)}. ${tr("suscripciones.periodoTitulo")}`);
+}
+
+// Lo que vale hoy 1 de cada divisa en la tuya. Si no hay red, la de ayer vale
+// más que nada: una suscripción no cambia de un día para otro.
+async function tasasHacia(to) {
+  const key = `todas:${to}`;
+  const cache = await loadCache();
+  let rates = cache[key]?.rates ?? null;
+  if (!isFresh(cache[key])) {
+    try {
+      rates = await fetchTodas(to);
+      saveCache({ [key]: { rates, day: hoy(), saved: Date.now() } });
+    } catch (error) {
+      console.warn("No se pudieron obtener las tasas de las suscripciones", error);
+    }
+  }
+  return rates && Object.fromEntries(Object.entries(rates).map(([code, r]) => [code, 1 / r]));
+}
+
+async function cargarTasasSuscripciones() {
+  for (const to of new Set(suscripciones.map((s) => s.to))) {
+    const tasas = await tasasHacia(to);
+    if (tasas) tasasSuscripciones[to] = tasas;
+  }
+}
+
+const fechaSuscripcion = (iso, formato) => {
+  const [a, m, d] = iso.split("-").map(Number);
+  return fechas(formato).format(new Date(a, m - 1, d));
+};
+const mesYAnio = (iso) => fechaSuscripcion(iso, { month: "short", year: "numeric" });
+const diaDeAlta = (iso) => fechaSuscripcion(iso, { day: "numeric", month: "long", year: "numeric" });
+
+function pintarSuscripciones() {
+  const { filas, totales } = cuentaSuscripciones(suscripciones, tasasSuscripciones);
+  if (totales.length) {
+    const linea = totales.map((t) => tr("suscripciones.total", { mes: `${nf.format(t.alMes)} ${t.to}`, anio: nf.format(t.alAnio) })).join(" + ");
+    const dif = totales[0].diferenciaAnio;
+    const nodo = document.createElement("span");
+    nodo.className = "suscripciones__cifra";
+    nodo.textContent = linea;
+    const cambio = document.createElement("span");
+    cambio.className = "suscripciones__cambio";
+    if (Math.abs(dif) >= 0.01) {
+      cambio.dataset.tono = dif > 0 ? "sube" : "baja";
+      cambio.textContent = tr(dif > 0 ? "suscripciones.sube" : "suscripciones.baja", { valor: `${nf.format(Math.abs(dif))} ${totales[0].to}` });
+    } else {
+      cambio.textContent = tr("suscripciones.igual");
+    }
+    el.suscripcionesTotal.replaceChildren(nodo, cambio);
+    // Con muchas el cambio se corta: entero, al pasar por encima.
+    el.suscripcionesTotal.title = `${linea} · ${cambio.textContent}`;
+  } else {
+    el.suscripcionesTotal.textContent = suscripciones.length ? "" : tr("suscripciones.vacio");
+    el.suscripcionesTotal.removeAttribute("title");
+  }
+  el.suscripcionesTotal.classList.toggle("is-vacio", !totales.length);
+
+  el.suscripcionesLista.replaceChildren(...filas.map((f, i) => {
+    const fila = document.createElement("li");
+    fila.className = "suscripcion";
+    fila.style.setProperty("--i", i);
+    if (f.id === suscripcionNueva) fila.classList.add("is-nueva");
+    const que = document.createElement("span");
+    que.className = "suscripcion__que";
+    const nombre = document.createElement("span");
+    nombre.className = "suscripcion__nombre";
+    nombre.textContent = f.nombre;
+    const precio = document.createElement("span");
+    precio.className = "suscripcion__precio";
+    precio.textContent = tr("suscripciones.desde", {
+      importe: `${nf.format(f.importe)} ${f.divisa}${tr(`suscripciones.${f.periodo}`)}`, fecha: mesYAnio(f.alta),
+    });
+    que.append(nombre, precio);
+    const cifras = document.createElement("span");
+    cifras.className = "suscripcion__cifras";
+    const tuyo = document.createElement("span");
+    tuyo.className = "suscripcion__tuyo";
+    tuyo.textContent = f.alMes === null ? "—" : `${nf.format(f.alMes)} ${f.to}${tr("suscripciones.mes")}`;
+    cifras.append(tuyo);
+    if (f.cambio !== null) {
+      const marca = document.createElement("span");
+      marca.className = "suscripcion__cambio";
+      marca.dataset.tono = f.cambio > 0 ? "sube" : f.cambio < 0 ? "baja" : "igual";
+      marca.textContent = f.cambio === 0 ? "=" : `${f.cambio > 0 ? "▲" : "▼"} ${tr("pct", { n: nfDias.format(Math.abs(f.cambio) * 100) })}`;
+      cifras.append(marca);
+      fila.title = f.cambio === 0
+        ? tr("suscripciones.filaIgual", { fecha: diaDeAlta(f.alta) })
+        : tr(f.cambio > 0 ? "suscripciones.filaSube" : "suscripciones.filaBaja", {
+          fecha: diaDeAlta(f.alta), valor: `${nf.format(Math.abs(f.diferenciaAnio))} ${f.to}`,
+        });
+    }
+    const quitar = document.createElement("button");
+    quitar.type = "button";
+    quitar.className = "gastos__quitar historial__quitar";
+    quitar.textContent = "✕";
+    quitar.setAttribute("aria-label", tr("suscripciones.quitar", { nombre: f.nombre }));
+    quitar.addEventListener("click", () => onQuitarSuscripcion(f.id));
+    fila.append(que, cifras, quitar);
+    return fila;
+  }));
+  suscripcionNueva = null;
+  const lleno = suscripciones.length >= SUSCRIPCIONES_MAX;
+  if (lleno) anadiendoSuscripcion = false;
+  el.suscripciones.classList.toggle("is-anadiendo", anadiendoSuscripcion);
+  el.suscripcionesForm.hidden = !anadiendoSuscripcion;
+  el.suscripcionesAbrir.hidden = lleno || anadiendoSuscripcion;
+  el.suscripcionesAbrir.textContent = tr(suscripciones.length ? "suscripciones.otra" : "suscripciones.primera");
+  el.suscripcionesAbrir.setAttribute("aria-expanded", String(anadiendoSuscripcion));
+}
+
+function abrirFormSuscripcion() {
+  anadiendoSuscripcion = true;
+  prepararFormSuscripcion();
+  pintarSuscripciones();
+  el.suscripcionesNombre.focus();
+}
+
+function cerrarFormSuscripcion() {
+  anadiendoSuscripcion = false;
+  notaSuscripcion(null);
+  pintarSuscripciones();
+  el.suscripcionesAbrir.focus();
+}
+
+function notaSuscripcion(clave, datos) {
+  el.suscripcionesNota.textContent = clave ? tr(clave, datos) : "";
+}
+
+async function onAnadirSuscripcion(event) {
+  event.preventDefault();
+  const nombre = el.suscripcionesNombre.value.trim();
+  const importe = leerImporte(el.suscripcionesImporte.value);
+  const divisa = el.suscripcionesDivisa.value;
+  const to = miDivisa();
+  const alta = el.suscripcionesAlta.value && el.suscripcionesAlta.value < hoy() ? el.suscripcionesAlta.value : hoy();
+  if (!nombre) {
+    restartAnimation(el.suscripcionesNombre, "is-mal");
+    el.suscripcionesNombre.focus();
+    return;
+  }
+  if (!(importe > 0)) {
+    restartAnimation(el.suscripcionesImporte, "is-mal");
+    el.suscripcionesImporte.focus();
+    return;
+  }
+  if (divisa === to) {
+    notaSuscripcion("suscripciones.tuya", { divisa });
+    restartAnimation(el.suscripcionesDivisa, "is-mal");
+    return;
+  }
+  notaSuscripcion("suscripciones.buscando");
+  let tasa = null;
+  try {
+    // La de aquel día, que es contra la que tiene sentido comparar.
+    tasa = alta === hoy() ? (await tasasHacia(to))?.[divisa] : (await fetchDia(divisa, to, alta)).rate;
+  } catch (error) {
+    console.warn("No se pudo obtener el cambio de ese día", error);
+  }
+  if (!(tasa > 0)) {
+    notaSuscripcion("suscripciones.sinTasa");
+    return;
+  }
+  const id = `${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`;
+  suscripciones = ponerSuscripcion(suscripciones, { id, nombre, importe, divisa, to, periodo: periodoNuevo, alta, tasa });
+  suscripcionNueva = suscripciones.find((s) => normalizar(s.nombre) === normalizar(nombre))?.id ?? null;
+  await guardarSuscripciones();
+  anadiendoSuscripcion = false;
+  prepararFormSuscripcion();
+  await cargarTasasSuscripciones();
+  pintarSuscripciones();
+  el.suscripcionesAbrir.focus();
+}
+
+function onQuitarSuscripcion(id) {
+  suscripciones = quitarSuscripcion(suscripciones, id);
+  guardarSuscripciones();
+  pintarSuscripciones();
+  (el.suscripcionesLista.querySelector(".gastos__quitar") ?? el.suscripcionesAbrir).focus();
 }
 
 // Lo que hay arriba, lo hayas escrito tú o salga de lo que tecleas abajo.
@@ -8053,6 +8303,26 @@ function bindEvents() {
     boton.addEventListener("click", () => cambiarVista(boton.dataset.vista));
   }
   el.vistas.addEventListener("keydown", onTeclaVistas);
+  el.suscripcionesForm.addEventListener("submit", onAnadirSuscripcion);
+  el.suscripcionesAbrir.addEventListener("click", abrirFormSuscripcion);
+  el.suscripcionesCerrar.addEventListener("click", cerrarFormSuscripcion);
+  el.suscripcionesForm.addEventListener("keydown", (event) => {
+    if (event.key !== "Escape") return;
+    event.preventDefault();
+    event.stopPropagation();
+    cerrarFormSuscripcion();
+  });
+  for (const campo of [el.suscripcionesNombre, el.suscripcionesImporte, el.suscripcionesDivisa]) {
+    campo.addEventListener(campo === el.suscripcionesDivisa ? "change" : "input", () => {
+      campo.classList.remove("is-mal");
+      notaSuscripcion(null);
+    });
+  }
+  el.suscripcionesPeriodo.addEventListener("click", () => {
+    periodoNuevo = periodoNuevo === "mes" ? "anio" : "mes";
+    pintarPeriodo();
+    restartAnimation(el.suscripcionesPeriodo, "is-cambiado");
+  });
   el.bandejaCerrar.addEventListener("click", () => cerrarBandeja()?.focus());
   el.bandeja.addEventListener("keydown", onTeclaBandeja);
   document.addEventListener("keydown", onAtajo);
@@ -8436,6 +8706,7 @@ async function init() {
   pintarAvisos();
   vista = vistaGuardada;
   pintarVista();
+  if (vista === "suscripciones") abrirSuscripciones();
   populateSelects(pendiente ?? pair);
   // El par de ahora entra en la lista, pero no lo guardo hasta que cambies:
   // abrir el popup no es elegir nada.

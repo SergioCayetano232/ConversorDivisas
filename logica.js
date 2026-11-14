@@ -7638,6 +7638,87 @@ function resumenTodosBarra(viajes) {
   return { principal, detalle };
 }
 
+// Las suscripciones que pagas en otra divisa: Netflix en dólares, iCloud en
+// libras. Guardo la tasa del día que te diste de alta para decirte cuánto te
+// ha subido (o bajado) solo por el cambio, sin que ellos toquen el precio.
+const SUSCRIPCIONES_MAX = 12;
+const NOMBRE_SUSCRIPCION_MAX = 24;
+const PERIODOS_SUSCRIPCION = ["mes", "anio"];
+// Por debajo de medio punto es ruido del cambio de cada día: ni sube ni baja.
+const SUSCRIPCION_IGUAL = 0.005;
+
+const limpiarNombreSuscripcion = (nombre) => String(nombre ?? "").replace(/\s+/g, " ").trim().slice(0, NOMBRE_SUSCRIPCION_MAX);
+
+function crearSuscripcion({ id, nombre, importe, divisa, to, periodo, alta, tasa }) {
+  const limpio = limpiarNombreSuscripcion(nombre);
+  if (typeof id !== "string" || !id || !limpio) return null;
+  if (!(importe > 0) || !Number.isFinite(importe) || !isValidCode(divisa) || !isValidCode(to) || divisa === to) return null;
+  if (!PERIODOS_SUSCRIPCION.includes(periodo) || !esIso(alta) || !(tasa > 0) || !Number.isFinite(tasa)) return null;
+  return { id, nombre: limpio, importe: Math.round(importe * 100) / 100, divisa, to, periodo, alta, tasa };
+}
+
+function leerSuscripciones(guardado) {
+  if (!Array.isArray(guardado)) return [];
+  const vistos = new Set();
+  return guardado.map((s) => (s && typeof s === "object" ? crearSuscripcion(s) : null))
+    .filter((s) => s && !vistos.has(s.id) && vistos.add(s.id))
+    .slice(0, SUSCRIPCIONES_MAX);
+}
+
+// Si ya hay una con ese nombre, es que le has cambiado el precio: la sustituyo.
+function ponerSuscripcion(lista, nueva) {
+  const actuales = leerSuscripciones(lista);
+  const buena = crearSuscripcion(nueva ?? {});
+  if (!buena) return actuales;
+  const clave = normalizar(buena.nombre);
+  const igual = actuales.findIndex((s) => normalizar(s.nombre) === clave);
+  if (igual >= 0) return actuales.map((s, i) => (i === igual ? { ...buena, id: s.id } : s));
+  if (actuales.length >= SUSCRIPCIONES_MAX) return actuales;
+  return [...actuales, buena];
+}
+
+const quitarSuscripcion = (lista, id) => leerSuscripciones(lista).filter((s) => s.id !== id);
+
+// Tu divisa, la de casa: la de tus gastos de viaje, que es en la que cuentas. Sin
+// viajes, la de tu idioma ("es-ES" → EUR), y si no, la de abajo del par.
+function tuDivisa({ viajes = [], idiomas = [], par = null } = {}) {
+  const veces = new Map();
+  for (const g of viajes.flatMap((v) => v.gastos ?? [])) veces.set(g.to, (veces.get(g.to) ?? 0) + 1);
+  const deGastos = [...veces].sort((a, b) => b[1] - a[1])[0]?.[0];
+  if (isValidCode(deGastos)) return deGastos;
+  const deIdioma = idiomas.map(divisaDeIdioma).find(Boolean);
+  return deIdioma ?? (isValidCode(par?.to) ? par.to : "EUR");
+}
+
+// tasas[tu divisa][la suya]: lo que vale hoy 1 de la suya en la tuya. Sin
+// tasa, sale sin cifras.
+function cuentaSuscripciones(lista, tasas = {}) {
+  const filas = leerSuscripciones(lista).map((s) => {
+    const tasa = tasas[s.to]?.[s.divisa];
+    const meses = s.periodo === "mes" ? 1 : 12;
+    if (!(tasa > 0)) return { ...s, alMes: null, alAnio: null, cambio: null, diferenciaAnio: null };
+    const hoy = s.importe * tasa;
+    const antes = s.importe * s.tasa;
+    const cambio = hoy / antes - 1;
+    return {
+      ...s,
+      alMes: hoy / meses,
+      alAnio: (hoy * 12) / meses,
+      cambio: Math.abs(cambio) < SUSCRIPCION_IGUAL ? 0 : cambio,
+      // Lo que pagas de más (o de menos) al año contra lo que pagabas al darte de alta.
+      diferenciaAnio: ((hoy - antes) * 12) / meses,
+    };
+  }).sort((a, b) => (b.alMes ?? -1) - (a.alMes ?? -1));
+  // Los totales por tu divisa: si cambiaste de casa, no se mezclan.
+  const totales = new Map();
+  for (const f of filas) {
+    if (f.alMes === null) continue;
+    const t = totales.get(f.to) ?? { to: f.to, alMes: 0, alAnio: 0, diferenciaAnio: 0, n: 0 };
+    totales.set(f.to, { ...t, alMes: t.alMes + f.alMes, alAnio: t.alAnio + f.alAnio, diferenciaAnio: t.diferenciaAnio + f.diferenciaAnio, n: t.n + 1 });
+  }
+  return { filas, totales: [...totales.values()].sort((a, b) => b.n - a.n) };
+}
+
 // Cuatro caben en dos filas de la pestaña sin que el popup crezca.
 const AVISOS_MAX = 4;
 
@@ -7920,6 +8001,7 @@ const ATAJOS = {
   Digit4: "vista:chuleta",
   Digit5: "vista:fecha",
   Digit6: "vista:timo",
+  Digit7: "vista:suscripciones",
   // El 0 no tenía pestaña: la cantidad a 1, que es como se mira la tasa.
   Digit0: "cantidadUno",
   KeyG: "gastos",
@@ -8355,6 +8437,7 @@ function limpiarCopia(crudo) {
   if (Array.isArray(d.paresRecientes)) datos.paresRecientes = leerRecientes(d.paresRecientes);
   if (Array.isArray(d.divisasExtra)) datos.divisasExtra = leerExtras(d.divisasExtra);
   if (Array.isArray(d.avisos)) datos.avisos = leerAvisos(d.avisos);
+  if (leerSuscripciones(d.suscripciones).length) datos.suscripciones = leerSuscripciones(d.suscripciones);
   if (Array.isArray(d.historialConversiones)) datos.historialConversiones = leerHistorial(d.historialConversiones);
   if (d.rangoGrafico !== undefined) datos.rangoGrafico = leerRango(d.rangoGrafico);
   if (d.comisionBanco !== undefined) datos.comisionBanco = leerComision(d.comisionBanco);
@@ -8378,7 +8461,7 @@ function limpiarCopia(crudo) {
 const CLAVES_COPIA = [
   "viajes", "gastosViaje", "presupuestoViaje", "lastPair", "paresRecientes", "divisasExtra", "avisos",
   "historialConversiones", "rangoGrafico", "comisionBanco", "tarjetasBanco", "impuestoVenta", "pagoGasto", "cuentaReparto", "insigniaActiva", "tasaAlReves", "idioma",
-  "recordatorioActivo", "recordatorioHora", "precioCafe", "sueldoHora", "categoriasPropias",
+  "recordatorioActivo", "recordatorioHora", "precioCafe", "sueldoHora", "categoriasPropias", "suscripciones",
 ];
 
 // Lo que se lleva tu cuenta de Chrome a tus otros ordenadores: cómo lo tienes
@@ -8577,6 +8660,7 @@ if (typeof module !== "undefined") {
     domingoDePascua, hayTasaEl, tasaVieja, textoTasaVieja, horaBce, textoActualizado, proximaTasa, textoProximaTasa,
     FECHA_MINIMA, fechaLarga, fechaValida, diaDelGrafico, mesesAtras, FECHAS_RAPIDAS, leerFecha, cambioDesde, notaDiaHabil,
     textoInsignia, cambioDiario, sentidoDe, cambioDelDia, textoCambioDia, ULTIMA_VEZ_MINIMO, desdeLaUltimaVez, ultimoVisto, tituloInsignia, tituloHoy, leerGrados, convertirGrados, textoGrados, leerGas, convertirGas, textoGas, leerDistancia, convertirDistancia, textoDistancia, leerRitmo, convertirRitmo, textoRitmo, leerPeso, convertirPeso, textoPeso, leerOnzas, convertirOnzas, textoOnzas, leerOnzasTroy, convertirOnzasTroy, textoOnzasTroy, leerAltura, convertirAltura, textoAltura, leerVelocidad, convertirVelocidad, textoVelocidad, leerVolumen, convertirVolumen, textoVolumen, leerLongitud, convertirLongitud, textoLongitud, leerSuperficie, convertirSuperficie, textoSuperficie, leerMillasCuadradas, convertirMillasCuadradas, textoMillasCuadradas, leerYardasCuadradas, convertirYardasCuadradas, textoYardasCuadradas, leerPulgadasCuadradas, convertirPulgadasCuadradas, textoPulgadasCuadradas, leerConsumo, convertirConsumo, textoConsumo, leerElectrico, convertirElectrico, textoElectrico, leerPresion, convertirPresion, textoPresion, leerTazas, convertirTazas, textoTazas, TAZA_DE, leerTazaDe, textoTazaDe, leerCucharadas, convertirCucharadas, textoCucharadas, leerSticks, convertirSticks, textoSticks, leerYardas, convertirYardas, textoYardas, leerStone, convertirStone, textoStone, leerLibrasYOnzas, convertirLibrasYOnzas, textoLibrasYOnzas, leerOnzasLiquidas, convertirOnzasLiquidas, textoOnzasLiquidas, leerPintas, convertirPintas, textoPintas, leerGills, convertirGills, textoGills, leerCuartos, convertirCuartos, textoCuartos, leerNudos, convertirNudos, textoNudos, leerMetrosPorSegundo, convertirMetrosPorSegundo, textoMetrosPorSegundo, leerMillasNauticas, convertirMillasNauticas, textoMillasNauticas, leerBrazas, convertirBrazas, textoBrazas, leerLeguas, convertirLeguas, textoLeguas, leerManos, convertirManos, textoManos, leerFurlongs, convertirFurlongs, textoFurlongs, leerChains, convertirChains, textoChains, leerRods, convertirRods, textoRods, leerJin, convertirJin, textoJin, leerTsubo, convertirTsubo, textoTsubo, leerJo, convertirJo, textoJo, leerLakh, convertirLakh, textoLakh, leerTola, convertirTola, textoTola, leerTael, convertirTael, textoTael, leerMach, convertirMach, textoMach, leerThou, convertirThou, textoThou, leerGramaje, convertirGramaje, textoGramaje, leerMomme, convertirMomme, textoMomme, leerPood, convertirPood, textoPood, leerVersta, convertirVersta, textoVersta, leerAnioLuz, convertirAnioLuz, textoAnioLuz, leerAcrePie, convertirAcrePie, textoAcrePie, leerBigha, convertirBigha, textoBigha, leerMu, convertirMu, textoMu, leerMaund, convertirMaund, textoMaund, leerPicul, convertirPicul, textoPicul, leerShaku, convertirShaku, textoShaku, leerTalla, convertirTalla, textoTalla, leerAnillo, convertirAnillo, textoAnillo, CAMISAS, leerCamisa, textoCamisa, ROPA, TRAJES, leerRopa, textoRopa, leerMah, convertirMah, textoMah, leerMbps, convertirMbps, textoMbps, leerGlucosa, convertirGlucosa, textoGlucosa, leerGo, convertirGo, textoGo, leerVara, convertirVara, textoVara, leerManzana, convertirManzana, textoManzana, leerRi, convertirRi, textoRi, leerDram, convertirDram, textoDram, leerFanega, convertirFanega, textoFanega, leerCodo, convertirCodo, textoCodo, leerAcres, convertirAcres, textoAcres, leerArpent, convertirArpent, textoArpent, leerCalorias, convertirCalorias, textoCalorias, leerPotencia, convertirPotencia, textoPotencia, leerBtu, convertirBtu, textoBtu, leerTherms, convertirTherms, textoTherms, leerInHg, convertirInHg, textoInHg, leerPiesCubicos, convertirPiesCubicos, textoPiesCubicos, leerYardasCubicas, convertirYardasCubicas, textoYardasCubicas, leerQuilates, convertirQuilates, textoQuilates, leerGrains, convertirGrains, textoGrains, leerPennyweight, convertirPennyweight, textoPennyweight, leerCwt, convertirCwt, textoCwt, leerCuerdas, convertirCuerdas, textoCuerdas, leerBushels, convertirBushels, textoBushels, leerPecks, convertirPecks, textoPecks, leerPulgadasCubicas, convertirPulgadasCubicas, textoPulgadasCubicas, leerBarriles, convertirBarriles, textoBarriles, leerParMotor, convertirParMotor, textoParMotor, leerToneladasCortas, convertirToneladasCortas, textoToneladasCortas, esHoyBarra, resumenHoyBarra, esAyerBarra, resumenAyerBarra, esAnteayerBarra, resumenAnteayerBarra, esSemanaBarra, resumenSemanaBarra, esMesBarra, resumenMesBarra, esTodosBarra, resumenTodosBarra, esViajeBarra, resumenViajeBarra, esCaroBarra, resumenCaroBarra, esTasaBarra, resumenTasaBarra, lineaTasa,
+    SUSCRIPCIONES_MAX, NOMBRE_SUSCRIPCION_MAX, PERIODOS_SUSCRIPCION, SUSCRIPCION_IGUAL, crearSuscripcion, leerSuscripciones, ponerSuscripcion, quitarSuscripcion, tuDivisa, cuentaSuscripciones,
     AVISOS_MAX, AVISO_PCT_MAX, sentidoAviso, crearAviso, leerPorcentajeAviso, crearAvisoPorcentaje, crearCompra, leerAvisos, avisoCumplido, repartirAvisos, mensajeAviso, faltaParaAviso, cercaniaAviso, textoFalta,
     nivelPresupuesto, avisosPresupuesto, mensajePresupuesto,
     RECORDATORIO_HORA, RECORDATORIO_HORAS, leerHoraRecordatorio, viajesSinApuntar, tocaRecordar, mensajeRecordatorio, TAX_FREE_HORA, tocaTaxFree, mensajeTaxFree,

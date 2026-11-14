@@ -8114,6 +8114,10 @@ body::after {
   transform: translateX(110px);
 }
 
+.vistas[data-vista="suscripciones"] .vistas__pildora {
+  transform: translateX(132px);
+}
+
 /* El punto de la campana cuando hay avisos puestos. */
 .vista.tiene-avisos::after {
   content: "";
@@ -8449,6 +8453,244 @@ body::after {
    filas de pastillas. */
 /* Mismo alto que la rejilla de extras. Va por columnas para que se lea de
    arriba abajo: 1, 5, 10 a la izquierda y 20, 50, 100 a la derecha. */
+/* Las suscripciones caben en lo mismo que las demás pestañas (unos 80 px):
+   el total arriba y una línea por suscripción, con scroll. El formulario
+   ocupa su sitio cuando lo abres, que los dos a la vez no caben. */
+.suscripciones {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-top: var(--s-2);
+  animation: enter var(--mid) var(--ease-out);
+}
+
+.suscripciones__cabeza {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 17px;
+}
+
+.suscripciones.is-anadiendo .suscripciones__cabeza,
+.suscripciones.is-anadiendo .suscripciones__lista {
+  display: none;
+}
+
+.suscripciones__total {
+  flex: 1;
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  min-width: 0;
+  font-size: 10px;
+  color: var(--muted);
+}
+
+.suscripciones__total.is-vacio {
+  font-size: 10.5px;
+  line-height: 1.4;
+}
+
+.suscripciones__cifra {
+  flex-shrink: 0;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: var(--mist);
+}
+
+.suscripciones__cambio {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 9.5px;
+}
+
+/* Subir es pagar más: en rojo. Bajar, en verde. */
+.suscripciones__cambio[data-tono="sube"],
+.suscripcion__cambio[data-tono="sube"] {
+  --tono: var(--cinnabar);
+}
+
+.suscripciones__cambio[data-tono="baja"],
+.suscripcion__cambio[data-tono="baja"] {
+  --tono: var(--jade);
+}
+
+.suscripciones__cambio[data-tono] {
+  color: var(--tono);
+}
+
+.suscripciones__abrir {
+  flex-shrink: 0;
+  align-self: flex-start;
+  font-family: inherit;
+  color: var(--brass);
+  border-color: color-mix(in srgb, var(--brass) 35%, transparent);
+}
+
+.suscripciones__abrir[hidden] {
+  display: none;
+}
+
+.suscripciones__abrir:hover,
+.suscripciones__abrir:focus-visible {
+  outline: none;
+  background: color-mix(in srgb, var(--brass) 14%, transparent);
+}
+
+.suscripciones__lista {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  max-height: 60px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
+  list-style: none;
+}
+
+.suscripcion {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto 16px;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+  height: 19px;
+  padding: 0 2px 0 7px;
+  border-radius: 5px;
+  background: var(--slate);
+}
+
+.suscripcion.is-nueva {
+  animation: pop var(--mid) var(--ease-spring);
+}
+
+.suscripcion__que {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  min-width: 0;
+}
+
+.suscripcion__cifras {
+  display: contents;
+}
+
+.suscripcion__nombre {
+  flex-shrink: 0;
+  max-width: 55%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 10.5px;
+  font-weight: 600;
+  color: var(--mist);
+}
+
+.suscripcion__precio {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-family: var(--font-mono);
+  font-size: 9px;
+  font-variant-numeric: tabular-nums;
+  color: var(--muted);
+}
+
+.suscripcion__tuyo {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  color: var(--mist);
+}
+
+.suscripcion__cambio {
+  --tono: var(--muted);
+  min-width: 42px;
+  padding: 0 4px;
+  border-radius: 999px;
+  font-family: var(--font-mono);
+  font-size: 8.5px;
+  font-variant-numeric: tabular-nums;
+  text-align: center;
+  white-space: nowrap;
+  color: var(--tono);
+  background: color-mix(in srgb, var(--tono) 14%, transparent);
+}
+
+.suscripcion .gastos__quitar {
+  width: 16px;
+  height: 16px;
+}
+
+.suscripciones__nueva {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.suscripciones__nueva[hidden] {
+  display: none;
+}
+
+.suscripciones__nueva .gastos__concepto {
+  flex: 1 1 40%;
+  font-family: inherit;
+}
+
+.suscripciones__nueva .suscripciones__importe {
+  flex: 0 1 58px;
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+
+.suscripciones__nueva .gastos__concepto.is-mal,
+.suscripciones__divisa.is-mal {
+  border-color: var(--cinnabar);
+  animation: shake 400ms var(--ease);
+}
+
+.suscripciones__divisa {
+  width: 70px;
+  cursor: pointer;
+}
+
+.suscripciones__periodo {
+  width: 44px;
+  cursor: pointer;
+  font-family: var(--font-mono);
+  color: var(--brass);
+}
+
+.suscripciones__periodo.is-cambiado {
+  animation: pop var(--mid) var(--ease-spring);
+}
+
+.suscripciones__alta {
+  flex: 1;
+  width: auto;
+  min-width: 0;
+}
+
+.suscripciones__cerrar {
+  align-self: center;
+}
+
+.suscripciones__nota {
+  font-size: 10px;
+  color: var(--muted);
+}
+
+.suscripciones__nota:empty {
+  display: none;
+}
+
 .chuleta {
   margin-top: var(--s-2);
 }
@@ -10232,6 +10474,7 @@ kbd {
   .desglose__trozo,
   .viajes__peso::after,
   .indice__concepto,
+  .suscripcion.is-nueva,
   .indice__viaje::after,
   .semana__barra,
   .aviso.is-nueva,

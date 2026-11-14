@@ -335,6 +335,13 @@ que necesitaba una conversión rápida. Ahora es un clic en la barra del navegad
   después (el scroll infinito de las tiendas, el "ver más") también sale
   convertido, mientras las tengas puestas. Los precios con los céntimos en
   pequeño (`$49⁹⁹`) se los salta, que los leería mal
+- Las suscripciones que pagas en otra divisa, en la pestaña de las flechas en
+  círculo (o con `7`): Netflix en dólares, iCloud en libras al año. Te dice lo
+  que te cuestan en la tuya al mes y al año, y cuánto te han subido o bajado
+  solo por el cambio desde que te diste de alta ("▼ 2,2 %"), con el cambio de
+  ese día. Tu divisa es la de tus gastos de viaje, o la de tu idioma si aún
+  no tienes. Si pones otra vez una con el mismo nombre, le cambias el precio.
+  Hasta doce, y van en la copia de seguridad
 - Pastillas con tus últimos pares, para cambiar de uno a otro con un clic. Con
   la chincheta que sale al pasar el ratón fijas uno, y ese ya no se va aunque
   cambies mucho de par. Hasta tres. El que tienes puesto, con la `F`

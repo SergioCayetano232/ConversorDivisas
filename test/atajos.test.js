@@ -128,3 +128,7 @@ test("con el concepto a medio escribir, Alt+E cambia el pago", () => {
   assert.equal(atajoPara(tecla("KeyE", { enCampo: true })), null, "la e es una letra");
   assert.equal(atajoPara(tecla("KeyE", { enCampo: true, altKey: true, key: "Dead" })), "pago", "en Mac, Alt+E es la tilde muerta");
 });
+
+test("el 7 abre las suscripciones", () => {
+  assert.equal(atajoPara(tecla("Digit7")), "vista:suscripciones");
+});
