@@ -7595,7 +7595,9 @@ html:not(.es-panel) .buscador__nombre {
   letter-spacing: -0.02em;
   color: var(--brass);
   font-variant-numeric: tabular-nums;
-  text-shadow: 0 0 28px var(--brass-glow);
+  /* Con text-shadow el input recortaba el brillo y quedaba un recuadro detrás
+     de la cifra. El filtro se pinta fuera de la caja. */
+  filter: drop-shadow(0 0 12px var(--brass-glow));
   cursor: text;
   transition: background-color var(--fast) var(--ease), border-color var(--fast) var(--ease);
 }
@@ -7603,18 +7605,20 @@ html:not(.es-panel) .buscador__nombre {
 .result__value:hover {
   background: var(--brass-ghost);
   border-color: var(--brass-dim);
+  filter: none;
 }
 
 .result__value:focus {
   outline: none;
   background: var(--brass-ghost);
   border-color: var(--brass);
+  filter: none;
 }
 
 .result__value[aria-invalid="true"] {
   color: var(--cinnabar);
   border-color: var(--cinnabar);
-  text-shadow: none;
+  filter: none;
 }
 
 .result__code {
@@ -7647,7 +7651,7 @@ html:not(.es-panel) .buscador__nombre {
 
 .result.is-loading .result__value {
   color: var(--muted);
-  text-shadow: none;
+  filter: none;
   animation: pulse 1.2s var(--ease) infinite;
 }
 
