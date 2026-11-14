@@ -315,6 +315,7 @@ const el = {
   lienzo: document.getElementById("trend-lienzo"),
   marcaMax: document.getElementById("marca-max"),
   marcaMin: document.getElementById("marca-min"),
+  trendHoy: document.getElementById("trend-hoy"),
   guia: document.getElementById("trend-guia"),
   punto: document.getElementById("trend-punto"),
   tip: document.getElementById("trend-tip"),
@@ -1293,6 +1294,8 @@ function dibujarLinea() {
   const { width, height } = el.trendLine.ownerSVGElement.getBoundingClientRect();
   el.trendLine.style.setProperty("--len", Math.ceil(largoEnPantalla(coords, width, height)) + 1);
   restartAnimation(el.trendLine);
+  colocar(el.trendHoy, coords[coords.length - 1]);
+  restartAnimation(el.trendHoy);
   pintarExtremos(serie.map((p) => p.valor));
 }
 

@@ -9876,6 +9876,7 @@ html:not(.es-panel) .buscador__nombre {
    el popup pega un salto. */
 .trend.is-cargando .trend__chart,
 .trend.is-cargando .trend__marca,
+.trend.is-cargando .trend__hoy,
 .trend.is-cargando .trend__pie {
   opacity: 0.35;
   transition: opacity var(--fast) var(--ease);
@@ -10093,6 +10094,36 @@ html:not(.es-panel) .buscador__nombre {
   pointer-events: none;
   animation: pop var(--mid) var(--ease-spring) backwards;
   animation-delay: 750ms;
+}
+
+/* El último punto, el de hoy. Sale cuando la línea acaba de llegar y late un
+   par de veces; latiendo siempre distraía de la cifra. */
+.trend__hoy {
+  position: absolute;
+  width: 6px;
+  height: 6px;
+  margin: -3px 0 0 -3px;
+  border-radius: 50%;
+  background: var(--brass);
+  box-shadow: 0 0 0 2px var(--graphite), 0 0 10px var(--brass-glow);
+  pointer-events: none;
+  animation: pop var(--mid) var(--ease-spring) backwards;
+  animation-delay: 850ms;
+}
+
+.trend__hoy::after {
+  content: "";
+  position: absolute;
+  inset: -1px;
+  border-radius: 50%;
+  border: 1.5px solid var(--brass);
+  opacity: 0;
+  animation: hoy-late 1.6s var(--ease-out) 1.1s 3;
+}
+
+@keyframes hoy-late {
+  0% { transform: scale(1); opacity: 0.7; }
+  100% { transform: scale(3.2); opacity: 0; }
 }
 
 .trend__marca--max {
@@ -10749,6 +10780,8 @@ kbd {
      invisibles un rato. */
   .reciente.is-nueva,
   .extra.is-nueva,
+  .trend__hoy,
+  .trend__hoy::after,
   .chuleta__fila.is-nueva,
   .historial__fila,
   .gastos__fila.is-nueva,
