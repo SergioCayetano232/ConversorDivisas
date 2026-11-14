@@ -3741,6 +3741,56 @@ function conceptoEstrella(gastos) {
   return mejor && mejor.veces >= ESTRELLA_MINIMO ? { ...mejor, to: principal.to } : null;
 }
 
+// El índice del café: lo mismo comprado en cada viaje, lado a lado. Con la
+// mediana y no la media, que un "café" de cuatro no me suba el de Lisboa.
+// Fuera las noches repartidas, lo pagado aparte y las devoluciones.
+const INDICE_MAX = 5;
+
+function indiceCafe(lista) {
+  const principales = lista.map((v) => sumarPorDivisa(v.gastos)[0]?.to).filter(Boolean);
+  const veces = new Map();
+  for (const to of principales) veces.set(to, (veces.get(to) ?? 0) + 1);
+  const comun = [...veces].sort((a, b) => b[1] - a[1])[0]?.[0];
+  if (!comun) return [];
+  const conceptos = new Map();
+  for (const viaje of lista) {
+    const suyos = [...viaje.gastos]
+      .filter((g) => g.to === comun && g.valor > 0 && !esFijo(g) && !esDevolucion(g) && !/-\d+$/.test(g.id))
+      .sort((a, b) => a.cuando - b.cuando);
+    for (const g of suyos) {
+      const clave = normalizar(g.concepto.trim());
+      if (!clave) continue;
+      const concepto = conceptos.get(clave) ?? { porViaje: new Map() };
+      const precios = concepto.porViaje.get(viaje.id) ?? [];
+      concepto.porViaje.set(viaje.id, [...precios, g.valor]);
+      // Se escribe como la última vez, igual que en la estrella.
+      conceptos.set(clave, { ...concepto, concepto: g.concepto.trim(), categoria: g.categoria, ultimo: g.cuando });
+    }
+  }
+  return [...conceptos.values()]
+    .filter((c) => c.porViaje.size >= 2)
+    .map((c) => {
+      const viajes = [...c.porViaje].map(([id, precios]) => ({ id, precio: mediana(precios), veces: precios.length }))
+        .sort((a, b) => a.precio - b.precio);
+      const min = viajes[0].precio;
+      const max = viajes[viajes.length - 1].precio;
+      const n = viajes.reduce((suma, v) => suma + v.veces, 0);
+      return {
+        concepto: c.concepto, categoria: c.categoria, to: comun, n, ultimo: c.ultimo,
+        // Por debajo de un céntimo es lo mismo: ni caro ni barato.
+        veces: max - min >= 0.01 && min > 0 ? max / min : null,
+        viajes: viajes.map((v) => ({
+          ...v, peso: v.precio / max,
+          extremo: max - min < 0.01 ? null : v.precio === min ? "barato" : v.precio === max ? "caro" : null,
+        })),
+      };
+    })
+    // Lo que sale en más viajes primero; luego lo que más compras.
+    .sort((a, b) => b.viajes.length - a.viajes.length || b.n - a.n || b.ultimo - a.ultimo)
+    .slice(0, INDICE_MAX)
+    .map(({ ultimo, ...c }) => c);
+}
+
 // Para pegarlo en WhatsApp: lo de entre asteriscos sale en negrita, y en
 // cualquier otro sitio se lee igual de bien. Los días van del primero al último,
 // que es como se cuenta un viaje.
@@ -8311,7 +8361,7 @@ if (typeof module !== "undefined") {
     GASTOS_MAX, CONCEPTO_MAX, crearGasto, leerGastos, esDevolucion, devolucionDe, apuntarGasto, NOCHES_MAX, repartirCentimos, repartirNoches, repartoPorDias, apuntarNoches, quitarGasto, cambiarConcepto, cambiarDia, buscarGastos, trozosResaltados, repetirGasto, devolverGasto, devolverTodos, sumarPorDivisa, gastosPorDia, huecoEntre, cifraEnMarcha, categoriaDelDia, pesoDeLosDias, ordenarPorImporte, masCarosDelDia, pesoDeLosGastos, RARO_VECES, mediana, gastoRaro, REPETIDO_MS, gastoRepetido, mediaPorDia, categoriasAlDia, mediaPorGasto, comisionesPagadas, cambioDelViaje, cifraCambio, textoCambio, pagadoEnEfectivo, ahorroEnEfectivo,
     RETIRADAS_MAX, leerRetiradas, crearRetirada, cambioDelCajero, sobreElBce, alCambioDelCajero, apuntarRetirada, quitarRetirada, efectivoQueda, EFECTIVO_POCO, tonoEfectivo, redondoDeCajero, cuantoSacar, loQueSobra, gastadoHoy, nombreDia,
     CATEGORIAS, CATEGORIA_POR_DEFECTO, CATEGORIAS_PROPIAS_MAX, NOMBRE_CATEGORIA_MAX, esCategoria, leerCategoriasPropias, ponerCategoriasPropias, todasCategorias, nombreCategoria, emojiCategoria, crearCategoriaPropia, quitarCategoriaPropia, sinCategoria, adivinarCategoria, PAGOS, PAGO_POR_DEFECTO, leerPago, comisionDelPago, desglose, conceptosUsados, completarConcepto,
-    EMOJI_CATEGORIA, destacados, resumenParaCompartir, FINDE_MINIMO, findeContraSemana, ESTRELLA_MINIMO, conceptoEstrella,
+    EMOJI_CATEGORIA, destacados, resumenParaCompartir, FINDE_MINIMO, findeContraSemana, ESTRELLA_MINIMO, conceptoEstrella, INDICE_MAX, indiceCafe,
     TARJETAS_MAX, NOMBRE_TARJETA_MAX, anadirTarjeta, leerTarjetas, quitarTarjeta, tarjetaActual, siguientePago, mejorTarjeta,
     COPIA_APP, COPIA_VERSION, CLAVES_COPIA, CLAVES_SYNC, limpiarSync, cambiosSync, mezclaInicial, limpiarCopia, crearCopia, leerCopia, resumenCopia,
     crearPaquete, leerPaquete, quienEsQuien, mapaValido, gastosParaJuntar, juntarGastos,

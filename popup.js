@@ -166,6 +166,9 @@ const el = {
   viajesArchivo: document.getElementById("viajes-archivo"),
   viajesAbrirArchivo: document.getElementById("viajes-abrir-archivo"),
   viajesArchivados: document.getElementById("viajes-archivados"),
+  viajesIndice: document.getElementById("viajes-indice"),
+  viajesAbrirIndice: document.getElementById("viajes-abrir-indice"),
+  viajesIndiceLista: document.getElementById("viajes-indice-lista"),
   viajesPie: document.getElementById("viajes-pie"),
   viajesCsv: document.getElementById("viajes-csv"),
   gastos: document.getElementById("gastos"),
@@ -5535,11 +5538,75 @@ function pintarArchivo() {
   el.viajesArchivados.replaceChildren(...(archivoAbierto ? archivados.map(crearFilaArchivado) : []));
 }
 
+let indiceAbierto = false;
+
+function crearConceptoIndice(c, i) {
+  const todos = todosLosViajes(viajes);
+  const viajeDe = (id) => todos.find((v) => v.id === id);
+  const item = document.createElement("li");
+  item.className = "indice__concepto";
+  item.style.setProperty("--i", i);
+  const cabeza = document.createElement("p");
+  cabeza.className = "indice__cabeza";
+  const que = document.createElement("span");
+  que.className = "indice__que";
+  que.textContent = `${emojiCategoria(c.categoria)} ${c.concepto}`;
+  cabeza.append(que);
+  const caro = c.viajes.at(-1);
+  const barato = c.viajes[0];
+  if (c.veces) {
+    const veces = document.createElement("span");
+    veces.className = "indice__veces";
+    veces.textContent = tr("indice.veces", { veces: nfDias.format(c.veces) });
+    cabeza.append(veces);
+    cabeza.title = tr("indice.titulo", {
+      concepto: c.concepto, veces: nfDias.format(c.veces),
+      caro: nombreViaje(viajeDe(caro.id)), barato: nombreViaje(viajeDe(barato.id)),
+    });
+  } else {
+    cabeza.title = tr("indice.igual", { concepto: c.concepto });
+  }
+  const filas = document.createElement("ol");
+  filas.className = "indice__viajes";
+  for (const v of c.viajes) {
+    const viaje = viajeDe(v.id);
+    const fila = document.createElement("li");
+    fila.className = "indice__viaje";
+    fila.style.setProperty("--acento-fila", `var(--viaje-${viaje.color})`);
+    fila.style.setProperty("--peso", v.peso);
+    if (v.extremo) fila.dataset.extremo = v.extremo;
+    const nombre = document.createElement("span");
+    nombre.className = "indice__nombre";
+    nombre.textContent = nombreViaje(viaje);
+    const precio = document.createElement("span");
+    precio.className = "indice__precio";
+    precio.textContent = nf.format(v.precio);
+    fila.append(nombre, precio);
+    fila.title = tr(v.veces === 1 ? "indice.una" : "indice.precio", { precio: nf.format(v.precio), to: c.to, nombre: nombreViaje(viaje), n: v.veces });
+    filas.append(fila);
+  }
+  item.append(cabeza, filas);
+  return item;
+}
+
+// Como el archivo: abierto ocupa el sitio de la lista, que los dos no caben.
+function pintarIndice() {
+  const indice = indiceCafe(todosLosViajes(viajes));
+  el.viajesIndice.hidden = indice.length === 0;
+  if (!indice.length) indiceAbierto = false;
+  el.viajesAbrirIndice.textContent = tr("indice.abrir", { n: indice.length });
+  el.viajesAbrirIndice.setAttribute("aria-expanded", String(indiceAbierto));
+  el.viajesIndiceLista.hidden = !indiceAbierto;
+  el.viajes.classList.toggle("is-indice", indiceAbierto);
+  el.viajesIndiceLista.replaceChildren(...(indiceAbierto ? indice.map(crearConceptoIndice) : []));
+}
+
 function pintarViajes() {
   // Con los archivados dentro: el más caro y el más barato, de todos tus viajes.
   comparacion = new Map(compararViajes(todosLosViajes(viajes)).map((f) => [f.id, f]));
   el.viajesLista.replaceChildren(...viajes.lista.map(crearFilaViaje));
   pintarArchivo();
+  pintarIndice();
   const lleno = viajes.lista.length >= VIAJES_MAX;
   el.viajesNuevo.hidden = lleno;
   el.viajesLleno.hidden = !lleno;
@@ -5582,6 +5649,7 @@ function abrirViajes() {
 function cerrarViajes() {
   if (el.viajes.hidden) return false;
   archivoAbierto = false;
+  indiceAbierto = false;
   el.viajes.hidden = true;
   el.viaje.setAttribute("aria-expanded", "false");
   noBorrarViaje();
@@ -7863,8 +7931,17 @@ function bindEvents() {
   el.viajesCsv.addEventListener("click", () => descargarCsv(csvViajes(todosLosViajes(viajes)), tr("csv.archivoViajes"), el.viajesCsv));
   el.viajesAbrirArchivo.addEventListener("click", () => {
     archivoAbierto = !archivoAbierto;
+    indiceAbierto = false;
     noBorrarViaje();
     pintarArchivo();
+    pintarIndice();
+  });
+  el.viajesAbrirIndice.addEventListener("click", () => {
+    indiceAbierto = !indiceAbierto;
+    archivoAbierto = false;
+    noBorrarViaje();
+    pintarArchivo();
+    pintarIndice();
   });
   el.viajesAbrirArchivo.addEventListener("animationend", () => el.viajesAbrirArchivo.classList.remove("is-nuevo"));
   el.abrirGastos.addEventListener("click", () => (el.gastos.hidden ? abrirGastos() : cerrarGastos()));

@@ -3183,6 +3183,142 @@ body::after {
   display: none;
 }
 
+/* El índice del café: igual que el archivo, ocupa el sitio de la lista. */
+.viajes.is-indice #viajes-lista,
+.viajes.is-indice .viajes__nuevo,
+.viajes.is-indice .viajes__lleno,
+.viajes.is-indice #viajes-archivo {
+  display: none;
+}
+
+.viajes.is-indice .viajes__indice {
+  margin-top: 0;
+  padding-top: 0;
+  border-top: 0;
+}
+
+.indice[hidden] {
+  display: none;
+}
+
+.indice {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  max-height: 200px;
+  margin-top: 6px;
+  padding: 0 6px 2px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
+  list-style: none;
+}
+
+.indice__concepto {
+  animation: enter var(--mid) var(--ease-out) backwards;
+  animation-delay: calc(var(--i, 0) * 50ms);
+}
+
+.indice__cabeza {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  margin-bottom: 4px;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--mist);
+}
+
+.indice__que {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Lo que más se comenta: cuántas veces más caro. */
+.indice__veces {
+  margin-left: auto;
+  padding: 0 6px;
+  border-radius: 999px;
+  font-family: var(--font-mono);
+  font-size: 9.5px;
+  font-variant-numeric: tabular-nums;
+  color: var(--cinnabar);
+  background: color-mix(in srgb, var(--cinnabar) 14%, transparent);
+}
+
+.indice__viajes {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  list-style: none;
+}
+
+.indice__viaje {
+  --tono: var(--acento-fila, var(--brass));
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 2px 0 4px 10px;
+  font-size: 10.5px;
+  color: var(--muted);
+}
+
+.indice__viaje::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 7px;
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--acento-fila, var(--brass));
+}
+
+.indice__viaje[data-extremo="caro"] {
+  --tono: var(--cinnabar);
+}
+
+.indice__viaje[data-extremo="barato"] {
+  --tono: var(--jade);
+}
+
+.indice__nombre {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.indice__precio {
+  margin-left: auto;
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  color: var(--mist);
+}
+
+.indice__viaje[data-extremo] .indice__precio {
+  color: var(--tono);
+}
+
+/* La barra, contra el viaje donde más cuesta. */
+.indice__viaje::after {
+  content: "";
+  position: absolute;
+  left: 10px;
+  right: 0;
+  bottom: 0;
+  height: 2px;
+  border-radius: 999px;
+  background: linear-gradient(to right, var(--tono) calc(var(--peso, 0) * 100%), var(--hairline) 0);
+  opacity: 0.8;
+  transform-origin: left;
+  animation: crecer 600ms var(--ease-out) backwards;
+  animation-delay: calc(var(--i, 0) * 50ms + 120ms);
+}
+
 .viajes__archivar.is-entra {
   animation: pop var(--mid) var(--ease-spring);
 }
@@ -9981,6 +10117,8 @@ kbd {
   .categorias__opcion,
   .desglose__trozo,
   .viajes__peso::after,
+  .indice__concepto,
+  .indice__viaje::after,
   .semana__barra,
   .aviso.is-nueva,
   .gente__pago,

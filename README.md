@@ -85,6 +85,12 @@ que necesitaba una conversión rápida. Ahora es un clic en la barra del navegad
   medida contra el que más gasta al día. El más caro y el más barato llevan su
   marca. Va por días y no por el total, que una semana en Japón siempre suma
   más que un finde en Lisboa
+- Lo mismo en cada viaje: debajo de los archivados, **☕ Lo mismo en cada
+  viaje** pone lado a lado lo que has comprado en más de uno (el café, el
+  metro, la cerveza), con lo que te costó en cada sitio, del más barato al más
+  caro, y cuántas veces más ("×3,7"). Va con lo normal de cada viaje y no con
+  la media, que un "café" de cuatro no te suba el de Lisboa. Los cinco que
+  salen en más viajes
 - Cada viaje con su color (dorado, azul, coral, turquesa, lila o rosa): el panel
   de los gastos se tiñe del suyo, así sabes de un vistazo en cuál apuntas. Se
   cambia pulsando el puntito de delante del nombre, y el nuevo coge uno libre
