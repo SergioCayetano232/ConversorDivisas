@@ -3123,6 +3123,7 @@ async function aplicarDictado(texto) {
   const cifra = Number.isInteger(leido.cantidad) ? nfEntero.format(leido.cantidad) : nf.format(leido.cantidad);
   ladoActivo = enLaTuya ? "result" : "amount";
   if (enLaTuya) {
+    pararCuentaResultado();
     el.result.value = cifra;
     onResultInput();
   } else {
@@ -7828,7 +7829,43 @@ function ajustarAncho() {
   el.resultBox.style.setProperty("--tam-cifra", `${tam}px`);
 }
 
+// La cifra grande corre hasta la nueva, como un marcador. En el campo va
+// siempre la buena desde el principio: lo de en medio solo lo pinto en los
+// fotogramas, y cualquier tecla o clic lo deja en su sitio antes de leerla.
+let cuentaResultado = null;
+
+function pararCuentaResultado() {
+  if (!cuentaResultado) return;
+  cancelAnimationFrame(cuentaResultado.raf);
+  el.result.value = cuentaResultado.final;
+  cuentaResultado = null;
+}
+
+function contarResultado(desde, hasta) {
+  pararCuentaResultado();
+  if (sinMovimiento.matches || desde === null || desde === hasta) return;
+  const final = el.result.value;
+  const yo = { final };
+  cuentaResultado = yo;
+  const paso = (ahora) => {
+    if (cuentaResultado !== yo) return;
+    // El reloj arranca en el primer fotograma: después de pintar todo lo de
+    // abajo tarda en llegar, y si no la cuenta se daba por acabada sin verse.
+    yo.empieza ??= ahora;
+    const t = (ahora - yo.empieza) / 300;
+    if (t >= 1) return pararCuentaResultado();
+    el.result.value = nf.format(cifraEnMarcha(desde, hasta, t));
+    yo.raf = requestAnimationFrame(paso);
+  };
+  yo.raf = requestAnimationFrame(paso);
+}
+
+for (const tipo of ["pointerdown", "keydown", "focusin"]) {
+  document.addEventListener(tipo, pararCuentaResultado, true);
+}
+
 function renderResult() {
+  pararCuentaResultado();
   const from = el.from.value;
   const to = el.to.value;
 
@@ -7873,6 +7910,7 @@ function renderResult() {
   }
 
   const convertido = escribiendoAbajo ? valor / rate : valor * rate;
+  const antes = escribiendoAbajo ? null : leerImporte(el.result.value);
   destino.value = nf.format(convertido);
   pintarCifraCompleta(destino, convertido, escribiendoAbajo ? from : to);
   origen.title = "";
@@ -7896,8 +7934,8 @@ function renderResult() {
   pintarComparar();
   pintarBotonGasto();
 
-  // El latido solo cuando cambia la cifra grande, que si no parpadea al teclear.
-  if (!escribiendoAbajo) restartAnimation(el.result, "is-updating");
+  // Solo cuando cambia la cifra grande, que si no parpadea al teclear.
+  if (!escribiendoAbajo) contarResultado(antes, leerImporte(el.result.value));
 }
 
 function pintarCifraCompleta(campo, valor, divisa) {
@@ -7985,6 +8023,7 @@ async function refresh() {
 
     rate = null;
     rateDate = null;
+    pararCuentaResultado();
     el.result.value = "—";
     el.result.title = "";
     el.resultCode.textContent = "";
