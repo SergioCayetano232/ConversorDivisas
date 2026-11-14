@@ -1,7 +1,7 @@
 const { test } = require("node:test");
 const assert = require("node:assert");
 const {
-  crearGasto, leerViajes, duplicarViaje, TRAMOS_MAX, leerTramos, ponerTramo, quitarTramo, tramoDelDia, resumenTramos,
+  crearGasto, leerViajes, duplicarViaje, TRAMOS_MAX, leerTramos, ponerTramo, quitarTramo, tramoDelDia, divisaDelTramo, resumenTramos,
 } = require("../logica.js");
 
 // A mediodía, que con la hora local de medianoche el día podría bailar.
@@ -85,4 +85,36 @@ test("se guardan con el viaje y no pasan al duplicado", () => {
   assert.deepEqual(viajes.lista[0].tramos, [tokio, kioto]);
   assert.equal("tramos" in duplicarViaje(viajes, "v", "w").lista[1], false);
   assert.equal("tramos" in leerViajes({ activo: "v", lista: [{ id: "v", gastos: [] }] }).lista[0], false);
+});
+
+test("cada tramo con su divisa, y los de antes sin ella", () => {
+  const [t, k] = leerTramos([{ ...tokio, divisa: "JPY" }, { ...kioto, divisa: "XXX" }]);
+  assert.equal(t.divisa, "JPY");
+  assert.equal("divisa" in k, false, "una que no existe no se guarda");
+  assert.equal("divisa" in leerTramos([tokio])[0], false);
+});
+
+test("cambiarle el nombre no le quita la divisa; con null, sí", () => {
+  const una = ponerTramo([], { ...tokio, divisa: "JPY" });
+  assert.equal(una[0].divisa, "JPY");
+  assert.equal(ponerTramo(una, { id: "z", nombre: "Tokio centro", desde: tokio.desde })[0].divisa, "JPY");
+  assert.equal(ponerTramo(una, { id: "z", nombre: "Tokio", desde: tokio.desde, divisa: "HUF" })[0].divisa, "HUF");
+  assert.equal("divisa" in ponerTramo(una, { id: "z", nombre: "Tokio", desde: tokio.desde, divisa: null })[0], false);
+});
+
+test("al llegar a un tramo con divisa, la pone arriba una vez", () => {
+  const viaje = { id: "v", tramos: [{ ...tokio, divisa: "JPY" }, { id: "b", nombre: "Budapest", desde: "2026-11-04", divisa: "HUF" }] };
+  const hoyIso = "2026-11-05";
+  assert.deepEqual(divisaDelTramo(viaje, { from: "JPY", to: "EUR", hoyIso }), { clave: "v:b", divisa: "HUF", nombre: "Budapest" });
+  assert.equal(divisaDelTramo(viaje, { from: "GBP", to: "EUR", aplicado: "v:b", hoyIso }), null, "ya la puso: si la cambiaste, es tuya");
+  assert.deepEqual(divisaDelTramo(viaje, { from: "HUF", to: "EUR", hoyIso }), { clave: "v:b", divisa: null, nombre: "Budapest" }, "ya estaba");
+  assert.equal(divisaDelTramo(viaje, { from: "JPY", to: "HUF", hoyIso }).divisa, null, "la de abajo no se convierte a sí misma");
+});
+
+test("sin tramo hoy o sin divisa, nada", () => {
+  const viaje = { id: "v", tramos: [kioto, { id: "b", nombre: "Budapest", desde: "2026-11-20", divisa: "HUF" }] };
+  assert.equal(divisaDelTramo(viaje, { from: "EUR", to: "USD", hoyIso: "2026-11-01" }), null, "aún no ha empezado ninguno");
+  assert.equal(divisaDelTramo(viaje, { from: "EUR", to: "USD", hoyIso: "2026-11-05" }), null, "Kioto no tiene divisa");
+  assert.equal(divisaDelTramo(null, { from: "EUR", to: "USD" }), null);
+  assert.equal(divisaDelTramo({ id: "v" }, { from: "EUR", to: "USD" }), null);
 });

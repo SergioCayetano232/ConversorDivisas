@@ -5297,6 +5297,37 @@ body::after {
   font-family: inherit;
 }
 
+/* Con la divisa no cabía todo en una línea: el nombre arriba, entero. */
+.tramos__nuevo {
+  flex-wrap: wrap;
+}
+
+.tramos__nuevo .gastos__concepto {
+  flex-basis: 100%;
+}
+
+.tramos__nuevo .tramos__desde:not(.tramos__divisa) {
+  flex: 1;
+}
+
+/* Cabe justo "🇭🇺 HUF"; el nombre de la divisa ya sale al pasar por el tramo. */
+.tramos__divisa {
+  width: 70px;
+  cursor: pointer;
+}
+
+.tramos__moneda {
+  margin-left: 5px;
+  padding: 0 4px;
+  border-radius: 4px;
+  font-family: var(--font-mono);
+  font-size: 8.5px;
+  font-weight: 500;
+  letter-spacing: 0.04em;
+  color: var(--viaje-azul);
+  background: color-mix(in srgb, var(--viaje-azul) 14%, transparent);
+}
+
 .gastos__dias-nombre {
   margin-right: 2px;
   font-size: 9px;

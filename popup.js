@@ -155,6 +155,7 @@ const el = {
   tramosForm: document.getElementById("tramos-form"),
   tramosNombre: document.getElementById("tramos-nombre"),
   tramosDesde: document.getElementById("tramos-desde"),
+  tramosDivisa: document.getElementById("tramos-divisa"),
   genteDevuelto: document.getElementById("gente-devuelto"),
   cajeroLista: document.getElementById("cajero-lista"),
   viajesLista: document.getElementById("viajes-lista"),
@@ -464,6 +465,7 @@ const HISTORIAL_KEY = "historialConversiones";
 const GASTOS_KEY = "gastosViaje";
 const PRESUPUESTO_KEY = "presupuestoViaje";
 const VIAJES_KEY = "viajes";
+const TRAMO_APLICADO_KEY = "tramoAplicado";
 const CATEGORIAS_KEY = "categoriasPropias";
 const CELEBRADOS_KEY = "viajesCelebrados";
 const CUENTA_KEY = "cuentaReparto";
@@ -3897,6 +3899,14 @@ function pintarTramos() {
     const nombre = document.createElement("span");
     nombre.className = "tramos__nombre";
     nombre.textContent = t.id ? t.nombre : tr("tramos.antes");
+    const original = leerTramos(tramos).find((x) => x.id === t.id);
+    if (original?.divisa) {
+      const moneda = document.createElement("span");
+      moneda.className = "tramos__moneda";
+      moneda.textContent = original.divisa;
+      moneda.title = tr("tramos.divisaDe", { nombre: t.nombre, divisa: nombreDe(original.divisa) });
+      nombre.append(moneda);
+    }
     if (t.caro) {
       const fuego = document.createElement("span");
       fuego.className = "tramos__caro";
@@ -4388,6 +4398,7 @@ function abrirTramos() {
   el.tramos.style.setProperty("--cajero-arriba", `${Math.round(arriba) + 4}px`);
   el.tramosNombre.value = "";
   el.tramosDesde.value = hoy();
+  pintarDivisasTramo();
   el.tramos.hidden = false;
   el.gastosTramo.setAttribute("aria-expanded", "true");
   pintarTramos();
@@ -4406,7 +4417,7 @@ function onPonerTramo(event) {
   const id = `${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`;
   const { tramos } = viajeActivo(viajes);
   const desde = el.tramosDesde.value || hoy();
-  const nuevos = ponerTramo(tramos, { id, nombre: el.tramosNombre.value, desde });
+  const nuevos = ponerTramo(tramos, { id, nombre: el.tramosNombre.value, desde, divisa: el.tramosDivisa.value || null });
   if (JSON.stringify(nuevos) === JSON.stringify(leerTramos(tramos))) {
     restartAnimation(el.tramosNombre, "is-mal");
     el.tramosNombre.focus();
@@ -4417,7 +4428,43 @@ function onPonerTramo(event) {
   el.tramosNombre.value = "";
   guardarViajes();
   pintarGastos();
+  // Si empieza hoy, ya estás allí: la divisa, ahora y no al volver a abrir.
+  ponerDivisaDelTramo();
   el.tramosNombre.focus();
+}
+
+// Por defecto la de arriba, que al apuntar el tramo sueles estar mirando precios de allí.
+function pintarDivisasTramo() {
+  const sin = new Option(tr("tramos.sinDivisa"), "");
+  const opciones = CURRENCIES.map((c) => new Option(`${banderaDivisa(c.code)} ${c.code}`, c.code));
+  el.tramosDivisa.replaceChildren(sin, ...opciones);
+  el.tramosDivisa.value = el.from.value;
+}
+
+async function ponerDivisaDelTramo() {
+  let aplicado = null;
+  try {
+    aplicado = (await chrome.storage.local.get(TRAMO_APLICADO_KEY))[TRAMO_APLICADO_KEY] ?? null;
+  } catch (error) {
+    console.warn("No se pudo leer el último tramo", error);
+  }
+  const cambio = divisaDelTramo(viajeActivo(viajes), { from: el.from.value, to: el.to.value, aplicado });
+  if (!cambio) return;
+  try {
+    await chrome.storage.local.set({ [TRAMO_APLICADO_KEY]: cambio.clave });
+  } catch (error) {
+    console.warn("No se pudo guardar el último tramo", error);
+  }
+  if (!cambio.divisa) return;
+  buscadores.from.poner(cambio.divisa);
+  restartAnimation(el.from, "is-cambiado");
+  onCurrencyChange();
+  const bandera = document.createElement("span");
+  bandera.className = "tecla-flash__bandera";
+  bandera.textContent = banderaDivisa(cambio.divisa) || "📍";
+  const kbd = document.createElement("kbd");
+  kbd.textContent = cambio.divisa;
+  setTimeout(() => mostrarFlash([bandera, kbd, ` ${tr("tramos.llegas", { nombre: cambio.nombre })}`], 3200), 550);
 }
 
 function onQuitarTramo(id) {
@@ -8308,6 +8355,8 @@ async function init() {
   bindEvents();
   onAmountInput();
   refresh();
+  // Lo del clic derecho manda: eso es elegir divisa, y el tramo no.
+  if (!pendiente) ponerDivisaDelTramo();
   // Lo que viene del clic derecho también es una conversión tuya.
   programarApunte();
 

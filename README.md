@@ -227,7 +227,10 @@ que necesitaba una conversión rápida. Ahora es un clic en la barra del navegad
   Sale lo de cada uno, sus días y lo que gastas al día allí, con 🔥 en el
   más caro, y en la lista una marca en el día que empieza cada uno. Arriba
   se queda el de ahora ("📍 Kioto · 46,67/día"). Lo pagado aparte no cuenta,
-  que el vuelo no es de ninguna ciudad
+  que el vuelo no es de ninguna ciudad. Cada tramo puede llevar su divisa
+  (Viena en euros, Budapest en forintos): el día que llegas, al abrir, la pone
+  arriba sola ("🇭🇺 HUF para Budapest"). Una vez por tramo, así que si luego
+  cambias tú la divisa, se queda la tuya
 - Los gastos de empresa: al pulsar el concepto, con el 💼 de al lado de la nota
   dices que te lo paga el trabajo. Sale de tus cuentas (el total, el presupuesto,
   el resumen) y va a su propia lista, con **CSV** e **Imprimir** para sacar la

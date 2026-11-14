@@ -4311,25 +4311,39 @@ function leerTramos(guardado) {
   const porDia = new Map();
   for (const t of guardado) {
     if (!t || typeof t.id !== "string" || !t.id || !esIso(t.desde) || !limpiarNombreTramo(t.nombre)) continue;
-    porDia.set(t.desde, { id: t.id, nombre: limpiarNombreTramo(t.nombre), desde: t.desde });
+    // Los de antes no traen divisa: esos no te cambian nada al llegar.
+    const divisa = isValidCode(t.divisa) ? { divisa: t.divisa } : {};
+    porDia.set(t.desde, { id: t.id, nombre: limpiarNombreTramo(t.nombre), desde: t.desde, ...divisa });
   }
   return [...porDia.values()].sort((a, b) => a.desde.localeCompare(b.desde)).slice(0, TRAMOS_MAX);
 }
 
 // Si ya hay uno ese día, le cambia el nombre: es que te equivocaste al ponerlo.
-function ponerTramo(tramos, { id, nombre, desde }) {
+function ponerTramo(tramos, { id, nombre, desde, divisa }) {
   const lista = leerTramos(tramos);
   const limpio = limpiarNombreTramo(nombre);
   if (!limpio || !esIso(desde) || typeof id !== "string" || !id) return lista;
-  if (lista.some((t) => t.desde === desde)) return lista.map((t) => (t.desde === desde ? { ...t, nombre: limpio } : t));
+  if (lista.some((t) => t.desde === desde)) return leerTramos(lista.map((t) => (t.desde === desde ? { ...t, nombre: limpio, divisa: divisa === undefined ? t.divisa : divisa } : t)));
   if (lista.length >= TRAMOS_MAX) return lista;
-  return leerTramos([...lista, { id, nombre: limpio, desde }]);
+  return leerTramos([...lista, { id, nombre: limpio, desde, divisa }]);
 }
 
 const quitarTramo = (tramos, id) => leerTramos(tramos).filter((t) => t.id !== id);
 
 function tramoDelDia(tramos, dia) {
   return leerTramos(tramos).filter((t) => t.desde <= dia).at(-1) ?? null;
+}
+
+// Al llegar a Budapest, los precios ya son en forintos. Solo una vez por tramo:
+// si luego cambias tú la divisa, es que querías esa, y no te la piso cada vez
+// que abres. Con la tuya abajo no la pongo, que no se puede convertir a sí misma.
+function divisaDelTramo(viaje, { from, to, aplicado = null, hoyIso = hoy() }) {
+  const tramo = tramoDelDia(viaje?.tramos, hoyIso);
+  if (!tramo?.divisa) return null;
+  const clave = `${viaje.id}:${tramo.id}`;
+  if (clave === aplicado) return null;
+  const cambia = tramo.divisa !== from && tramo.divisa !== to;
+  return { clave, divisa: cambia ? tramo.divisa : null, nombre: tramo.nombre };
 }
 
 // Lo de cada tramo, sin lo pagado aparte: el vuelo que reservaste hace meses
@@ -8368,7 +8382,7 @@ if (typeof module !== "undefined") {
     puedeSerDeEmpresa, pasarAEmpresa, sacarDeEmpresa, notaDeGastos,
     AVISO_MEJOR_DIAS, techoDeSerie, crearAvisoMejor, ponerTechos,
     presupuestoSugerido, PARTES_VALIDAS, leerPartes, partesDe, repartirPorPartes, textoParte,
-    VIAJES_MAX, NOMBRE_VIAJE_MAX, leerViajes, leerPersonas, porPersona, consumoGente, leerPagador, leerGente, ponerNombre, nombrePersona, inicialPersona, cuentasViaje, frasePago, COBRO_GASTOS_MAX, mensajeCobro, leerEntre, entreDe, fraseEntre, cambiarEntre, leerSaldados, saldarPago, quitarSaldado, fraseSaldado, hayOtrosPagadores, NOMBRE_PERSONA_MAX, compararViajes, COLORES_VIAJE, leerColorViaje, colorLibre, siguienteColor, viajeActivo, ARCHIVADOS_MAX, archivarViaje, desarchivarViaje, borrarArchivado, todosLosViajes, crearViaje, nombreCopia, nombreDeDestino, duplicarViaje, renombrarViaje, elegirViaje, borrarViaje, moverGasto, cambiarViaje, TRAMOS_MAX, NOMBRE_TRAMO_MAX, leerTramos, ponerTramo, quitarTramo, tramoDelDia, resumenTramos, curvaPresupuesto, FRANJAS, HORAS_MINIMO, horaFiable, porFranja, PENDIENTES_MAX, leerPendientes, crearPendiente, cambiarVence, pendientesPorFecha, tocaPagar, tonoVence, textoVence, PENDIENTE_HORA, tocaPendientes, avisadosPendientes, mensajePendientes, apuntarPendiente, quitarPendiente, totalPendiente, pagarPendiente, resumenViaje, archivoGastos,
+    VIAJES_MAX, NOMBRE_VIAJE_MAX, leerViajes, leerPersonas, porPersona, consumoGente, leerPagador, leerGente, ponerNombre, nombrePersona, inicialPersona, cuentasViaje, frasePago, COBRO_GASTOS_MAX, mensajeCobro, leerEntre, entreDe, fraseEntre, cambiarEntre, leerSaldados, saldarPago, quitarSaldado, fraseSaldado, hayOtrosPagadores, NOMBRE_PERSONA_MAX, compararViajes, COLORES_VIAJE, leerColorViaje, colorLibre, siguienteColor, viajeActivo, ARCHIVADOS_MAX, archivarViaje, desarchivarViaje, borrarArchivado, todosLosViajes, crearViaje, nombreCopia, nombreDeDestino, duplicarViaje, renombrarViaje, elegirViaje, borrarViaje, moverGasto, cambiarViaje, TRAMOS_MAX, NOMBRE_TRAMO_MAX, leerTramos, ponerTramo, quitarTramo, tramoDelDia, divisaDelTramo, resumenTramos, curvaPresupuesto, FRANJAS, HORAS_MINIMO, horaFiable, porFranja, PENDIENTES_MAX, leerPendientes, crearPendiente, cambiarVence, pendientesPorFecha, tocaPagar, tonoVence, textoVence, PENDIENTE_HORA, tocaPendientes, avisadosPendientes, mensajePendientes, apuntarPendiente, quitarPendiente, totalPendiente, pagarPendiente, resumenViaje, archivoGastos,
     diasHasta, leerPresupuesto, leerTopes, PRESUPUESTO_JUSTO, estadoPresupuesto, estadoTopes, alDiaAlli, inicioDelViaje, diaDelViaje, cuentaAtras, textoCuentaAtras, huchaViaje, loDeHoy, CELEBRADOS_MAX, leerCelebrados, anadirCelebrado, viajeParaCelebrar, textoCelebrar, RACHA_MINIMA, rachaPresupuesto, hastaCuandoLlega, previsionViaje, PREVISION_JUSTA, textoPrevision, loQueSeLleva, redondearDias,
     EXTRAS_MAX, EXTRAS_POR_DEFECTO, leerExtras, anadirExtra, quitarExtra,
     extrasVisibles, disponiblesParaAnadir, convertirExtras, semanaDe, trazoMini, CHULETA, escalaChuleta, chuleta, TRUCO_TOLERANCIA, trucoDeCabeza, textoTruco, tituloTruco, chuletaParaCompartir, extrasParaCompartir,
