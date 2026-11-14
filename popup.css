@@ -7573,6 +7573,8 @@ html:not(.es-panel) .buscador__nombre {
   flex: 0 1 auto;
   min-width: 1.5em;
   max-width: 100%;
+  /* Con solo el size Chrome deja un carácter de más y el código quedaba lejos. */
+  field-sizing: content;
   padding: 2px var(--s-2);
   margin-left: calc(-1 * var(--s-2));
   background: transparent;
