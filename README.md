@@ -58,6 +58,15 @@ que necesitaba una conversión rápida. Ahora es un clic en la barra del navegad
   el martes. Hasta 200, y para vaciarlo hay que darle dos veces. Si
   quitas uno o los vacías todos sin querer, tienes cinco segundos para
   deshacerlo
+- Dictar el gasto, con el micrófono del concepto: dices "cena cuarenta y
+  cinco", "doce con cincuenta de taxi" o "500 de metro en efectivo" y se
+  apunta, con su concepto, su categoría y cómo pagaste (eso, solo para ese
+  gasto). La cantidad puede ir delante o detrás, en número o en palabras, y
+  si dices la divisa la cambia ("taxi 30 dólares"); si es la tuya ("12 euros
+  con 50"), la pone abajo. Pasa por los mismos avisos que uno escrito. La
+  primera vez abre una pestaña para dar permiso al micrófono, que desde el
+  popup Chrome no lo pregunta. Ojo: el reconocimiento de voz es el de Chrome,
+  que manda el audio a Google
 - Modo discreto, con el ojo de arriba de los gastos: las cifras se difuminan
   para enseñar la pantalla sin que se vea lo que llevas. Pasando el ratón por
   una, se asoma. Se queda como lo dejes
@@ -498,6 +507,7 @@ logica.js        las cuentas y los formatos, sin tocar la pantalla
 popup.js         lo que reacciona a los clics
 copia.*          la página de la copia de seguridad (las opciones)
 imprimir.*       la chuleta en tamaño tarjeta, para imprimir
+permiso.*        la pestaña que pide el micrófono para dictar
 background.js    el menú del clic derecho y la tasa para la tarjeta
 tarjeta.js       la tarjeta que sale en la web, en un shadow DOM
 precios.js       las pastillas con los precios de toda la página

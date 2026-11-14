@@ -1,0 +1,59 @@
+.microfono {
+  display: grid;
+  place-items: center;
+  width: 72px;
+  height: 72px;
+  margin: 4px auto;
+  border-radius: 50%;
+  color: var(--dorado);
+  background: var(--dorado-fantasma);
+  box-shadow: 0 0 0 1px var(--dorado-tenue);
+  animation: escucha 1.6s var(--suave) infinite;
+}
+
+.microfono svg {
+  width: 30px;
+  height: 30px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+}
+
+/* Dado: se queda quieto en verde. */
+.microfono[data-estado="si"] {
+  color: var(--jade);
+  background: color-mix(in srgb, var(--jade) 14%, transparent);
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--jade) 45%, transparent);
+  animation: pop var(--medio) var(--muelle);
+}
+
+.microfono[data-estado="no"] {
+  color: var(--cinabrio);
+  background: color-mix(in srgb, var(--cinabrio) 12%, transparent);
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--cinabrio) 40%, transparent);
+  animation: temblor 360ms var(--suave);
+}
+
+.estado {
+  text-align: center;
+  color: var(--tenue);
+}
+
+@keyframes escucha {
+  50% {
+    box-shadow: 0 0 0 10px transparent, 0 0 0 1px var(--dorado-tenue);
+  }
+}
+
+@keyframes pop {
+  from {
+    transform: scale(0.8);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .microfono {
+    animation: none !important;
+  }
+}

@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>ConversorDivisas · Micrófono</title>
+  <link rel="icon" href="icons/icon48.png">
+  <link rel="stylesheet" href="copia.css">
+  <link rel="stylesheet" href="permiso.css">
+</head>
+<body>
+  <main class="pagina">
+    <header class="cabeza">
+      <img class="cabeza__logo" src="icons/icon128.png" alt="" width="44" height="44">
+      <div>
+        <p class="cabeza__app">ConversorDivisas</p>
+        <h1 class="cabeza__titulo" data-t="voz.permisoTitulo">Dictar los gastos</h1>
+      </div>
+    </header>
+    <p class="intro" data-t="voz.permisoIntro">Para apuntar un gasto hablando ("cena cuarenta y cinco"), Chrome tiene que dejar a la extensión usar el micrófono. Desde el popup no puede preguntártelo, así que se pide aquí, una vez.</p>
+
+    <section class="tarjeta" aria-labelledby="permiso-titulo">
+      <h2 class="tarjeta__titulo" id="permiso-titulo" data-t="voz.permisoQue">El micrófono</h2>
+      <div class="microfono" id="microfono" aria-hidden="true">
+        <svg viewBox="0 0 24 24"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5.5 11a6.5 6.5 0 0 0 13 0M12 17.5V21"/></svg>
+      </div>
+      <p class="estado" id="estado" role="status" data-t="voz.permisoPidiendo">Chrome te está preguntando arriba, al lado de la dirección.</p>
+      <button class="boton boton--dorado" type="button" id="pedir" hidden>
+        <span data-t="voz.permisoOtraVez">Pedirlo otra vez</span>
+      </button>
+    </section>
+
+    <footer class="pie">
+      <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 1.8l5 2v4c0 3-2.2 5.3-5 6.4-2.8-1.1-5-3.4-5-6.4v-4z"/></svg>
+      <span data-t="voz.permisoPie">Solo escucha mientras el botón del micrófono está encendido. Lo que dices lo pasa a texto el reconocimiento de voz de Chrome, que lo envía a Google.</span>
+    </footer>
+  </main>
+
+  <script src="textos.js"></script>
+  <script src="permiso.js"></script>
+</body>
+</html>

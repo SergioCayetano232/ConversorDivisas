@@ -185,6 +185,7 @@ const el = {
   gastosEfectivo: document.getElementById("gastos-efectivo"),
   gastosForm: document.getElementById("gastos-form"),
   gastosConcepto: document.getElementById("gastos-concepto"),
+  gastosVoz: document.getElementById("gastos-voz"),
   gastosPago: document.getElementById("gastos-pago"),
   gastosMejor: document.getElementById("gastos-mejor"),
   tarjetasLista: document.getElementById("tarjetas-lista"),
@@ -2740,6 +2741,103 @@ function ponerPago(pago) {
   pintarEfectivo();
   if (comision > 0) restartAnimation(el.gastosApuntar, "is-tic");
   guardarPago();
+}
+
+// Dictar el gasto. Rellena lo mismo que escribirías y le da a apuntar: así pasa
+// por los mismos avisos (el cero de más, el repetido) que uno escrito a mano.
+const Reconocimiento = globalThis.SpeechRecognition ?? globalThis.webkitSpeechRecognition;
+let escucha = null;
+
+function idiomaDeVoz() {
+  const idioma = idiomaActual();
+  return navigator.languages.find((l) => l.toLowerCase().startsWith(`${idioma}-`)) ?? (idioma === "en" ? "en-US" : "es-ES");
+}
+
+function pintarVoz() {
+  const oyendo = Boolean(escucha);
+  el.gastosVoz.classList.toggle("is-escuchando", oyendo);
+  el.gastosVoz.setAttribute("aria-pressed", String(oyendo));
+  el.gastosVoz.title = tr(oyendo ? "voz.parar" : "voz.dictar");
+  el.gastosVoz.setAttribute("aria-label", el.gastosVoz.title);
+  el.gastosConcepto.placeholder = oyendo ? tr("voz.oyendo") : tr("gastos.concepto");
+}
+
+function onDictar() {
+  if (escucha) {
+    escucha.stop();
+    return;
+  }
+  const r = new Reconocimiento();
+  r.lang = idiomaDeVoz();
+  r.interimResults = true;
+  r.maxAlternatives = 1;
+  let dicho = "";
+  r.addEventListener("result", (event) => {
+    dicho = [...event.results].map((x) => x[0].transcript).join(" ").trim();
+    // Mientras hablas lo ves en el concepto, en gris, como una sugerencia.
+    el.gastosConcepto.placeholder = dicho;
+  });
+  r.addEventListener("error", (event) => {
+    if (event.error === "not-allowed" || event.error === "service-not-allowed") {
+      chrome.tabs.create({ url: "permiso.html" });
+    } else if (event.error !== "aborted" && event.error !== "no-speech") {
+      mostrarFlash([`🎙 ${tr("voz.fallo")}`], 2600);
+    }
+    dicho = "";
+  });
+  r.addEventListener("end", () => {
+    escucha = null;
+    pintarVoz();
+    if (dicho) aplicarDictado(dicho);
+  });
+  try {
+    r.start();
+    escucha = r;
+  } catch (error) {
+    console.warn("No se pudo empezar a escuchar", error);
+  }
+  pintarVoz();
+}
+
+async function aplicarDictado(texto) {
+  const leido = leerDictado(texto, { from: el.from.value, to: el.to.value });
+  if (!leido) {
+    mostrarFlash([`🎙 «${texto}»: ${tr("voz.sinCantidad")}`], 3200);
+    restartAnimation(el.gastosVoz, "is-mal");
+    return;
+  }
+  // Si dices tu divisa ("doce euros"), va abajo y se calcula la de arriba.
+  const enLaTuya = leido.from === el.to.value;
+  if (!enLaTuya && leido.from !== el.from.value) {
+    buscadores.from.poner(leido.from);
+    restartAnimation(el.from, "is-cambiado");
+    savePair(el.from.value, el.to.value);
+    apuntarPar();
+    await refresh();
+  }
+  const cifra = Number.isInteger(leido.cantidad) ? nfEntero.format(leido.cantidad) : nf.format(leido.cantidad);
+  ladoActivo = enLaTuya ? "result" : "amount";
+  if (enLaTuya) {
+    el.result.value = cifra;
+    onResultInput();
+  } else {
+    el.amount.value = cifra;
+    onAmountInput();
+  }
+  el.gastosConcepto.value = leido.concepto;
+  onConceptoGasto();
+  // "En efectivo" dicho vale para este gasto, no para los siguientes, como en la barra.
+  const pagoAntes = pagoNuevo;
+  // Miro la lista y no gastoNuevo, que pintarGastos lo deja a null al pintarlo.
+  const ultimoAntes = gastos[0]?.id;
+  if (leido.pago) pagoNuevo = leido.pago;
+  mostrarFlash([`🎙 ${[leido.concepto, `${cifra} ${leido.from}`].filter(Boolean).join(" · ")}`], 2600);
+  el.gastosForm.requestSubmit();
+  // Si se ha quedado esperando por un aviso, el pago dicho sigue para cuando lo confirmes.
+  if (gastos[0]?.id !== ultimoAntes) pagoNuevo = pagoAntes;
+  pintarPago();
+  pintarBotonGasto();
+  pintarEfectivo();
 }
 
 function onConceptoGasto() {
@@ -8005,6 +8103,11 @@ function bindEvents() {
   el.abrirGastos.addEventListener("animationend", () => el.abrirGastos.classList.remove("is-apuntado"));
   el.gastosForm.addEventListener("submit", onApuntarGasto);
   el.gastosConcepto.addEventListener("input", onConceptoGasto);
+  el.gastosVoz.hidden = !Reconocimiento;
+  if (Reconocimiento) {
+    pintarVoz();
+    el.gastosVoz.addEventListener("click", onDictar);
+  }
   el.gastosConcepto.addEventListener("keydown", onTeclaConcepto);
   // Mover el cursor no lanza input, y la sugerencia solo vale con él al final.
   el.gastosConcepto.addEventListener("keyup", (event) => {

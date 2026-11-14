@@ -4422,6 +4422,67 @@ body::after {
   opacity: 1;
 }
 
+/* El micrófono, dentro del concepto a la derecha: es otra forma de escribirlo. */
+.gastos__caja:has(.gastos__voz:not([hidden])) .gastos__concepto {
+  padding-right: 24px;
+}
+
+.gastos__voz {
+  position: absolute;
+  top: 3px;
+  right: 3px;
+  display: grid;
+  place-items: center;
+  width: 18px;
+  height: 18px;
+  padding: 0;
+  background: transparent;
+  border: 0;
+  border-radius: 50%;
+  color: var(--muted);
+  cursor: pointer;
+  transition: color var(--fast) var(--ease), background-color var(--fast) var(--ease);
+}
+
+.gastos__voz[hidden] {
+  display: none;
+}
+
+.gastos__voz svg {
+  width: 11px;
+  height: 11px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.2;
+  stroke-linecap: round;
+}
+
+.gastos__voz:hover,
+.gastos__voz:focus-visible {
+  color: var(--brass);
+  outline: none;
+}
+
+/* Escuchando: en rojo y latiendo, que se vea que el micro está abierto. */
+.gastos__voz.is-escuchando {
+  color: #fff;
+  background: var(--cinnabar);
+  animation: voz-late 1.2s var(--ease) infinite;
+}
+
+.gastos__voz.is-mal {
+  animation: shake 360ms var(--ease);
+}
+
+@keyframes voz-late {
+  0%, 100% {
+    box-shadow: 0 0 0 0 color-mix(in srgb, var(--cinnabar) 55%, transparent);
+  }
+  60% {
+    box-shadow: 0 0 0 6px transparent;
+  }
+}
+
 .gastos__escrito {
   visibility: hidden;
 }

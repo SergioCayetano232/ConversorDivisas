@@ -2446,6 +2446,127 @@ function leerGastoBarra(texto, par) {
   return { ...leido, concepto: limpiarConcepto(concepto), pago };
 }
 
+// Lo dictado: "cena cuarenta y cinco", "doce con cincuenta de taxi". Al hablar
+// la cantidad va donde caiga, así que la busco y lo paso a "+ 45 cena", que eso
+// ya lo sabe leer la barra. Chrome suele dar las cifras ya en número; las
+// palabras son por si acaso.
+const NUMEROS_DICHOS = {
+  cero: 0, uno: 1, un: 1, una: 1, dos: 2, tres: 3, cuatro: 4, cinco: 5, seis: 6, siete: 7, ocho: 8, nueve: 9,
+  diez: 10, once: 11, doce: 12, trece: 13, catorce: 14, quince: 15, dieciseis: 16, diecisiete: 17, dieciocho: 18,
+  diecinueve: 19, veinte: 20, veintiuno: 21, veintiun: 21, veintiuna: 21, veintidos: 22, veintitres: 23, veinticuatro: 24,
+  veinticinco: 25, veintiseis: 26, veintisiete: 27, veintiocho: 28, veintinueve: 29, treinta: 30, cuarenta: 40,
+  cincuenta: 50, sesenta: 60, setenta: 70, ochenta: 80, noventa: 90, cien: 100, ciento: 100, doscientos: 200,
+  doscientas: 200, trescientos: 300, trescientas: 300, cuatrocientos: 400, cuatrocientas: 400, quinientos: 500,
+  quinientas: 500, seiscientos: 600, seiscientas: 600, setecientos: 700, setecientas: 700, ochocientos: 800,
+  ochocientas: 800, novecientos: 900, novecientas: 900,
+  zero: 0, one: 1, two: 2, three: 3, four: 4, five: 5, six: 6, seven: 7, eight: 8, nine: 9, ten: 10, eleven: 11,
+  twelve: 12, thirteen: 13, fourteen: 14, fifteen: 15, sixteen: 16, seventeen: 17, eighteen: 18, nineteen: 19,
+  twenty: 20, thirty: 30, forty: 40, fifty: 50, sixty: 60, seventy: 70, eighty: 80, ninety: 90,
+};
+// "Un café" no es un gasto de un yen: el "un" solo cuenta delante de mil o millón.
+const SOLO_DELANTE = new Set(["un", "una"]);
+const ESCALAS_DICHAS = { mil: 1000, thousand: 1000, millon: 1e6, millones: 1e6, million: 1e6, millions: 1e6 };
+const CENTENA_DICHA = new Set(["hundred"]);
+// Lo que sobra en los bordes del concepto: "de taxi", "la cena", "for dinner".
+const RELLENO_DICHO = new Set(["de", "del", "la", "el", "los", "las", "en", "por", "para", "un", "una", "y", "the", "for", "of", "a", "an", "on", "and", "is", "son", "es", "fue", "fueron"]);
+const ES_CIFRA = /^\d+(?:[.,]\d+)*$/;
+
+// Junta las palabras de número seguidas en una cifra: "cuarenta y cinco" → 45.
+function cifrasDichas(palabras) {
+  const salen = [];
+  let i = 0;
+  while (i < palabras.length) {
+    const p = normalizar(palabras[i]);
+    const siguiente = normalizar(palabras[i + 1] ?? "");
+    const empieza = p in NUMEROS_DICHOS && (!SOLO_DELANTE.has(p) || siguiente in ESCALAS_DICHAS)
+      || (p in ESCALAS_DICHAS && p.startsWith("mil") && !/^\d/.test(palabras[i - 1] ?? ""));
+    if (!empieza) {
+      salen.push(palabras[i]);
+      i += 1;
+      continue;
+    }
+    let total = 0;
+    let grupo = 0;
+    let j = i;
+    while (j < palabras.length) {
+      const w = normalizar(palabras[j]);
+      if (w in NUMEROS_DICHOS) grupo += NUMEROS_DICHOS[w];
+      else if (CENTENA_DICHA.has(w)) grupo = (grupo || 1) * 100;
+      else if (w in ESCALAS_DICHAS) {
+        total += (grupo || 1) * ESCALAS_DICHAS[w];
+        grupo = 0;
+      } else if ((w === "y" || w === "and") && normalizar(palabras[j + 1] ?? "") in NUMEROS_DICHOS && j > i) {
+        // "cuarenta y cinco": la "y" va dentro del número, no es un enlace.
+      } else break;
+      j += 1;
+    }
+    salen.push(String(total + grupo));
+    i = j;
+  }
+  return salen;
+}
+
+function leerDictado(texto, par) {
+  if (typeof texto !== "string" || !texto.trim()) return null;
+  let palabras = cifrasDichas(texto.trim().replace(/([€$£¥])/g, " $1 ").split(/\s+/).filter(Boolean));
+  // "en efectivo", "con tarjeta": lo saco antes, con su "en", que si no se
+  // quedaba colgando en el concepto.
+  let pago = "";
+  palabras = palabras.filter((p, i) => {
+    if (!PAGO_POR_PALABRA[normalizar(p)]) return true;
+    pago = p;
+    return false;
+  });
+  palabras = palabras.filter((p, i) => !(/^(en|con|in|by|with|por)$/i.test(p) && i === palabras.length - 1 && pago));
+  // "doce con cincuenta" y "doce euros con cincuenta" son 12,50; "cuatro y medio", 4,50.
+  for (let i = 0; i < palabras.length; i += 1) {
+    if (!ES_CIFRA.test(palabras[i])) continue;
+    const salto = ES_CIFRA.test(palabras[i + 2] ?? "") ? 0 : divisaDe(palabras[i + 1] ?? "") ? 1 : 0;
+    const enlace = normalizar(palabras[i + 1 + salto] ?? "");
+    const despues = palabras[i + 2 + salto] ?? "";
+    if ((enlace === "con" || enlace === "point") && /^\d{1,2}$/.test(despues)) {
+      palabras.splice(i + 1 + salto, 2);
+      palabras[i] = `${palabras[i]},${despues.padStart(2, "0")}`;
+    } else if (enlace === "y" && /^medi[oa]$/.test(normalizar(despues))) {
+      palabras.splice(i + 1 + salto, 2);
+      palabras[i] = `${palabras[i]},50`;
+    }
+  }
+  const donde = palabras.findIndex((p) => ES_CIFRA.test(p));
+  if (donde < 0) return null;
+  let fin = donde + 1;
+  if (normalizar(palabras[fin] ?? "") in ESCALAS_DICHAS || /^[km]$/i.test(palabras[fin] ?? "")) fin += 1;
+  // La divisa dicha: "pesos" en Colombia son los colombianos, no los mexicanos.
+  // Dos palabras solo si la segunda es de su nombre: "coronas checas" sí, "euros la" no.
+  const raiz = (p) => normalizar(p ?? "").replace(/(es|s)$/, "");
+  const empiezaDivisa = fin;
+  let divisa = null;
+  const [una, dos] = [palabras[fin], palabras[fin + 1]];
+  const doble = una && dos ? divisaDe(`${una} ${dos}`) : null;
+  const suya = una && raiz(una).length >= 3 && !RELLENO_DICHO.has(normalizar(una))
+    ? [par?.from, par?.to].find((c) => isValidCode(c) && normalizar(nombreDe(c)).startsWith(raiz(una))) : null;
+  if (doble && raiz(dos).length >= 3 && normalizar(nombreDe(doble)).includes(raiz(dos).slice(0, 4))) {
+    divisa = doble;
+    fin += 2;
+  } else if (suya || (una && divisaDe(una))) {
+    divisa = suya ?? divisaDe(una);
+    fin += 1;
+  }
+  const antes = palabras.slice(0, donde);
+  const despues = palabras.slice(fin);
+  const limpiar = (lista) => {
+    const l = [...lista];
+    while (l.length && RELLENO_DICHO.has(normalizar(l[0]))) l.shift();
+    while (l.length && RELLENO_DICHO.has(normalizar(l.at(-1)))) l.pop();
+    return l;
+  };
+  const concepto = [...limpiar(antes), ...limpiar(despues)].join(" ");
+  const cantidad = palabras.slice(donde, empiezaDivisa).join(" ");
+  const leido = leerGastoBarra(`+ ${cantidad}${divisa ? ` ${divisa}` : ""} ${concepto} ${pago}`, par);
+  // Un concepto dicho empieza en mayúscula, como lo escribirías.
+  return leido && { ...leido, concepto: leido.concepto.charAt(0).toLocaleUpperCase() + leido.concepto.slice(1) };
+}
+
 // Con la categoría que le diste la última vez a ese concepto; si es nuevo, la que
 // sale por el nombre.
 function gastoDeBarra(leido, { id, cuando, tasa, comision, pago, usados = [] }) {
@@ -8429,7 +8550,7 @@ if (typeof module !== "undefined") {
     RECIENTES_MAX, FIJOS_MAX, apuntarReciente, fijarReciente, leerRecientes, recientesVisibles,
     RANGOS, RANGO_POR_DEFECTO, leerRango, siguienteRango, coordenadas, alturaEn, MOMENTO_UMBRAL, momento, textoMomento,
     SEMANAS_MINIMAS, mejorDiaSemana, nombreDiaSemana, textoDiaSemana, indiceCercano, extremos, fechaCorta, largoEnPantalla,
-    leerNumero, divisaDe, leerSeleccion, sumarSeleccion, notaDeSuma, destinoPara, leerPegado, leerPegadoSuelto, leerColumna, cuentaDeColumna, buscarPrecios, precioEntero, leerOmnibox, leerMezcla, textoMezcla, precioUnidadBarra, leerGastoBarra, gastoDeBarra, gastoDeTarjeta, escaparXml,
+    leerNumero, divisaDe, leerSeleccion, sumarSeleccion, notaDeSuma, destinoPara, leerPegado, leerPegadoSuelto, leerColumna, cuentaDeColumna, buscarPrecios, precioEntero, leerOmnibox, leerMezcla, textoMezcla, precioUnidadBarra, leerGastoBarra, leerDictado, gastoDeBarra, gastoDeTarjeta, escaparXml,
     divisaDeIdioma, parPorIdioma, banderaDe, banderaDivisa,
     HISTORIAL_MAX, leerHistorial, apuntarConversion, quitarConversion, haceCuanto, ultimoDeHoy, textoParaCopiar, fraseParaCopiar, gastoParaCopiar, ultimoGasto, gastoMasCaro, totalParaCopiar, hoyParaCopiar, simboloDe, textoConSimbolo, fraseConSimbolo,
     celdaCsv, csvHistorial, csvGastos, csvViajes,
