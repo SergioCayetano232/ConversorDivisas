@@ -51,10 +51,15 @@
   --fast: 180ms;
   --mid: 260ms;
   --slow: 420ms;
+
+  /* Para que los calendarios, desplegables y scrolls del navegador salgan a juego. */
+  color-scheme: dark;
 }
 
 @media (prefers-color-scheme: light) {
   :root {
+    color-scheme: light;
+
     --viaje-oro: #9A6B14;
     --viaje-azul: #1F6FB2;
     --viaje-coral: #C2502F;
@@ -5110,16 +5115,8 @@ html:not(.es-panel) .buscador__nombre {
   border: 1px solid color-mix(in srgb, var(--brass) 30%, transparent);
   border-top: 0;
   border-radius: 0 0 6px 6px;
-  color-scheme: dark;
   transform-origin: top;
   animation: dias-baja 260ms var(--ease-out);
-}
-
-@media (prefers-color-scheme: light) {
-  .gastos__dias,
-  .tramos__desde {
-    color-scheme: light;
-  }
 }
 
 @keyframes dias-baja {
@@ -5525,7 +5522,6 @@ html:not(.es-panel) .buscador__nombre {
   font: inherit;
   font-size: 10px;
   font-variant-numeric: tabular-nums;
-  color-scheme: dark;
 }
 
 .tramos__desde:focus {
@@ -6606,13 +6602,6 @@ html:not(.es-panel) .buscador__nombre {
   align-items: center;
   gap: 4px;
   margin-bottom: var(--s-2);
-  color-scheme: dark;
-}
-
-@media (prefers-color-scheme: light) {
-  .presupuesto__form {
-    color-scheme: light;
-  }
 }
 
 .presupuesto__form.is-nuevo {
@@ -9065,13 +9054,6 @@ html:not(.es-panel) .buscador__nombre {
   grid-template-rows: repeat(3, 19px);
   gap: 3px;
   margin-top: var(--s-2);
-  color-scheme: dark;
-}
-
-@media (prefers-color-scheme: light) {
-  .fecha {
-    color-scheme: light;
-  }
 }
 
 .fecha__fila {
