@@ -111,6 +111,15 @@ body {
   isolation: isolate;
 }
 
+::selection {
+  background: var(--brass-glow);
+}
+
+input,
+textarea {
+  caret-color: var(--brass);
+}
+
 /* En el panel lateral el ancho lo pone Chrome (y lo puedes arrastrar), así que
    ocupo lo que haya en vez de los 340 del popup. */
 .es-panel body {
@@ -754,10 +763,6 @@ body::after {
 .footer__source a:focus-visible {
   outline: 2px solid var(--brass);
   outline-offset: 2px;
-}
-
-.field__input::selection {
-  background: var(--brass-ghost);
 }
 
 .field__input[aria-invalid="true"] {
@@ -7590,10 +7595,6 @@ html:not(.es-panel) .buscador__nombre {
   outline: none;
   background: var(--brass-ghost);
   border-color: var(--brass);
-}
-
-.result__value::selection {
-  background: var(--brass-ghost);
 }
 
 .result__value[aria-invalid="true"] {
