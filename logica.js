@@ -8930,6 +8930,80 @@ function resumenCopia(datos) {
   };
 }
 
+// Cuánto de su moneda hace falta allí para comprar lo que 1 dólar en Estados
+// Unidos: la paridad de poder adquisitivo del FMI, con su estimación del año.
+// Con la tasa del día sale cuánto más caro es un sitio que otro, y así no se
+// queda viejo aunque el yen se hunda.
+const PPA_ANIO = 2026;
+const PPA = {
+  USD: 1, GBP: 0.661, JPY: 94.142, CHF: 0.927, CAD: 1.182, AUD: 1.421, CNY: 3.319, MXN: 10.426,
+  BRL: 2.598, SEK: 8.287, NOK: 9.46, DKK: 5.728, PLN: 1.91, TRY: 21.055, CZK: 12.907, HKD: 5.47,
+  HUF: 187.122, IDR: 4719.555, ILS: 3.639, INR: 20.024, ISK: 159.609, KRW: 898.117, MYR: 1.349,
+  NZD: 1.483, PHP: 19.319, RON: 2.197, SGD: 0.788, THB: 9.965, ZAR: 7.466, VND: 6951.034,
+  ARS: 719.833, MAD: 3.836, PEN: 1.939, COP: 1596.02, CLP: 489.15, EGP: 8.265, AED: 2.506,
+  TWD: 13.476, UYU: 27.409, CRC: 285.919, DOP: 24.277, TND: 0.92, KES: 44.815, LKR: 90.645,
+  NPR: 33.902, KHR: 1363.373, JOD: 0.298, QAR: 2.231, SAR: 1.846, GEL: 0.913, RSD: 49.135,
+  BOB: 3.119, GTQ: 3.312, PYG: 2617.548,
+};
+// Con el euro no hay un solo país: en Luxemburgo cuesta casi el doble que en
+// Croacia. Uso el del idioma del navegador y, si no es del euro, la media.
+const PPA_EURO = {
+  DE: 0.719, FR: 0.643, IT: 0.597, ES: 0.598, NL: 0.766, BE: 0.707, AT: 0.732, PT: 0.566,
+  IE: 0.735, FI: 0.737, GR: 0.535, SK: 0.534, LT: 0.508, SI: 0.576, LV: 0.535, EE: 0.599,
+  HR: 0.472, LU: 0.856, CY: 0.561, MT: 0.561, BG: 0.444,
+};
+const PPA_EURO_MEDIA = Object.values(PPA_EURO).reduce((a, b) => a + b, 0) / Object.keys(PPA_EURO).length;
+// Por debajo de esto es ruido: el dato es una media de todo el país.
+const NIVEL_IGUAL = 10;
+
+function paisDePrecios(code, idiomas = []) {
+  if (code === "EUR") {
+    const region = idiomas.map((i) => String(i).split(/[-_]/).slice(1).find((p) => /^[a-z]{2}$/i.test(p))?.toUpperCase())
+      .find((r) => r in PPA_EURO);
+    return region ? { region, ppa: PPA_EURO[region] } : { region: null, ppa: PPA_EURO_MEDIA };
+  }
+  return PPA[code] ? { region: code.slice(0, 2), ppa: PPA[code] } : null;
+}
+
+// rate es lo que vale 1 de from en to. Allí es el lado que no es tu divisa,
+// esté arriba o abajo; si ninguno lo es, no hay "casa" con la que comparar.
+function nivelDePrecios(from, to, rate, idiomas = [], tuya = to) {
+  if (from === to || !(rate > 0) || (tuya !== from && tuya !== to)) return null;
+  const alReves = tuya === from;
+  const alli = paisDePrecios(alReves ? to : from, idiomas);
+  const casa = paisDePrecios(tuya, idiomas);
+  if (alReves) rate = 1 / rate;
+  if (!alli || !casa) return null;
+  const ratio = (rate * alli.ppa) / casa.ppa;
+  const pct = Math.round((ratio - 1) * 100);
+  if (Math.abs(pct) < NIVEL_IGUAL) return null;
+  return { pct, ratio, alli: alli.region, casa: casa.region };
+}
+
+// "In United States" suena mal: algunos países llevan artículo.
+const ARTICULO_PAIS = { es: { GB: "el " }, en: { US: "the ", GB: "the ", NL: "the ", PH: "the ", AE: "the ", DO: "the " } };
+
+function nombrePais(region) {
+  if (!region) return tr("precios.zonaEuro");
+  const nombres = (style) => new Intl.DisplayNames([localeActual()], { type: "region", style }).of(region);
+  const largo = nombres("long");
+  const nombre = /\(|SAR/.test(largo) ? nombres("short") : largo;
+  return `${ARTICULO_PAIS[idiomaActual()]?.[region] ?? ""}${nombre}`;
+}
+
+// Corto, para la pastilla: "allí −12 %". Largo, para el título, con lo que sería
+// pagar esa cantidad en casa si se la das.
+function textoNivel(nivel, { corto = false, importe = null, to = "" } = {}) {
+  if (!nivel) return "";
+  const n = numeros({ maximumFractionDigits: 0 });
+  if (corto) return tr("precios.corto", { signo: nivel.pct > 0 ? "+" : "−", pct: n.format(Math.abs(nivel.pct)) });
+  const datos = { alli: nombrePais(nivel.alli), casa: nombrePais(nivel.casa), pct: n.format(Math.abs(nivel.pct)) };
+  const frases = [tr(nivel.pct > 0 ? "precios.masCaro" : "precios.masBarato", datos)];
+  if (importe > 0) frases.push(tr("precios.equivale", { importe: `${numeros({ minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(importe / nivel.ratio)} ${to}` }));
+  frases.push(tr("precios.fuente", { anio: PPA_ANIO }));
+  return frases.join(". ");
+}
+
 // El panel lateral abre el mismo popup.html con ?panel, y así sé dónde estoy.
 const esPanel = (busqueda) => new URLSearchParams(busqueda ?? "").has("panel");
 
@@ -8988,5 +9062,6 @@ if (typeof module !== "undefined") {
     RECORDATORIO_HORA, RECORDATORIO_HORAS, leerHoraRecordatorio, viajesSinApuntar, tocaRecordar, mensajeRecordatorio, TAX_FREE_HORA, tocaTaxFree, mensajeTaxFree,
     ATAJOS, atajoPara, textoAtajo, FUNCIONES, FUNCIONES_MAX, buscarFunciones,
     esPanel, cambioDeFuera,
+    PPA_ANIO, PPA, PPA_EURO, NIVEL_IGUAL, paisDePrecios, nivelDePrecios, nombrePais, textoNivel,
   };
 }

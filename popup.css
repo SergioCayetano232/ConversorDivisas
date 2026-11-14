@@ -856,6 +856,64 @@ body::after {
   display: none;
 }
 
+.pair .field:last-child {
+  position: relative;
+}
+
+/* Con verde si allí es más barato y rojo si es más caro, pero apagados: es
+   una pista sobre el sitio, no una alarma. */
+.nivel {
+  --tono: var(--jade);
+  position: absolute;
+  top: -1px;
+  right: 0;
+  max-width: calc(100% - 22px);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  padding: 1px 7px;
+  background: color-mix(in srgb, var(--tono) 12%, transparent);
+  border: 1px solid transparent;
+  border-radius: 999px;
+  color: color-mix(in srgb, var(--tono) 85%, var(--muted));
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-variant-numeric: tabular-nums;
+  cursor: help;
+  transition: border-color var(--fast) var(--ease), color var(--fast) var(--ease);
+}
+
+.nivel[data-sentido="caro"] {
+  --tono: var(--cinnabar);
+}
+
+.nivel[hidden] {
+  display: none;
+}
+
+.nivel::before {
+  content: "🛒";
+  margin-right: 3px;
+}
+
+.nivel:hover {
+  border-color: color-mix(in srgb, var(--tono) 45%, transparent);
+  color: var(--tono);
+}
+
+.nivel:focus-visible {
+  outline: 2px solid var(--tono);
+  outline-offset: 1px;
+}
+
+.nivel.is-entra {
+  animation: pop var(--mid) var(--ease-spring);
+}
+
+.nivel.is-tic {
+  animation: tic 260ms var(--ease-out);
+}
+
 .alli__reloj {
   width: 12px;
   height: 12px;

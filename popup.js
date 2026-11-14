@@ -295,6 +295,7 @@ const el = {
   abrirAyuda: document.getElementById("abrir-ayuda"),
   abrirCopia: document.getElementById("abrir-copia"),
   abrirPanel: document.getElementById("abrir-panel"),
+  nivel: document.getElementById("nivel"),
   ayuda: document.getElementById("ayuda"),
   ayudaCerrar: document.getElementById("ayuda-cerrar"),
   ayudaLista: document.getElementById("ayuda-lista"),
@@ -2220,6 +2221,25 @@ function pintarCafes() {
   const corto = n === 0.5 ? "½" : `≈ ${nfEntero.format(n)}`;
   nodo.textContent = corto;
   nodo.title = `${texto}. ${tr("cafe.cuenta", { precio: `${nf.format(cafe.precio)} ${cafe.divisa}` })}`;
+  nodo.setAttribute("aria-label", nodo.title);
+  if (habia !== corto) restartAnimation(nodo, habia ? "is-tic" : "is-entra");
+}
+
+// Encima de la divisa de abajo, si allí la vida es más cara o más barata. Va
+// con la tasa del día, así que cambia sola si su moneda se hunde.
+function pintarNivel() {
+  const nivel = nivelDePrecios(el.from.value, el.to.value, rate, navigator.languages, miDivisa());
+  const nodo = el.nivel;
+  const habia = nodo.textContent;
+  const corto = textoNivel(nivel, { corto: true });
+  nodo.hidden = !corto;
+  nodo.textContent = corto;
+  if (!corto) return;
+  nodo.dataset.sentido = nivel.pct > 0 ? "caro" : "barato";
+  // Lo que pagarías allí, pasado a tu divisa, esté en el campo que esté.
+  const cantidad = leerImporte(el.amount.value) ?? 0;
+  const tuya = miDivisa();
+  nodo.title = textoNivel(nivel, { importe: tuya === el.to.value ? cantidad * rate : cantidad, to: tuya });
   nodo.setAttribute("aria-label", nodo.title);
   if (habia !== corto) restartAnimation(nodo, habia ? "is-tic" : "is-entra");
 }
@@ -7818,6 +7838,7 @@ function renderResult() {
   pintarFecha();
   pintarTimo();
   pintarCuenta();
+  pintarNivel();
 
   if (valor === null) {
     pintarBotonGasto();
@@ -7970,6 +7991,7 @@ async function refresh() {
     pintarComparar();
     pintarComision();
     pintarCafes();
+    pintarNivel();
     pintarHoras();
     pintarPistas();
     hideTrend();

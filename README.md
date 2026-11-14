@@ -392,6 +392,14 @@ que necesitaba una conversión rápida. Ahora es un clic en la barra del navegad
 - La hora que es allí, al lado de la divisa de origen, con un relojito que la
   marca de verdad: si es de noche sale una luna, que estará todo cerrado.
   Pasando el ratón, la ciudad y cuántas horas te lleva
+- Si allí es caro o barato: encima de la divisa de destino sale "🛒 allí −11 %"
+  (en verde) o "allí +67 %" (en rojo), lo que cuesta la vida allí comparado
+  con tu casa. Pasando el ratón, la frase entera y a cuánto te sale de verdad
+  ("Pagar esto allí es como pagar 28,58 EUR en casa"). Sale de la paridad de
+  poder adquisitivo del FMI de 2026 y la tasa del día, así que si su moneda se
+  hunde, allí se abarata. Con el euro, compara con el país de tu navegador
+  (España con `es-ES`) o con la media de la zona euro. Por debajo de un 10 % de
+  diferencia no sale, y tampoco si ninguna de las dos divisas es la tuya
 - La primera vez elige el par según el idioma del navegador: con `es-MX` empieza
   en MXN → USD, con `en-GB` en GBP → EUR. Si no lo tiene claro, EUR → USD
 - Recuerda la última pareja de divisas, la cantidad, el periodo del gráfico,
