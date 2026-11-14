@@ -175,6 +175,7 @@ const el = {
   viajesNombre: document.getElementById("viajes-nombre"),
   viajesDuplicar: document.getElementById("viajes-duplicar"),
   viajesTarjeta: document.getElementById("viajes-tarjeta"),
+  viajesCalendario: document.getElementById("viajes-calendario"),
   viajesLleno: document.getElementById("viajes-lleno"),
   viajesArchivo: document.getElementById("viajes-archivo"),
   viajesAbrirArchivo: document.getElementById("viajes-abrir-archivo"),
@@ -2812,6 +2813,26 @@ function onBorrarHistorial() {
 
 // El BOM del principio es para Excel: sin él abre el archivo como Latin-1 y
 // "Cena en el Rincón" sale con la ó rota.
+// El .ics se abre con el calendario del sistema (o se importa en Google), que
+// es quien pregunta dónde añadirlo.
+function descargarCalendario() {
+  const viaje = viajeActivo(viajes);
+  const ics = calendarioViaje(viaje);
+  if (!ics) return;
+  const url = URL.createObjectURL(new Blob([ics], { type: "text/calendar;charset=utf-8" }));
+  const enlace = document.createElement("a");
+  enlace.href = url;
+  enlace.download = `${archivoCalendario(viaje.nombre)}.ics`;
+  document.body.append(enlace);
+  enlace.click();
+  enlace.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+  restartAnimation(el.viajesCalendario, "is-hecho");
+  clearTimeout(el.viajesCalendario.vuelta);
+  el.viajesCalendario.vuelta = setTimeout(() => el.viajesCalendario.classList.remove("is-hecho"), 1400);
+  mostrarFlash([`📅 ${tr("calendario.descargado")}`], 2400);
+}
+
 function descargarCsv(texto, nombre, boton) {
   const url = URL.createObjectURL(new Blob(["\uFEFF", texto], { type: "text/csv;charset=utf-8" }));
   const enlace = document.createElement("a");
@@ -6017,6 +6038,10 @@ function pintarViajes() {
   // La tarjeta del viaje en el que estás, al lado de duplicarlo. En la fila de
   // cada viaje no cabía: el nombre se quedaba en puntos suspensivos.
   el.viajesTarjeta.hidden = viajeActivo(viajes).gastos.length === 0;
+  // Solo si hay algo con fecha: un calendario vacío no sirve de nada.
+  el.viajesCalendario.hidden = !calendarioViaje(viajeActivo(viajes));
+  el.viajesCalendario.title = tr("calendario.boton", { nombre: nombreViaje(viajeActivo(viajes)) });
+  el.viajesCalendario.setAttribute("aria-label", el.viajesCalendario.title);
   el.viajesTarjeta.title = tr("resumen.abrirDe", { nombre: nombreViaje(viajeActivo(viajes)) });
   el.viajesTarjeta.setAttribute("aria-label", el.viajesTarjeta.title);
   // Lo de arriba suele ser la divisa de allí: el nombre ya lo tengo.
@@ -7326,6 +7351,7 @@ function funcionPosible(accion) {
   if (accion === "horas") return Boolean(porFranja(gastos));
   if (accion === "csvViajes") return viajes.lista.some((v) => v.gastos.length);
   if (accion === "anio") return aniosConGastos(todosLosViajes(viajes)).length > 0;
+  if (accion === "calendario") return Boolean(calendarioViaje(viajeActivo(viajes)));
   if (accion === "archivados") return (viajes.archivados ?? []).length > 0;
   if (accion === "indiceCafe") return indiceCafe(todosLosViajes(viajes)).length > 0;
   if (["copiarTasa", "chuleta", "imprimirChuleta", "copiarSimbolo", "copiar"].includes(accion)) return rate !== null;
@@ -7441,6 +7467,7 @@ function hacerFuncion(accion) {
   else if (accion === "anio") abrirPestana(`resumen.html?anio=${aniosConGastos(todosLosViajes(viajes))[0]}`);
   else if (accion === "comision") abrirBurbuja();
   else if (accion === "copiaSeguridad") chrome.runtime.openOptionsPage();
+  else if (accion === "calendario") descargarCalendario();
   else hacerAtajo(accion);
 }
 
@@ -8522,6 +8549,7 @@ function bindEvents() {
   el.chuletaImprimir.addEventListener("click", onImprimirChuleta);
   el.gastosCsv.addEventListener("click", () => descargarCsv(csvGastos(gastos), archivoGastos(viajeActivo(viajes).nombre), el.gastosCsv));
   el.viajesCsv.addEventListener("click", () => descargarCsv(csvViajes(todosLosViajes(viajes)), tr("csv.archivoViajes"), el.viajesCsv));
+  el.viajesCalendario.addEventListener("click", descargarCalendario);
   el.viajesAnio.addEventListener("click", () => chrome.tabs.create({ url: `resumen.html?anio=${el.viajesAnio.dataset.anio}` }));
   el.viajesAbrirArchivo.addEventListener("click", () => {
     archivoAbierto = !archivoAbierto;

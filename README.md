@@ -270,6 +270,13 @@ que necesitaba una conversión rápida. Ahora es un clic en la barra del navegad
   de cada día, lo más caro, el día que más, en qué se fue, si sobró
   presupuesto y el cambio medio, con el color del viaje. Se descarga en JPG o
   se copia para pegarla directamente en el chat
+- El viaje al calendario: en la lista de viajes, el botón del calendario
+  baja un `.ics` con las fechas del viaje, cada tramo ("📍 Kioto", del día que
+  empieza al antes del siguiente) y lo pendiente el día que toca pagarlo, con
+  un aviso a las nueve ("💳 Pagar Hotel Kioto · 72.000 JPY"). Todo de día
+  entero, que la hora del vuelo no la sé. Lo abres y tu calendario lo añade;
+  si lo importas otra vez, se actualiza en vez de duplicarse. Solo sale si el
+  viaje tiene algo con fecha
 - Tu año viajando: abajo del todo en la lista de viajes, **✨ Mi 2026** abre
   el año entero en una imagen como la del viaje: cuántos viajes, los días
   fuera (sin contar dos veces los que se solapan), el total, lo de media al

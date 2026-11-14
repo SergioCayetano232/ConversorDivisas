@@ -3746,6 +3746,104 @@ function cambiarViaje(viajes, id, cambios) {
   return { ...viajes, lista: viajes.lista.map((v) => (v.id === id ? { ...v, ...cambios } : v)) };
 }
 
+// El viaje al calendario (.ics): las fechas del viaje, cada tramo y lo
+// pendiente con el día en que toca pagarlo, con un aviso a las nueve. Todo de
+// día entero, que la hora de un vuelo no la sé y un calendario con horas
+// inventadas es peor que uno sin ellas.
+const AVISO_PENDIENTE_ICS = "PT9H";
+
+const otroDia = (iso, paso) => {
+  const [a, m, d] = iso.split("-").map(Number);
+  return isoLocal(new Date(a, m - 1, d + paso));
+};
+const diaSiguiente = (iso) => otroDia(iso, 1);
+const fechaIcs = (iso) => iso.replaceAll("-", "");
+// Las comas, los puntos y comas y las barras van escapados; los saltos, como \n.
+const textoIcs = (texto) => String(texto).replace(/[\\;,]/g, (c) => `\\${c}`).replace(/\r?\n/g, "\\n");
+
+// Las líneas de más de 75 bytes se parten, y por bytes, no por letras: una
+// tilde son dos y una bandera, ocho. Nunca por la mitad de una letra.
+function plegarIcs(linea) {
+  const trozos = [];
+  let actual = "";
+  let bytes = 0;
+  for (const letra of linea) {
+    const largo = new TextEncoder().encode(letra).length;
+    const max = trozos.length ? 74 : 75;
+    if (bytes + largo > max) {
+      trozos.push(actual);
+      actual = "";
+      bytes = 0;
+    }
+    actual += letra;
+    bytes += largo;
+  }
+  trozos.push(actual);
+  return trozos.join("\r\n ");
+}
+
+function eventosDelViaje(viaje, hoyIso = hoy()) {
+  const { presupuesto = null, gastos = [] } = viaje ?? {};
+  const nombre = viaje?.nombre || tr("viajes.sinNombre");
+  const eventos = [];
+  const hasta = presupuesto?.hasta ?? null;
+  const desde = hasta ? inicioDelViaje(presupuesto, gastos, hoyIso) : null;
+  if (desde && hasta && desde <= hasta) {
+    const dinero = numeros({ minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    eventos.push({
+      uid: "viaje", desde, hasta,
+      titulo: `✈️ ${nombre}`,
+      nota: tr("calendario.presupuesto", { importe: `${dinero.format(presupuesto.importe)} ${presupuesto.to}` }),
+    });
+  }
+  // Cada tramo hasta el día antes del siguiente; el último, hasta la vuelta.
+  const tramos = leerTramos(viaje?.tramos);
+  tramos.forEach((t, i) => {
+    const siguiente = tramos[i + 1];
+    const fin = siguiente ? otroDia(siguiente.desde, -1) : hasta && hasta >= t.desde ? hasta : t.desde;
+    eventos.push({ uid: `tramo-${t.id}`, desde: t.desde, hasta: fin, titulo: `📍 ${t.nombre}`, nota: nombre });
+  });
+  for (const p of leerPendientes(viaje?.pendientes)) {
+    if (!p.vence) continue;
+    const dinero = numeros({ minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    const que = p.concepto || nombreCategoria(p.categoria);
+    eventos.push({
+      uid: `pendiente-${p.id}`, desde: p.vence, hasta: p.vence,
+      titulo: tr("calendario.pagar", { que, importe: `${dinero.format(p.cantidad)} ${p.from}` }),
+      nota: tr("calendario.pagarNota", { viaje: nombre, valor: `${dinero.format(p.valor)} ${p.to}` }),
+      aviso: true,
+    });
+  }
+  return eventos;
+}
+
+function calendarioViaje(viaje, { ahora = Date.now(), hoyIso = hoy() } = {}) {
+  const eventos = eventosDelViaje(viaje, hoyIso);
+  if (!eventos.length) return null;
+  const sello = new Date(ahora).toISOString().replace(/[-:]/g, "").replace(/\.\d{3}/, "");
+  const lineas = ["BEGIN:VCALENDAR", "VERSION:2.0", "PRODID:-//ConversorDivisas//ES", "CALSCALE:GREGORIAN", "METHOD:PUBLISH"];
+  for (const e of eventos) {
+    lineas.push(
+      "BEGIN:VEVENT",
+      // El mismo uid cada vez: si lo importas otra vez, se actualiza en vez de duplicarse.
+      `UID:${viaje.id}-${e.uid}@conversordivisas`,
+      `DTSTAMP:${sello}`,
+      `DTSTART;VALUE=DATE:${fechaIcs(e.desde)}`,
+      // El final de un evento de día entero es el día siguiente, no el último.
+      `DTEND;VALUE=DATE:${fechaIcs(diaSiguiente(e.hasta))}`,
+      `SUMMARY:${textoIcs(e.titulo)}`,
+      `DESCRIPTION:${textoIcs(e.nota)}`,
+      "TRANSP:TRANSPARENT",
+    );
+    if (e.aviso) lineas.push("BEGIN:VALARM", "ACTION:DISPLAY", `DESCRIPTION:${textoIcs(e.titulo)}`, `TRIGGER;RELATED=START:${AVISO_PENDIENTE_ICS}`, "END:VALARM");
+    lineas.push("END:VEVENT");
+  }
+  lineas.push("END:VCALENDAR");
+  return `${lineas.map(plegarIcs).join("\r\n")}\r\n`;
+}
+
+const archivoCalendario = (nombre) => archivoGastos(nombre).replace(/^[^-]+/, tr("calendario.archivo"));
+
 // "Japón 2026" → "gastos-japon-2026": sin tildes ni espacios, que algunos
 // sistemas los llevan mal en los nombres de archivo. Sin nombre, el de siempre.
 function archivoGastos(nombre) {
@@ -8065,6 +8163,7 @@ const FUNCIONES = [
   { accion: "archivados", claves: "archivo viejos acabados archive old" },
   { accion: "tarjetaViaje", claves: "imagen foto compartir postal image share card" },
   { accion: "anio", claves: "año resumen anual wrapped year annual" },
+  { accion: "calendario", claves: "calendario ics google agenda fechas recordatorio calendar dates reminder" },
   { accion: "compartir", claves: "whatsapp resumen mandar enviar share summary send" },
   { accion: "csv", claves: "excel hoja exportar descargar export download spreadsheet" },
   { accion: "csvViajes", claves: "excel todos exportar export all" },
@@ -8735,7 +8834,7 @@ if (typeof module !== "undefined") {
     puedeSerDeEmpresa, pasarAEmpresa, sacarDeEmpresa, notaDeGastos,
     AVISO_MEJOR_DIAS, techoDeSerie, crearAvisoMejor, ponerTechos,
     presupuestoSugerido, PARTES_VALIDAS, leerPartes, partesDe, repartirPorPartes, textoParte,
-    VIAJES_MAX, NOMBRE_VIAJE_MAX, leerViajes, leerPersonas, porPersona, consumoGente, leerPagador, leerGente, ponerNombre, nombrePersona, inicialPersona, cuentasViaje, frasePago, COBRO_GASTOS_MAX, mensajeCobro, leerEntre, entreDe, fraseEntre, cambiarEntre, leerSaldados, saldarPago, quitarSaldado, fraseSaldado, hayOtrosPagadores, NOMBRE_PERSONA_MAX, compararViajes, COLORES_VIAJE, leerColorViaje, colorLibre, siguienteColor, viajeActivo, ARCHIVADOS_MAX, archivarViaje, desarchivarViaje, borrarArchivado, todosLosViajes, crearViaje, nombreCopia, nombreDeDestino, duplicarViaje, renombrarViaje, elegirViaje, borrarViaje, moverGasto, cambiarViaje, TRAMOS_MAX, NOMBRE_TRAMO_MAX, leerTramos, ponerTramo, quitarTramo, tramoDelDia, divisaDelTramo, resumenTramos, curvaPresupuesto, FRANJAS, HORAS_MINIMO, horaFiable, porFranja, PENDIENTES_MAX, leerPendientes, crearPendiente, cambiarVence, pendientesPorFecha, tocaPagar, tonoVence, textoVence, PENDIENTE_HORA, tocaPendientes, avisadosPendientes, mensajePendientes, apuntarPendiente, quitarPendiente, totalPendiente, pagarPendiente, resumenViaje, archivoGastos,
+    VIAJES_MAX, NOMBRE_VIAJE_MAX, leerViajes, leerPersonas, porPersona, consumoGente, leerPagador, leerGente, ponerNombre, nombrePersona, inicialPersona, cuentasViaje, frasePago, COBRO_GASTOS_MAX, mensajeCobro, leerEntre, entreDe, fraseEntre, cambiarEntre, leerSaldados, saldarPago, quitarSaldado, fraseSaldado, hayOtrosPagadores, NOMBRE_PERSONA_MAX, compararViajes, COLORES_VIAJE, leerColorViaje, colorLibre, siguienteColor, viajeActivo, ARCHIVADOS_MAX, archivarViaje, desarchivarViaje, borrarArchivado, todosLosViajes, crearViaje, nombreCopia, nombreDeDestino, duplicarViaje, renombrarViaje, elegirViaje, borrarViaje, moverGasto, cambiarViaje, TRAMOS_MAX, NOMBRE_TRAMO_MAX, leerTramos, ponerTramo, quitarTramo, tramoDelDia, divisaDelTramo, resumenTramos, curvaPresupuesto, FRANJAS, HORAS_MINIMO, horaFiable, porFranja, PENDIENTES_MAX, leerPendientes, crearPendiente, cambiarVence, pendientesPorFecha, tocaPagar, tonoVence, textoVence, PENDIENTE_HORA, tocaPendientes, avisadosPendientes, mensajePendientes, apuntarPendiente, quitarPendiente, totalPendiente, pagarPendiente, resumenViaje, archivoGastos, plegarIcs, eventosDelViaje, calendarioViaje, archivoCalendario,
     diasHasta, leerPresupuesto, leerTopes, PRESUPUESTO_JUSTO, estadoPresupuesto, estadoTopes, alDiaAlli, inicioDelViaje, diaDelViaje, cuentaAtras, textoCuentaAtras, huchaViaje, loDeHoy, CELEBRADOS_MAX, leerCelebrados, anadirCelebrado, viajeParaCelebrar, textoCelebrar, RACHA_MINIMA, rachaPresupuesto, hastaCuandoLlega, previsionViaje, PREVISION_JUSTA, textoPrevision, loQueSeLleva, redondearDias,
     EXTRAS_MAX, EXTRAS_POR_DEFECTO, leerExtras, anadirExtra, quitarExtra,
     extrasVisibles, disponiblesParaAnadir, convertirExtras, semanaDe, trazoMini, CHULETA, escalaChuleta, chuleta, TRUCO_TOLERANCIA, trucoDeCabeza, textoTruco, tituloTruco, chuletaParaCompartir, extrasParaCompartir,

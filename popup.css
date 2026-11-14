@@ -3061,6 +3061,27 @@ body::after {
   display: none;
 }
 
+/* El calendario no se desplaza al pasar como las hojas de duplicar: el + se
+   asoma, que es lo que va a hacer, añadir. */
+#viajes-calendario:hover rect {
+  transform: none;
+}
+
+.viajes__calendario-mas {
+  transform-origin: 6px 7.6px;
+  transition: transform var(--mid) var(--ease-spring);
+}
+
+#viajes-calendario:hover .viajes__calendario-mas {
+  transform: scale(1.25);
+}
+
+#viajes-calendario.is-hecho {
+  color: var(--jade);
+  border-color: color-mix(in srgb, var(--jade) 45%, transparent);
+  animation: pop var(--mid) var(--ease-spring);
+}
+
 .viajes__duplicar.is-mal {
   animation: shake 400ms var(--ease);
 }
