@@ -14,6 +14,21 @@ const el = {
   restaurar: document.getElementById("restaurar"),
   cancelar: document.getElementById("cancelar"),
   hecho: document.getElementById("hecho"),
+  appSoltar: document.getElementById("app-soltar"),
+  appArchivo: document.getElementById("app-archivo"),
+  appError: document.getElementById("app-error"),
+  app: document.getElementById("app"),
+  appViaje: document.getElementById("app-viaje"),
+  appTu: document.getElementById("app-tu"),
+  appAlli: document.getElementById("app-alli"),
+  appAlliCampo: document.getElementById("app-alli-campo"),
+  appLista: document.getElementById("app-lista"),
+  appResumen: document.getElementById("app-resumen"),
+  appImportar: document.getElementById("app-importar"),
+  appCancelar: document.getElementById("app-cancelar"),
+  appHecho: document.getElementById("app-hecho"),
+  appHechoTexto: document.getElementById("app-hecho-texto"),
+  appDeshacer: document.getElementById("app-deshacer"),
   bancoSoltar: document.getElementById("banco-soltar"),
   bancoArchivo: document.getElementById("banco-archivo"),
   bancoError: document.getElementById("banco-error"),
@@ -530,6 +545,168 @@ function onCancelarGrupo() {
 }
 
 // Las dos cajas para soltar se portan igual.
+// De Splitwise o Tricount. Por defecto a un viaje nuevo: uno que ya tiene su
+// gente no se mezcla con la de otra app, que no sabría quién es quién.
+let leidoApp = null;
+let importadoApp = null;
+const NUEVO_VIAJE = "__nuevo";
+
+const dineroApp = (n, divisa) => `${numeros({ minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(n)} ${divisa}`;
+
+function divisaPrincipal(viaje, viajes) {
+  return sumarPorDivisa(viaje?.gastos ?? [])[0]?.to
+    ?? tuDivisa({ viajes: todosLosViajes(viajes), idiomas: navigator.languages });
+}
+
+// La de allí: la más repetida del archivo que no es la tuya.
+function divisaDeAlli(leido, to) {
+  const veces = new Map();
+  for (const g of leido.gastos) if (g.divisa !== to) veces.set(g.divisa, (veces.get(g.divisa) ?? 0) + 1);
+  return [...veces].sort((a, b) => b[1] - a[1])[0]?.[0] ?? (to === "USD" ? "EUR" : "USD");
+}
+
+function errorApp(clave, datos) {
+  el.app.hidden = true;
+  el.appError.textContent = tr(clave, datos);
+  el.appError.hidden = false;
+  reiniciar(el.appSoltar, "is-mal");
+}
+
+async function leerApp(archivo) {
+  if (!archivo) return;
+  el.appHecho.hidden = true;
+  const leido = leerCsvGrupo(await archivo.text());
+  if (leido.error) return errorApp(`app.error.${leido.error}`, { max: PERSONAS_MAX });
+  leidoApp = leido;
+  el.appError.hidden = true;
+  const viajes = await cargarViajesGuardados();
+  const to = divisaPrincipal(null, viajes);
+  const lleno = viajes.lista.length >= VIAJES_MAX;
+  const nombre = nombreDeDestino(divisaDeAlli(leido, to), viajes.lista) || tr("viajes.sinNombre");
+  const nuevo = lleno ? [] : [new Option(tr("app.nuevo", { nombre }), NUEVO_VIAJE, true, true)];
+  if (nuevo[0]) nuevo[0].dataset.nombre = nombre;
+  el.appViaje.replaceChildren(...nuevo, ...viajes.lista.map((v) => new Option(v.nombre || tr("gastos"), v.id, false, lleno && v.id === viajes.activo)));
+  el.appTu.replaceChildren(...leido.personas.map((n, i) => new Option(n, String(i))));
+  el.appAlli.replaceChildren(...CURRENCIES.map((c) => new Option(`${c.code} · ${nombreDe(c.code)}`, c.code)));
+  el.appAlli.value = divisaDeAlli(leido, to);
+  el.app.hidden = false;
+  reiniciar(el.app, "is-nueva");
+  await pintarApp();
+  el.appTu.focus();
+}
+
+async function pintarApp() {
+  if (!leidoApp) return;
+  const viajes = await cargarViajesGuardados();
+  const viaje = viajes.lista.find((v) => v.id === el.appViaje.value) ?? null;
+  const to = divisaPrincipal(viaje, viajes);
+  const tu = Number(el.appTu.value);
+  // Solo hace falta si hay algo en tu divisa: se guarda en la de allí.
+  el.appAlliCampo.hidden = !leidoApp.gastos.some((g) => g.divisa === to);
+  el.appLista.replaceChildren(...leidoApp.gastos.map((g) => {
+    const li = document.createElement("li");
+    li.className = "banco__fila";
+    li.innerHTML = '<span class="banco__fecha"></span><span class="banco__cat" aria-hidden="true"></span><span class="banco__concepto"></span><span class="banco__importe"></span>';
+    li.querySelector(".banco__fecha").textContent = fechaCorta(g.fecha);
+    li.querySelector(".banco__cat").textContent = emojiCategoria(g.categoria);
+    const quien = g.pagador === null ? "" : g.pagador === tu ? tr("app.pagasteTu") : tr("app.pago", { quien: leidoApp.personas[g.pagador] });
+    const entre = g.entre ? ` · ${tr("app.entre", { n: g.entre.length })}` : "";
+    li.querySelector(".banco__concepto").textContent = `${g.concepto || tr("gastos.sinConcepto")}${quien ? ` · ${quien}` : ""}${entre}`;
+    li.querySelector(".banco__importe").textContent = dineroApp(g.importe, g.divisa);
+    return li;
+  }));
+  const conGente = viaje && viaje.personas > 1;
+  const libres = GASTOS_MAX - (viaje?.gastos.length ?? 0);
+  let aviso = null;
+  if (conGente) aviso = tr("app.yaTieneGente", { viaje: viaje.nombre || tr("gastos") });
+  else if (leidoApp.gastos.length > libres) aviso = tr("banco.noCaben", { libres, max: GASTOS_MAX });
+  el.appResumen.textContent = aviso ?? tr("app.resumen", {
+    n: leidoApp.gastos.length, app: leidoApp.app === "tricount" ? "Tricount" : "Splitwise", personas: leidoApp.personas.length,
+  });
+  el.appResumen.classList.toggle("is-mal", Boolean(aviso));
+  el.appImportar.disabled = Boolean(aviso);
+  el.appImportar.textContent = tr(leidoApp.gastos.length === 1 ? "banco.importarUno" : "banco.importar", { n: leidoApp.gastos.length });
+}
+
+// Lo que vale 1 de esa divisa en la tuya cada día. Una semana antes, que si el
+// primero cae en sábado la tasa que vale es la del viernes.
+async function tasasSerie(from, to, desde, hasta) {
+  const [a, m, d] = desde.split("-").map(Number);
+  const antes = isoLocal(new Date(a, m - 1, d - 7));
+  const respuesta = await fetch(urlSerie(from, to, antes, hasta));
+  if (!respuesta.ok) throw new Error(`HTTP ${respuesta.status}`);
+  const datos = aFormatoV1(await respuesta.json(), true);
+  return Object.fromEntries(Object.entries(datos.rates ?? {}).map(([dia, r]) => [dia, r[to]]));
+}
+
+async function onImportarApp() {
+  el.appImportar.disabled = true;
+  try {
+    let viajes = await cargarViajesGuardados();
+    let id = el.appViaje.value;
+    const nuevo = id === NUEVO_VIAJE;
+    const alli = el.appAlli.value;
+    const to = divisaPrincipal(viajes.lista.find((v) => v.id === id), viajes);
+    const desde = leidoApp.gastos[0].fecha;
+    const hasta = leidoApp.gastos.at(-1).fecha;
+    const divisas = [...new Set(leidoApp.gastos.map((g) => (g.divisa === to ? alli : g.divisa)))].filter((c) => c !== to);
+    const tasas = Object.fromEntries(await Promise.all(divisas.map(async (c) => [c, await tasasSerie(c, to, desde, hasta)])));
+    if (nuevo) {
+      id = `${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`;
+      const creado = crearViaje(viajes, id, el.appViaje.selectedOptions[0].dataset.nombre);
+      if (creado === viajes) throw new Error("sin sitio");
+      viajes = creado;
+    }
+    const viaje = viajes.lista.find((v) => v.id === id);
+    const r = gastosDelGrupo(leidoApp, {
+      tu: Number(el.appTu.value), to, alli, tasas, existentes: viaje.gastos, idBase: `s${Date.now().toString(36)}`,
+    });
+    if (!r.nuevos.length) throw new Error(r.repetidos ? "repetidos" : "sin tasas");
+    const gastos = [...[...r.nuevos].sort((a, b) => b.cuando - a.cuando), ...viaje.gastos].slice(0, GASTOS_MAX);
+    importadoApp = { viaje: id, ids: r.nuevos.map((g) => g.id), nuevo, antes: { personas: viaje.personas, gente: viaje.gente } };
+    await chrome.storage.local.set({ viajes: cambiarViaje(viajes, id, { gastos, personas: r.personas, gente: r.gente }) });
+    el.app.hidden = true;
+    el.appArchivo.value = "";
+    const fuera = r.repetidos + r.sinTasa;
+    el.appHechoTexto.textContent = tr(r.nuevos.length === 1 ? "banco.hechoUno" : "banco.hecho", { n: r.nuevos.length, viaje: viaje.nombre || tr("gastos") })
+      + (fuera ? ` ${tr("app.fuera", { n: fuera })}` : "");
+    el.appDeshacer.hidden = false;
+    el.appHecho.hidden = false;
+    reiniciar(el.appHecho, "is-nueva");
+  } catch (error) {
+    console.warn("No se pudo importar de la app", error);
+    errorApp(error.message === "repetidos" ? "app.error.repetidos" : "banco.error.tasas");
+    el.app.hidden = false;
+    el.appImportar.disabled = false;
+  }
+}
+
+// Deshacer lo deja como estaba: si el viaje era nuevo, se va entero.
+async function onDeshacerApp() {
+  if (!importadoApp) return;
+  const viajes = await cargarViajesGuardados();
+  const viaje = viajes.lista.find((v) => v.id === importadoApp.viaje);
+  if (viaje && importadoApp.nuevo) {
+    await chrome.storage.local.set({ viajes: borrarViaje(viajes, viaje.id) });
+  } else if (viaje) {
+    const fuera = new Set(importadoApp.ids);
+    await chrome.storage.local.set({ viajes: cambiarViaje(viajes, viaje.id, {
+      gastos: viaje.gastos.filter((g) => !fuera.has(g.id)), ...importadoApp.antes,
+    }) });
+  }
+  el.appHechoTexto.textContent = tr(importadoApp.nuevo ? "app.deshechoNuevo" : "banco.deshecho", { viaje: viaje?.nombre ?? "" });
+  importadoApp = null;
+  el.appDeshacer.hidden = true;
+  reiniciar(el.appHecho, "is-nueva");
+}
+
+function onCancelarApp() {
+  leidoApp = null;
+  el.appArchivo.value = "";
+  el.app.hidden = true;
+  el.appSoltar.focus();
+}
+
 function zonaDeSoltar(zona, alSoltar) {
   for (const tipo of ["dragenter", "dragover"]) {
     zona.addEventListener(tipo, (event) => {
@@ -549,6 +726,12 @@ function zonaDeSoltar(zona, alSoltar) {
 }
 
 function bindEvents() {
+  zonaDeSoltar(el.appSoltar, leerApp);
+  el.appArchivo.addEventListener("change", () => leerApp(el.appArchivo.files[0]));
+  for (const campo of [el.appViaje, el.appTu, el.appAlli]) campo.addEventListener("change", pintarApp);
+  el.appImportar.addEventListener("click", onImportarApp);
+  el.appCancelar.addEventListener("click", onCancelarApp);
+  el.appDeshacer.addEventListener("click", onDeshacerApp);
   zonaDeSoltar(el.grupoSoltar, leerGrupo);
   el.grupoArchivo.addEventListener("change", () => leerGrupo(el.grupoArchivo.files[0]));
   el.grupoDescargar.addEventListener("click", onDescargarGrupo);

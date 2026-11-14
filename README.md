@@ -475,6 +475,13 @@ que necesitaba una conversión rápida. Ahora es un clic en la barra del navegad
   la divisa de allí a la tasa del BCE de cada día y la categoría adivinada por
   el concepto. Antes de importar los ves y quitas los que no son del viaje; lo
   que ya tenías apuntado ese día con ese importe no se repite. Y se puede deshacer
+- Lo que llevabais en Splitwise o Tricount, también ahí: exportas el grupo en
+  CSV y lo sueltas. Te pregunta quién eres tú y pasan los gastos con quién
+  pagó y entre quiénes ("Museo · pagaste tú · entre 2"), cada uno a la tasa de
+  su día; lo que estaba en tu divisa se guarda en la de allí, como lo del
+  banco. Por defecto va a un viaje nuevo con la gente puesta, y a uno que ya
+  tiene su gente no deja, que se mezclarían. Los pagos entre vosotros no son
+  gastos y no pasan. Se puede deshacer
 - Los gastos del grupo, también ahí: cada uno baja su viaje en un archivo (sin
   sus notas) y os lo pasáis. Al soltarlo eliges a qué viaje va y quién es quién,
   que cada uno tiene a la gente en su orden. Lo que pagó el otro entra a su

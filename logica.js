@@ -8482,6 +8482,131 @@ function tasaDeEseDia(tasas, fecha) {
   return tasas[antes];
 }
 
+// El CSV de Splitwise o Tricount: lo que llevabais en otra app, con quién pagó
+// y entre quiénes. Por los nombres de las columnas y no por su sitio, que cada
+// app (y cada idioma) las pone a su manera.
+const COLUMNAS_GRUPO = {
+  fecha: [/^(date|fecha|datum)/],
+  concepto: [/^(description|title|titulo|descripcion|concepto|what|wat)$/],
+  categoria: [/^(category|categoria)$/],
+  importe: [/^(cost|amount|importe|cantidad|coste|bedrag)$/],
+  divisa: [/^(currency|moneda|divisa|valuta)$/],
+  pagador: [/^(paid by|pagado por|payer|betaald door)$/],
+  tipo: [/^(type|tipo|transaction type)$/],
+};
+// En Tricount, una columna por persona con lo que le toca: "Paid for Ana".
+const PARA_PERSONA = /^(?:paid for|impact for|pagado para|para|betaald voor)\s+(.+)$/i;
+// Lo que es saldar deudas, no gastar: Splitwise lo marca como "Payment".
+const ES_PAGO_GRUPO = /^(payment|pago|transfer|transferencia|money transfer|reembolso|reimbursement)$/i;
+
+const CATEGORIAS_GRUPO = [
+  ["comida", /dining|groceries|food|liquor|restaurant|comida|supermercado|bar|cafe/],
+  ["transporte", /taxi|transport|bus|train|plane|flight|car|gas|fuel|parking|bicycle|transporte|vuelo|tren/],
+  ["alojamiento", /hotel|lodging|rent|accommodation|alojamiento|alquiler/],
+  ["ocio", /entertainment|games|movies|music|sports|ocio|entradas/],
+  ["compras", /clothing|gifts|household|electronics|shopping|compras|ropa|regalos/],
+];
+
+function categoriaDeGrupo(concepto, categoria) {
+  const t = normalizar(String(categoria ?? ""));
+  return adivinarCategoria(concepto) ?? CATEGORIAS_GRUPO.find(([, patron]) => patron.test(t))?.[0] ?? CATEGORIA_POR_DEFECTO;
+}
+
+function leerCsvGrupo(texto) {
+  const limpio = String(texto ?? "").replace(/^﻿/, "");
+  const primeras = limpio.split(/\r?\n/).slice(0, 5).join("\n");
+  const sep = [",", ";", "\t"].map((c) => [c, primeras.split(c).length]).sort((a, b) => b[1] - a[1])[0][0];
+  const filas = partirCsv(limpio, sep);
+  const donde = filas.slice(0, 10).findIndex((f) => columnaBanco(f, COLUMNAS_GRUPO.fecha) > -1
+    && columnaBanco(f, COLUMNAS_GRUPO.importe) > -1 && columnaBanco(f, COLUMNAS_GRUPO.divisa) > -1);
+  if (donde === -1) return { error: "columnas" };
+  const cabecera = filas[donde];
+  const col = Object.fromEntries(Object.entries(COLUMNAS_GRUPO).map(([k, p]) => [k, columnaBanco(cabecera, p)]));
+
+  // Splitwise: una columna por persona detrás de la divisa, con lo que puso
+  // menos lo que le tocaba. Tricount: "Pagado por" y una "Paid for X" por persona.
+  const tricount = col.pagador > -1;
+  const columnasPersona = tricount
+    ? cabecera.map((c, i) => [i, c.match(PARA_PERSONA)?.[1]?.trim()]).filter(([, n]) => n)
+    : cabecera.map((c, i) => [i, c.trim()]).filter(([i, n]) => i > col.divisa && n);
+  const personas = columnasPersona.map(([, n]) => n);
+  if (personas.length > PERSONAS_MAX) return { error: "personas" };
+
+  const gastos = [];
+  for (const f of filas.slice(donde + 1)) {
+    const fecha = fechaBanco(f[col.fecha]);
+    const importe = numeroBanco(f[col.importe]);
+    const divisa = String(f[col.divisa] ?? "").trim().toUpperCase();
+    // La línea del total de Splitwise no tiene fecha; los pagos entre vosotros no son gastos.
+    if (!fecha || !(importe > 0) || !isValidCode(divisa)) continue;
+    if (ES_PAGO_GRUPO.test(f[col.categoria] ?? "") || ES_PAGO_GRUPO.test(f[col.tipo] ?? "")) continue;
+    let pagador = null;
+    let entre = [];
+    if (tricount) {
+      const nombre = normalizar(String(f[col.pagador] ?? "").trim());
+      pagador = personas.findIndex((n) => normalizar(n) === nombre);
+      entre = columnasPersona.map(([i], k) => [k, numeroBanco(f[i])]).filter(([, v]) => Math.abs(v ?? 0) >= 0.005).map(([k]) => k);
+    } else {
+      const netos = columnasPersona.map(([i]) => numeroBanco(f[i]) ?? 0);
+      // El que puso el dinero es el que sale en positivo; si son varios, el que más.
+      const max = Math.max(...netos);
+      pagador = max > 0.005 ? netos.indexOf(max) : -1;
+      // A cada uno le tocaba lo que puso menos su neto; los que no ponen nada ni deben, no entran.
+      entre = netos.map((v, k) => [k, (k === pagador ? importe : 0) - v]).filter(([, parte]) => parte >= 0.005).map(([k]) => k);
+    }
+    const concepto = col.concepto > -1 ? String(f[col.concepto] ?? "").trim() : "";
+    gastos.push({
+      fecha, concepto, importe: Math.round(importe * 100) / 100, divisa,
+      categoria: categoriaDeGrupo(concepto, col.categoria > -1 ? f[col.categoria] : ""),
+      pagador: pagador >= 0 ? pagador : null,
+      entre: entre.length && entre.length < personas.length ? entre : null,
+    });
+  }
+  if (!gastos.length) return { error: "vacio" };
+  return { app: tricount ? "tricount" : "splitwise", personas, gastos: gastos.sort((a, b) => a.fecha.localeCompare(b.fecha)) };
+}
+
+// De lo leído a gastos del viaje. "tu" es tu columna: pasas a ser la persona 0,
+// como en el resto de la extensión, y los demás van detrás en su orden.
+// tasas[divisa][día] es lo que vale 1 de esa divisa en la tuya ese día. Lo que
+// ya viene en tu divisa se guarda en la de allí, como lo del banco, porque un
+// gasto no puede ir de una divisa a sí misma.
+function gastosDelGrupo(leido, { tu = 0, to, alli, tasas, existentes = [], idBase = "s", cuando = 12 }) {
+  const n = leido.personas.length;
+  const orden = [tu, ...leido.personas.map((_, i) => i).filter((i) => i !== tu)];
+  const nuevoIndice = (i) => orden.indexOf(i);
+  const nuevos = [];
+  let repetidos = 0;
+  let sinTasa = 0;
+  leido.gastos.forEach((g, k) => {
+    const enLaTuya = g.divisa === to;
+    const from = enLaTuya ? alli : g.divisa;
+    const tasa = tasaDeEseDia(tasas?.[from], g.fecha);
+    if (!(tasa > 0) || from === to) {
+      sinTasa += 1;
+      return;
+    }
+    const valor = enLaTuya ? g.importe : Math.round(g.importe * tasa * 100) / 100;
+    if (yaApuntado([...existentes, ...nuevos], g.fecha, valor, to)) {
+      repetidos += 1;
+      return;
+    }
+    const [a, m, d] = g.fecha.split("-").map(Number);
+    const gasto = crearGasto({
+      id: `${idBase}${k.toString(36)}`, from, to, valor,
+      cantidad: enLaTuya ? Math.round((g.importe / tasa) * 100) / 100 : g.importe,
+      cuando: new Date(a, m - 1, d, cuando).getTime(),
+      concepto: g.concepto, categoria: g.categoria, pago: "tarjeta", comision: 0,
+      pagador: g.pagador === null ? 0 : nuevoIndice(g.pagador),
+      entre: g.entre?.map(nuevoIndice),
+    });
+    if (gasto) nuevos.push(gasto);
+  });
+  // Tu nombre no: en la extensión tú eres "tú".
+  const gente = orden.map((i, k) => (k === 0 ? "" : leido.personas[i]));
+  return { nuevos, repetidos, sinTasa, personas: n, gente };
+}
+
 // Lo de un mismo día con el mismo importe ya está: lo apuntaste a mano o lo
 // importaste antes. El concepto no lo miro, que el del banco nunca es el tuyo.
 const yaApuntado = (gastos, fecha, importe, to) => gastos.some((g) => g.to === to
@@ -8830,6 +8955,7 @@ if (typeof module !== "undefined") {
     EMOJI_CATEGORIA, destacados, resumenParaCompartir, FINDE_MINIMO, findeContraSemana, ESTRELLA_MINIMO, conceptoEstrella, INDICE_MAX, indiceCafe,
     TARJETAS_MAX, NOMBRE_TARJETA_MAX, anadirTarjeta, leerTarjetas, quitarTarjeta, tarjetaActual, siguientePago, mejorTarjeta,
     aniosConGastos, datosAnio, COPIA_APP, COPIA_VERSION, CLAVES_COPIA, CLAVES_SYNC, limpiarSync, cambiosSync, mezclaInicial, limpiarCopia, crearCopia, leerCopia, resumenCopia,
+    leerCsvGrupo, gastosDelGrupo, categoriaDeGrupo,
     crearPaquete, leerPaquete, quienEsQuien, mapaValido, gastosParaJuntar, juntarGastos,
     puedeSerDeEmpresa, pasarAEmpresa, sacarDeEmpresa, notaDeGastos,
     AVISO_MEJOR_DIAS, techoDeSerie, crearAvisoMejor, ponerTechos,

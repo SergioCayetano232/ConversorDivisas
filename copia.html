@@ -135,6 +135,45 @@
       </div>
     </section>
 
+    <section class="tarjeta" aria-labelledby="app-titulo">
+      <h2 class="tarjeta__titulo" id="app-titulo" data-t="app.titulo">De Splitwise o Tricount</h2>
+      <p class="tarjeta__nota" data-t="app.intro">Si llevabais las cuentas en otra app, exporta el grupo en CSV y suéltalo aquí. Pasan los gastos con quién pagó y entre quiénes, a la tasa de su día.</p>
+      <label class="soltar" id="app-soltar">
+        <input class="soltar__archivo" type="file" id="app-archivo" accept=".csv,text/csv,text/plain">
+        <svg class="soltar__icono" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h11M4 7l3-3M4 7l3 3"/><path d="M20 17H9M20 17l-3-3M20 17l-3 3"/></svg>
+        <span class="soltar__texto" data-t="app.soltar">Arrastra aquí el CSV de Splitwise o Tricount</span>
+        <span class="soltar__pista" data-t="copia.elegir">o pulsa para elegirlo</span>
+      </label>
+      <p class="error" id="app-error" role="alert" hidden></p>
+      <div class="vista-previa banco" id="app" hidden>
+        <div class="banco__ajustes">
+          <label class="campo">
+            <span class="campo__nombre" data-t="banco.viaje">Al viaje</span>
+            <select class="campo__control" id="app-viaje"></select>
+          </label>
+          <label class="campo">
+            <span class="campo__nombre" data-t="app.tu">¿Quién eres tú?</span>
+            <select class="campo__control" id="app-tu"></select>
+          </label>
+          <label class="campo" id="app-alli-campo">
+            <span class="campo__nombre" data-t="banco.divisa">Divisa de allí</span>
+            <select class="campo__control" id="app-alli"></select>
+          </label>
+        </div>
+        <ul class="banco__lista" id="app-lista" aria-label="Gastos del archivo" data-t-aria-label="grupo.lista"></ul>
+        <p class="banco__resumen" id="app-resumen" aria-live="polite"></p>
+        <div class="vista-previa__botones">
+          <button class="boton boton--dorado" type="button" id="app-importar"></button>
+          <button class="boton" type="button" id="app-cancelar" data-t="copia.no">Cancelar</button>
+        </div>
+      </div>
+      <div class="hecho banco__hecho" id="app-hecho" role="status" hidden>
+        <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3.5 8.3l3 3 6-6.5"/></svg>
+        <span id="app-hecho-texto"></span>
+        <button class="boton boton--pequeno" type="button" id="app-deshacer" data-t="banco.deshacer">Deshacer</button>
+      </div>
+    </section>
+
     <footer class="pie">
       <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 1.8l5 2v4c0 3-2.2 5.3-5 6.4-2.8-1.1-5-3.4-5-6.4v-4z"/></svg>
       <span data-t="copia.pie">Todo se queda en tu navegador: la copia es un archivo tuyo y no se manda a ningún sitio.</span>
