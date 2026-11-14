@@ -924,8 +924,13 @@ function crearBuscador(lado) {
     boton.value = code;
     const bandera = crearBandera(code);
     const texto = document.createElement("span");
-    texto.textContent = `${code} · ${nombreDe(code)}`;
-    boton.replaceChildren(bandera, texto);
+    texto.className = "buscador__codigo";
+    texto.textContent = code;
+    const nombre = document.createElement("span");
+    nombre.className = "buscador__nombre";
+    nombre.textContent = ` · ${nombreDe(code)}`;
+    boton.replaceChildren(bandera, texto, nombre);
+    boton.title = nombreDe(code);
     // Al abrir el popup no salta: solo cuando cambias tú la divisa.
     if (cambia && boton.dataset.puesto) bandera.classList.add("is-nueva");
     boton.dataset.puesto = "1";

@@ -793,6 +793,26 @@ body::after {
   text-overflow: ellipsis;
 }
 
+.buscador__codigo {
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+
+.buscador__nombre {
+  color: var(--muted);
+}
+
+/* En 340 px el nombre solo cabía como "E…"; lo escondo pero sin display:none,
+   que el botón se nombra a sí mismo y el lector de pantalla lo perdería. */
+html:not(.es-panel) .buscador__nombre {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
 /* Cuando algo cambia sin que lo toques (una pastilla, el menú de la web), que
    se vea dónde ha caído. */
 .buscador__boton.is-cambiado,
