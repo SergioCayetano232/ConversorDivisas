@@ -8197,6 +8197,7 @@ const FUNCIONES = [
   { accion: "vista:timo", claves: "casa de cambio timo comision exchange office fair" },
   { accion: "vista:suscripciones", claves: "netflix spotify icloud suscripcion mensual subscription monthly" },
   { accion: "copiaSeguridad", claves: "copia backup restaurar exportar restore" },
+  { accion: "panel", claves: "lateral fijo abierto al lado side panel dock pin" },
   { accion: "ayuda", claves: "teclado atajos ayuda keyboard shortcuts help" },
 ];
 const FUNCIONES_MAX = 8;
@@ -8929,6 +8930,14 @@ function resumenCopia(datos) {
   };
 }
 
+// El panel lateral abre el mismo popup.html con ?panel, y así sé dónde estoy.
+const esPanel = (busqueda) => new URLSearchParams(busqueda ?? "").has("panel");
+
+// El panel se queda abierto horas, y mientras tanto los viajes pueden cambiar
+// por debajo: "cd + 20 taxi" en la barra o la copia de seguridad. Si no los
+// recargo, el siguiente gasto que apunte se los come. Lo que guardé yo no cuenta.
+const cambioDeFuera = (nuevo, mio) => JSON.stringify(nuevo) !== JSON.stringify(mio);
+
 // El popup lo carga como script normal y lo lee del ámbito global; Node necesita
 // el export. Sin esto habría que montar un build, y aquí no hay ninguno.
 if (typeof module !== "undefined") {
@@ -8978,5 +8987,6 @@ if (typeof module !== "undefined") {
     nivelPresupuesto, avisosPresupuesto, mensajePresupuesto,
     RECORDATORIO_HORA, RECORDATORIO_HORAS, leerHoraRecordatorio, viajesSinApuntar, tocaRecordar, mensajeRecordatorio, TAX_FREE_HORA, tocaTaxFree, mensajeTaxFree,
     ATAJOS, atajoPara, textoAtajo, FUNCIONES, FUNCIONES_MAX, buscarFunciones,
+    esPanel, cambioDeFuera,
   };
 }

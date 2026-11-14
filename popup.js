@@ -294,6 +294,7 @@ const el = {
   campana: document.getElementById("vista-avisos"),
   abrirAyuda: document.getElementById("abrir-ayuda"),
   abrirCopia: document.getElementById("abrir-copia"),
+  abrirPanel: document.getElementById("abrir-panel"),
   ayuda: document.getElementById("ayuda"),
   ayudaCerrar: document.getElementById("ayuda-cerrar"),
   ayudaLista: document.getElementById("ayuda-lista"),
@@ -7195,6 +7196,20 @@ function onQuitarAviso(id) {
 }
 
 const esMac = /mac|iphone|ipad/i.test(navigator.userAgentData?.platform ?? navigator.platform ?? "");
+const enPanel = esPanel(location.search);
+const puedePanel = !enPanel && typeof chrome.sidePanel?.open === "function";
+
+// sidePanel.open solo vale dentro del clic, así que la ventana la pido antes:
+// con un await por medio Chrome ya no lo cuenta como gesto tuyo.
+let ventanaActual = null;
+if (puedePanel) chrome.windows.getCurrent().then((v) => { ventanaActual = v.id; }).catch(() => {});
+
+function abrirPanel() {
+  if (ventanaActual === null) return;
+  chrome.sidePanel.open({ windowId: ventanaActual })
+    .then(() => window.close())
+    .catch((error) => console.warn("No se pudo abrir el panel lateral", error));
+}
 
 const queHace = (accion) => tr(`atajo.${accion}`);
 
@@ -7346,6 +7361,7 @@ function funcionPosible(accion) {
   const conGastos = ["csv", "compartir", "copiarTotal", "copiarGasto", "tarjetaViaje", "curva"];
   if (conGastos.includes(accion)) return gastos.length > 0;
   if (accion === "deshacer") return Boolean(quitado);
+  if (accion === "panel") return puedePanel;
   if (accion === "empresa") return deEmpresa().length > 0;
   if (accion === "gente") return Boolean(cuentasViaje(gastos, viajeActivo(viajes).personas));
   if (accion === "horas") return Boolean(porFranja(gastos));
@@ -7467,6 +7483,7 @@ function hacerFuncion(accion) {
   else if (accion === "anio") abrirPestana(`resumen.html?anio=${aniosConGastos(todosLosViajes(viajes))[0]}`);
   else if (accion === "comision") abrirBurbuja();
   else if (accion === "copiaSeguridad") chrome.runtime.openOptionsPage();
+  else if (accion === "panel") abrirPanel();
   else if (accion === "calendario") descargarCalendario();
   else hacerAtajo(accion);
 }
@@ -8514,6 +8531,8 @@ function bindEvents() {
   document.addEventListener("keydown", onAtajo);
   el.abrirAyuda.addEventListener("click", abrirAyuda);
   el.abrirCopia.addEventListener("click", () => chrome.runtime.openOptionsPage());
+  el.abrirPanel.hidden = !puedePanel;
+  el.abrirPanel.addEventListener("click", abrirPanel);
   el.abrirFunciones.addEventListener("click", abrirFunciones);
   // Sin texto, que en el pie no cabía: el atajo va en el título.
   el.abrirFunciones.title = tr("funciones.botonTitulo", { tecla: esMac ? "⌘K" : "Ctrl+K" });
@@ -8745,9 +8764,16 @@ function bindEvents() {
   // Cuando salta un aviso lo borra el service worker; si tienes el popup
   // abierto, que la pastilla desaparezca también.
   chrome.storage.onChanged.addListener((cambios, zona) => {
-    if (zona !== "local" || !cambios[AVISOS_KEY]) return;
-    avisos = leerAvisos(cambios[AVISOS_KEY].newValue);
-    pintarAvisos();
+    if (zona !== "local") return;
+    if (cambios[AVISOS_KEY]) {
+      avisos = leerAvisos(cambios[AVISOS_KEY].newValue);
+      pintarAvisos();
+    }
+    if (cambios[VIAJES_KEY] && cambioDeFuera(cambios[VIAJES_KEY].newValue, viajes)) {
+      viajes = leerViajes(cambios[VIAJES_KEY].newValue);
+      ({ gastos, presupuesto, cajero } = viajeActivo(viajes));
+      pintarGastos();
+    }
   });
   document.addEventListener("keydown", (event) => {
     if (event.key === "Escape" && !el.bandeja.hidden) {
@@ -8867,6 +8893,7 @@ function saludarIdioma() {
 }
 
 async function init() {
+  document.documentElement.classList.toggle("es-panel", enPanel);
   const idiomaCambiado = await cargarIdioma();
   traducirPagina();
   if (idiomaCambiado) saludarIdioma();

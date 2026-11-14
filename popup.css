@@ -106,6 +106,23 @@ body {
   isolation: isolate;
 }
 
+/* En el panel lateral el ancho lo pone Chrome (y lo puedes arrastrar), así que
+   ocupo lo que haya en vez de los 340 del popup. */
+.es-panel body {
+  width: auto;
+  min-width: 320px;
+}
+
+/* Con todo el alto, la cartera crece hasta abajo (su alto sale del de .app) y
+   el pie se queda al final en vez de flotar a media pantalla. */
+.es-panel .app {
+  min-height: 100vh;
+}
+
+.es-panel .footer {
+  margin-top: auto;
+}
+
 /* Las manchas van en un pseudoelemento fijo: si las pongo de fondo del body
    se reescalan cuando el popup crece al aparecer el gráfico. */
 body::before {
@@ -286,6 +303,48 @@ body::after {
   font-weight: 600;
   letter-spacing: 0.02em;
   color: var(--mist);
+}
+
+.header__panel {
+  display: inline-grid;
+  place-items: center;
+  margin-left: 6px;
+  padding: 2px;
+  vertical-align: -3px;
+  background: transparent;
+  border: none;
+  border-radius: var(--r-sm);
+  color: var(--muted);
+  cursor: pointer;
+  transition: color var(--fast) var(--ease), background-color var(--fast) var(--ease);
+}
+
+.header__panel svg {
+  width: 13px;
+  height: 13px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.3;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.header__panel-raya {
+  transition: transform var(--mid) var(--ease-spring);
+}
+
+.header__panel:hover {
+  color: var(--brass);
+  background: var(--brass-ghost);
+}
+
+.header__panel:hover .header__panel-raya {
+  transform: translateX(-1px);
+}
+
+.header__panel:focus-visible {
+  outline: 2px solid var(--brass);
+  outline-offset: 2px;
 }
 
 /* El veredicto va encima, a la derecha. Si la tasa es larga (el yen o la
@@ -10220,6 +10279,7 @@ body::after {
 .footer__copia {
   padding: 2px 4px;
 }
+
 
 /* Los tres botones juntos: sueltos, con el hueco del pie entre cada uno, ya no
    cabía "Tasas de Frankfurter" en una línea. */

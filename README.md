@@ -452,6 +452,11 @@ que necesitaba una conversión rápida. Ahora es un clic en la barra del navegad
   un campo, con `Alt` delante (`⌥` en Mac). En la cantidad, `↑` y `↓` suben o
   bajan 1, y con Shift, 10. La rueda del ratón hace lo mismo, con el cursor puesto en ella. Con
   Alt, por diez o entre diez: de 50 a 500. Y `Esc` la vacía; con ella vacía, otro `Esc` cierra el popup Con `?` salen todos
+- En el panel lateral de Chrome, con el botón que hay al lado del nombre: se
+  queda abierto mientras miras otras pestañas, para ir apuntando gastos o
+  comparando precios sin que se cierre a cada clic. Ocupa el alto entero, así
+  que la cartera enseña más gastos, y lo que apuntes desde la barra (`cd + 20
+  taxi`) o la copia de seguridad aparece en él sin tener que cerrarlo
 - Tiene modo claro y oscuro, según cómo tengas el sistema
 - En español o en inglés, según el idioma de Chrome o el que elijas con clic
   derecho en el icono → **Idioma**. En inglés los números van a la inglesa
@@ -493,7 +498,7 @@ que necesitaba una conversión rápida. Ahora es un clic en la barra del navegad
 Pide lo justo: guardar tus preferencias, hablar con la API de las tasas, una
 alarma para refrescar el icono y mirar los avisos cada hora, mandar las
 notificaciones de esos avisos, de los del presupuesto, del recordatorio de la
-noche y de los gastos apuntados desde la barra y, para lo del clic derecho, el menú y poner la
+noche y de los gastos apuntados desde la barra, abrirse en el panel lateral y, para lo del clic derecho, el menú y poner la
 tarjeta en la pestaña en la que estás.
 Esto último solo pasa cuando pulsas **Convertir**, **Convertir los precios de
 la página** o el atajo; no lee ninguna web por su cuenta, y por eso Chrome no avisa de nada al instalarla. No hay analítica ni
