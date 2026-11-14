@@ -120,6 +120,18 @@ textarea {
   caret-color: var(--brass);
 }
 
+/* Un apretón para los botones que no traen el suyo. Con :where no pesa nada,
+   así que los que ya tienen transform o transition propios se quedan como
+   estaban. Los que parecen texto o campo, sin él. */
+:where(button) {
+  transition: transform var(--mid) var(--ease-spring);
+}
+
+:where(button:not(:disabled, .field__select, .header__tasa, .gastos__cabeza, .tramos__desde)):active {
+  transform: scale(0.94);
+  transition-duration: 60ms;
+}
+
 /* En el panel lateral el ancho lo pone Chrome (y lo puedes arrastrar), así que
    ocupo lo que haya en vez de los 340 del popup. */
 .es-panel body {
