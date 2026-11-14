@@ -3354,6 +3354,28 @@ body::after {
   color: var(--muted);
 }
 
+.viajes__pie .csv[hidden] {
+  display: none;
+}
+
+/* El año, en dorado: es lo que se enseña. */
+.viajes__anio {
+  margin-left: auto;
+  margin-right: 2px;
+  font-family: inherit;
+  font-size: 9.5px;
+  letter-spacing: 0.02em;
+  color: var(--brass);
+  border-color: color-mix(in srgb, var(--brass) 35%, transparent);
+  background: color-mix(in srgb, var(--brass) 8%, transparent);
+}
+
+.viajes__anio:hover,
+.viajes__anio:focus-visible {
+  outline: none;
+  background: color-mix(in srgb, var(--brass) 16%, transparent);
+}
+
 /* El título va encima del total y no en su propia fila: la caja del resultado
    recorta lo que se sale, y cada fila de la lista cuenta. */
 .gastos__total {

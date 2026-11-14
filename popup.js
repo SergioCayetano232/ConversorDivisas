@@ -172,6 +172,7 @@ const el = {
   viajesIndiceLista: document.getElementById("viajes-indice-lista"),
   viajesPie: document.getElementById("viajes-pie"),
   viajesCsv: document.getElementById("viajes-csv"),
+  viajesAnio: document.getElementById("viajes-anio"),
   gastos: document.getElementById("gastos"),
   gastosVaciar: document.getElementById("gastos-vaciar"),
   gastosSuma: document.getElementById("gastos-suma"),
@@ -5668,8 +5669,16 @@ function pintarViajes() {
   // Lo de arriba suele ser la divisa de allí: el nombre ya lo tengo.
   const sugerido = nombreDeDestino(el.from.value, viajes.lista);
   el.viajesNombre.placeholder = sugerido ? tr("viajes.nuevoDe", { nombre: sugerido }) : tr("viajes.nuevo");
-  // Con un viaje solo es el CSV de abajo otra vez.
-  el.viajesPie.hidden = todosLosViajes(viajes).length < 2 || !todosLosViajes(viajes).some((v) => v.gastos.length > 0);
+  // Con un viaje solo el CSV es el de abajo otra vez; el año sí, que ya es tu año.
+  const [anio] = aniosConGastos(todosLosViajes(viajes));
+  el.viajesCsv.hidden = todosLosViajes(viajes).length < 2;
+  el.viajesAnio.hidden = !anio;
+  el.viajesPie.hidden = !anio;
+  if (anio) {
+    el.viajesAnio.textContent = tr("anio.abrir", { anio });
+    el.viajesAnio.title = tr("anio.abrirTitulo", { anio });
+    el.viajesAnio.dataset.anio = anio;
+  }
 }
 
 function abrirViajes() {
@@ -7976,6 +7985,7 @@ function bindEvents() {
   el.chuletaImprimir.addEventListener("click", onImprimirChuleta);
   el.gastosCsv.addEventListener("click", () => descargarCsv(csvGastos(gastos), archivoGastos(viajeActivo(viajes).nombre), el.gastosCsv));
   el.viajesCsv.addEventListener("click", () => descargarCsv(csvViajes(todosLosViajes(viajes)), tr("csv.archivoViajes"), el.viajesCsv));
+  el.viajesAnio.addEventListener("click", () => chrome.tabs.create({ url: `resumen.html?anio=${el.viajesAnio.dataset.anio}` }));
   el.viajesAbrirArchivo.addEventListener("click", () => {
     archivoAbierto = !archivoAbierto;
     indiceAbierto = false;

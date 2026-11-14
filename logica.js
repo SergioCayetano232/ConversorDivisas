@@ -8158,6 +8158,67 @@ function datosTarjeta(viaje, hoyIso = hoy()) {
   };
 }
 
+// Tu año viajando: todos los viajes, archivados también, contados solo con lo
+// que gastaste ese año. Un viaje de Nochevieja cuenta en los dos.
+const anioDe = (g) => new Date(g.cuando).getFullYear();
+
+function aniosConGastos(lista) {
+  const anios = new Set(lista.flatMap((v) => v.gastos.map(anioDe)));
+  return [...anios].sort((a, b) => b - a);
+}
+
+function datosAnio(lista, anio) {
+  const delAnio = lista
+    .map((v) => ({ ...v, gastos: v.gastos.filter((g) => anioDe(g) === anio) }))
+    .filter((v) => v.gastos.length > 0);
+  const todos = delAnio.flatMap((v) => v.gastos);
+  const totales = sumarPorDivisa(todos);
+  const [total] = totales;
+  if (!total) return null;
+  const suyos = (gastos) => gastos.filter((g) => g.to === total.to);
+
+  // Los días fuera, sin contar dos veces los que se solapan: la escapada
+  // dentro de un viaje largo no te da más días.
+  const dias = new Set();
+  for (const v of delAnio) {
+    const diarios = delDiaADia(v.gastos);
+    const fechas = gastosPorDia(diarios.length ? diarios : v.gastos).map((d) => d.dia).sort();
+    const [a, m, d] = fechas[0].split("-").map(Number);
+    for (let i = 0; i < diasHasta(fechas.at(-1), fechas[0]); i += 1) dias.add(isoLocal(new Date(a, m - 1, d + i)));
+  }
+
+  const filas = compararViajes(delAnio).filter((f) => f.media !== null && f.to === total.to);
+  const nombre = (id) => delAnio.find((v) => v.id === id)?.nombre || tr("viajes.sinNombre");
+  const porMedia = [...filas].sort((a, b) => b.media - a.media);
+  const fila = (f) => (f ? { nombre: nombre(f.id), media: f.media, to: f.to } : null);
+  const diarios = suyos(delDiaADia(todos));
+  const caro = diarios.length ? diarios.reduce((max, g) => (g.valor > max.valor ? g : max)) : null;
+  const diasDiarios = new Set(diarios.map((g) => isoLocal(new Date(g.cuando))));
+  const sumaDiarios = diarios.reduce((suma, g) => suma + g.valor, 0);
+  // Las divisas por orden de llegada: es el orden del año.
+  const divisas = [...new Set([...todos].sort((a, b) => a.cuando - b.cuando).map((g) => g.from))]
+    .filter((code) => code !== total.to);
+
+  return {
+    anio,
+    viajes: delAnio.length,
+    dias: dias.size,
+    total,
+    otras: totales.slice(1),
+    n: todos.length,
+    // Contra los días fuera y no contra los días con gastos: el día del museo
+    // gratis también estabas de viaje.
+    media: dias.size >= 2 && diasDiarios.size ? { valor: sumaDiarios / dias.size, to: total.to } : null,
+    // Con un viaje solo no hay más caro ni más barato.
+    caroDia: porMedia.length >= 2 ? fila(porMedia[0]) : null,
+    baratoDia: porMedia.length >= 2 ? fila(porMedia.at(-1)) : null,
+    caro: caro ? { concepto: caro.concepto || nombreCategoria(caro.categoria), valor: caro.valor, to: caro.to, categoria: caro.categoria } : null,
+    estrella: conceptoEstrella(todos),
+    divisas,
+    categorias: desglose(todos).slice(0, 3),
+  };
+}
+
 // La copia de seguridad guarda lo tuyo: viajes, avisos, historial y
 // preferencias. Las tasas guardadas no, que caducan en un día.
 const COPIA_APP = "ConversorDivisas";
@@ -8377,7 +8438,7 @@ if (typeof module !== "undefined") {
     CATEGORIAS, CATEGORIA_POR_DEFECTO, CATEGORIAS_PROPIAS_MAX, NOMBRE_CATEGORIA_MAX, esCategoria, leerCategoriasPropias, ponerCategoriasPropias, todasCategorias, nombreCategoria, emojiCategoria, crearCategoriaPropia, quitarCategoriaPropia, sinCategoria, adivinarCategoria, PAGOS, PAGO_POR_DEFECTO, leerPago, comisionDelPago, desglose, conceptosUsados, completarConcepto,
     EMOJI_CATEGORIA, destacados, resumenParaCompartir, FINDE_MINIMO, findeContraSemana, ESTRELLA_MINIMO, conceptoEstrella, INDICE_MAX, indiceCafe,
     TARJETAS_MAX, NOMBRE_TARJETA_MAX, anadirTarjeta, leerTarjetas, quitarTarjeta, tarjetaActual, siguientePago, mejorTarjeta,
-    COPIA_APP, COPIA_VERSION, CLAVES_COPIA, CLAVES_SYNC, limpiarSync, cambiosSync, mezclaInicial, limpiarCopia, crearCopia, leerCopia, resumenCopia,
+    aniosConGastos, datosAnio, COPIA_APP, COPIA_VERSION, CLAVES_COPIA, CLAVES_SYNC, limpiarSync, cambiosSync, mezclaInicial, limpiarCopia, crearCopia, leerCopia, resumenCopia,
     crearPaquete, leerPaquete, quienEsQuien, mapaValido, gastosParaJuntar, juntarGastos,
     puedeSerDeEmpresa, pasarAEmpresa, sacarDeEmpresa, notaDeGastos,
     AVISO_MEJOR_DIAS, techoDeSerie, crearAvisoMejor, ponerTechos,

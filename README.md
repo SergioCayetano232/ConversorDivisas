@@ -261,6 +261,12 @@ que necesitaba una conversión rápida. Ahora es un clic en la barra del navegad
   de cada día, lo más caro, el día que más, en qué se fue, si sobró
   presupuesto y el cambio medio, con el color del viaje. Se descarga en JPG o
   se copia para pegarla directamente en el chat
+- Tu año viajando: abajo del todo en la lista de viajes, **✨ Mi 2026** abre
+  el año entero en una imagen como la del viaje: cuántos viajes, los días
+  fuera (sin contar dos veces los que se solapan), el total, lo de media al
+  día, dónde gastaste más y menos al día, lo más caro y las banderas de las
+  divisas por orden de llegada. Cuenta también los archivados, y si tienes
+  más de un año, arriba eliges cuál
 - Si estás de viaje y a las nueve de la noche no has apuntado nada, te lo
   recuerda con una notificación, una vez al día. Pulsándola se abren los gastos
   de ese viaje. Con clic derecho en el icono lo pasas a las ocho o a las diez,

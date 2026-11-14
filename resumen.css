@@ -196,10 +196,56 @@
   white-space: nowrap;
 }
 
+.postal__banderas {
+  margin-top: auto;
+  overflow: hidden;
+  font-size: 5.2cqi;
+  letter-spacing: 0.1em;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .boton:disabled {
   opacity: 0.45;
   cursor: default;
   pointer-events: none;
+}
+
+/* Los años, como pastillas: solo sale si hay más de uno. */
+.anios {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.anios[hidden] {
+  display: none;
+}
+
+.anios__anio {
+  padding: 4px 12px;
+  border: 1px solid var(--borde);
+  border-radius: 999px;
+  background: var(--losa);
+  font-family: var(--mono);
+  font-size: 13px;
+  font-variant-numeric: tabular-nums;
+  color: var(--tenue);
+  text-decoration: none;
+  transition: color var(--rapido) var(--suave), border-color var(--rapido) var(--suave);
+}
+
+.anios__anio:hover,
+.anios__anio:focus-visible {
+  color: var(--texto);
+  border-color: var(--borde-fuerte);
+  outline: none;
+}
+
+.anios__anio[aria-current="page"] {
+  color: var(--dorado);
+  border-color: var(--dorado-tenue);
+  background: var(--dorado-fantasma);
 }
 
 @media (max-width: 480px) {

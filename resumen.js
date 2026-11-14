@@ -8,6 +8,9 @@ const el = {
   descargarTexto: document.getElementById("descargar-texto"),
   copiar: document.getElementById("copiar"),
   copiarTexto: document.getElementById("copiar-texto"),
+  titulo: document.getElementById("titulo"),
+  intro: document.getElementById("intro"),
+  anios: document.getElementById("anios"),
 };
 
 // Los colores de los viajes, los del popup en oscuro. Repetidos aquí porque el
@@ -125,7 +128,54 @@ function pintarPostal(p) {
     partes.push(linea);
   }
   if (p.pie.length) partes.push(nodo("p", "postal__pie", p.pie.join(" · ")));
+  if (p.banderas) partes.push(nodo("p", "postal__banderas", p.banderas));
   el.postal.replaceChildren(...partes);
+}
+
+// El año sale con las mismas piezas que un viaje: así la imagen es la misma.
+// Tres destacados como mucho, que con más se pisan con las categorías.
+function montarPiezasAnio(d) {
+  const datos = [];
+  if (d.media) datos.push([dinero(d.media.valor, d.media.to), tr("resumen.alDia")]);
+  if (d.divisas.length) datos.push([String(d.divisas.length), tr(d.divisas.length === 1 ? "anio.divisa1" : "anio.divisas")]);
+  datos.push([String(d.n), tr(d.n === 1 ? "gastos.uno" : "resumen.gastos")]);
+  const porDia = (f) => `${f.nombre} · ${tr("anio.porDia", { valor: dinero(f.media, f.to) })}`;
+  const destacados = [
+    d.caroDia && [`🔥 ${tr("anio.caroDia")}`, porDia(d.caroDia)],
+    d.baratoDia && [`🌿 ${tr("anio.baratoDia")}`, porDia(d.baratoDia)],
+    d.caro && [`${emojiCategoria(d.caro.categoria)} ${tr("resumen.caro")}`, `${d.caro.concepto} · ${dinero(d.caro.valor, d.caro.to)}`],
+    d.estrella && [`⭐ ${tr("anio.estrella")}`, tr("anio.veces", { que: d.estrella.concepto, n: d.estrella.veces })],
+  ].filter(Boolean).slice(0, 3);
+  const viajes = tr(d.viajes === 1 ? "anio.viaje1" : "anio.viajes", { n: d.viajes });
+  const dias = tr(d.dias === 1 ? "anio.diaFuera" : "anio.diasFuera", { n: d.dias });
+  return {
+    color: COLORES_POSTAL.oro,
+    nombre: tr("anio.nombre", { anio: d.anio }),
+    fechas: `${viajes} · ${dias}`,
+    total: dinero(d.total.total, d.total.to),
+    otras: d.otras.map((o) => dinero(o.total, o.to)).join(" + "),
+    datos,
+    destacados,
+    categorias: d.categorias.map((c) => ({ emoji: emojiCategoria(c.categoria), nombre: nombreCategoria(c.categoria), fraccion: c.fraccion, categoria: c.categoria })),
+    presupuesto: null,
+    pie: [],
+    // Las banderas, grandes y al pie: es lo que más se mira de un año.
+    banderas: d.divisas.map((code) => banderaDivisa(code) || code).join(" "),
+    archivo: `${tr("anio.archivo")}-${d.anio}`,
+  };
+}
+
+// Solo los años con algo; el que miras va marcado.
+function pintarAnios(anios, actual) {
+  el.anios.hidden = anios.length < 2;
+  el.anios.replaceChildren(...anios.map((anio) => {
+    const enlace = document.createElement("a");
+    enlace.className = "anios__anio";
+    enlace.href = `?anio=${anio}`;
+    enlace.textContent = anio;
+    if (anio === actual) enlace.setAttribute("aria-current", "page");
+    return enlace;
+  }));
 }
 
 // La imagen, a mano en un canvas: 1080 × 1350, lo que cabe entero en una
@@ -270,6 +320,10 @@ function dibujar(p) {
     ctx.font = `400 28px ${LETRA}`;
     texto(ctx, p.pie.join("  ·  "), MARGEN, ALTO - MARGEN, util);
   }
+  if (p.banderas) {
+    ctx.font = `400 56px ${LETRA}`;
+    texto(ctx, p.banderas, MARGEN, ALTO - MARGEN, util);
+  }
   return lienzo;
 }
 
@@ -297,7 +351,7 @@ async function onDescargar() {
   const enlace = document.createElement("a");
   enlace.href = url;
   const nombre = normalizar(piezas.nombre).replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
-  enlace.download = `${tr("resumen.archivo")}${nombre ? `-${nombre}` : ""}.jpg`;
+  enlace.download = piezas.archivo ? `${piezas.archivo}.jpg` : `${tr("resumen.archivo")}${nombre ? `-${nombre}` : ""}.jpg`;
   document.body.append(enlace);
   enlace.click();
   enlace.remove();
@@ -318,21 +372,28 @@ async function onCopiar() {
 
 async function init() {
   await ponerIdiomaGuardado();
-  const id = new URLSearchParams(location.search).get("viaje");
+  const params = new URLSearchParams(location.search);
+  const id = params.get("viaje");
   const { viajes, gastosViaje, presupuestoViaje, categoriasPropias } = await chrome.storage.local.get(["viajes", "gastosViaje", "presupuestoViaje", "categoriasPropias"]);
   ponerCategoriasPropias(categoriasPropias);
   const todos = leerViajes(viajes, gastosViaje, presupuestoViaje);
-  const viaje = todosLosViajes(todos).find((v) => v.id === id) ?? viajeActivo(todos);
-  const datos = datosTarjeta(viaje);
+  const anio = params.has("anio") ? Number.parseInt(params.get("anio"), 10) || new Date().getFullYear() : null;
+  if (anio !== null) {
+    el.titulo.textContent = tr("anio.titulo");
+    el.intro.textContent = tr("anio.intro");
+    document.title = `ConversorDivisas · ${tr("anio.titulo")}`;
+    pintarAnios(aniosConGastos(todosLosViajes(todos)), anio);
+  }
+  const datos = anio !== null ? datosAnio(todosLosViajes(todos), anio) : datosTarjeta(todosLosViajes(todos).find((v) => v.id === id) ?? viajeActivo(todos));
   if (!datos) {
-    el.error.textContent = tr("resumen.vacio");
+    el.error.textContent = anio !== null ? tr("anio.vacio", { anio }) : tr("resumen.vacio");
     el.error.hidden = false;
     el.postal.hidden = true;
     el.descargar.disabled = true;
     el.copiar.disabled = true;
     return;
   }
-  piezas = montarPiezas(datos);
+  piezas = anio !== null ? montarPiezasAnio(datos) : montarPiezas(datos);
   pintarPostal(piezas);
   el.descargar.addEventListener("click", onDescargar);
   el.copiar.addEventListener("click", onCopiar);
