@@ -1264,6 +1264,13 @@ html:not(.es-panel) .buscador__nombre {
     transform var(--fast) var(--ease-spring);
 }
 
+.reciente__bandera {
+  margin-right: -2px;
+  font-size: 11px;
+  line-height: 1;
+  filter: saturate(0.9);
+}
+
 .reciente__flecha {
   color: var(--muted);
   font-weight: 400;

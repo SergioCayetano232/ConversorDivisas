@@ -8369,6 +8369,14 @@ function avisar(texto) {
 
 const sinMovimiento = matchMedia("(prefers-reduced-motion: reduce)");
 
+function banderaPastilla(code) {
+  const bandera = document.createElement("span");
+  bandera.className = "reciente__bandera";
+  bandera.setAttribute("aria-hidden", "true");
+  bandera.textContent = banderaDivisa(code);
+  return bandera;
+}
+
 // La chincheta va fuera del botón y no dentro: un botón no puede llevar otro.
 function crearPastilla(par) {
   const caja = document.createElement("span");
@@ -8388,7 +8396,8 @@ function crearPastilla(par) {
   const a = document.createElement("span");
   a.textContent = par.to;
 
-  boton.append(de, flecha, a);
+  // Solo la de destino: con las dos, tres pastillas ya no cabían en una fila.
+  boton.append(de, flecha, banderaPastilla(par.to), a);
   boton.addEventListener("click", () => onReciente(par));
   // Si no la quito, al reordenar vuelve a entrar con rebote: sacar un nodo del
   // DOM y meterlo otra vez reinicia sus animaciones.
