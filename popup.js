@@ -298,6 +298,11 @@ const el = {
   ayudaLista: document.getElementById("ayuda-lista"),
   ayudaNota: document.getElementById("ayuda-nota"),
   teclaFlash: document.getElementById("tecla-flash"),
+  funciones: document.getElementById("funciones"),
+  funcionesBuscar: document.getElementById("funciones-buscar"),
+  funcionesLista: document.getElementById("funciones-lista"),
+  funcionesPie: document.getElementById("funciones-pie"),
+  abrirFunciones: document.getElementById("abrir-funciones"),
   trendChange: document.getElementById("trend-change"),
   rangos: document.querySelectorAll(".rango"),
   grupoRangos: document.getElementById("rangos"),
@@ -7291,6 +7296,152 @@ function hacerAtajo(accion) {
   else if (accion === "cantidadUno") cantidadAUno();
   else if (accion === "deshacer") onDeshacer();
   else if (accion.startsWith("vista:")) cambiarVista(accion.slice(6));
+  else if (accion === "funciones") abrirFunciones();
+}
+
+// El buscador de funciones. Las de los atajos usan su texto de la ayuda, sin
+// lo de "(con Shift…)", que aquí no aplica; las demás, el suyo.
+let funcionesHalladas = [];
+let funcionElegida = 0;
+let focoAntesDeFunciones = null;
+
+const nombreFuncion = (accion) => (TEXTOS.es[`funcion.${accion}`] ? tr(`funcion.${accion}`) : queHace(accion).replace(/\s*\([^)]*\)$/, ""));
+
+function teclaDeFuncion(accion) {
+  const shift = Object.keys(CON_SHIFT).find((a) => CON_SHIFT[a] === accion);
+  const code = Object.keys(ATAJOS).find((c) => ATAJOS[c] === (shift ?? accion));
+  if (accion === "buscar") return "/";
+  if (accion === "ayuda") return "?";
+  if (!code) return "";
+  return `${shift ? (esMac ? "⇧" : "Shift+") : ""}${code.replace(/^Key|^Digit/, "")}`;
+}
+
+// Lo que no se puede hacer ahora no sale: sin gastos no hay CSV que bajar.
+function funcionPosible(accion) {
+  const conGastos = ["csv", "compartir", "copiarTotal", "copiarGasto", "tarjetaViaje", "curva"];
+  if (conGastos.includes(accion)) return gastos.length > 0;
+  if (accion === "deshacer") return Boolean(quitado);
+  if (accion === "empresa") return deEmpresa().length > 0;
+  if (accion === "gente") return Boolean(cuentasViaje(gastos, viajeActivo(viajes).personas));
+  if (accion === "horas") return Boolean(porFranja(gastos));
+  if (accion === "csvViajes") return viajes.lista.some((v) => v.gastos.length);
+  if (accion === "anio") return aniosConGastos(todosLosViajes(viajes)).length > 0;
+  if (accion === "archivados") return (viajes.archivados ?? []).length > 0;
+  if (accion === "indiceCafe") return indiceCafe(todosLosViajes(viajes)).length > 0;
+  if (["copiarTasa", "chuleta", "imprimirChuleta", "copiarSimbolo", "copiar"].includes(accion)) return rate !== null;
+  return true;
+}
+
+function abrirFunciones() {
+  focoAntesDeFunciones = document.activeElement;
+  cerrarAyuda();
+  cerrarBandeja();
+  cerrarBurbuja();
+  el.funcionesBuscar.value = "";
+  el.funciones.hidden = false;
+  el.abrirFunciones.setAttribute("aria-expanded", "true");
+  el.funcionesPie.textContent = tr("funciones.pie");
+  pintarFunciones();
+  el.funcionesBuscar.focus();
+}
+
+function cerrarFunciones(volver = true) {
+  if (el.funciones.hidden) return;
+  el.funciones.hidden = true;
+  el.abrirFunciones.setAttribute("aria-expanded", "false");
+  if (volver) focoAntesDeFunciones?.focus?.();
+}
+
+function pintarFunciones() {
+  const todas = FUNCIONES.filter((f) => funcionPosible(f.accion)).map((f) => ({ ...f, nombre: nombreFuncion(f.accion) }));
+  funcionesHalladas = buscarFunciones(el.funcionesBuscar.value, todas);
+  funcionElegida = 0;
+  el.funcionesLista.replaceChildren(...funcionesHalladas.map((f, i) => {
+    const fila = document.createElement("li");
+    fila.className = "funciones__fila";
+    fila.id = `funcion-${i}`;
+    fila.setAttribute("role", "option");
+    fila.style.setProperty("--i", i);
+    const nombre = document.createElement("span");
+    nombre.className = "funciones__nombre";
+    nombre.textContent = f.nombre;
+    fila.append(nombre);
+    const tecla = teclaDeFuncion(f.accion);
+    if (tecla) {
+      const kbd = document.createElement("kbd");
+      kbd.textContent = tecla;
+      fila.append(kbd);
+    }
+    // mousedown y no click: si no, el campo pierde el foco antes y se cierra todo.
+    fila.addEventListener("mousedown", (event) => {
+      event.preventDefault();
+      hacerFuncion(f.accion);
+    });
+    fila.addEventListener("mousemove", () => elegirFuncion(i));
+    return fila;
+  }));
+  if (!funcionesHalladas.length) {
+    const nada = document.createElement("li");
+    nada.className = "funciones__nada";
+    nada.textContent = tr("funciones.nada", { texto: el.funcionesBuscar.value.trim() });
+    el.funcionesLista.append(nada);
+  }
+  elegirFuncion(0);
+}
+
+function elegirFuncion(i) {
+  funcionElegida = i;
+  for (const [j, fila] of [...el.funcionesLista.querySelectorAll(".funciones__fila")].entries()) {
+    fila.classList.toggle("is-elegida", j === i);
+    fila.setAttribute("aria-selected", String(j === i));
+    if (j === i) fila.scrollIntoView({ block: "nearest" });
+  }
+  if (funcionesHalladas.length) el.funcionesBuscar.setAttribute("aria-activedescendant", `funcion-${i}`);
+  else el.funcionesBuscar.removeAttribute("aria-activedescendant");
+}
+
+function onTeclaFunciones(event) {
+  if (event.key === "ArrowDown" || event.key === "ArrowUp") {
+    event.preventDefault();
+    if (!funcionesHalladas.length) return;
+    const paso = event.key === "ArrowDown" ? 1 : -1;
+    elegirFuncion((funcionElegida + paso + funcionesHalladas.length) % funcionesHalladas.length);
+  } else if (event.key === "Enter") {
+    event.preventDefault();
+    if (funcionesHalladas[funcionElegida]) hacerFuncion(funcionesHalladas[funcionElegida].accion);
+    else restartAnimation(el.funcionesBuscar, "is-mal");
+  } else if (event.key === "Escape") {
+    event.preventDefault();
+    event.stopPropagation();
+    cerrarFunciones();
+  }
+}
+
+// Las de los atajos van por hacerAtajo, igual que con la tecla. Las demás abren
+// su panel dentro de los gastos, que es donde viven.
+function hacerFuncion(accion) {
+  cerrarFunciones(false);
+  const enGastos = (abrir) => {
+    if (el.gastos.hidden) abrirGastos();
+    abrir();
+  };
+  const abrirPestana = (url) => chrome.tabs.create({ url });
+  if (accion === "presupuesto") enGastos(() => (el.presupuestoAnadir.hidden ? el.presupuestoVer.click() : editarPresupuesto()));
+  else if (accion === "tramos") enGastos(abrirTramos);
+  else if (accion === "cajero") enGastos(abrirCajero);
+  else if (accion === "pendientes") enGastos(abrirPendientes);
+  else if (accion === "empresa") enGastos(abrirEmpresa);
+  else if (accion === "gente") enGastos(abrirGente);
+  else if (accion === "curva") enGastos(abrirCurva);
+  else if (accion === "horas") enGastos(abrirHoras);
+  else if (accion === "indiceCafe" || accion === "archivados") {
+    enGastos(abrirViajes);
+    (accion === "indiceCafe" ? el.viajesAbrirIndice : el.viajesAbrirArchivo).click();
+  } else if (accion === "tarjetaViaje") abrirPestana(`resumen.html?viaje=${encodeURIComponent(viajes.activo)}`);
+  else if (accion === "anio") abrirPestana(`resumen.html?anio=${aniosConGastos(todosLosViajes(viajes))[0]}`);
+  else if (accion === "comision") abrirBurbuja();
+  else if (accion === "copiaSeguridad") chrome.runtime.openOptionsPage();
+  else hacerAtajo(accion);
 }
 
 let teclaFlash = null;
@@ -7355,6 +7506,14 @@ function saludarPorIdioma({ from, idioma }) {
 }
 
 function onAtajo(event) {
+  // Con el buscador abierto, las teclas son suyas; Ctrl+K otra vez lo cierra.
+  if (!el.funciones.hidden) {
+    if ((event.ctrlKey || event.metaKey) && event.code === "KeyK") {
+      event.preventDefault();
+      cerrarFunciones();
+    }
+    return;
+  }
   if (!el.ayuda.hidden) {
     if (event.key === "Escape" || event.key === "?") {
       event.preventDefault();
@@ -7380,7 +7539,7 @@ function onAtajo(event) {
   event.preventDefault();
   hacerAtajo(accion);
   // El resumen, la chuleta y las otras divisas ya avisan ellos al copiar, y si falla dicen que ha fallado.
-  if (accion !== "ayuda" && accion !== "compartir" && accion !== "chuleta" && !(accion === "extras" && textoExtras())) {
+  if (accion !== "funciones" && accion !== "ayuda" && accion !== "compartir" && accion !== "chuleta" && !(accion === "extras" && textoExtras())) {
     const conCmd = event.metaKey || event.ctrlKey;
     const tecla = conCmd ? (esMac ? "⌘Z" : "Ctrl+Z")
       : accion === "buscar" ? "/"
@@ -8328,6 +8487,16 @@ function bindEvents() {
   document.addEventListener("keydown", onAtajo);
   el.abrirAyuda.addEventListener("click", abrirAyuda);
   el.abrirCopia.addEventListener("click", () => chrome.runtime.openOptionsPage());
+  el.abrirFunciones.addEventListener("click", abrirFunciones);
+  // Sin texto, que en el pie no cabía: el atajo va en el título.
+  el.abrirFunciones.title = tr("funciones.botonTitulo", { tecla: esMac ? "⌘K" : "Ctrl+K" });
+  el.abrirFunciones.setAttribute("aria-label", el.abrirFunciones.title);
+  el.funcionesBuscar.addEventListener("input", pintarFunciones);
+  el.funcionesBuscar.addEventListener("keydown", onTeclaFunciones);
+  // Pulsar fuera del panel, en lo borroso, lo cierra.
+  el.funciones.addEventListener("mousedown", (event) => {
+    if (event.target === el.funciones) cerrarFunciones();
+  });
   el.ayudaCerrar.addEventListener("click", cerrarAyuda);
   el.ayuda.addEventListener("mousedown", (event) => {
     if (event.target !== el.ayuda) return;

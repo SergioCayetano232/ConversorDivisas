@@ -8043,6 +8043,92 @@ const ATAJOS = {
 // caro o la frase con símbolos.
 const CON_SHIFT = { copiar: "copiarFrase", copiarSimbolo: "copiarFraseSimbolo", chuleta: "imprimirChuleta", copiarTasa: "copiarTasaAlReves", csv: "csvViajes", apuntar: "apuntarEfectivo", copiarTotal: "copiarHoy", copiarGasto: "copiarMasCaro" };
 
+// El buscador de funciones (Ctrl+K): con todo lo que hay en el popup, escribir
+// "tax free" es más rápido que acordarse de dónde estaba. Las de los atajos
+// tienen ya su texto en la ayuda; las claves son lo que alguien escribiría
+// buscándolas y no sale en el nombre, en los dos idiomas.
+const FUNCIONES = [
+  { accion: "gastos", claves: "viaje apuntar cartera tax free devolucion iva expenses trip wallet refund" },
+  { accion: "apuntar", claves: "gasto añadir nuevo add expense log" },
+  { accion: "buscar", claves: "lupa encontrar find search filter" },
+  { accion: "viajes", claves: "viaje lista elegir cambiar trips switch" },
+  { accion: "nuevoViaje", claves: "crear empezar viaje new trip start" },
+  { accion: "presupuesto", claves: "presupuesto limite tope dinero budget limit" },
+  { accion: "tramos", claves: "ciudades etapas paradas ciudad cities legs stops" },
+  { accion: "cajero", claves: "efectivo cajero billetes sacar atm cash withdraw" },
+  { accion: "pendientes", claves: "pendiente por pagar hotel reserva pending unpaid" },
+  { accion: "empresa", claves: "trabajo empresa nota de gastos business work reimburse" },
+  { accion: "gente", claves: "quien pago deudas cuentas amigos grupo who paid debts split group" },
+  { accion: "curva", claves: "grafico ritmo dia a dia evolucion pace chart" },
+  { accion: "horas", claves: "hora franja noche mañana time of day night" },
+  { accion: "indiceCafe", claves: "cafe precios comparar mismo coffee prices compare" },
+  { accion: "archivados", claves: "archivo viejos acabados archive old" },
+  { accion: "tarjetaViaje", claves: "imagen foto compartir postal image share card" },
+  { accion: "anio", claves: "año resumen anual wrapped year annual" },
+  { accion: "compartir", claves: "whatsapp resumen mandar enviar share summary send" },
+  { accion: "csv", claves: "excel hoja exportar descargar export download spreadsheet" },
+  { accion: "csvViajes", claves: "excel todos exportar export all" },
+  { accion: "copiarTotal", claves: "total copiar copy" },
+  { accion: "copiarGasto", claves: "ultimo copiar last copy" },
+  { accion: "pago", claves: "tarjeta efectivo metalico card cash" },
+  { accion: "discreto", claves: "ocultar privado esconder ojo hide private eye" },
+  { accion: "deshacer", claves: "recuperar volver undo restore" },
+  { accion: "intercambiar", claves: "invertir girar par swap reverse" },
+  { accion: "copiar", claves: "resultado copy result" },
+  { accion: "copiarSimbolo", claves: "simbolo $ € copy symbol" },
+  { accion: "copiarTasa", claves: "tasa cambio copy rate" },
+  { accion: "girarTasa", claves: "tasa al reves inversa rate inverse" },
+  { accion: "cantidadUno", claves: "uno 1 tasa rate one" },
+  { accion: "origen", claves: "divisa moneda de from currency" },
+  { accion: "destino", claves: "divisa moneda a to currency" },
+  { accion: "fijar", claves: "chincheta guardar par favorito pin favourite favorite" },
+  { accion: "historial", claves: "recientes conversiones anteriores history recent" },
+  { accion: "cuenta", claves: "dividir restaurante propina cuenta split bill tip" },
+  { accion: "comparar", claves: "barato caro precio balanza cheaper price compare" },
+  { accion: "comision", claves: "comision banco tarjeta impuesto iva cafes horas fee bank tax" },
+  { accion: "vista:evolucion", claves: "grafico historico tendencia chart trend" },
+  { accion: "rango", claves: "periodo semana mes año period week month" },
+  { accion: "vista:extras", claves: "otras divisas varias monedas other currencies" },
+  { accion: "extras", claves: "otras divisas whatsapp other currencies" },
+  { accion: "vista:avisos", claves: "alerta notificacion avisame alert notify" },
+  { accion: "vista:chuleta", claves: "chuleta tabla viaje precios cheat sheet table" },
+  { accion: "chuleta", claves: "chuleta whatsapp cheat sheet" },
+  { accion: "imprimirChuleta", claves: "imprimir cartera print wallet" },
+  { accion: "vista:fecha", claves: "historico dia fecha pasado date past" },
+  { accion: "vista:timo", claves: "casa de cambio timo comision exchange office fair" },
+  { accion: "vista:suscripciones", claves: "netflix spotify icloud suscripcion mensual subscription monthly" },
+  { accion: "copiaSeguridad", claves: "copia backup restaurar exportar restore" },
+  { accion: "ayuda", claves: "teclado atajos ayuda keyboard shortcuts help" },
+];
+const FUNCIONES_MAX = 8;
+
+// Cada palabra de lo que escribes tiene que empezar alguna palabra del nombre o
+// de las claves: "tax" encuentra "tax free" pero "ax" no, que sería ruido. Lo
+// que sale en el nombre pesa más que lo de las claves, y al principio, más aún.
+function buscarFunciones(consulta, funciones, max = FUNCIONES_MAX) {
+  const palabras = normalizar(String(consulta ?? "")).split(/[^a-z0-9$€]+/).filter(Boolean);
+  if (!palabras.length) return funciones.slice(0, max);
+  const trocear = (texto) => normalizar(String(texto ?? "")).split(/[^a-z0-9$€]+/).filter(Boolean);
+  return funciones
+    .map((f, orden) => {
+      const nombre = trocear(f.nombre);
+      const claves = trocear(f.claves);
+      let puntos = 0;
+      for (const p of palabras) {
+        const enNombre = nombre.findIndex((w) => w.startsWith(p));
+        if (enNombre === 0) puntos += 4;
+        else if (enNombre > 0) puntos += 3;
+        else if (claves.some((w) => w.startsWith(p))) puntos += 2;
+        else return null;
+      }
+      return { ...f, puntos, orden };
+    })
+    .filter(Boolean)
+    .sort((a, b) => b.puntos - a.puntos || a.orden - b.orden)
+    .slice(0, max)
+    .map(({ puntos, orden, ...f }) => f);
+}
+
 // Escribiendo en un campo las letras son letras (la x es "por" en las
 // cuentas), así que ahí hace falta Alt. Cmd y Ctrl no los toco nunca: son
 // copiar, pegar y compañía.
@@ -8050,6 +8136,8 @@ function atajoPara({ code, key, altKey, ctrlKey, metaKey, shiftKey, enCampo }) {
   // La única excepción: Cmd+Z fuera de un campo no hace nada en el navegador, y
   // es lo primero que pulsas cuando borras algo sin querer.
   if ((ctrlKey || metaKey) && code === "KeyZ" && !enCampo && !altKey && !shiftKey) return "deshacer";
+  // Ctrl+K, como en tantas apps: el buscador de funciones, también desde un campo.
+  if ((ctrlKey || metaKey) && code === "KeyK" && !altKey && !shiftKey) return "funciones";
   if (ctrlKey || metaKey) return null;
   if (!enCampo && key === "?") return "ayuda";
   // Por la tecla y no por el código: en un teclado español la / es Shift+7. Y
@@ -8664,6 +8752,6 @@ if (typeof module !== "undefined") {
     AVISOS_MAX, AVISO_PCT_MAX, sentidoAviso, crearAviso, leerPorcentajeAviso, crearAvisoPorcentaje, crearCompra, leerAvisos, avisoCumplido, repartirAvisos, mensajeAviso, faltaParaAviso, cercaniaAviso, textoFalta,
     nivelPresupuesto, avisosPresupuesto, mensajePresupuesto,
     RECORDATORIO_HORA, RECORDATORIO_HORAS, leerHoraRecordatorio, viajesSinApuntar, tocaRecordar, mensajeRecordatorio, TAX_FREE_HORA, tocaTaxFree, mensajeTaxFree,
-    ATAJOS, atajoPara, textoAtajo,
+    ATAJOS, atajoPara, textoAtajo, FUNCIONES, FUNCIONES_MAX, buscarFunciones,
   };
 }

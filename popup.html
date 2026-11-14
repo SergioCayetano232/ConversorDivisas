@@ -611,14 +611,43 @@
       <p class="footer__source">
         <span data-t="pie.tasasDe">Tasas de</span> <a href="https://frankfurter.dev" target="_blank" rel="noopener noreferrer">Frankfurter</a>
       </p>
+      <span class="footer__botones">
+      <button class="footer__atajos footer__funciones" type="button" id="abrir-funciones" aria-haspopup="dialog">
+        <svg viewBox="0 0 12 12" aria-hidden="true"><circle cx="5.2" cy="5.2" r="3.4"/><path d="M7.8 7.8l2.7 2.7"/></svg>
+      </button>
       <button class="footer__atajos" type="button" id="abrir-ayuda" aria-haspopup="dialog">
         <span class="footer__tecla" aria-hidden="true">?</span> <span data-t="atajos">Atajos</span>
       </button>
       <button class="footer__atajos footer__copia" type="button" id="abrir-copia" title="Copia de seguridad de tus datos" aria-label="Copia de seguridad de tus datos" data-t-title="copia.abrir" data-t-aria-label="copia.abrir">
         <svg viewBox="0 0 14 14" aria-hidden="true"><path d="M7 1.6l4.6 1.8v3.5c0 2.7-2 4.7-4.6 5.6-2.6-.9-4.6-2.9-4.6-5.6V3.4z"/><path class="footer__copia-flecha" d="M7 4.6v4M5.3 7.1L7 8.8l1.7-1.7"/></svg>
       </button>
+      </span>
       <p class="footer__updated" id="updated"></p>
     </footer>
+
+    <div class="ayuda funciones" id="funciones" hidden>
+      <div class="ayuda__panel funciones__panel" role="dialog" aria-modal="true" aria-label="Buscar una función" data-t-aria-label="funciones.titulo">
+        <div class="funciones__caja">
+          <svg class="funciones__lupa" viewBox="0 0 12 12" aria-hidden="true"><circle cx="5.2" cy="5.2" r="3.4"/><path d="M7.8 7.8l2.7 2.7"/></svg>
+          <input
+            class="funciones__buscar"
+            type="text"
+            id="funciones-buscar"
+            role="combobox"
+            aria-expanded="true"
+            aria-controls="funciones-lista"
+            aria-autocomplete="list"
+            autocomplete="off"
+            spellcheck="false"
+            placeholder="¿Qué quieres hacer? Presupuesto, tax free…"
+            aria-label="Buscar una función"
+            data-t-placeholder="funciones.buscar"
+            data-t-aria-label="funciones.titulo">
+        </div>
+        <ul class="funciones__lista" id="funciones-lista" role="listbox" aria-label="Funciones" data-t-aria-label="funciones.lista"></ul>
+        <p class="funciones__pie" id="funciones-pie"></p>
+      </div>
+    </div>
 
     <div class="ayuda" id="ayuda" hidden>
       <div class="ayuda__panel" role="dialog" aria-modal="true" aria-labelledby="ayuda-titulo">

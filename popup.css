@@ -10200,6 +10200,27 @@ body::after {
   padding: 2px 4px;
 }
 
+/* Los tres botones juntos: sueltos, con el hueco del pie entre cada uno, ya no
+   cabía "Tasas de Frankfurter" en una línea. */
+.footer__botones {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.footer__funciones {
+  padding: 2px 4px;
+}
+
+.footer__funciones svg {
+  width: 11px;
+  height: 11px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.4;
+  stroke-linecap: round;
+}
+
 .footer__copia svg {
   width: 13px;
   height: 13px;
@@ -10352,6 +10373,129 @@ kbd {
   color: var(--muted);
 }
 
+/* El buscador de funciones: arriba, como en las apps de escritorio, para que
+   la lista tenga sitio de crecer hacia abajo. */
+.funciones {
+  /* Sin el minmax la columna crece con la fila más larga y se sale por la derecha. */
+  grid-template-columns: minmax(0, 1fr);
+  place-items: start center;
+  padding-top: 56px;
+}
+
+.funciones__panel {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-2);
+  padding: var(--s-3);
+}
+
+.funciones__caja {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.funciones__lupa {
+  position: absolute;
+  left: 10px;
+  width: 13px;
+  height: 13px;
+  fill: none;
+  stroke: var(--brass);
+  stroke-width: 1.4;
+  stroke-linecap: round;
+  pointer-events: none;
+}
+
+.funciones__buscar {
+  width: 100%;
+  height: 34px;
+  padding: 0 10px 0 30px;
+  background: var(--slate);
+  border: 1px solid var(--hairline-strong);
+  border-radius: var(--r-sm);
+  color: var(--mist);
+  font: inherit;
+  font-size: 13px;
+  transition: border-color var(--fast) var(--ease), box-shadow var(--fast) var(--ease);
+}
+
+.funciones__buscar::placeholder {
+  color: var(--muted);
+}
+
+.funciones__buscar:focus {
+  outline: none;
+  border-color: var(--brass);
+  box-shadow: 0 0 0 3px var(--brass-ghost);
+}
+
+.funciones__buscar.is-mal {
+  animation: shake 360ms var(--ease);
+}
+
+.funciones__lista {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  max-height: 280px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
+  list-style: none;
+}
+
+.funciones__fila {
+  display: flex;
+  align-items: center;
+  gap: var(--s-2);
+  min-height: 30px;
+  padding: 0 8px 0 10px;
+  border-radius: 7px;
+  font-size: 12px;
+  color: var(--mist);
+  cursor: pointer;
+  animation: pop var(--mid) var(--ease-spring) backwards;
+  animation-delay: calc(var(--i, 0) * 25ms);
+}
+
+.funciones__fila.is-elegida {
+  background: var(--brass-ghost);
+  box-shadow: inset 2px 0 0 var(--brass);
+}
+
+.funciones__nombre {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.funciones__fila kbd {
+  flex-shrink: 0;
+  color: var(--muted);
+}
+
+.funciones__fila.is-elegida kbd {
+  color: var(--brass);
+}
+
+.funciones__nada {
+  padding: 10px;
+  font-size: 12px;
+  text-align: center;
+  color: var(--muted);
+}
+
+.funciones__pie {
+  padding-top: var(--s-2);
+  border-top: 1px solid var(--hairline);
+  font-size: 10px;
+  text-align: center;
+  color: var(--muted);
+}
+
 /* La tecla que acabas de usar, flotando abajo un momento. */
 .tecla-flash {
   position: fixed;
@@ -10485,6 +10629,7 @@ kbd {
   .cuenta__monedas,
   .noches__luna,
   .ayuda__fila,
+  .funciones__fila,
   .bandeja__opcion,
   .trend__marca,
   .trend__media,
