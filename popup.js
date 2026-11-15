@@ -3100,7 +3100,7 @@ function pintarVoz() {
   el.gastosVoz.setAttribute("aria-pressed", String(oyendo));
   el.gastosVoz.title = tr(oyendo ? "voz.parar" : "voz.dictar");
   el.gastosVoz.setAttribute("aria-label", el.gastosVoz.title);
-  el.gastosConcepto.placeholder = oyendo ? tr("voz.oyendo") : tr("gastos.concepto");
+  el.gastosConcepto.placeholder = oyendo ? tr("voz.oyendo") : tr("gastos.conceptoCorto");
 }
 
 function onDictar() {

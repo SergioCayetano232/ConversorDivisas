@@ -4703,6 +4703,12 @@ body::after {
   color: var(--muted);
 }
 
+/* "(opcional)" no cabía ni a 340: de ejemplo va solo "Concepto", y el resto se
+   queda en el aria-label. Si aun así no cabe, con puntos y no cortado. */
+.gastos__concepto {
+  text-overflow: ellipsis;
+}
+
 .gastos__concepto:focus {
   outline: none;
   border-color: var(--brass);
