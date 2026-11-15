@@ -591,10 +591,49 @@ body::after {
 }
 
 .field__input {
+  height: 52px;
+  padding-right: 60px;
   font-family: var(--font-mono);
-  font-size: 20px;
+  font-size: 24px;
+  font-weight: 500;
   font-variant-numeric: tabular-nums;
-  letter-spacing: -0.01em;
+  letter-spacing: -0.02em;
+}
+
+/* El código dentro del campo, para que se lea "250 EUR" de un vistazo. Se
+   aparta cuando sale la cuenta o la etiqueta de lo pegado, que van ahí mismo. */
+.field__divisa {
+  position: absolute;
+  top: 50%;
+  right: var(--s-4);
+  font-family: var(--font-mono);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  color: var(--muted);
+  pointer-events: none;
+  transform: translateY(-50%);
+  transition: color var(--fast) var(--ease), opacity var(--fast) var(--ease);
+}
+
+.field__input:focus ~ .field__divisa {
+  color: var(--brass);
+}
+
+.field__input.is-calculando ~ .field__divisa,
+.field__caja:has(.pegado) .field__divisa {
+  opacity: 0;
+}
+
+.field__divisa.is-nueva {
+  animation: divisa-entra var(--mid) var(--ease-spring);
+}
+
+@keyframes divisa-entra {
+  from {
+    opacity: 0;
+    transform: translate(6px, -50%);
+  }
 }
 
 .field__caja {

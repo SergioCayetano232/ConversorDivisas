@@ -8,6 +8,7 @@ ponerIdioma(idiomaPara(idiomaDeChrome));
 const el = {
   form: document.getElementById("converter-form"),
   amount: document.getElementById("amount"),
+  amountDivisa: document.getElementById("amount-divisa"),
   calculo: document.getElementById("calculo"),
   from: document.getElementById("from"),
   to: document.getElementById("to"),
@@ -7903,6 +7904,10 @@ function renderResult() {
   const to = el.to.value;
 
   el.resultCode.textContent = to;
+  if (el.amountDivisa.textContent !== from) {
+    el.amountDivisa.textContent = from;
+    restartAnimation(el.amountDivisa, "is-nueva");
+  }
 
   // El campo que estas tocando se queda como lo has dejado; relleno el otro.
   const escribiendoAbajo = ladoActivo === "result";
