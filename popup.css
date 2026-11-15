@@ -564,12 +564,20 @@ body::after {
   min-width: 0;
 }
 
-.field__label {
-  font-size: 11px;
-  font-weight: 600;
+/* Finas y apagadas, que lo que tiene que leerse son las cifras. La del campo
+   en el que estás se enciende para saber dónde escribes. */
+.field__label,
+.result__label {
+  font-size: 10px;
+  font-weight: 500;
   text-transform: uppercase;
-  letter-spacing: 0.08em;
-  color: var(--muted);
+  letter-spacing: 0.14em;
+  color: color-mix(in srgb, var(--muted) 85%, transparent);
+  transition: color var(--fast) var(--ease);
+}
+
+.field:focus-within > .field__label {
+  color: var(--brass);
 }
 
 .field__input,
@@ -7604,14 +7612,6 @@ html:not(.es-panel) .buscador__nombre {
   background: color-mix(in srgb, var(--cinnabar) 10%, transparent);
   font-weight: 600;
   animation: beat var(--mid) var(--ease-spring);
-}
-
-.result__label {
-  font-size: 11px;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-  color: var(--muted);
 }
 
 .result__row {
