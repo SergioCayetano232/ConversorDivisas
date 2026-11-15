@@ -930,7 +930,8 @@ function crearBuscador(lado) {
     texto.textContent = code;
     const nombre = document.createElement("span");
     nombre.className = "buscador__nombre";
-    nombre.textContent = ` · ${nombreDe(code)}`;
+    // El espacio es para el lector de pantalla, que si no lee "EUREuro".
+    nombre.textContent = ` ${nombreDe(code)}`;
     boton.replaceChildren(bandera, texto, nombre);
     boton.title = nombreDe(code);
     // Al abrir el popup no salta: solo cuando cambias tú la divisa.
