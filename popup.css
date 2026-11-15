@@ -275,14 +275,26 @@ body::after {
   outline-offset: 3px;
 }
 
-.momento__titulo {
+/* La misma pastilla que la del cambio de ayer, cada una con su tono, para que
+   la cabecera no parezca de dos diseños. */
+.momento__titulo,
+.header__cambio {
   display: inline-flex;
   align-items: center;
-  gap: 5px;
-  font-size: 11px;
-  font-weight: 600;
+  padding: 0 7px;
+  border: 1px solid color-mix(in srgb, var(--tono) 30%, transparent);
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--tono) 12%, transparent);
   color: var(--tono);
-  transition: color var(--mid) var(--ease);
+  font-size: 10px;
+  font-weight: 600;
+  line-height: 15px;
+  transition: color var(--mid) var(--ease), background-color var(--mid) var(--ease),
+    border-color var(--mid) var(--ease);
+}
+
+.momento__titulo {
+  gap: 5px;
 }
 
 /* El punto late despacio, como un piloto encendido. */
@@ -325,6 +337,8 @@ body::after {
 }
 
 .header__title {
+  display: flex;
+  align-items: center;
   font-size: 13px;
   font-weight: 700;
   letter-spacing: -0.005em;
@@ -332,12 +346,20 @@ body::after {
   color: var(--mist);
 }
 
+.header__logo {
+  width: 18px;
+  height: 18px;
+  /* Sobresale un píxel por arriba y por abajo para no estirar la cabecera. */
+  margin: -1px 7px -1px 0;
+  border-radius: 50%;
+  box-shadow: 0 0 0 1px var(--brass-dim), 0 0 12px -2px var(--brass-glow);
+}
+
 .header__panel {
   display: inline-grid;
   place-items: center;
   margin-left: 6px;
   padding: 2px;
-  vertical-align: -3px;
   background: transparent;
   border: none;
   border-radius: var(--r-sm);
@@ -429,24 +451,16 @@ body::after {
 }
 
 .header__cambio {
-  display: inline-block;
-  padding: 1px 6px;
-  border-radius: 999px;
-  font-size: 10px;
-  font-weight: 600;
-  color: var(--muted);
-  background: var(--hairline);
+  --tono: var(--muted);
   cursor: default;
 }
 
 .header__cambio[data-sentido="sube"] {
-  color: var(--jade);
-  background: color-mix(in srgb, var(--jade) 14%, transparent);
+  --tono: var(--jade);
 }
 
 .header__cambio[data-sentido="baja"] {
-  color: var(--cinnabar);
-  background: color-mix(in srgb, var(--cinnabar) 14%, transparent);
+  --tono: var(--cinnabar);
 }
 
 /* La tasa es de hace días: el BCE ha publicado y no me ha llegado. Ámbar y
