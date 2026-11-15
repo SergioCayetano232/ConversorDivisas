@@ -7871,8 +7871,8 @@ html:not(.es-panel) .buscador__nombre {
   100% { opacity: 0; transform: translate(2px, -3px) scaleY(1.1) skewX(-14deg); }
 }
 
-/* Sin comisión es una pastilla discreta con borde de puntos; con ella se
-   enciende en dorado y enseña lo que pagarías. */
+/* Sin comisión es una pastilla de cristal discreta con un + delante; con ella
+   se enciende en dorado y enseña lo que pagarías. */
 .comision {
   display: inline-flex;
   align-items: center;
@@ -7882,10 +7882,11 @@ html:not(.es-panel) .buscador__nombre {
   /* Ni un píxel más que la línea de al lado: el popup va justo en 600, y con
      18 ya se pasaba en las pestañas que no son el gráfico. */
   height: 16px;
-  padding: 0 8px;
-  background: transparent;
-  border: 1px dashed var(--hairline-strong);
+  padding: 0 8px 0 2px;
+  background: var(--glass-light);
+  border: 1px solid var(--hairline-strong);
   border-radius: 999px;
+  box-shadow: inset 0 1px 0 var(--sheen);
   color: var(--muted);
   font-family: var(--font-mono);
   font-size: 10px;
@@ -7901,6 +7902,29 @@ html:not(.es-panel) .buscador__nombre {
   color: var(--brass);
 }
 
+.comision:not(.is-puesta)::before {
+  content: "+";
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: var(--brass-ghost);
+  color: var(--brass);
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 1;
+  transition: transform var(--mid) var(--ease-spring), background-color var(--fast) var(--ease),
+    color var(--fast) var(--ease);
+}
+
+.comision:not(.is-puesta):hover::before {
+  background: var(--brass);
+  color: var(--graphite);
+  transform: rotate(90deg);
+}
+
 .comision:active {
   transform: scale(0.94);
 }
@@ -7911,7 +7935,7 @@ html:not(.es-panel) .buscador__nombre {
 }
 
 .comision.is-puesta {
-  border-style: solid;
+  padding-left: 8px;
   border-color: var(--brass-dim);
   background: var(--brass-ghost);
   color: var(--mist);
