@@ -5815,6 +5815,35 @@ body::after {
   transform: rotate(-180deg);
 }
 
+/* En la lista de gastos, sin caja: dos cajas por fila hacían la lista muy
+   pesada. Apagados hasta que pasas por la fila; con el dedo no hay "pasar",
+   así que ahí se ven siempre. */
+.gastos__fila > :is(.gastos__quitar, .gastos__repetir) {
+  width: 20px;
+  height: 20px;
+  border-color: transparent;
+  border-radius: 50%;
+  opacity: 0.45;
+  transition: color var(--fast) var(--ease), border-color var(--fast) var(--ease),
+    background-color var(--fast) var(--ease), opacity var(--fast) var(--ease),
+    transform var(--mid) var(--ease-spring);
+}
+
+.gastos__fila:hover > :is(.gastos__quitar, .gastos__repetir),
+.gastos__fila > :is(.gastos__quitar, .gastos__repetir):focus-visible {
+  opacity: 1;
+}
+
+.gastos__fila > :is(.gastos__quitar, .gastos__repetir):hover {
+  border-color: transparent;
+}
+
+@media (hover: none) {
+  .gastos__fila > :is(.gastos__quitar, .gastos__repetir) {
+    opacity: 1;
+  }
+}
+
 /* El aviso de deshacer, abajo del panel. La barra de abajo es el reloj: cuando
    se vacía, el JS lo da por perdido. Al pasar el ratón se para. */
 .deshacer {
