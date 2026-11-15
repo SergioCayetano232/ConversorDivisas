@@ -7632,7 +7632,12 @@ body::after {
   scrollbar-width: none;
 }
 
+/* Cada categoría con su color, de los mismos seis de los viajes: el borde, el
+   icono y lo que pesa, que en dorado flojo apenas se veía. Probé a marcar el
+   final del relleno con un filo, pero cruzaba los iconos. Las tuyas y las
+   horas, en dorado. */
 .desglose__trozo {
+  --cat: var(--brass);
   display: inline-flex;
   align-items: center;
   gap: 4px;
@@ -7640,9 +7645,9 @@ body::after {
   height: 20px;
   padding: 0 7px;
   background:
-    linear-gradient(90deg, var(--brass-ghost) calc(var(--parte, 0) * 100%), transparent 0),
+    linear-gradient(90deg, color-mix(in srgb, var(--cat) 28%, transparent) calc(var(--parte, 0) * 100%), transparent 0),
     var(--slate);
-  border: 1px solid var(--hairline-strong);
+  border: 1px solid color-mix(in srgb, var(--cat) 30%, var(--hairline-strong));
   border-radius: 999px;
   color: var(--muted);
   font-family: var(--font-mono);
@@ -7655,13 +7660,19 @@ body::after {
     transform var(--fast) var(--ease-spring);
 }
 
+.desglose__trozo[data-categoria="comida"] { --cat: var(--viaje-coral); }
+.desglose__trozo[data-categoria="transporte"] { --cat: var(--viaje-azul); }
+.desglose__trozo[data-categoria="alojamiento"] { --cat: var(--viaje-lila); }
+.desglose__trozo[data-categoria="ocio"] { --cat: var(--viaje-rosa); }
+.desglose__trozo[data-categoria="compras"] { --cat: var(--viaje-jade); }
+
 .desglose__trozo svg {
-  color: var(--brass);
+  color: var(--cat);
 }
 
 .desglose__trozo:hover {
   color: var(--mist);
-  border-color: var(--brass-dim);
+  border-color: color-mix(in srgb, var(--cat) 55%, transparent);
 }
 
 .desglose__trozo:active {
@@ -7670,10 +7681,10 @@ body::after {
 
 .desglose__trozo[aria-pressed="true"] {
   color: var(--graphite);
-  background: var(--brass);
-  border-color: var(--brass);
+  background: var(--cat);
+  border-color: var(--cat);
   font-weight: 700;
-  box-shadow: 0 0 10px -2px var(--brass-glow);
+  box-shadow: 0 0 10px -2px color-mix(in srgb, var(--cat) 60%, transparent);
 }
 
 .desglose__trozo[aria-pressed="true"] svg {
