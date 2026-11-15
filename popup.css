@@ -7013,26 +7013,25 @@ body::after {
   box-shadow: 0 0 0 1.5px var(--graphite), 0 0 6px var(--jade-glow);
 }
 
-/* El más caro del día lleva corona en la esquina de arriba (el efectivo va
-   abajo) y su cifra en dorado. Al cambiar de rey, la corona cae y rebota. */
+/* El más caro del día lleva corona delante de la cifra. En la esquina del
+   icono se salía de la fila y la primera salía cortada. Al cambiar de rey,
+   la corona cae y rebota. */
 .gastos__icono.is-rey {
-  position: relative;
   color: var(--brass);
 }
 
-.gastos__icono.is-rey::before {
+.gastos__icono.is-rey ~ .gastos__valor::before {
   content: "👑";
-  position: absolute;
-  left: -7px;
-  top: -8px;
+  display: inline-block;
+  margin-right: 4px;
   font-size: 10px;
   line-height: 1;
-  transform: rotate(-18deg);
+  vertical-align: 1px;
+  transform: rotate(-12deg);
   filter: drop-shadow(0 0 3px var(--brass-glow));
-  pointer-events: none;
 }
 
-.gastos__icono.is-coronado::before {
+.gastos__icono.is-coronado ~ .gastos__valor::before {
   animation: corona-cae 620ms var(--ease-spring) 180ms backwards;
 }
 
@@ -7049,7 +7048,7 @@ body::after {
 @keyframes corona-cae {
   0% { opacity: 0; transform: translateY(-8px) rotate(-60deg) scale(0.4); }
   60% { opacity: 1; transform: translateY(1px) rotate(-10deg) scale(1.15); }
-  100% { transform: rotate(-18deg); }
+  100% { transform: rotate(-12deg); }
 }
 
 .gastos__apuntar.is-tic {
