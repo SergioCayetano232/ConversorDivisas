@@ -1089,6 +1089,8 @@ function hideTrend() {
   pintarVista();
   el.trendLine.setAttribute("d", "");
   el.trendArea.setAttribute("d", "");
+  pararCuentaCambio();
+  cambioPintado = null;
   el.trendChange.textContent = "";
   el.trendChange.classList.remove("is-up", "is-down");
   pintarMomento(null);
@@ -1198,6 +1200,37 @@ function pintarExtremos(values) {
   restartAnimation(el.pie);
 }
 
+// Al cambiar de periodo el porcentaje corre del que había al nuevo, como la
+// cifra del resultado. El color va directo al final, que si no pasa por el gris.
+let cambioPintado = null;
+let cuentaCambio = null;
+
+function pararCuentaCambio() {
+  if (!cuentaCambio) return;
+  cancelAnimationFrame(cuentaCambio.raf);
+  cuentaCambio = null;
+}
+
+function contarCambio(hasta) {
+  pararCuentaCambio();
+  const desde = cambioPintado;
+  cambioPintado = hasta;
+  el.trendChange.textContent = nfPercent.format(hasta);
+  if (sinMovimiento.matches || desde === null || desde === hasta) return;
+  const yo = {};
+  cuentaCambio = yo;
+  const paso = (ahora) => {
+    if (cuentaCambio !== yo) return;
+    yo.empieza ??= ahora;
+    const t = (ahora - yo.empieza) / 400;
+    el.trendChange.textContent = nfPercent.format(cifraEnMarcha(desde, hasta, t, 4));
+    if (t >= 1) return pararCuentaCambio();
+    yo.raf = requestAnimationFrame(paso);
+  };
+  el.trendChange.textContent = nfPercent.format(desde);
+  yo.raf = requestAnimationFrame(paso);
+}
+
 function renderTrend(puntos) {
   // Con menos de dos puntos no hay nada que dibujar ni con qué comparar.
   if (puntos.length < 2) {
@@ -1218,7 +1251,7 @@ function renderTrend(puntos) {
   const last = values[values.length - 1];
   const change = first === 0 ? 0 : (last - first) / first;
 
-  el.trendChange.textContent = nfPercent.format(change);
+  contarCambio(change);
   el.trendChange.classList.toggle("is-up", change > 0);
   el.trendChange.classList.toggle("is-down", change < 0);
 

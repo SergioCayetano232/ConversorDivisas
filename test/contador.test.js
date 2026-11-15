@@ -23,3 +23,11 @@ test("al céntimo, y fuera de tiempo se queda en los extremos", () => {
   assert.equal(cifraEnMarcha(10, 20, -1), 10);
   assert.equal(cifraEnMarcha(10, 20, 2), 20);
 });
+
+test("con más decimales vale para un porcentaje sin que se quede en cero", () => {
+  assert.equal(cifraEnMarcha(0.0042, -0.0179, 1, 4), -0.0179);
+  assert.equal(cifraEnMarcha(0.0042, -0.0179, 0, 4), 0.0042);
+  const medio = cifraEnMarcha(0.0042, -0.0179, 0.5, 4);
+  assert.equal(medio, -0.0151);
+  assert.equal(cifraEnMarcha(0, 0.0179, 0.5), 0.02);
+});

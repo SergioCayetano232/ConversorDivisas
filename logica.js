@@ -4147,9 +4147,11 @@ function masCarosDelDia(todos) {
 // lo mismo y no tengo con qué compararlos. A igual importe, el más reciente.
 // Lo que enseña el total a mitad de cuenta. Frena al final, como el resto de
 // animaciones, y va al céntimo para que no bailen los decimales.
-function cifraEnMarcha(desde, hasta, t) {
+// Los porcentajes van como fracción (0,0179), así que esos piden 4 decimales.
+function cifraEnMarcha(desde, hasta, t, decimales = 2) {
   const avance = 1 - (1 - Math.min(Math.max(t, 0), 1)) ** 3;
-  return Math.round((desde + (hasta - desde) * avance) * 100) / 100;
+  const escala = 10 ** decimales;
+  return Math.round((desde + (hasta - desde) * avance) * escala) / escala;
 }
 
 // Los días que no apuntaste nada entre dos que sí. La lista va de lo último a lo
