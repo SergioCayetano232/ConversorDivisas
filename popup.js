@@ -1254,6 +1254,7 @@ function renderTrend(puntos) {
   const change = first === 0 ? 0 : (last - first) / first;
 
   contarCambio(change);
+  el.trend.dataset.tendencia = change > 0 ? "sube" : change < 0 ? "baja" : "";
   el.trendChange.classList.toggle("is-up", change > 0);
   el.trendChange.classList.toggle("is-down", change < 0);
 

@@ -10236,8 +10236,8 @@ body::after {
   height: 6px;
   margin: -3px 0 0 -3px;
   border-radius: 50%;
-  background: var(--brass);
-  box-shadow: 0 0 0 2px var(--graphite), 0 0 10px var(--brass-glow);
+  background: var(--tendencia);
+  box-shadow: 0 0 0 2px var(--graphite), 0 0 10px color-mix(in srgb, var(--tendencia) 45%, transparent);
   pointer-events: none;
   animation: pop var(--mid) var(--ease-spring) backwards;
   animation-delay: 850ms;
@@ -10248,7 +10248,7 @@ body::after {
   position: absolute;
   inset: -1px;
   border-radius: 50%;
-  border: 1.5px solid var(--brass);
+  border: 1.5px solid var(--tendencia);
   opacity: 0;
   animation: hoy-late 1.6s var(--ease-out) 1.1s 3;
 }
@@ -10367,14 +10367,34 @@ body::after {
   color: var(--jade);
 }
 
+/* La línea y su relleno van del color de lo que ha hecho la tasa en el
+   periodo, el mismo que el porcentaje de arriba. Plana, en dorado. */
+.trend {
+  --tendencia: var(--brass);
+}
+
+.trend[data-tendencia="sube"] {
+  --tendencia: var(--jade);
+}
+
+.trend[data-tendencia="baja"] {
+  --tendencia: var(--cinnabar);
+}
+
+#trend-fill stop {
+  stop-color: var(--tendencia);
+  transition: stop-color var(--slow) var(--ease);
+}
+
 .trend__line {
   fill: none;
-  stroke: var(--brass);
+  stroke: var(--tendencia);
   stroke-width: 1.5;
   stroke-linecap: round;
   stroke-linejoin: round;
   vector-effect: non-scaling-stroke;
-  filter: drop-shadow(0 0 5px var(--brass-glow));
+  filter: drop-shadow(0 0 5px color-mix(in srgb, var(--tendencia) 40%, transparent));
+  transition: stroke var(--slow) var(--ease), filter var(--slow) var(--ease);
   /* Dibujo la línea de izquierda a derecha con el truco del guion largo.
      El valor lo pone el JS, que es quien sabe lo que mide el path. */
   stroke-dasharray: var(--len, 0);
