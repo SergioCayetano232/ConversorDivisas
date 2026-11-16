@@ -8080,10 +8080,24 @@ body::after {
   }
 }
 
-.result.is-loading .result__value {
-  color: var(--muted);
+/* Mientras llega la tasa, un brillo recorre la cifra de lado a lado, como
+   los esqueletos de carga. Mejor que el parpadeo: se ve que algo avanza. */
+.result.is-loading .result__value,
+.extras.is-cargando .extra__valor,
+.fecha.is-cargando .fecha__valor,
+.fecha.is-cargando .fecha__tasa {
+  color: transparent;
   filter: none;
-  animation: pulse 1.2s var(--ease) infinite;
+  background-image: linear-gradient(100deg, var(--muted) 0 36%, var(--brass) 46%, var(--chispa) 50%, var(--brass) 54%, var(--muted) 64% 100%);
+  background-size: 260% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  animation: brillo-carga 1.4s linear infinite;
+}
+
+@keyframes brillo-carga {
+  from { background-position: 100% 0; }
+  to { background-position: 0 0; }
 }
 
 @keyframes beat {
@@ -9009,10 +9023,6 @@ body::after {
   }
 }
 
-.extras.is-cargando .extra__valor {
-  color: var(--muted);
-  animation: pulse 1.2s var(--ease) infinite;
-}
 
 .extra__quitar {
   position: absolute;
@@ -9677,11 +9687,6 @@ body::after {
   animation: pop var(--mid) var(--ease-spring);
 }
 
-.fecha.is-cargando .fecha__valor,
-.fecha.is-cargando .fecha__tasa {
-  color: var(--muted);
-  animation: pulse 1.2s var(--ease) infinite;
-}
 
 /* La ventanilla: las mismas tres filas de 19 px que la pestaña del día. El
    tono sale del veredicto y lo heredan la pastilla y la pérdida. */
