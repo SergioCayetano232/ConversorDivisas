@@ -96,6 +96,52 @@
   }
 }
 
+/* Los colores que cambian entre claro y oscuro, registrados para que se
+   puedan animar: así, cuando el sistema cambia de tema, se funden en vez de
+   saltar, y todo lo que los usa se funde con ellos. Va en :root y no en cada
+   elemento porque el navegador cambia el tema antes de avisar al JS. */
+@property --graphite { syntax: "<color>"; inherits: true; initial-value: #0B0E13; }
+@property --slate { syntax: "<color>"; inherits: true; initial-value: rgba(255, 255, 255, 0.04); }
+@property --mist { syntax: "<color>"; inherits: true; initial-value: #E6EDF3; }
+@property --brass { syntax: "<color>"; inherits: true; initial-value: #E8B75C; }
+@property --muted { syntax: "<color>"; inherits: true; initial-value: #8B949E; }
+@property --hairline { syntax: "<color>"; inherits: true; initial-value: rgba(255, 255, 255, 0.07); }
+@property --hairline-strong { syntax: "<color>"; inherits: true; initial-value: rgba(255, 255, 255, 0.12); }
+@property --brass-dim { syntax: "<color>"; inherits: true; initial-value: rgba(232, 183, 92, 0.45); }
+@property --brass-ghost { syntax: "<color>"; inherits: true; initial-value: rgba(232, 183, 92, 0.12); }
+@property --brass-glow { syntax: "<color>"; inherits: true; initial-value: rgba(232, 183, 92, 0.28); }
+@property --glass { syntax: "<color>"; inherits: true; initial-value: rgba(22, 27, 34, 0.55); }
+@property --glass-light { syntax: "<color>"; inherits: true; initial-value: rgba(255, 255, 255, 0.05); }
+@property --sheen { syntax: "<color>"; inherits: true; initial-value: rgba(255, 255, 255, 0.14); }
+@property --viaje-oro { syntax: "<color>"; inherits: true; initial-value: #E8B75C; }
+@property --viaje-azul { syntax: "<color>"; inherits: true; initial-value: #5AA9E6; }
+@property --viaje-coral { syntax: "<color>"; inherits: true; initial-value: #F0806A; }
+@property --viaje-jade { syntax: "<color>"; inherits: true; initial-value: #3FB8AF; }
+@property --viaje-lila { syntax: "<color>"; inherits: true; initial-value: #A78BFA; }
+@property --viaje-rosa { syntax: "<color>"; inherits: true; initial-value: #E879A6; }
+
+:root {
+  transition: --graphite 600ms var(--ease),
+    --slate 600ms var(--ease),
+    --mist 600ms var(--ease),
+    --brass 600ms var(--ease),
+    --muted 600ms var(--ease),
+    --hairline 600ms var(--ease),
+    --hairline-strong 600ms var(--ease),
+    --brass-dim 600ms var(--ease),
+    --brass-ghost 600ms var(--ease),
+    --brass-glow 600ms var(--ease),
+    --glass 600ms var(--ease),
+    --glass-light 600ms var(--ease),
+    --sheen 600ms var(--ease),
+    --viaje-oro 600ms var(--ease),
+    --viaje-azul 600ms var(--ease),
+    --viaje-coral 600ms var(--ease),
+    --viaje-jade 600ms var(--ease),
+    --viaje-lila 600ms var(--ease),
+    --viaje-rosa 600ms var(--ease);
+}
+
 *,
 *::before,
 *::after {
@@ -183,6 +229,27 @@ html::before {
     radial-gradient(400px circle at 81% 30%, rgba(96, 134, 224, 0.26), transparent 58%),
     radial-gradient(380px circle at 19% 67%, rgba(78, 169, 107, 0.16), transparent 58%);
   animation: deriva 36s ease-in-out -12s infinite alternate-reverse;
+}
+
+/* Los degradados de las manchas no se pueden fundir, así que al cambiar de
+   tema bajan y vuelven para que no se note el salto. */
+.is-cambiando-tema::before,
+.is-cambiando-tema body::before {
+  animation-name: deriva, manchas-funden;
+  animation-duration: 48s, 700ms;
+  animation-timing-function: ease-in-out, var(--ease);
+  animation-iteration-count: infinite, 1;
+  animation-direction: alternate, normal;
+}
+
+.is-cambiando-tema::before {
+  animation-duration: 36s, 700ms;
+  animation-delay: -12s, 0s;
+  animation-direction: alternate-reverse, normal;
+}
+
+@keyframes manchas-funden {
+  40% { opacity: 0.25; }
 }
 
 @keyframes deriva {

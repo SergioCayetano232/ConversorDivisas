@@ -9163,6 +9163,16 @@ function seguirLuz(event) {
   caja.classList.add("is-luz");
 }
 
+// Los colores se funden solos desde el CSS; esto es solo para que las manchas
+// del fondo, que no se pueden fundir, bajen un momento y no se note el salto.
+let fundidoTema = null;
+matchMedia("(prefers-color-scheme: dark)").addEventListener("change", () => {
+  if (sinMovimiento.matches) return;
+  document.documentElement.classList.add("is-cambiando-tema");
+  clearTimeout(fundidoTema);
+  fundidoTema = setTimeout(() => document.documentElement.classList.remove("is-cambiando-tema"), 700);
+});
+
 const cabecera = document.querySelector(".header");
 const pegarCabecera = () => cabecera.classList.toggle("is-pegada", scrollY > 4);
 addEventListener("scroll", pegarCabecera, { passive: true });
