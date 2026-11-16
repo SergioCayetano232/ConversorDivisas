@@ -9149,6 +9149,11 @@ function seguirLuz(event) {
   caja.classList.add("is-luz");
 }
 
+const cabecera = document.querySelector(".header");
+const pegarCabecera = () => cabecera.classList.toggle("is-pegada", scrollY > 4);
+addEventListener("scroll", pegarCabecera, { passive: true });
+pegarCabecera();
+
 // El botón de dar la vuelta se acerca un poco al ratón cuando pasas cerca.
 const IMAN_ALCANCE = 56;
 const IMAN_FUERZA = 5;
