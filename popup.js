@@ -1398,10 +1398,12 @@ function pintarVista() {
 
 function cambiarVista(nueva) {
   if (nueva === vista) return;
+  const antes = vista;
   vista = nueva;
   cerrarBandeja();
   dejarDeMirar();
   pintarVista();
+  deslizarVista(VISTAS.indexOf(nueva) > VISTAS.indexOf(antes) ? 1 : -1);
   if (vista === "evolucion" && hayGrafico) dibujarLinea();
   // Al entrar en la rejilla las casillas vuelven a llegar en cascada.
   if (vista === "extras") {
@@ -1421,6 +1423,37 @@ function cambiarVista(nueva) {
     chrome.storage.local.set({ [VISTA_KEY]: vista });
   } catch (error) {
     console.warn("No se pudo guardar la pestaña", error);
+  }
+}
+
+// Lo de la pestaña nueva entra desde el lado en el que está, como si las
+// pestañas fueran páginas en fila.
+function deslizarVista(lado) {
+  const paneles = {
+    evolucion: [el.trend, el.trendControles],
+    extras: [el.extras],
+    avisos: [el.avisos],
+    chuleta: [el.chuleta],
+    fecha: [el.fecha],
+    timo: [el.timo],
+    suscripciones: [el.suscripciones],
+  };
+  // Al ocultarse a medias no llega ningún evento, así que limpio aquí los de
+  // las pestañas por las que pasaste deprisa.
+  for (const panel of Object.values(paneles).flat()) panel.classList.remove("is-llega");
+  for (const panel of paneles[vista]) {
+    panel.style.setProperty("--lado", lado);
+    restartAnimation(panel, "is-llega");
+    // animationend sube desde dentro (las casillas en cascada), así que solo
+    // me vale el del propio panel. Si cambias antes de que acabe, llega cancel.
+    const quitar = (event) => {
+      if (event.target !== panel) return;
+      panel.classList.remove("is-llega");
+      panel.removeEventListener("animationend", quitar);
+      panel.removeEventListener("animationcancel", quitar);
+    };
+    panel.addEventListener("animationend", quitar);
+    panel.addEventListener("animationcancel", quitar);
   }
 }
 

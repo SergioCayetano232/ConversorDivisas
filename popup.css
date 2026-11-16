@@ -8562,6 +8562,19 @@ body::after {
 }
 
 /* El conmutador de pestañas: la píldora dorada se desliza de un icono al otro. */
+[role="tabpanel"].is-llega,
+.trend__controles.is-llega {
+  animation: vista-llega var(--mid) var(--ease-out);
+}
+
+@keyframes vista-llega {
+  from {
+    opacity: 0;
+    transform: translateX(calc(var(--lado, 1) * 18px));
+    filter: blur(3px);
+  }
+}
+
 .vistas {
   position: relative;
   flex: 1 0 100%;
