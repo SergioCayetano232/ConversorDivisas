@@ -153,16 +153,37 @@ textarea {
 
 /* Las manchas van en un pseudoelemento fijo: si las pongo de fondo del body
    se reescalan cuando el popup crece al aparecer el gráfico. */
+/* Van en dos capas que giran despacio cada una para un lado, así las manchas
+   se mueven unas respecto a otras. Las capas son más grandes que el popup para
+   que al girar no se vea el borde; por eso las posiciones no son las de antes. */
+html::before,
 body::before {
   content: "";
   position: fixed;
-  inset: 0;
+  inset: -30%;
+  pointer-events: none;
+  will-change: transform;
+}
+
+body::before {
   z-index: -2;
   background:
-    radial-gradient(460px circle at 8% 2%, rgba(232, 183, 92, 0.30), transparent 60%),
-    radial-gradient(400px circle at 100% 18%, rgba(96, 134, 224, 0.26), transparent 58%),
-    radial-gradient(440px circle at 82% 96%, rgba(188, 98, 208, 0.22), transparent 60%),
-    radial-gradient(380px circle at 0% 78%, rgba(78, 169, 107, 0.16), transparent 58%);
+    radial-gradient(460px circle at 24% 20%, rgba(232, 183, 92, 0.30), transparent 60%),
+    radial-gradient(440px circle at 70% 79%, rgba(188, 98, 208, 0.22), transparent 60%);
+  animation: deriva 48s ease-in-out infinite alternate;
+}
+
+html::before {
+  z-index: -1;
+  background:
+    radial-gradient(400px circle at 81% 30%, rgba(96, 134, 224, 0.26), transparent 58%),
+    radial-gradient(380px circle at 19% 67%, rgba(78, 169, 107, 0.16), transparent 58%);
+  animation: deriva 36s ease-in-out -12s infinite alternate-reverse;
+}
+
+@keyframes deriva {
+  from { transform: rotate(-9deg) translate(-3%, 2%); }
+  to { transform: rotate(9deg) translate(3%, -2%); }
 }
 
 body::after {
@@ -178,10 +199,14 @@ body::after {
 @media (prefers-color-scheme: light) {
   body::before {
     background:
-      radial-gradient(460px circle at 8% 2%, rgba(214, 158, 46, 0.34), transparent 60%),
-      radial-gradient(400px circle at 100% 18%, rgba(96, 134, 224, 0.26), transparent 58%),
-      radial-gradient(440px circle at 82% 96%, rgba(188, 98, 208, 0.22), transparent 60%),
-      radial-gradient(380px circle at 0% 78%, rgba(78, 169, 107, 0.18), transparent 58%);
+      radial-gradient(460px circle at 24% 20%, rgba(214, 158, 46, 0.34), transparent 60%),
+      radial-gradient(440px circle at 70% 79%, rgba(188, 98, 208, 0.22), transparent 60%);
+  }
+
+  html::before {
+    background:
+      radial-gradient(400px circle at 81% 30%, rgba(96, 134, 224, 0.26), transparent 58%),
+      radial-gradient(380px circle at 19% 67%, rgba(78, 169, 107, 0.18), transparent 58%);
   }
 
   body::after {
