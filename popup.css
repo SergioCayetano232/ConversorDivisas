@@ -1644,6 +1644,65 @@ body::after {
   animation: beat var(--mid) var(--ease-spring);
 }
 
+/* Al copiar, un ✓ que se dibuja delante del texto y unas chispas que salen
+   del botón. Las chispas son sombras de un punto: al crecer, se separan. */
+.copiar {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+}
+
+.copiar__check {
+  width: 0;
+  height: 10px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-dasharray: 12;
+  stroke-dashoffset: 12;
+  transition: width var(--mid) var(--ease-spring), margin var(--mid) var(--ease-spring);
+}
+
+.copiar.is-bien .copiar__check {
+  width: 10px;
+  margin-right: 4px;
+  animation: check-dibuja 320ms var(--ease-out) 80ms forwards;
+}
+
+@keyframes check-dibuja {
+  to { stroke-dashoffset: 0; }
+}
+
+.copiar::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 3px;
+  height: 3px;
+  margin: -1.5px 0 0 -1.5px;
+  border-radius: 50%;
+  pointer-events: none;
+  opacity: 0;
+  box-shadow:
+    -34px -10px 0 var(--jade), 34px -10px 0 var(--brass),
+    -38px 6px 0 var(--brass), 38px 6px 0 var(--jade),
+    -16px -17px 0 var(--brass), 16px 17px 0 var(--brass),
+    18px -18px 0 var(--jade), -18px 16px 0 var(--jade);
+}
+
+.copiar.is-bien::after {
+  animation: chispas-copiar 560ms var(--ease-out);
+}
+
+@keyframes chispas-copiar {
+  0% { opacity: 1; transform: scale(0.35); }
+  70% { opacity: 1; }
+  100% { opacity: 0; transform: scale(1.1); }
+}
+
 /* Con Shift el borde pasa a discontinuo: va a copiar más de lo normal. */
 .copiar.is-frase {
   color: var(--brass);

@@ -8351,7 +8351,7 @@ async function onCopiar(entera = false, conSimbolo = false) {
   if (entera && !frase) return;
   const simbolo = !entera && conSimbolo ? textoConSimbolo(valor, el.to.value) : "";
   const bien = await copiar(frase || simbolo || textoParaCopiar(valor));
-  avisar(tr(!bien ? "copiar.fallo" : frase ? "copiado.frase" : "copiado"));
+  avisar(tr(!bien ? "copiar.fallo" : frase ? "copiado.frase" : "copiado"), bien);
   if (bien && (frase || simbolo)) soltarFrase(frase || simbolo);
 }
 
@@ -8429,14 +8429,17 @@ function copiarALaAntigua(texto) {
   }
 }
 
-function avisar(texto) {
+function avisar(texto, bien = false) {
   el.copiarTexto.textContent = texto;
   el.copiar.classList.add("is-hecho");
+  // El ✓ y las chispas, solo cuando de verdad se ha copiado.
+  if (bien) restartAnimation(el.copiar, "is-bien");
+  else el.copiar.classList.remove("is-bien");
 
   clearTimeout(avisoCopiado);
   avisoCopiado = setTimeout(() => {
     el.copiarTexto.textContent = etiquetaCopiar();
-    el.copiar.classList.remove("is-hecho");
+    el.copiar.classList.remove("is-hecho", "is-bien");
   }, 1400);
 }
 
