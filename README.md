@@ -41,7 +41,8 @@ que necesitaba una conversión rápida. Ahora es un clic en la barra del navegad
   sin abrirlo, al entrar te dice cuánto se ha movido desde entonces ("▲ 1,01 %
   desde el 1 oct, la última vez que miraste")
 - Las últimas diez conversiones, en el reloj que hay al lado de **Copiar**. Pulsando
-  una copias su resultado; con la flecha de al lado la vuelves a poner. Se
+  una copias su resultado (con Shift, la frase entera; con Alt, con su símbolo,
+  igual que en **Copiar**); con la flecha de al lado la vuelves a poner. Se
   apunta sola cuando dejas de escribir, al darle a Enter o al copiar
 - Los gastos del viaje, en la cartera que hay al lado del reloj: con una
   cantidad puesta, le das a **+ 38,90 EUR** (con un concepto si quieres, "Cena",

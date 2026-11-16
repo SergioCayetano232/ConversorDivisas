@@ -5145,6 +5145,15 @@ function fraseConSimbolo({ cantidad, from, valor, to }) {
   return `${textoConSimbolo(cantidad, from)} = ${textoConSimbolo(valor, to)}`;
 }
 
+// Lo mismo que el botón de copiar, pero con una fila del reloj: Shift la frase,
+// Alt el símbolo y los dos juntos la frase con símbolos.
+function conversionParaCopiar({ cantidad, from, resultado, to }, { entera = false, conSimbolo = false } = {}) {
+  if (!Number.isFinite(resultado)) return "";
+  const par = { cantidad, from, valor: resultado, to };
+  if (entera) return conSimbolo ? fraseConSimbolo(par) : fraseParaCopiar(par);
+  return conSimbolo ? textoConSimbolo(resultado, to) : textoParaCopiar(resultado);
+}
+
 function destinoPara(divisa, par) {
   if (!divisa) return { from: par.from, to: par.to };
   return { from: divisa, to: divisa === par.to ? par.from : par.to };
@@ -9032,7 +9041,7 @@ if (typeof module !== "undefined") {
     SEMANAS_MINIMAS, mejorDiaSemana, nombreDiaSemana, textoDiaSemana, indiceCercano, extremos, fechaCorta, largoEnPantalla,
     leerNumero, divisaDe, leerSeleccion, sumarSeleccion, notaDeSuma, destinoPara, leerPegado, leerPegadoSuelto, leerColumna, cuentaDeColumna, buscarPrecios, precioEntero, leerOmnibox, leerMezcla, textoMezcla, precioUnidadBarra, leerGastoBarra, leerDictado, gastoDeBarra, gastoDeTarjeta, escaparXml,
     divisaDeIdioma, parPorIdioma, banderaDe, banderaDivisa,
-    HISTORIAL_MAX, leerHistorial, apuntarConversion, quitarConversion, haceCuanto, ultimoDeHoy, textoParaCopiar, fraseParaCopiar, gastoParaCopiar, ultimoGasto, gastoMasCaro, totalParaCopiar, hoyParaCopiar, simboloDe, textoConSimbolo, fraseConSimbolo,
+    HISTORIAL_MAX, leerHistorial, apuntarConversion, quitarConversion, haceCuanto, ultimoDeHoy, textoParaCopiar, fraseParaCopiar, conversionParaCopiar, gastoParaCopiar, ultimoGasto, gastoMasCaro, totalParaCopiar, hoyParaCopiar, simboloDe, textoConSimbolo, fraseConSimbolo,
     celdaCsv, csvHistorial, csvGastos, csvViajes,
     GASTOS_MAX, CONCEPTO_MAX, crearGasto, leerGastos, esDevolucion, devolucionDe, apuntarGasto, NOCHES_MAX, repartirCentimos, repartirNoches, repartoPorDias, apuntarNoches, quitarGasto, cambiarConcepto, cambiarDia, buscarGastos, trozosResaltados, repetirGasto, devolverGasto, devolverTodos, sumarPorDivisa, gastosPorDia, huecoEntre, cifraEnMarcha, categoriaDelDia, pesoDeLosDias, ordenarPorImporte, masCarosDelDia, pesoDeLosGastos, RARO_VECES, mediana, gastoRaro, REPETIDO_MS, gastoRepetido, mediaPorDia, categoriasAlDia, mediaPorGasto, comisionesPagadas, cambioDelViaje, cifraCambio, textoCambio, pagadoEnEfectivo, ahorroEnEfectivo,
     RETIRADAS_MAX, leerRetiradas, crearRetirada, cambioDelCajero, sobreElBce, alCambioDelCajero, apuntarRetirada, quitarRetirada, efectivoQueda, EFECTIVO_POCO, tonoEfectivo, redondoDeCajero, cuantoSacar, loQueSobra, gastadoHoy, nombreDia,

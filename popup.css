@@ -2322,6 +2322,34 @@ body::after {
   transform: scale(0.97);
 }
 
+/* Con Shift o Alt las filas avisan de lo que van a copiar, como el botón de Copiar. */
+.historial.is-frase .historial__copiar {
+  border-style: dashed;
+  border-color: var(--brass-dim);
+}
+
+.historial.is-simbolo .historial__copiar {
+  border-style: dotted;
+  border-color: var(--brass-dim);
+  box-shadow: 0 0 12px -4px var(--brass-glow);
+}
+
+.historial.is-frase .historial__de,
+.historial.is-simbolo .historial__a {
+  color: var(--brass);
+}
+
+/* La frase entera se lleva las dos cifras: las dos dan el salto. */
+.historial__fila.is-frase .historial__cuenta {
+  animation: historial-frase 420ms var(--ease-spring);
+}
+
+@keyframes historial-frase {
+  0% { transform: scale(1); }
+  40% { transform: scale(1.06); letter-spacing: 0.02em; }
+  100% { transform: scale(1); }
+}
+
 .historial__fila.is-copiada .historial__copiar {
   border-color: color-mix(in srgb, var(--jade) 50%, transparent);
   background: color-mix(in srgb, var(--jade) 12%, transparent);

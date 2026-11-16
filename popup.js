@@ -2791,7 +2791,7 @@ function crearFilaHistorial(entrada, i) {
   cuando.className = "historial__cuando";
   cuando.textContent = haceCuanto(entrada.cuando);
   botonCopiar.append(cuenta, cuando);
-  botonCopiar.title = tr("copiar.aria");
+  botonCopiar.title = tr("historial.copiarTitulo");
   botonCopiar.setAttribute(
     "aria-label",
     tr("historial.fila", {
@@ -2799,14 +2799,18 @@ function crearFilaHistorial(entrada, i) {
       resultado: nf.format(entrada.resultado), to: entrada.to, cuando: cuando.textContent,
     }),
   );
-  botonCopiar.addEventListener("click", async () => {
-    const bien = await copiar(textoParaCopiar(entrada.resultado));
-    cuando.textContent = tr(bien ? "historial.copiado" : "historial.fallo");
+  botonCopiar.addEventListener("click", async (event) => {
+    const entera = event.shiftKey;
+    const conSimbolo = event.altKey;
+    const texto = conversionParaCopiar(entrada, { entera, conSimbolo });
+    const bien = texto !== "" && await copiar(texto);
+    cuando.textContent = tr(!bien ? "historial.fallo" : entera ? "historial.frase" : conSimbolo ? "historial.simbolo" : "historial.copiado");
     fila.classList.add(bien ? "is-copiada" : "is-fallo");
+    fila.classList.toggle("is-frase", bien && (entera || conSimbolo));
     restartAnimation(cuando, "is-tic");
     setTimeout(() => {
       cuando.textContent = haceCuanto(entrada.cuando);
-      fila.classList.remove("is-copiada", "is-fallo");
+      fila.classList.remove("is-copiada", "is-fallo", "is-frase");
     }, 1300);
   });
 
@@ -8401,6 +8405,9 @@ function onShift(event) {
   // Alt solo con el ratón encima: escribiendo, Alt es la tecla de los atajos y
   // Alt+C copia la cifra a secas.
   const alt = event.type === "blur" || event.type === "mouseleave" ? false : event.altKey && el.copiar.matches(":hover");
+  // Las filas del reloj también copian así, y lo enseñan igual que el botón.
+  el.historial.classList.toggle("is-frase", shift);
+  el.historial.classList.toggle("is-simbolo", !shift && event.type !== "blur" && event.altKey === true);
   if (shift === conShift && alt === conAlt) return;
   const antes = etiquetaCopiar();
   conShift = shift;
