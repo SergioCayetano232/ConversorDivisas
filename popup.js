@@ -9103,4 +9103,19 @@ async function tomarAbrirGastos() {
   }
 }
 
+// La luz del cristal: solo guardo dónde está el ratón, lo demás es CSS.
+function seguirLuz(event) {
+  if (event.pointerType !== "mouse" || sinMovimiento.matches) return;
+  const caja = event.currentTarget;
+  const r = caja.getBoundingClientRect();
+  caja.style.setProperty("--luz-x", `${event.clientX - r.left}px`);
+  caja.style.setProperty("--luz-y", `${event.clientY - r.top}px`);
+  caja.classList.add("is-luz");
+}
+
+for (const caja of [el.resultBox, el.from, el.to]) {
+  caja.addEventListener("pointermove", seguirLuz);
+  caja.addEventListener("pointerleave", () => caja.classList.remove("is-luz"));
+}
+
 init();

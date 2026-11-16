@@ -26,6 +26,7 @@
   --glass: rgba(22, 27, 34, 0.55);
   --glass-light: rgba(255, 255, 255, 0.05);
   --sheen: rgba(255, 255, 255, 0.14);
+  --luz: rgba(232, 183, 92, 0.18);
 
   --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.4);
   --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.45);
@@ -83,6 +84,7 @@
     --glass: rgba(255, 255, 255, 0.6);
     --glass-light: rgba(255, 255, 255, 0.7);
     --sheen: rgba(255, 255, 255, 0.9);
+    --luz: rgba(214, 158, 46, 0.2);
 
     --shadow-sm: 0 1px 2px rgba(60, 50, 30, 0.08);
     --shadow-md: 0 4px 16px rgba(60, 50, 30, 0.1);
@@ -1514,6 +1516,30 @@ body::after {
   right: var(--s-6);
   height: 1px;
   background: linear-gradient(90deg, transparent, var(--sheen), transparent);
+}
+
+/* Una luz suave que sigue al ratón por el cristal. La posición la pone el JS;
+   si no hay ratón encima se apaga y no molesta. */
+.result::after,
+.buscador__boton::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  background: radial-gradient(var(--luz-tam, 220px) circle at var(--luz-x, 50%) var(--luz-y, 50%), var(--luz), transparent 70%);
+  opacity: 0;
+  transition: opacity var(--slow) var(--ease);
+}
+
+.buscador__boton {
+  position: relative;
+  --luz-tam: 120px;
+}
+
+.result.is-luz::after,
+.buscador__boton.is-luz::after {
+  opacity: 1;
 }
 
 .result__head {
