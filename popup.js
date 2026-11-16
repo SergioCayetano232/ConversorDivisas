@@ -893,6 +893,20 @@ function crearBuscador(lado) {
 
     const activa = lista.querySelector(".is-marcada");
     if (activa) activa.scrollIntoView({ block: "nearest" });
+    cascadaOpciones();
+  }
+
+  // Solo las que caben en la ventana de la lista: animar las 55 haría que las
+  // de abajo llegaran tarde para nada.
+  function cascadaOpciones() {
+    const arriba = lista.scrollTop;
+    const abajo = arriba + lista.clientHeight;
+    let i = 0;
+    for (const fila of lista.children) {
+      if (fila.offsetTop + fila.offsetHeight <= arriba || fila.offsetTop >= abajo) continue;
+      fila.style.setProperty("--i", i++);
+      fila.classList.add("is-nueva");
+    }
   }
 
   function abrir() {

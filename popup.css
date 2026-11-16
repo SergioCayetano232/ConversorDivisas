@@ -1224,6 +1224,8 @@ body::after {
 }
 
 .buscador__lista {
+  /* Relativa para que el offsetTop de las filas se cuente desde la lista. */
+  position: relative;
   max-height: 188px;
   overflow-y: auto;
   overscroll-behavior: contain;
@@ -1243,6 +1245,19 @@ body::after {
 
 .buscador__opcion.is-marcada {
   background: var(--brass-ghost);
+}
+
+/* Las que se ven al abrir caen una detrás de otra, de arriba abajo. */
+.buscador__opcion.is-nueva {
+  animation: opcion-cae 240ms var(--ease-out) backwards;
+  animation-delay: calc(var(--i, 0) * 22ms);
+}
+
+@keyframes opcion-cae {
+  from {
+    opacity: 0;
+    transform: translateY(-6px);
+  }
 }
 
 .buscador__codigo {
@@ -11303,6 +11318,7 @@ kbd {
   .trend__media,
   .trend__media-texto,
   .trend__pie,
+  .buscador__opcion.is-nueva,
   .gastos__barra.is-creciendo {
     animation-delay: 0s;
   }
