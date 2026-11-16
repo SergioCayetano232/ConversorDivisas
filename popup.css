@@ -1321,6 +1321,20 @@ body::after {
     box-shadow var(--fast) var(--ease), transform var(--fast) var(--ease-spring);
 }
 
+/* El imán: el JS pone hacia dónde tirar y aquí se mueve con muelle. Va en
+   translate y no en transform, que ese ya lo usan el hover y el clic. */
+.swap {
+  translate: var(--iman-x, 0px) var(--iman-y, 0px);
+  transition-property: border-color, color, box-shadow, transform, translate;
+  transition-duration: var(--fast), var(--fast), var(--fast), var(--fast), var(--slow);
+  transition-timing-function: var(--ease), var(--ease), var(--ease), var(--ease-spring), var(--ease-spring);
+}
+
+.swap__icon {
+  translate: calc(var(--iman-x, 0px) * 0.6) calc(var(--iman-y, 0px) * 0.6);
+  transition: translate var(--slow) var(--ease-spring);
+}
+
 .swap:hover {
   border-color: var(--brass-dim);
   color: var(--brass);

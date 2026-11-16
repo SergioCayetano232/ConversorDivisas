@@ -9149,6 +9149,32 @@ function seguirLuz(event) {
   caja.classList.add("is-luz");
 }
 
+// El botón de dar la vuelta se acerca un poco al ratón cuando pasas cerca.
+const IMAN_ALCANCE = 56;
+const IMAN_FUERZA = 5;
+
+function atraerSwap(event) {
+  if (event.pointerType !== "mouse" || sinMovimiento.matches || el.swap.disabled) return soltarSwap();
+  const r = el.swap.getBoundingClientRect();
+  const dx = event.clientX - (r.left + r.width / 2);
+  const dy = event.clientY - (r.top + r.height / 2);
+  const distancia = Math.hypot(dx, dy);
+  if (distancia > IMAN_ALCANCE) return soltarSwap();
+  // Tira más cuanto más cerca, pero sin pasar de unos píxeles. Con la raíz ya
+  // se nota desde lejos; en línea recta solo se movía al tenerlo encima.
+  const tiron = Math.sqrt(1 - distancia / IMAN_ALCANCE) * IMAN_FUERZA / Math.max(distancia, 1);
+  el.swap.style.setProperty("--iman-x", `${(dx * tiron).toFixed(1)}px`);
+  el.swap.style.setProperty("--iman-y", `${(dy * tiron).toFixed(1)}px`);
+}
+
+function soltarSwap() {
+  el.swap.style.removeProperty("--iman-x");
+  el.swap.style.removeProperty("--iman-y");
+}
+
+document.addEventListener("pointermove", atraerSwap);
+document.documentElement.addEventListener("pointerleave", soltarSwap);
+
 for (const caja of [el.resultBox, el.from, el.to]) {
   caja.addEventListener("pointermove", seguirLuz);
   caja.addEventListener("pointerleave", () => caja.classList.remove("is-luz"));
