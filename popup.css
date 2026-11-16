@@ -27,6 +27,7 @@
   --glass-light: rgba(255, 255, 255, 0.05);
   --sheen: rgba(255, 255, 255, 0.14);
   --luz: rgba(232, 183, 92, 0.18);
+  --chispa: #FFF1CC;
 
   --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.4);
   --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.45);
@@ -85,6 +86,7 @@
     --glass-light: rgba(255, 255, 255, 0.7);
     --sheen: rgba(255, 255, 255, 0.9);
     --luz: rgba(214, 158, 46, 0.2);
+    --chispa: #F2B33D;
 
     --shadow-sm: 0 1px 2px rgba(60, 50, 30, 0.08);
     --shadow-md: 0 4px 16px rgba(60, 50, 30, 0.1);
@@ -687,6 +689,40 @@ body::after {
 
 .field__caja {
   position: relative;
+}
+
+/* Al entrar en el campo, una chispa da una vuelta al borde y se queda en el
+   dorado de siempre. Solo una vuelta: dando vueltas mientras escribes cansa. */
+@property --giro {
+  syntax: "<angle>";
+  inherits: false;
+  initial-value: 0deg;
+}
+
+.field__caja::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  padding: 2px;
+  border-radius: var(--r-md);
+  background: conic-gradient(from var(--giro), transparent 0 52%, var(--brass-dim) 72%, var(--brass) 88%, var(--chispa) 95%, transparent 98%);
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  pointer-events: none;
+  opacity: 0;
+}
+
+.field__caja:has(> .field__input:focus)::before {
+  animation: chispa 1100ms var(--ease-out);
+}
+
+@keyframes chispa {
+  0% { opacity: 0; --giro: 0deg; }
+  12% { opacity: 1; }
+  75% { opacity: 1; }
+  100% { opacity: 0; --giro: 360deg; }
 }
 
 .field__input.is-calculando {
