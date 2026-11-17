@@ -97,6 +97,7 @@ chrome.runtime.onInstalled.addListener(async () => {
   actualizarInsignia();
   revisarAvisos();
   mezclarSync();
+  avisarCambioDePais();
 });
 
 chrome.runtime.onStartup.addListener(() => {
@@ -106,6 +107,7 @@ chrome.runtime.onStartup.addListener(() => {
   recordarGastos();
   avisarTaxFree();
   avisarPendientes();
+  avisarCambioDePais();
 });
 
 // Con la de cada hora basta: salta en la hora que hayas elegido, y si a esa
@@ -117,6 +119,7 @@ chrome.alarms.onAlarm.addListener((alarma) => {
   recordarGastos();
   avisarTaxFree();
   avisarPendientes();
+  avisarCambioDePais();
 });
 
 // Las preferencias van y vienen con tu cuenta de Chrome. Si no tienes la
@@ -1576,6 +1579,32 @@ async function recordarGastos() {
     });
   } catch (error) {
     console.warn("No se pudo mirar si faltan gastos", error);
+  }
+}
+
+// No hay evento para cuando el sistema cambia de zona: lo miro al abrir Chrome y
+// cada hora. Al pulsar el aviso, el clic de abajo pone el par por el id.
+async function avisarCambioDePais() {
+  try {
+    await idiomaListo;
+    const { zonaVista, viajes, lastPair } = await chrome.storage.local.get(["zonaVista", "viajes", "lastPair"]);
+    const par = await leerPar();
+    const casa = tuDivisa({ viajes: viajes ? todosLosViajes(leerViajes(viajes)) : [], idiomas: navigator.languages, par: lastPair ?? par });
+    const zona = Intl.DateTimeFormat().resolvedOptions().timeZone;
+    const r = cambioDePais({ zona, antes: zonaVista, par, casa });
+    if (!r) return;
+    await chrome.storage.local.set({ zonaVista: r.guardar });
+    if (!r.aviso) return;
+    const { titulo, cuerpo } = mensajeCambioDePais(r.aviso);
+    await chrome.notifications.create(`pais:${r.aviso.from}:${r.aviso.to}`, {
+      type: "basic",
+      iconUrl: "icons/icon128.png",
+      title: titulo,
+      message: cuerpo,
+      priority: 1,
+    });
+  } catch (error) {
+    console.warn("No se pudo mirar la zona horaria", error);
   }
 }
 

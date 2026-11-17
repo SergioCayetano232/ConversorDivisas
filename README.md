@@ -284,6 +284,10 @@ que necesitaba una conversión rápida. Ahora es un clic en la barra del navegad
   día, dónde gastaste más y menos al día, lo más caro y las banderas de las
   divisas por orden de llegada. Cuenta también los archivados, y si tienes
   más de un año, arriba eliges cuál
+- Al aterrizar en otro país, si el ordenador cambia solo de hora, te avisa:
+  "¿Estás en Japón? 🇯🇵", y pulsando pone JPY → tu divisa. Una vez por cambio
+  de zona; de vuelta en casa o con el par ya puesto no dice nada. Lo mira al
+  abrir Chrome y cada hora
 - Si estás de viaje y a las nueve de la noche no has apuntado nada, te lo
   recuerda con una notificación, una vez al día. Pulsándola se abren los gastos
   de ese viaje. Con clic derecho en el icono lo pasas a las ocho o a las diez,

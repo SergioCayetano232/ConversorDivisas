@@ -7881,6 +7881,72 @@ function tuDivisa({ viajes = [], idiomas = [], par = null } = {}) {
   return deIdioma ?? (isValidCode(par?.to) ? par.to : "EUR");
 }
 
+// Las zonas horarias que pone el sistema al aterrizar, con su país. Las de
+// siempre de cada sitio; si la tuya no está, no aviso y ya.
+const PAIS_DE_ZONA = Object.fromEntries(Object.entries({
+  ES: "Europe/Madrid Atlantic/Canary Africa/Ceuta", PT: "Europe/Lisbon Atlantic/Madeira Atlantic/Azores",
+  FR: "Europe/Paris", DE: "Europe/Berlin Europe/Busingen", IT: "Europe/Rome", NL: "Europe/Amsterdam", BE: "Europe/Brussels",
+  AT: "Europe/Vienna", IE: "Europe/Dublin", FI: "Europe/Helsinki", GR: "Europe/Athens", LU: "Europe/Luxembourg",
+  MT: "Europe/Malta", CY: "Asia/Nicosia Asia/Famagusta Europe/Nicosia", SI: "Europe/Ljubljana", SK: "Europe/Bratislava",
+  EE: "Europe/Tallinn", LV: "Europe/Riga", LT: "Europe/Vilnius", HR: "Europe/Zagreb", BG: "Europe/Sofia",
+  MC: "Europe/Monaco", AD: "Europe/Andorra", ME: "Europe/Podgorica", VA: "Europe/Vatican", SM: "Europe/San_Marino",
+  GB: "Europe/London Europe/Belfast", CH: "Europe/Zurich", LI: "Europe/Vaduz", SE: "Europe/Stockholm", NO: "Europe/Oslo",
+  DK: "Europe/Copenhagen", PL: "Europe/Warsaw", CZ: "Europe/Prague", HU: "Europe/Budapest", RO: "Europe/Bucharest",
+  TR: "Europe/Istanbul Asia/Istanbul", IS: "Atlantic/Reykjavik", RS: "Europe/Belgrade", GE: "Asia/Tbilisi",
+  US: "America/New_York America/Chicago America/Denver America/Los_Angeles America/Phoenix America/Anchorage "
+    + "Pacific/Honolulu America/Detroit America/Indiana/Indianapolis America/Boise America/Kentucky/Louisville",
+  PR: "America/Puerto_Rico", EC: "America/Guayaquil", PA: "America/Panama", SV: "America/El_Salvador",
+  CA: "America/Toronto America/Vancouver America/Edmonton America/Winnipeg America/Halifax America/St_Johns "
+    + "America/Regina America/Montreal",
+  MX: "America/Mexico_City America/Cancun America/Tijuana America/Monterrey America/Merida America/Mazatlan "
+    + "America/Chihuahua America/Hermosillo America/Bahia_Banderas",
+  BR: "America/Sao_Paulo America/Manaus America/Fortaleza America/Recife America/Bahia America/Belem America/Cuiaba America/Noronha",
+  AR: "America/Argentina/Buenos_Aires America/Buenos_Aires America/Argentina/Cordoba America/Argentina/Mendoza "
+    + "America/Argentina/Ushuaia America/Argentina/Salta",
+  CL: "America/Santiago Pacific/Easter", PE: "America/Lima", CO: "America/Bogota", UY: "America/Montevideo",
+  CR: "America/Costa_Rica", DO: "America/Santo_Domingo", BO: "America/La_Paz", GT: "America/Guatemala", PY: "America/Asuncion",
+  JP: "Asia/Tokyo", CN: "Asia/Shanghai Asia/Urumqi Asia/Chongqing", HK: "Asia/Hong_Kong", TW: "Asia/Taipei", KR: "Asia/Seoul",
+  SG: "Asia/Singapore", MY: "Asia/Kuala_Lumpur Asia/Kuching", TH: "Asia/Bangkok", VN: "Asia/Ho_Chi_Minh Asia/Saigon",
+  KH: "Asia/Phnom_Penh", ID: "Asia/Jakarta Asia/Makassar Asia/Jayapura Asia/Pontianak", PH: "Asia/Manila",
+  IN: "Asia/Kolkata Asia/Calcutta", LK: "Asia/Colombo", NP: "Asia/Kathmandu Asia/Katmandu",
+  IL: "Asia/Jerusalem Asia/Tel_Aviv", JO: "Asia/Amman", AE: "Asia/Dubai", QA: "Asia/Qatar", SA: "Asia/Riyadh",
+  AU: "Australia/Sydney Australia/Melbourne Australia/Brisbane Australia/Perth Australia/Adelaide Australia/Hobart Australia/Darwin",
+  NZ: "Pacific/Auckland Pacific/Chatham", ZA: "Africa/Johannesburg", MA: "Africa/Casablanca", EG: "Africa/Cairo",
+  TN: "Africa/Tunis", KE: "Africa/Nairobi",
+}).flatMap(([pais, zonas]) => zonas.split(" ").map((zona) => [zona, pais])));
+
+// Las de fuera del BCE, que no están en DIVISA_DE_REGION.
+const DIVISA_DE_MERCADO = {
+  VN: "VND", AR: "ARS", MA: "MAD", PE: "PEN", CO: "COP", CL: "CLP", EG: "EGP", AE: "AED", TW: "TWD", UY: "UYU",
+  CR: "CRC", DO: "DOP", TN: "TND", KE: "KES", LK: "LKR", NP: "NPR", KH: "KHR", JO: "JOD", QA: "QAR", SA: "SAR",
+  GE: "GEL", RS: "RSD", BO: "BOB", GT: "GTQ", PY: "PYG",
+};
+
+function paisDeZona(zona) {
+  const region = PAIS_DE_ZONA[zona];
+  const divisa = region && (DIVISA_DE_REGION[region] ?? DIVISA_DE_MERCADO[region]);
+  return divisa && isValidCode(divisa) ? { region, divisa } : null;
+}
+
+// Si el sistema ha cambiado de zona y la de ahora es de otra divisa, propongo
+// el par de allí a la tuya. Una vez por cambio: si no le haces caso, no insiste.
+// Volviendo a casa, o con el par ya puesto, no hay nada que decir.
+function cambioDePais({ zona, antes, par, casa }) {
+  if (!zona || zona === antes) return null;
+  const ahora = paisDeZona(zona);
+  const previo = paisDeZona(antes);
+  if (!antes || !ahora || previo?.divisa === ahora.divisa || ahora.divisa === casa) return { guardar: zona, aviso: null };
+  if (par?.from === ahora.divisa && par?.to === casa) return { guardar: zona, aviso: null };
+  return { guardar: zona, aviso: { region: ahora.region, from: ahora.divisa, to: casa } };
+}
+
+function mensajeCambioDePais({ region, from, to }) {
+  return {
+    titulo: tr("pais.titulo", { pais: nombrePais(region), bandera: banderaDe(`x-${region}`) }),
+    cuerpo: tr("pais.cuerpo", { from, to }),
+  };
+}
+
 // tasas[tu divisa][la suya]: lo que vale hoy 1 de la suya en la tuya. Sin
 // tasa, sale sin cifras.
 function cuentaSuscripciones(lista, tasas = {}) {
@@ -9205,6 +9271,6 @@ if (typeof module !== "undefined") {
     RECORDATORIO_HORA, RECORDATORIO_HORAS, leerHoraRecordatorio, viajesSinApuntar, tocaRecordar, mensajeRecordatorio, TAX_FREE_HORA, tocaTaxFree, mensajeTaxFree,
     ATAJOS, atajoPara, textoAtajo, FUNCIONES, FUNCIONES_MAX, buscarFunciones,
     esPanel, cambioDeFuera,
-    PPA_ANIO, PPA, PPA_EURO, NIVEL_IGUAL, paisDePrecios, IVA_UE, UMBRAL_ARANCEL, paisIva, compraDeFuera, textoCompraDeFuera, nivelDePrecios, nombrePais, textoNivel,
+    PPA_ANIO, PPA, PPA_EURO, NIVEL_IGUAL, paisDePrecios, PAIS_DE_ZONA, paisDeZona, cambioDePais, mensajeCambioDePais, IVA_UE, UMBRAL_ARANCEL, paisIva, compraDeFuera, textoCompraDeFuera, nivelDePrecios, nombrePais, textoNivel,
   };
 }
