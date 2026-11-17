@@ -8276,10 +8276,49 @@ function onPegar(event) {
   ponerPegado(campo, pegado);
 }
 
+// El correo de una reserva, pegado fuera de los campos o en un concepto: si se
+// paga allí va a lo pendiente; si ya está pagada, al gasto con sus noches. No
+// apunto nada solo: lo dejo relleno y lo confirmas tú.
+function onPegarReserva(event) {
+  const r = leerReserva(event.clipboardData?.getData("text") ?? "");
+  if (!r) return false;
+  event.preventDefault();
+  if (el.gastos.hidden) abrirGastos();
+  const concepto = r.nombre ?? tr("reserva.alojamiento");
+  // En tu divisa (Booking en euros) va abajo, como al pegar un precio ahí: así
+  // no le doy la vuelta al par.
+  if (r.divisa === el.to.value) ponerPegado(el.result, { from: el.from.value, to: el.to.value, cantidad: r.cantidad });
+  else ponerPegado(el.amount, { ...destinoPara(r.divisa, { from: el.from.value, to: el.to.value }), cantidad: r.cantidad });
+
+  if (r.aPagar) {
+    abrirPendientes();
+    el.pendientesConcepto.value = concepto;
+    const cantidad = cantidadOrigen();
+    el.pendientesCantidad.value = cantidad ? nf.format(cantidad) : "";
+    if (r.entrada && r.entrada >= hoy()) el.pendientesVence.value = r.entrada;
+    for (const campo of [el.pendientesConcepto, el.pendientesCantidad, el.pendientesVence]) restartAnimation(campo, "is-cambiado");
+    // El foco en el concepto, como al abrirlo: en la cantidad, con el cursor al
+    // final, el campo estrecho enseñaba "4.000,00" de los 84.000.
+    el.pendientesConcepto.focus();
+    return true;
+  }
+  el.gastosConcepto.value = concepto;
+  categoriaNueva = "alojamiento";
+  categoriaAMano = true;
+  pintarCategoriaNueva(true);
+  onConceptoGasto();
+  nochesNuevas = r.noches ?? 1;
+  pintarNoches();
+  restartAnimation(el.gastosConcepto, "is-cambiado");
+  el.gastosConcepto.focus();
+  return true;
+}
+
 // Cmd+V sin estar en ningún campo: a la cantidad, y te deja el cursor en ella.
 function onPegarFuera(event) {
   const t = event.target;
   if (t instanceof HTMLInputElement || t instanceof HTMLTextAreaElement || t.isContentEditable) return;
+  if (onPegarReserva(event)) return;
   const texto = event.clipboardData?.getData("text") ?? "";
   const par = { from: el.from.value, to: el.to.value };
   const pegado = pegadoDeColumna(texto, par) || leerPegadoSuelto(texto, par);
@@ -8879,6 +8918,8 @@ function bindEvents() {
   el.empresaCsv.addEventListener("click", onCsvEmpresa);
   el.empresaImprimir.addEventListener("click", onImprimirEmpresa);
   el.pendientesForm.addEventListener("submit", onApuntarPendiente);
+  el.pendientesConcepto.addEventListener("paste", onPegarReserva);
+  el.gastosConcepto.addEventListener("paste", onPegarReserva);
   for (const campo of [el.pendientesConcepto, el.pendientesCantidad]) {
     campo.addEventListener("animationend", () => campo.classList.remove("is-mal"));
   }

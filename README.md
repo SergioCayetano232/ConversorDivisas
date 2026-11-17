@@ -259,6 +259,11 @@ que necesitaba una conversión rápida. Ahora es un clic en la barra del navegad
   tienda, la fianza del piso). Sale en verde y en negativo, y resta del total,
   del día, de su categoría y del presupuesto. Va al cambio de aquel día pero sin
   la comisión, que el banco no la devuelve. Si fue en efectivo, vuelve a la cartera
+- Pegar el correo de la reserva: copias el de Booking, Airbnb o el hotel y lo
+  pegas en el popup (fuera de los campos o en un concepto). Saca el nombre, el
+  total, las noches y la fecha de entrada. Si dice que se paga en el
+  alojamiento, abre **⏳ Pendiente** relleno, con la fecha; si ya está pagada,
+  deja el gasto listo con sus noches. No apunta nada solo: lo confirmas tú
 - Lo pagado aparte: el vuelo, el hotel reservado meses antes o el seguro. Al
   pulsar el concepto, con el 📌 de la tira de días lo sacas del día a día: sale
   arriba, en "Pagado aparte", y cuenta en el total, en las categorías y en el

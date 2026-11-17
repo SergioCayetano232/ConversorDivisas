@@ -5389,6 +5389,84 @@ function leerPegado(texto, lado, par) {
 // precio, o dos divisas distintas, mejor pegarlo como siempre.
 const COLUMNA_MAX = 50;
 
+// El correo de la reserva pegado tal cual (Booking, Airbnb, el del hotel): el
+// alojamiento, lo que cuesta, las noches y si se paga allí. No pretendo leer
+// cualquier correo: si no hay pinta de reserva y un precio con su divisa, nada.
+const PISTA_RESERVA = /\b(reserva|booking|check-?in|entrada|llegada|alojamiento|hotel|airbnb|noches?|nights?|estancia|stay|confirmaci[oó]n|confirmation)\b/i;
+const LINEA_TOTAL = /\b(total|importe|you(?:'ll| will)? pay|pagar[aá]s|a pagar|amount|precio)\b/i;
+const PAGAR_ALLI = /\b(pagas|pagar[aá]s|pagar|pago|se paga)\b[^.\n]{0,25}\b(en el|al|en)\b[^.\n]{0,10}\b(alojamiento|hotel|llegar|destino|propiedad)\b|\bpay(?:ment)?\b[^.\n]{0,20}\b(at the property|at the hotel|on arrival|at check-?in)\b/i;
+const MESES = { ene: 1, jan: 1, feb: 2, mar: 3, abr: 4, apr: 4, may: 5, jun: 6, jul: 7, ago: 8, aug: 8, sep: 9, set: 9, oct: 10, nov: 11, dic: 12, dec: 12 };
+
+// "12 de enero de 2027", "Jan 12, 2027", "12/01/2027" o "2027-01-12". Sin año,
+// el próximo que caiga a partir de hoy, que una reserva siempre es de adelante.
+function leerFechaReserva(texto, hoyIso = hoy()) {
+  const t = normalizar(String(texto ?? ""));
+  let a, m, d;
+  let x = t.match(/\b(\d{4})-(\d{2})-(\d{2})\b/);
+  if (x) [, a, m, d] = x.map(Number);
+  if (!x && (x = t.match(/\b(\d{1,2})[/.-](\d{1,2})[/.-](\d{2,4})\b/))) [, d, m, a] = x.map(Number);
+  if (!x && (x = t.match(/\b(\d{1,2})(?:\s+de)?\s+([a-z]{3})[a-z]*\.?(?:\s+de)?(?:\s+(\d{4}))?/))) {
+    [d, m, a] = [Number(x[1]), MESES[x[2]], x[3] ? Number(x[3]) : null];
+  }
+  if (!x && (x = t.match(/\b([a-z]{3})[a-z]*\.?\s+(\d{1,2})(?:st|nd|rd|th)?,?(?:\s+(\d{4}))?/))) {
+    [m, d, a] = [MESES[x[1]], Number(x[2]), x[3] ? Number(x[3]) : null];
+  }
+  if (!x || !m || !(d >= 1 && d <= 31) || m > 12) return null;
+  if (a && a < 100) a += 2000;
+  const anio = Number(hoyIso.slice(0, 4));
+  const iso = (y) => `${y}-${String(m).padStart(2, "0")}-${String(d).padStart(2, "0")}`;
+  if (!a) a = iso(anio) >= hoyIso ? anio : anio + 1;
+  return esIso(iso(a)) ? iso(a) : null;
+}
+
+// La fecha va en la misma línea que "Entrada" o en la siguiente, según el correo.
+function fechaTras(lineas, patron, hoyIso) {
+  const i = lineas.findIndex((l) => patron.test(l));
+  if (i === -1) return null;
+  return leerFechaReserva(lineas[i].replace(patron, ""), hoyIso) ?? leerFechaReserva(lineas[i + 1] ?? "", hoyIso);
+}
+
+function nombreReserva(texto) {
+  const deReserva = texto.match(/\b(?:reserva|booking|estancia|stay)\b[^\n]{0,20}?\b(?:en|at|in)\s+([^\n,.!:(]{3,40})/i);
+  // Con \b no vale: detrás de la "á" de "está" no hay límite de palabra para JS.
+  const limpio = (n) => n.replace(/\s+(est[aá]|is|has|ha)(?=\s|$).*$/i, "").trim();
+  if (deReserva) return limpio(deReserva[1]);
+  // El nombre en mayúscula: si no, "pay at the hotel on arrival" salía como hotel.
+  const alojamiento = texto.match(/\b((?:[Hh]otel|[Hh]ostal|[Hh]ostel|[Rr]yokan|[Aa]partamentos?|[Aa]partments?|[Rr]iad|[Pp]osada)\s+\p{Lu}[^\n,.!:(]{1,30})/u);
+  if (alojamiento) return limpio(alojamiento[1]);
+  return /airbnb/i.test(texto) ? "Airbnb" : null;
+}
+
+function leerReserva(texto, hoyIso = hoy()) {
+  if (typeof texto !== "string" || texto.length < 40 || !PISTA_RESERVA.test(texto)) return null;
+  const lineas = texto.split(/\r?\n/).map((l) => l.trim()).filter(Boolean);
+  if (lineas.length < 3) return null;
+  // El total es el mayor de las líneas de "Total": el subtotal y las tasas son menos.
+  const candidatos = [];
+  lineas.forEach((l, i) => {
+    if (!LINEA_TOTAL.test(l)) return;
+    const precios = buscarPrecios(l).length ? buscarPrecios(l) : buscarPrecios(lineas[i + 1] ?? "");
+    candidatos.push(...precios);
+  });
+  const precios = candidatos.length ? candidatos : buscarPrecios(texto);
+  if (!precios.length) return null;
+  const total = precios.reduce((a, b) => (b.cantidad > a.cantidad ? b : a));
+  const entrada = fechaTras(lineas, /\b(entrada|llegada|check-?in|arrival)\b:?/i, hoyIso);
+  const salida = fechaTras(lineas, /\b(salida|check-?out|departure)\b:?/i, hoyIso);
+  const dichas = Number(texto.match(/\b(\d{1,2})\s*(?:noches?|nights?)\b/i)?.[1]);
+  const porFechas = entrada && salida && salida > entrada ? diasHasta(salida, entrada) - 1 : null;
+  const noches = dichas > 0 ? dichas : porFechas;
+  return {
+    nombre: nombreReserva(texto),
+    cantidad: total.cantidad,
+    divisa: total.divisa,
+    noches: noches > 0 ? Math.min(noches, NOCHES_MAX) : null,
+    entrada,
+    salida,
+    aPagar: PAGAR_ALLI.test(texto),
+  };
+}
+
 function leerColumna(texto, par) {
   const lineas = String(texto ?? "").split(/\r?\n|\t/).map((l) => l.trim()).filter(Boolean);
   if (lineas.length < 2 || lineas.length > COLUMNA_MAX) return null;
@@ -9355,7 +9433,7 @@ if (typeof module !== "undefined") {
     RECIENTES_MAX, FIJOS_MAX, apuntarReciente, fijarReciente, leerRecientes, recientesVisibles,
     RANGOS, RANGO_POR_DEFECTO, leerRango, siguienteRango, coordenadas, alturaEn, MOMENTO_UMBRAL, momento, textoMomento,
     SEMANAS_MINIMAS, mejorDiaSemana, ABANICO_MINIMO, abanicoTasa, textoAbanico, nombreDiaSemana, textoDiaSemana, indiceCercano, extremos, fechaCorta, largoEnPantalla,
-    leerNumero, divisaDe, leerSeleccion, sumarSeleccion, notaDeSuma, leerCobro, COBRO_RARO, analizarCobro, textoCobro, destinoPara, leerPegado, leerPegadoSuelto, leerColumna, cuentaDeColumna, buscarPrecios, precioEntero, leerOmnibox, leerMezcla, textoMezcla, precioUnidadBarra, leerGastoBarra, leerDictado, gastoDeBarra, gastoDeTarjeta, escaparXml,
+    leerNumero, divisaDe, leerSeleccion, sumarSeleccion, notaDeSuma, leerCobro, COBRO_RARO, analizarCobro, textoCobro, destinoPara, leerPegado, leerPegadoSuelto, leerColumna, leerFechaReserva, leerReserva, cuentaDeColumna, buscarPrecios, precioEntero, leerOmnibox, leerMezcla, textoMezcla, precioUnidadBarra, leerGastoBarra, leerDictado, gastoDeBarra, gastoDeTarjeta, escaparXml,
     divisaDeIdioma, parPorIdioma, banderaDe, banderaDivisa,
     HISTORIAL_MAX, leerHistorial, apuntarConversion, quitarConversion, haceCuanto, ultimoDeHoy, textoParaCopiar, fraseParaCopiar, conversionParaCopiar, gastoParaCopiar, ultimoGasto, gastoMasCaro, totalParaCopiar, hoyParaCopiar, simboloDe, textoConSimbolo, fraseConSimbolo,
     celdaCsv, csvHistorial, csvGastos, csvViajes,
