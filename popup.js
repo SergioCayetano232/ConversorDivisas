@@ -6084,6 +6084,15 @@ function crearFilaArchivado(viaje, i) {
   sacar.append(nombre, meta);
   const compara = comparacion.get(viaje.id);
   if (compara?.media != null) sacar.append(crearComparacion(compara));
+  const hoyViaje = textoViajeHoy(viajeConTasasDeHoy(viaje, tasasArchivo.get(total?.to)));
+  if (hoyViaje) {
+    const linea = document.createElement("span");
+    linea.className = "viajes__hoy";
+    linea.dataset.tono = hoyViaje.tono;
+    linea.textContent = hoyViaje.texto;
+    if (hoyViaje.titulo) linea.title = hoyViaje.titulo;
+    sacar.append(linea);
+  }
   sacar.setAttribute("aria-label", tr(lleno ? "viajes.sacarLleno" : "viajes.sacar", { nombre: nombreViaje(viaje), n: VIAJES_MAX }));
   sacar.title = sacar.getAttribute("aria-label");
   sacar.addEventListener("click", () => onSacarArchivado(viaje, sacar));
@@ -6122,6 +6131,19 @@ function pintarArchivo() {
   // Abierto ocupa el sitio de la lista: debajo no cabe y el popup no crece más de 600 px.
   el.viajes.classList.toggle("is-archivo", archivoAbierto);
   el.viajesArchivados.replaceChildren(...(archivoAbierto ? archivados.map(crearFilaArchivado) : []));
+  if (archivoAbierto) cargarTasasArchivo(archivados);
+}
+
+// Las tasas de hoy hacia la divisa de cada archivado, una vez por divisa. Sin red
+// se queda en null y la fila sale sin la línea, sin volver a intentarlo.
+const tasasArchivo = new Map();
+
+async function cargarTasasArchivo(archivados) {
+  const faltan = new Set(archivados.map((v) => sumarPorDivisa(v.gastos)[0]?.to).filter((to) => to && !tasasArchivo.has(to)));
+  if (faltan.size === 0) return;
+  for (const to of faltan) tasasArchivo.set(to, null);
+  for (const to of faltan) tasasArchivo.set(to, await tasasHacia(to));
+  if (archivoAbierto) pintarArchivo();
 }
 
 let indiceAbierto = false;

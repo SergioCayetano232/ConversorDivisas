@@ -4009,6 +4009,49 @@ function compararViajes(lista) {
   });
 }
 
+// Lo mismo que gastaste, con el cambio de hoy y la comisión que llevaba cada
+// gasto: si el yen ha caído, Japón te sale más barato que cuando fuiste. Solo
+// es la divisa, los precios de allí también habrán cambiado. tasas[code] es lo
+// que vale hoy 1 de esa divisa en la del viaje; sin tasa, el gasto cuenta igual.
+function viajeConTasasDeHoy(viaje, tasas) {
+  const total = sumarPorDivisa(viaje?.gastos ?? [])[0];
+  if (!total || !tasas) return null;
+  const suyos = viaje.gastos.filter((g) => g.to === total.to);
+  let antes = 0;
+  let hoy = 0;
+  let sinTasa = 0;
+  for (const g of suyos) {
+    antes += g.valor;
+    const t = tasas[g.from];
+    if (t > 0) {
+      hoy += conComision(g.cantidad * t, g.comision ?? 0);
+    } else {
+      hoy += g.valor;
+      sinTasa += 1;
+    }
+  }
+  if (sinTasa === suyos.length || !(antes > 0)) return null;
+  const diferencia = hoy - antes;
+  return { to: total.to, antes, hoy, diferencia, pct: diferencia / antes, parcial: sinTasa > 0 };
+}
+
+// Por debajo de un 1 % no lo cuento como cambio: son los decimales de la tasa.
+const VIAJE_HOY_IGUAL = 0.01;
+
+function textoViajeHoy(r) {
+  if (!r) return null;
+  const dinero = numeros({ maximumFractionDigits: 0 });
+  const titulo = tr("viajeHoy.titulo", { antes: `${dinero.format(r.antes)} ${r.to}`, hoy: `${dinero.format(r.hoy)} ${r.to}` });
+  if (Math.abs(r.pct) < VIAJE_HOY_IGUAL) return { tono: "igual", texto: tr("viajeHoy.igual"), titulo };
+  const pct = porCiento(Math.round(Math.abs(r.pct) * 100));
+  const diferencia = `${r.diferencia > 0 ? "+" : "−"}${dinero.format(Math.abs(r.diferencia))}\u00a0${r.to}`;
+  return {
+    tono: r.diferencia > 0 ? "caro" : "barato",
+    texto: tr(r.diferencia > 0 ? "viajeHoy.caro" : "viajeHoy.barato", { pct, diferencia }),
+    titulo,
+  };
+}
+
 const EMOJI_CATEGORIA = {
   comida: "🍽️", transporte: "🚕", alojamiento: "🏨", ocio: "🎟️", compras: "🛍️", otros: "📌",
 };
@@ -9327,7 +9370,7 @@ if (typeof module !== "undefined") {
     puedeSerDeEmpresa, pasarAEmpresa, sacarDeEmpresa, notaDeGastos,
     AVISO_MEJOR_DIAS, techoDeSerie, crearAvisoMejor, ponerTechos,
     presupuestoSugerido, PARTES_VALIDAS, leerPartes, partesDe, repartirPorPartes, textoParte,
-    VIAJES_MAX, NOMBRE_VIAJE_MAX, leerViajes, leerPersonas, porPersona, consumoGente, leerPagador, leerGente, ponerNombre, nombrePersona, inicialPersona, cuentasViaje, frasePago, COBRO_GASTOS_MAX, mensajeCobro, leerEntre, entreDe, fraseEntre, cambiarEntre, leerSaldados, saldarPago, quitarSaldado, fraseSaldado, hayOtrosPagadores, NOMBRE_PERSONA_MAX, compararViajes, COLORES_VIAJE, leerColorViaje, colorLibre, siguienteColor, viajeActivo, ARCHIVADOS_MAX, archivarViaje, desarchivarViaje, borrarArchivado, todosLosViajes, crearViaje, nombreCopia, nombreDeDestino, duplicarViaje, renombrarViaje, elegirViaje, borrarViaje, moverGasto, cambiarViaje, TRAMOS_MAX, NOMBRE_TRAMO_MAX, leerTramos, ponerTramo, quitarTramo, tramoDelDia, divisaDelTramo, resumenTramos, curvaPresupuesto, FRANJAS, HORAS_MINIMO, horaFiable, porFranja, PENDIENTES_MAX, leerPendientes, crearPendiente, cambiarVence, pendientesPorFecha, tocaPagar, tonoVence, textoVence, PENDIENTE_HORA, tocaPendientes, avisadosPendientes, mensajePendientes, apuntarPendiente, quitarPendiente, totalPendiente, exposicionPendientes, textoExposicion, pagarPendiente, resumenViaje, archivoGastos, plegarIcs, eventosDelViaje, calendarioViaje, archivoCalendario,
+    VIAJES_MAX, NOMBRE_VIAJE_MAX, leerViajes, leerPersonas, porPersona, consumoGente, leerPagador, leerGente, ponerNombre, nombrePersona, inicialPersona, cuentasViaje, frasePago, COBRO_GASTOS_MAX, mensajeCobro, leerEntre, entreDe, fraseEntre, cambiarEntre, leerSaldados, saldarPago, quitarSaldado, fraseSaldado, hayOtrosPagadores, NOMBRE_PERSONA_MAX, compararViajes, viajeConTasasDeHoy, VIAJE_HOY_IGUAL, textoViajeHoy, COLORES_VIAJE, leerColorViaje, colorLibre, siguienteColor, viajeActivo, ARCHIVADOS_MAX, archivarViaje, desarchivarViaje, borrarArchivado, todosLosViajes, crearViaje, nombreCopia, nombreDeDestino, duplicarViaje, renombrarViaje, elegirViaje, borrarViaje, moverGasto, cambiarViaje, TRAMOS_MAX, NOMBRE_TRAMO_MAX, leerTramos, ponerTramo, quitarTramo, tramoDelDia, divisaDelTramo, resumenTramos, curvaPresupuesto, FRANJAS, HORAS_MINIMO, horaFiable, porFranja, PENDIENTES_MAX, leerPendientes, crearPendiente, cambiarVence, pendientesPorFecha, tocaPagar, tonoVence, textoVence, PENDIENTE_HORA, tocaPendientes, avisadosPendientes, mensajePendientes, apuntarPendiente, quitarPendiente, totalPendiente, exposicionPendientes, textoExposicion, pagarPendiente, resumenViaje, archivoGastos, plegarIcs, eventosDelViaje, calendarioViaje, archivoCalendario,
     diasHasta, leerPresupuesto, leerTopes, PRESUPUESTO_JUSTO, estadoPresupuesto, estadoTopes, alDiaAlli, inicioDelViaje, diaDelViaje, cuentaAtras, textoCuentaAtras, huchaViaje, loDeHoy, CELEBRADOS_MAX, leerCelebrados, anadirCelebrado, viajeParaCelebrar, textoCelebrar, RACHA_MINIMA, rachaPresupuesto, hastaCuandoLlega, previsionViaje, PREVISION_JUSTA, textoPrevision, loQueSeLleva, presupuestoEnTarjeta, textoPresupuestoTarjeta, redondearDias,
     EXTRAS_MAX, EXTRAS_POR_DEFECTO, leerExtras, anadirExtra, quitarExtra,
     extrasVisibles, disponiblesParaAnadir, convertirExtras, semanaDe, trazoMini, CHULETA, escalaChuleta, chuleta, TRUCO_TOLERANCIA, trucoDeCabeza, textoTruco, tituloTruco, chuletaParaCompartir, extrasParaCompartir,

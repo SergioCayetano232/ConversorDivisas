@@ -94,7 +94,9 @@ que necesitaba una conversión rápida. Ahora es un clic en la barra del navegad
   de media al día y en qué se fue más ("110,00/día · 🏨 80 %"), con una barrita
   medida contra el que más gasta al día. El más caro y el más barato llevan su
   marca. Va por días y no por el total, que una semana en Japón siempre suma
-  más que un finde en Lisboa
+  más que un finde en Lisboa. En los archivados, además, lo que te saldría hoy
+  lo mismo que gastaste, con el cambio de hoy ("Hoy, un 12 % más barato (−114
+  EUR)"). Solo cuenta la divisa, no lo que hayan subido los precios allí
 - Lo mismo en cada viaje: debajo de los archivados, **☕ Lo mismo en cada
   viaje** pone lado a lado lo que has comprado en más de uno (el café, el
   metro, la cerveza), con lo que te costó en cada sitio, del más barato al más

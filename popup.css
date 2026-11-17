@@ -3509,7 +3509,8 @@ body::after {
 }
 
 /* Con la comparación debajo la fila crece a dos líneas. */
-.viajes__elegir:has(.viajes__compara) {
+.viajes__elegir:has(.viajes__compara),
+.viajes__elegir:has(.viajes__hoy) {
   flex-wrap: wrap;
   row-gap: 3px;
   height: auto;
@@ -3520,6 +3521,26 @@ body::after {
 
 .viajes__elegir:has(.viajes__compara)::before {
   top: 12px;
+}
+
+/* Con el cambio de hoy, solo en los archivados: verde si hoy saldría más
+   barato, rojo si más caro. */
+.viajes__hoy {
+  flex-basis: 100%;
+  padding-bottom: 5px;
+  font-family: var(--font-mono);
+  font-size: 9.5px;
+  font-variant-numeric: tabular-nums;
+  color: var(--muted);
+  animation: fade 400ms var(--ease-out) backwards;
+}
+
+.viajes__hoy[data-tono="barato"] {
+  color: var(--jade);
+}
+
+.viajes__hoy[data-tono="caro"] {
+  color: var(--cinnabar);
 }
 
 .viajes__compara {
