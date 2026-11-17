@@ -334,7 +334,9 @@ que necesitaba una conversión rápida. Ahora es un clic en la barra del navegad
   en Mac), también dentro de un campo de texto. Con **+ Gasto** lo apuntas en el
   viaje abierto, con un concepto si quieres, para el hotel o el vuelo que pagas
   en la web: va con tarjeta y con tu comisión. Si el precio ya está en tu divisa,
-  entra ese importe tal cual, sin comisión
+  entra ese importe tal cual, sin comisión. Si el viaje abierto tiene presupuesto,
+  antes de apuntarlo ya ves lo que se come de lo que te queda ("Se lleva el 19 %
+  de lo que te queda · ≈ 1,1 días"), con una barrita a rayas, o en cuánto te pasas
 - Todos los precios de una web a la vez: clic derecho en la página, **Convertir
   los precios de la página**, y al lado de cada precio sale lo que vale en tu
   divisa. Solo cuenta los que llevan la divisa pegada (`49,99 €`, `$1,049.99`,

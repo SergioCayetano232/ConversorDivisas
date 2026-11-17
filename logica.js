@@ -4985,6 +4985,40 @@ function loQueSeLleva(presupuesto, gastos, gasto, hoyIso = hoy(), pendientes = [
   };
 }
 
+// Lo mismo para la tarjeta de la web, pero contado sobre lo que te queda y no
+// sobre el total: "el 18 % de lo que te queda" es lo que te hace pensártelo.
+// Acabado el viaje ya no pinta nada, y por debajo del 1 % tampoco.
+function presupuestoEnTarjeta(viaje, gasto, hoyIso = hoy()) {
+  const presupuesto = viaje?.presupuesto;
+  const seLleva = loQueSeLleva(presupuesto, viaje?.gastos ?? [], gasto, hoyIso, viaje?.pendientes);
+  if (!seLleva) return null;
+  const estado = estadoPresupuesto(presupuesto, viaje.gastos, hoyIso, viaje.pendientes);
+  if (estado.dias === 0) return null;
+  const base = { to: presupuesto.to, desde: seLleva.desde, trozo: seLleva.trozo };
+  if (gasto.valor > estado.queda) {
+    // Si ya ibas pasado, "te pasas en" sería todo el gasto: mejor decirlo así.
+    return { ...base, tono: "pasado", exceso: gasto.valor - estado.queda, yaPasado: estado.queda <= 0 };
+  }
+  const fraccion = gasto.valor / estado.queda;
+  if (fraccion < 0.01) return null;
+  const tono = (estado.gastado + gasto.valor) / presupuesto.importe >= PRESUPUESTO_JUSTO ? "justo" : "bien";
+  return { ...base, tono, fraccion, dias: seLleva.dias };
+}
+
+function textoPresupuestoTarjeta(r) {
+  if (!r) return "";
+  if (r.yaPasado) return tr("tarjeta.presupuestoYaPasado");
+  if (r.exceso !== undefined) {
+    const dinero = numeros({ minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    return tr("tarjeta.presupuestoPasa", { exceso: `${dinero.format(r.exceso)} ${r.to}` });
+  }
+  const parte = tr("tarjeta.presupuesto", { pct: tr("pct", { n: Math.max(Math.round(r.fraccion * 100), 1) }) });
+  if (r.dias === null) return parte;
+  const dias = r.dias === 1 ? tr("presupuesto.estoUno") : tr("presupuesto.esto", { dias: numeros({ maximumFractionDigits: 1 }).format(r.dias) });
+  // Sin espacios que partan: en la tarjeta, "días" se quedaba solo en otra línea.
+  return `${parte}\u00a0· ${dias.replace(/ /g, "\u00a0")}`;
+}
+
 // Con un decimal hasta diez días; de ahí, sin decimales. Por debajo de una
 // décima no lo digo: un café no te arruina el viaje.
 function redondearDias(dias) {
@@ -9055,7 +9089,7 @@ if (typeof module !== "undefined") {
     AVISO_MEJOR_DIAS, techoDeSerie, crearAvisoMejor, ponerTechos,
     presupuestoSugerido, PARTES_VALIDAS, leerPartes, partesDe, repartirPorPartes, textoParte,
     VIAJES_MAX, NOMBRE_VIAJE_MAX, leerViajes, leerPersonas, porPersona, consumoGente, leerPagador, leerGente, ponerNombre, nombrePersona, inicialPersona, cuentasViaje, frasePago, COBRO_GASTOS_MAX, mensajeCobro, leerEntre, entreDe, fraseEntre, cambiarEntre, leerSaldados, saldarPago, quitarSaldado, fraseSaldado, hayOtrosPagadores, NOMBRE_PERSONA_MAX, compararViajes, COLORES_VIAJE, leerColorViaje, colorLibre, siguienteColor, viajeActivo, ARCHIVADOS_MAX, archivarViaje, desarchivarViaje, borrarArchivado, todosLosViajes, crearViaje, nombreCopia, nombreDeDestino, duplicarViaje, renombrarViaje, elegirViaje, borrarViaje, moverGasto, cambiarViaje, TRAMOS_MAX, NOMBRE_TRAMO_MAX, leerTramos, ponerTramo, quitarTramo, tramoDelDia, divisaDelTramo, resumenTramos, curvaPresupuesto, FRANJAS, HORAS_MINIMO, horaFiable, porFranja, PENDIENTES_MAX, leerPendientes, crearPendiente, cambiarVence, pendientesPorFecha, tocaPagar, tonoVence, textoVence, PENDIENTE_HORA, tocaPendientes, avisadosPendientes, mensajePendientes, apuntarPendiente, quitarPendiente, totalPendiente, pagarPendiente, resumenViaje, archivoGastos, plegarIcs, eventosDelViaje, calendarioViaje, archivoCalendario,
-    diasHasta, leerPresupuesto, leerTopes, PRESUPUESTO_JUSTO, estadoPresupuesto, estadoTopes, alDiaAlli, inicioDelViaje, diaDelViaje, cuentaAtras, textoCuentaAtras, huchaViaje, loDeHoy, CELEBRADOS_MAX, leerCelebrados, anadirCelebrado, viajeParaCelebrar, textoCelebrar, RACHA_MINIMA, rachaPresupuesto, hastaCuandoLlega, previsionViaje, PREVISION_JUSTA, textoPrevision, loQueSeLleva, redondearDias,
+    diasHasta, leerPresupuesto, leerTopes, PRESUPUESTO_JUSTO, estadoPresupuesto, estadoTopes, alDiaAlli, inicioDelViaje, diaDelViaje, cuentaAtras, textoCuentaAtras, huchaViaje, loDeHoy, CELEBRADOS_MAX, leerCelebrados, anadirCelebrado, viajeParaCelebrar, textoCelebrar, RACHA_MINIMA, rachaPresupuesto, hastaCuandoLlega, previsionViaje, PREVISION_JUSTA, textoPrevision, loQueSeLleva, presupuestoEnTarjeta, textoPresupuestoTarjeta, redondearDias,
     EXTRAS_MAX, EXTRAS_POR_DEFECTO, leerExtras, anadirExtra, quitarExtra,
     extrasVisibles, disponiblesParaAnadir, convertirExtras, semanaDe, trazoMini, CHULETA, escalaChuleta, chuleta, TRUCO_TOLERANCIA, trucoDeCabeza, textoTruco, tituloTruco, chuletaParaCompartir, extrasParaCompartir,
     urlImpresion, leerImpresion, chuletaParaImprimir,

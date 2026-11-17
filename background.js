@@ -327,6 +327,7 @@ async function calcular(texto) {
     const { rate, date } = await tasa(from, to);
     const resultado = leido.cantidad * rate;
     return {
+      ...(await enElPresupuesto({ cantidad: leido.cantidad, from, to }, rate)),
       estado: "ok",
       original: `${nf.format(leido.cantidad)} ${from}`,
       nota: suma ? notaDeSuma(suma.cantidades) : leido.divisa ? "" : tr("tarjeta.sinDivisa", { from }),
@@ -342,6 +343,19 @@ async function calcular(texto) {
     };
   } catch (error) {
     return { estado: "error", original: texto, mensaje: errorMessageFor(error) };
+  }
+}
+
+// Con el mismo gasto que apuntaría el botón, comisión incluida, para que lo que
+// dice la tarjeta cuadre con lo que luego sale en la cartera.
+async function enElPresupuesto(precio, rate) {
+  try {
+    const { viajes, viaje, ...datos } = await paraApuntar();
+    const r = presupuestoEnTarjeta(viaje, gastoDeTarjeta(precio, await leerPar(), { ...datos, tasa: rate }));
+    return r ? { presupuesto: { ...r, texto: textoPresupuestoTarjeta(r) } } : {};
+  } catch (error) {
+    console.warn("No se pudo mirar el presupuesto", error);
+    return {};
   }
 }
 

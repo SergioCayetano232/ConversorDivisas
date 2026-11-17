@@ -23,6 +23,7 @@
       --jade: #4EA96B;
       --jade-ghost: rgba(78, 169, 107, 0.14);
       --cinabrio: #E5534B;
+      --cinabrio-ghost: rgba(229, 83, 75, 0.16);
       --sombra: 0 18px 48px rgba(0, 0, 0, 0.5), 0 2px 6px rgba(0, 0, 0, 0.3);
       --mono: ui-monospace, "SF Mono", "JetBrains Mono", "Cascadia Code", Menlo, monospace;
       --suave: cubic-bezier(0.16, 1, 0.3, 1);
@@ -63,6 +64,8 @@
         --borde: rgba(0, 0, 0, 0.1);
         --sheen: rgba(255, 255, 255, 0.9);
         --sombra: 0 18px 48px rgba(60, 50, 30, 0.18), 0 2px 6px rgba(60, 50, 30, 0.08);
+        --jade: #2E8A4E;
+        --cinabrio: #C7372F;
       }
     }
 
@@ -256,6 +259,52 @@
     .nota { color: var(--dorado); opacity: 0.85; }
     .nota:empty { display: none; }
 
+    /* Lo gastado del viaje, liso, y lo que se llevaría esto, a rayas detrás,
+       como en la barra del presupuesto del popup. */
+    .presupuesto[hidden] { display: none; }
+    .presupuesto {
+      --tono: var(--jade);
+      margin-top: 8px;
+      animation: latido 420ms var(--muelle) 120ms both;
+    }
+    .presupuesto[data-tono="justo"] { --tono: var(--dorado); }
+    .presupuesto[data-tono="pasado"] { --tono: var(--cinabrio); }
+    .pista {
+      position: relative;
+      height: 4px;
+      border-radius: 2px;
+      background: var(--borde);
+      overflow: hidden;
+    }
+    .gastado,
+    .esto {
+      position: absolute;
+      top: 0;
+      bottom: 0;
+      left: 0;
+    }
+    .gastado {
+      width: var(--desde);
+      background: var(--tenue);
+      opacity: 0.55;
+    }
+    .esto {
+      left: var(--desde);
+      width: var(--trozo);
+      background: repeating-linear-gradient(-45deg, var(--tono) 0 3px, transparent 3px 5px);
+      transform-origin: left;
+      animation: crecer 600ms var(--suave) 260ms both;
+    }
+    @keyframes crecer {
+      from { transform: scaleX(0); }
+    }
+    .frase {
+      margin: 4px 0 0;
+      font-size: 11px;
+      color: var(--tono);
+      font-variant-numeric: tabular-nums;
+    }
+    .presupuesto[data-tono="pasado"] .pista { background: var(--cinabrio-ghost); }
     .aviso {
       display: none;
       margin: 10px 0 2px;
@@ -384,6 +433,10 @@
       <div class="cifra" aria-live="polite"><span class="valor"></span><span class="codigo"></span></div>
       <p class="meta"></p>
       <p class="nota"></p>
+      <div class="presupuesto" hidden>
+        <div class="pista"><span class="gastado"></span><span class="esto"></span></div>
+        <p class="frase"></p>
+      </div>
       <p class="aviso" role="alert"></p>
       <div class="pie">
         <input class="concepto" type="text" maxlength="40" autocomplete="off" placeholder="Concepto" aria-label="Concepto">
@@ -542,17 +595,37 @@
       $(".codigo").textContent = d.to;
       $(".meta").textContent = d.fecha ? `${d.tasa} · ${d.fecha}` : d.tasa;
       $(".nota").textContent = d.nota ?? "";
+      pintarPresupuesto(d.presupuesto);
       contar(d.resultado);
     } else if (d.estado === "cargando") {
       $(".original").textContent = citar(d.original);
+      pintarPresupuesto(null);
     } else {
       // Con el atajo y nada seleccionado no hay texto que citar: mejor nada que «».
       $(".original").textContent = d.original ? citar(d.original) : "";
       $(".aviso").textContent = d.mensaje;
+      pintarPresupuesto(null);
     }
 
     colocar();
     if (d.estado === "ok") $(".copiar").focus({ preventScroll: true });
+  }
+
+  // Va con la tarjeta del viaje abierto; sin presupuesto o en otra divisa no sale.
+  function pintarPresupuesto(p) {
+    const caja = $(".presupuesto");
+    caja.hidden = !p;
+    if (!p) return;
+    caja.dataset.tono = p.tono;
+    caja.style.setProperty("--desde", `${p.desde * 100}%`);
+    caja.style.setProperty("--trozo", `${p.trozo * 100}%`);
+    $(".frase").textContent = p.texto;
+    // Si cambia de conversión con la tarjeta abierta, que vuelva a crecer.
+    for (const el of [caja, $(".esto")]) {
+      el.style.animation = "none";
+      void el.offsetWidth;
+      el.style.animation = "";
+    }
   }
 
   function cerrar() {
