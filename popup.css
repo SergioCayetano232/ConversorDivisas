@@ -10793,6 +10793,86 @@ body::after {
   line-height: 1.35;
 }
 
+/* Si esperas un mes: la franja dorada es dónde caerá la tasa 8 de cada 10
+   veces, sobre una pista que va de −10 % a +10 %. La raya del centro es hoy. */
+.trend__abanico {
+  margin-top: 8px;
+  padding-top: 7px;
+  border-top: 1px solid var(--hairline);
+  font-size: 10px;
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+  cursor: help;
+  animation: fade 600ms var(--ease-out) backwards;
+  animation-delay: 950ms;
+}
+
+.trend__abanico[hidden],
+.abanico__dinero[hidden] {
+  display: none;
+}
+
+.abanico__cabeza {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 2px 8px;
+  margin: 0;
+}
+
+.abanico__titulo {
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  color: var(--mist);
+}
+
+.abanico__rango {
+  font-family: var(--font-mono);
+}
+
+.abanico__barra {
+  position: relative;
+  display: block;
+  height: 6px;
+  margin: 6px 0 5px;
+  border-radius: 3px;
+  background: var(--hairline-strong);
+}
+
+.abanico__franja {
+  position: absolute;
+  inset: 0 calc(50% - var(--ancho, 0.2) * 50%);
+  border-radius: inherit;
+  background: linear-gradient(90deg, transparent, var(--brass) 30%, var(--brass) 70%, transparent);
+  opacity: 0.75;
+  box-shadow: 0 0 8px var(--brass-glow);
+  animation: abanico-abre 700ms var(--ease-spring) backwards;
+  animation-delay: 1050ms;
+}
+
+@keyframes abanico-abre {
+  from {
+    transform: scaleX(0);
+  }
+}
+
+.abanico__hoy {
+  position: absolute;
+  top: -3px;
+  bottom: -3px;
+  left: 50%;
+  width: 2px;
+  margin-left: -1px;
+  border-radius: 1px;
+  background: var(--mist);
+}
+
+.abanico__dinero {
+  margin: 0;
+  line-height: 1.35;
+}
+
 .trend__extremo::before {
   margin-right: 4px;
   font-size: 8px;
@@ -11425,6 +11505,8 @@ kbd {
   .suscripcion.is-nueva,
   .indice__viaje::after,
   .semana__barra,
+  .trend__abanico,
+  .abanico__franja,
   .aviso.is-nueva,
   .gente__pago,
   .gente__pago.is-nueva,

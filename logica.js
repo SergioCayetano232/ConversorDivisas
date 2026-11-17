@@ -579,6 +579,54 @@ function textoDiaSemana(r) {
 
 const porCiento = (n) => tr("pct", { n });
 
+// Dónde puede estar la tasa dentro de un mes, sacado de cuánto se ha movido en
+// el periodo del gráfico: 8 de cada 10 veces dentro de la franja. No es una
+// previsión, es lo que te juegas si esperas. Con menos de 20 tasas el cálculo
+// no vale nada.
+const ABANICO_MINIMO = 20;
+const ABANICO_DIAS = 30;
+// El 1,2816 es el que deja un 10 % por cada lado en una normal.
+const ABANICO_Z = 1.2816;
+
+function abanicoTasa(serie) {
+  if (!Array.isArray(serie)) return null;
+  const buenos = serie.filter((p) => esIso(p?.fecha) && p.valor > 0);
+  if (buenos.length < ABANICO_MINIMO) return null;
+  const saltos = buenos.slice(1).map((p, i) => Math.log(p.valor / buenos[i].valor));
+  const media = saltos.reduce((a, b) => a + b, 0) / saltos.length;
+  const sigma = Math.sqrt(saltos.reduce((a, b) => a + (b - media) ** 2, 0) / (saltos.length - 1));
+  // Las del BCE no publican en fin de semana y otras sí: cuántas tasas caben en
+  // un mes lo dicen las propias fechas.
+  const dias = diasHasta(buenos[buenos.length - 1].fecha, buenos[0].fecha) - 1;
+  if (!(dias > 0)) return null;
+  const pasos = (ABANICO_DIAS * saltos.length) / dias;
+  const ancho = ABANICO_Z * sigma * Math.sqrt(pasos);
+  const actual = buenos[buenos.length - 1].valor;
+  return { actual, bajo: actual * Math.exp(-ancho), alto: actual * Math.exp(ancho), pct: Math.exp(ancho) - 1 };
+}
+
+// Las tasas con los decimales de la línea de arriba, para que se puedan comparar.
+function cifraTasa(valor) {
+  const decimales = valor >= 1 ? 4 : Math.min(Math.max(4, 3 - Math.floor(Math.log10(valor))), 8);
+  return numeros({ minimumFractionDigits: decimales, maximumFractionDigits: decimales }).format(valor);
+}
+
+function textoAbanico(r, { cantidad, from, to } = {}) {
+  if (!r) return null;
+  const pct = porCiento(numeros({ maximumFractionDigits: 1 }).format(r.pct * 100));
+  const rango = tr("abanico.rango", { bajo: cifraTasa(r.bajo), alto: cifraTasa(r.alto), pct });
+  if (!(cantidad > 0) || !from || !to) return { rango, dinero: "" };
+  const dinero = numeros({ minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  return {
+    rango,
+    dinero: tr("abanico.dinero", {
+      cantidad: `${dinero.format(cantidad)} ${from}`,
+      bajo: dinero.format(cantidad * r.bajo),
+      alto: `${dinero.format(cantidad * r.alto)} ${to}`,
+    }),
+  };
+}
+
 function textoMomento(m, dias, from, to) {
   const pct = Math.abs(m.diferencia * 100);
   const cuanto = porCiento(numeros({ maximumFractionDigits: 1 }).format(pct));
@@ -9236,7 +9284,7 @@ if (typeof module !== "undefined") {
     normalizar, filtrarDivisas, buildPaths, startDateFor, errorMessageFor,
     RECIENTES_MAX, FIJOS_MAX, apuntarReciente, fijarReciente, leerRecientes, recientesVisibles,
     RANGOS, RANGO_POR_DEFECTO, leerRango, siguienteRango, coordenadas, alturaEn, MOMENTO_UMBRAL, momento, textoMomento,
-    SEMANAS_MINIMAS, mejorDiaSemana, nombreDiaSemana, textoDiaSemana, indiceCercano, extremos, fechaCorta, largoEnPantalla,
+    SEMANAS_MINIMAS, mejorDiaSemana, ABANICO_MINIMO, abanicoTasa, textoAbanico, nombreDiaSemana, textoDiaSemana, indiceCercano, extremos, fechaCorta, largoEnPantalla,
     leerNumero, divisaDe, leerSeleccion, sumarSeleccion, notaDeSuma, leerCobro, COBRO_RARO, analizarCobro, textoCobro, destinoPara, leerPegado, leerPegadoSuelto, leerColumna, cuentaDeColumna, buscarPrecios, precioEntero, leerOmnibox, leerMezcla, textoMezcla, precioUnidadBarra, leerGastoBarra, leerDictado, gastoDeBarra, gastoDeTarjeta, escaparXml,
     divisaDeIdioma, parPorIdioma, banderaDe, banderaDivisa,
     HISTORIAL_MAX, leerHistorial, apuntarConversion, quitarConversion, haceCuanto, ultimoDeHoy, textoParaCopiar, fraseParaCopiar, conversionParaCopiar, gastoParaCopiar, ultimoGasto, gastoMasCaro, totalParaCopiar, hoyParaCopiar, simboloDe, textoConSimbolo, fraseConSimbolo,

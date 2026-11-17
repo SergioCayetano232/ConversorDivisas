@@ -292,6 +292,9 @@ const el = {
   semana: document.getElementById("trend-semana"),
   semanaBarras: document.getElementById("semana-barras"),
   semanaTexto: document.getElementById("semana-texto"),
+  abanico: document.getElementById("trend-abanico"),
+  abanicoRango: document.getElementById("abanico-rango"),
+  abanicoDinero: document.getElementById("abanico-dinero"),
   campana: document.getElementById("vista-avisos"),
   abrirAyuda: document.getElementById("abrir-ayuda"),
   abrirCopia: document.getElementById("abrir-copia"),
@@ -1112,6 +1115,7 @@ function hideTrend() {
   pintarMomento(null);
   pintarDiaSemana(null);
   parDeLaSerie = "";
+  pintarAbanico(null);
   pintarCambioDia();
 }
 
@@ -1277,6 +1281,7 @@ function renderTrend(puntos) {
   pintarMomento(values);
   pintarDiaSemana(puntos);
   parDeLaSerie = `${el.from.value}-${el.to.value}`;
+  pintarAbanico(puntos);
   pintarCambioDia(true);
   mirarUltimaVez();
   if (!el.trend.hidden) dibujarLinea();
@@ -1335,6 +1340,30 @@ function pintarDiaSemana(puntos) {
   el.semanaTexto.textContent = textoDiaSemana(r);
   el.semana.title = tr("semana.titulo", { semanas: r.semanas });
   el.semana.dataset.igual = r.igual;
+}
+
+// La barra va a escala fija, de −10 % a +10 %, y no ajustada a cada par: así un
+// par tranquilo sale estrecho y uno movido ancho, y se ve cuánto te juegas.
+const ESCALA_ABANICO = 0.1;
+let abanico = null;
+
+function pintarAbanico(puntos) {
+  abanico = puntos ? abanicoTasa(puntos) : null;
+  el.abanico.hidden = !abanico;
+  if (!abanico) return;
+  el.abanico.style.setProperty("--ancho", Math.min(abanico.pct / ESCALA_ABANICO, 1));
+  el.abanico.title = tr("abanico.explicacion");
+  pintarAbanicoDinero();
+}
+
+// Con lo que tengas escrito; va aparte porque cambia con cada tecla y la franja no.
+function pintarAbanicoDinero() {
+  if (!abanico) return;
+  const de = parDeLaSerie === `${el.from.value}-${el.to.value}`;
+  const texto = textoAbanico(abanico, de ? { cantidad: cantidadOrigen(), from: el.from.value, to: el.to.value } : {});
+  el.abanicoRango.textContent = texto.rango;
+  el.abanicoDinero.textContent = texto.dinero;
+  el.abanicoDinero.hidden = !texto.dinero;
 }
 
 // Se mide ya visible: con el gráfico oculto el SVG tiene ancho cero. El +1 es
@@ -7975,6 +8004,7 @@ function renderResult() {
   pintarTimo();
   pintarCuenta();
   pintarNivel();
+  pintarAbanicoDinero();
 
   if (valor === null) {
     pintarBotonGasto();

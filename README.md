@@ -377,6 +377,11 @@ que necesitaba una conversión rápida. Ahora es un clic en la barra del navegad
   "Momento normal" o "Mal momento", según si la tasa de hoy es mejor que la de
   tres de cada cuatro días del periodo del gráfico, y cuánto se aparta de la
   media. En el gráfico, la media es la línea de puntos
+- Si esperas un mes, cuánto te juegas: debajo del gráfico (de 1 mes, 3 meses o
+  un año) sale entre qué tasas estará 8 de cada 10 veces ("entre 0,8895 y
+  0,9267, ±2,1 %") y lo que serían tus cantidades ("Tus 1.000,00 USD serían de
+  889,51 a 926,75 EUR"). Sale de cuánto se ha movido en ese periodo, no dice si
+  subirá o bajará. La barra va siempre de −10 % a +10 %, para comparar pares
 - Qué día de la semana suele salir mejor, debajo del gráfico de 3 meses o de un
   año: "Los lunes suele darte un 0,09 % más que los jueves", con una barrita por
   día. Cada día se compara con la media de su semana, para que no gane el
