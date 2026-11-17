@@ -735,6 +735,76 @@ body::after {
   color: var(--brass);
 }
 
+/* El altavoz, a la derecha de "Cantidad". Mientras habla, las ondas laten. */
+.field--decir {
+  position: relative;
+}
+
+.decir {
+  position: absolute;
+  top: -3px;
+  right: 0;
+  display: grid;
+  place-items: center;
+  width: 20px;
+  height: 20px;
+  padding: 0;
+  border: none;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+  transition: color var(--fast) var(--ease), background-color var(--fast) var(--ease), transform 220ms var(--ease-spring);
+}
+
+.decir[hidden] {
+  display: none;
+}
+
+.decir:hover,
+.decir.is-hablando {
+  color: var(--brass);
+  background: var(--brass-ghost);
+}
+
+.decir:active {
+  transform: scale(0.88);
+}
+
+.decir:focus-visible {
+  outline: 2px solid var(--brass);
+  outline-offset: 1px;
+}
+
+.decir svg {
+  width: 13px;
+  height: 13px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.3;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.decir__altavoz {
+  fill: currentColor;
+  fill-opacity: 0.25;
+}
+
+.decir.is-hablando .decir__onda {
+  animation: decir-onda 900ms var(--ease) infinite;
+}
+
+.decir.is-hablando .decir__onda--2 {
+  animation-delay: 150ms;
+}
+
+@keyframes decir-onda {
+  50% {
+    opacity: 0.2;
+  }
+}
+
 .field__input,
 .field__select {
   width: 100%;
@@ -11553,6 +11623,7 @@ kbd {
   .semana__barra,
   .trend__abanico,
   .abanico__franja,
+  .decir__onda,
   .aviso.is-nueva,
   .gente__pago,
   .gente__pago.is-nueva,

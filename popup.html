@@ -20,8 +20,11 @@
     <main class="converter">
       <form id="converter-form" novalidate>
 
-        <div class="field">
+        <div class="field field--decir">
           <label class="field__label" for="amount" data-t="cantidad">Cantidad</label>
+          <button class="decir" type="button" id="decir" hidden>
+            <svg viewBox="0 0 14 14" aria-hidden="true"><path class="decir__altavoz" d="M2 5.2h2.2L7.4 2.6v8.8L4.2 8.8H2z"/><path class="decir__onda decir__onda--1" d="M9.4 5.1a2.6 2.6 0 0 1 0 3.8"/><path class="decir__onda decir__onda--2" d="M11 3.5a5 5 0 0 1 0 7"/></svg>
+          </button>
           <div class="field__caja">
             <input
               class="field__input"

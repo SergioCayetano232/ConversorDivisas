@@ -295,6 +295,7 @@ const el = {
   semana: document.getElementById("trend-semana"),
   semanaBarras: document.getElementById("semana-barras"),
   semanaTexto: document.getElementById("semana-texto"),
+  decir: document.getElementById("decir"),
   abanico: document.getElementById("trend-abanico"),
   abanicoRango: document.getElementById("abanico-rango"),
   abanicoDinero: document.getElementById("abanico-dinero"),
@@ -1368,6 +1369,44 @@ function pintarAbanicoDinero() {
   el.abanicoRango.textContent = texto.rango;
   el.abanicoDinero.textContent = texto.dinero;
   el.abanicoDinero.hidden = !texto.dinero;
+}
+
+// El precio de allí dicho por la voz del navegador en el idioma de allí. Si no
+// hay voz de ese idioma, el botón no sale: mejor nada que un japonés en inglés.
+let voces = [];
+let paraHablar = null;
+
+function cargarVoces() {
+  voces = globalThis.speechSynthesis?.getVoices() ?? [];
+  pintarDecir();
+}
+
+function pintarDecir() {
+  const tuya = miDivisa();
+  const cantidad = cantidadOrigen();
+  const from = el.from.value;
+  const to = el.to.value;
+  const d = from !== tuya ? paraDecir(cantidad, from) : to !== tuya && rate ? paraDecir(cantidad * rate, to) : null;
+  const voz = d && elegirVoz(voces, d.lang);
+  paraHablar = voz ? { ...d, voz } : null;
+  el.decir.hidden = !paraHablar;
+  if (!paraHablar) return;
+  const idioma = new Intl.DisplayNames([localeActual()], { type: "language" }).of(d.lang);
+  el.decir.title = tr("decir.titulo", { idioma, texto: d.texto });
+  el.decir.setAttribute("aria-label", el.decir.title);
+}
+
+function onDecir() {
+  if (!paraHablar) return;
+  speechSynthesis.cancel();
+  const frase = new SpeechSynthesisUtterance(paraHablar.texto);
+  frase.lang = paraHablar.lang;
+  frase.voice = paraHablar.voz;
+  // Un pelín más despacio: es para repetirlo, no para oírlo de pasada.
+  frase.rate = 0.85;
+  frase.addEventListener("start", () => el.decir.classList.add("is-hablando"));
+  for (const fin of ["end", "error"]) frase.addEventListener(fin, () => el.decir.classList.remove("is-hablando"));
+  speechSynthesis.speak(frase);
 }
 
 // Se mide ya visible: con el gráfico oculto el SVG tiene ancho cero. El +1 es
@@ -8045,6 +8084,7 @@ function renderResult() {
   pintarCuenta();
   pintarNivel();
   pintarAbanicoDinero();
+  pintarDecir();
 
   if (valor === null) {
     pintarBotonGasto();
@@ -8918,6 +8958,10 @@ function bindEvents() {
   el.empresaCsv.addEventListener("click", onCsvEmpresa);
   el.empresaImprimir.addEventListener("click", onImprimirEmpresa);
   el.pendientesForm.addEventListener("submit", onApuntarPendiente);
+  el.decir.addEventListener("click", onDecir);
+  // Chrome carga las voces tarde: la primera vez getVoices() viene vacío.
+  globalThis.speechSynthesis?.addEventListener("voiceschanged", cargarVoces);
+  cargarVoces();
   el.pendientesConcepto.addEventListener("paste", onPegarReserva);
   el.gastosConcepto.addEventListener("paste", onPegarReserva);
   for (const campo of [el.pendientesConcepto, el.pendientesCantidad]) {

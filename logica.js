@@ -1500,6 +1500,57 @@ function textoAgua(code) {
   return `${banderaDivisa(code)} ${agua === "si" ? "🚰" : "🚱"} ${tr(`agua.${agua}`)}`;
 }
 
+// Cómo se dice el precio allí: el idioma de cada divisa para la voz del
+// navegador. Con el precio escrito como allí ("￥84,000"), la voz japonesa ya
+// dice "hachiman en", sin tablas de números en palabras. El euro no está: no hay
+// un idioma del euro.
+const IDIOMA_DE_DIVISA = {
+  USD: "en-US", GBP: "en-GB", JPY: "ja-JP", CHF: "de-CH", CAD: "en-CA", AUD: "en-AU", CNY: "zh-CN", MXN: "es-MX",
+  BRL: "pt-BR", SEK: "sv-SE", NOK: "nb-NO", DKK: "da-DK", PLN: "pl-PL", TRY: "tr-TR", CZK: "cs-CZ", HKD: "zh-HK",
+  HUF: "hu-HU", IDR: "id-ID", ILS: "he-IL", INR: "hi-IN", ISK: "is-IS", KRW: "ko-KR", MYR: "ms-MY", NZD: "en-NZ",
+  PHP: "fil-PH", RON: "ro-RO", SGD: "en-SG", THB: "th-TH", ZAR: "en-ZA", VND: "vi-VN", ARS: "es-AR", MAD: "ar-MA",
+  PEN: "es-PE", COP: "es-CO", CLP: "es-CL", EGP: "ar-EG", AED: "ar-AE", TWD: "zh-TW", UYU: "es-UY", CRC: "es-CR",
+  DOP: "es-DO", TND: "ar-TN", KES: "sw-KE", LKR: "si-LK", NPR: "ne-NP", KHR: "km-KH", JOD: "ar-JO", QAR: "ar-QA",
+  SAR: "ar-SA", GEL: "ka-GE", RSD: "sr-RS", BOB: "es-BO", GTQ: "es-GT", PYG: "es-PY",
+};
+
+// Pasado de cien, sin céntimos: nadie dice "ochenta y cuatro mil yenes con cero".
+function paraDecir(cantidad, code) {
+  const lang = IDIOMA_DE_DIVISA[code];
+  if (!lang || !Number.isFinite(cantidad) || cantidad <= 0) return null;
+  const valor = cantidad >= 100 ? Math.round(cantidad) : Math.round(cantidad * 100) / 100;
+  const decimales = Number.isInteger(valor) ? 0 : 2;
+  const texto = new Intl.NumberFormat(lang, {
+    style: "currency", currency: code, minimumFractionDigits: decimales, maximumFractionDigits: decimales,
+  }).format(valor);
+  return { lang, texto };
+}
+
+// Las de broma de macOS: "Albert" diciendo un precio suena a robot de feria.
+// Chrome las da con el nombre traducido al idioma del sistema y sin ningún id
+// fijo, así que van en inglés y en español, que son los idiomas de la extensión.
+const VOCES_DE_BROMA = new Set([
+  "Albert", "Bad News", "Bahh", "Bells", "Boing", "Bubbles", "Cellos", "Good News", "Jester", "Organ",
+  "Superstar", "Trinoids", "Whisper", "Wobble", "Zarvox", "Eddy", "Flo", "Grandma", "Grandpa", "Reed",
+  "Rocko", "Sandy", "Shelley", "Fred", "Junior", "Ralph", "Kathy",
+  "Malas noticias", "Buenas noticias", "Campanas", "Burbujas", "Violonchelos", "Bufón", "Órgano",
+  "Superestrella", "Susurro",
+]);
+
+// La voz que más se parezca: la del país, y si no, otra de la misma lengua. De
+// esas, las de Google (suenan mejor) y la que el sistema tenga por defecto.
+function elegirVoz(voces, lang) {
+  if (!Array.isArray(voces) || !lang) return null;
+  const norm = (l) => String(l ?? "").replace("_", "-").toLowerCase();
+  const nombre = (v) => String(v.name ?? "").split(" (")[0];
+  const buenas = voces.filter((v) => !VOCES_DE_BROMA.has(nombre(v)));
+  const puntos = (v) => (/google/i.test(v.name) ? 2 : 0) + (v.default ? 1 : 0);
+  const mejor = (lista) => lista.reduce((a, b) => (a && puntos(a) >= puntos(b) ? a : b), null);
+  const lengua = norm(lang).split("-")[0];
+  return mejor(buenas.filter((v) => norm(v.lang) === norm(lang)))
+    ?? mejor(buenas.filter((v) => norm(v.lang).split("-")[0] === lengua));
+}
+
 // "cd prefijo": el código para llamar allí. El euro no tiene uno, así que van
 // los de los países a los que más se viaja. La República Dominicana comparte el +1.
 const PREFIJOS = {
@@ -9456,7 +9507,7 @@ if (typeof module !== "undefined") {
     COMISION_MAX, COMISIONES_RAPIDAS, leerComision, leerPorcentaje, conComision,
     IMPUESTO_MAX, IMPUESTOS_RAPIDOS, leerImpuesto, leerImpuestoEscrito, loQuePagas,
     COMPARAR_IGUAL, compararPrecios, inclinacion, ZONAS, desfase, esNoche, horaAlli, SIGLAS_ZONA, leerHoraZona, convertirHoraZona, textoHoraZona, textoDiferencia, relojDe, tituloHoraAlli, leerCafe, enCafes, textoCafes, HORAS_JORNADA, enHoras, textoHoras,
-    PROPINAS_RAPIDAS, PROPINA_HABITUAL, propinaHabitual, leerPropina, textoPropina, ENCHUFES, leerEnchufe, enchufeDe, textoEnchufe, EMERGENCIAS, leerEmergencias, textoEmergencias, AGUA, leerAgua, textoAgua, POR_LA_IZQUIERDA, CARNE_EUROPEO, leerConducir, textoConducir, PREFIJOS, leerPrefijo, textoPrefijo, FRASES, leerGracias, textoGracias, IVA, leerIva, textoIva, PAGO_ALLI, CAJERO_NOTA, leerCajero, textoCajero, leerLlegar, textoLlegar, VISADOS, leerVisado, textoVisado, ROAMING, leerRoaming, textoRoaming, CON_TSE, leerSanitaria, textoSanitaria, APPS_TAXI, leerTaxi, textoTaxi, REGATEO, leerRegatear, textoRegatear, FESTIVOS, FESTIVOS_LUNA, pascuaOrtodoxa, fechaFestivo, festivosProximos, leerFestivos, textoFestivos, HORARIOS, leerHorario, textoHorario, PROPINA_MAX, PERSONAS_MAX, CUENTA_POR_DEFECTO, leerCuenta, redondoHaciaArriba, repartirCuenta, cuentaParaCompartir, gastoDeLaCuenta, BILLETES, leerBilletes, textoBilletes, PAGOS_MAX, pagosPosibles, vuelta, pagoJusto,
+    PROPINAS_RAPIDAS, PROPINA_HABITUAL, propinaHabitual, leerPropina, textoPropina, ENCHUFES, leerEnchufe, enchufeDe, textoEnchufe, EMERGENCIAS, leerEmergencias, textoEmergencias, AGUA, leerAgua, textoAgua, POR_LA_IZQUIERDA, CARNE_EUROPEO, leerConducir, textoConducir, IDIOMA_DE_DIVISA, paraDecir, VOCES_DE_BROMA, elegirVoz, PREFIJOS, leerPrefijo, textoPrefijo, FRASES, leerGracias, textoGracias, IVA, leerIva, textoIva, PAGO_ALLI, CAJERO_NOTA, leerCajero, textoCajero, leerLlegar, textoLlegar, VISADOS, leerVisado, textoVisado, ROAMING, leerRoaming, textoRoaming, CON_TSE, leerSanitaria, textoSanitaria, APPS_TAXI, leerTaxi, textoTaxi, REGATEO, leerRegatear, textoRegatear, FESTIVOS, FESTIVOS_LUNA, pascuaOrtodoxa, fechaFestivo, festivosProximos, leerFestivos, textoFestivos, HORARIOS, leerHorario, textoHorario, PROPINA_MAX, PERSONAS_MAX, CUENTA_POR_DEFECTO, leerCuenta, redondoHaciaArriba, repartirCuenta, cuentaParaCompartir, gastoDeLaCuenta, BILLETES, leerBilletes, textoBilletes, PAGOS_MAX, pagosPosibles, vuelta, pagoJusto,
     MARGENES, tasaOfrecida, analizarCambio,
     domingoDePascua, hayTasaEl, tasaVieja, textoTasaVieja, horaBce, textoActualizado, proximaTasa, textoProximaTasa,
     FECHA_MINIMA, fechaLarga, fechaValida, diaDelGrafico, mesesAtras, FECHAS_RAPIDAS, leerFecha, cambioDesde, notaDiaHabil,

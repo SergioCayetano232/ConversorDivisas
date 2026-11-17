@@ -28,6 +28,10 @@ que necesitaba una conversión rápida. Ahora es un clic en la barra del navegad
   tique, y que se sumen: en la cantidad se queda la cuenta ("12,50 + 3,20 +
   8,00 = 23,70"), y si cada línea lleva su divisa ("£4.50"), cambia el par. Los
   descuentos con su menos restan. Si alguna línea tiene texto, se pega como siempre
+- Cómo se dice el precio allí: con el altavoz que hay al lado de **Cantidad**,
+  la voz del navegador dice la cantidad de allí en su idioma ("￥84,000" en
+  japonés), para repetirla en un mercado o un taxi. Si no tienes ninguna voz de
+  ese idioma, el botón no sale. Con el euro tampoco, que no tiene un idioma
 - Buscas la divisa escribiendo: pones "mex" y sale el peso mexicano
 - Un botón para dar la vuelta al par sin tocar los dos desplegables
 - Un botón para copiar el resultado. Con Shift (clic o `Shift+C`) copia la
