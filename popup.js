@@ -144,6 +144,9 @@ const el = {
   empresaImprimir: document.getElementById("empresa-imprimir"),
   pendientes: document.getElementById("pendientes"),
   pendientesLista: document.getElementById("pendientes-lista"),
+  pendientesRiesgo: document.getElementById("pendientes-riesgo"),
+  pendientesHoy: document.getElementById("pendientes-hoy"),
+  pendientesBaila: document.getElementById("pendientes-baila"),
   pendientesForm: document.getElementById("pendientes-form"),
   pendientesConcepto: document.getElementById("pendientes-concepto"),
   pendientesCantidad: document.getElementById("pendientes-cantidad"),
@@ -1354,6 +1357,7 @@ function pintarAbanico(puntos) {
   el.abanico.style.setProperty("--ancho", Math.min(abanico.pct / ESCALA_ABANICO, 1));
   el.abanico.title = tr("abanico.explicacion");
   pintarAbanicoDinero();
+  if (!el.pendientes.hidden) pintarRiesgoPendientes();
 }
 
 // Con lo que tengas escrito; va aparte porque cambia con cada tecla y la franja no.
@@ -4642,6 +4646,20 @@ function pintarPendientes() {
     return fila;
   }));
   pendienteNuevo = null;
+  pintarRiesgoPendientes();
+}
+
+// El ± sale de la franja del gráfico, si la hay y es de este par.
+function pintarRiesgoPendientes() {
+  const from = el.from.value;
+  const to = el.to.value;
+  const pct = abanico && parDeLaSerie === `${from}-${to}` ? abanico.pct : null;
+  const r = textoExposicion(exposicionPendientes(viajeActivo(viajes).pendientes, { from, to, rate, pct }));
+  el.pendientesRiesgo.hidden = !r;
+  if (!r) return;
+  el.pendientesHoy.textContent = r.hoy;
+  el.pendientesBaila.textContent = r.baila;
+  el.pendientesBaila.hidden = !r.baila;
 }
 
 function abrirPendientes() {

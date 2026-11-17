@@ -230,7 +230,10 @@ que necesitaba una conversión rápida. Ahora es un clic en la barra del navegad
   comisión de ese momento. Si le pones el día en que toca pagarlo, salen los más
   urgentes arriba ("📅 Mañana"), y ese día a partir de las nueve te salta una
   notificación ("Hoy toca pagar Hotel Kioto"), o al abrir Chrome si ese día no lo
-  abriste. El día se cambia pulsándolo
+  abriste. El día se cambia pulsándolo. Si es en otra divisa, debajo de la
+  lista sale lo que vale a la tasa de hoy frente a cuando lo apuntaste ("625,78
+  EUR: 34,22 menos que al apuntarlo") y, si el gráfico tiene la franja de un
+  mes, cuánto puede moverse hasta entonces ("±17,02 EUR")
 - Tramos dentro del viaje (Tokio, Kioto, Osaka): con **📍 Tramos**, debajo
   del total, pones dónde estás desde qué día. Cada tramo dura hasta que
   empieza el siguiente, así los gastos caen solos en el suyo por la fecha.

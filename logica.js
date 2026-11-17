@@ -3239,6 +3239,33 @@ const quitarPendiente = (lista, id) => leerPendientes(lista).filter((p) => p.id 
 
 const totalPendiente = (lista, to) => leerPendientes(lista).filter((p) => p.to === to).reduce((suma, p) => suma + p.valor, 0);
 
+// Lo pendiente se guarda con la tasa del día en que lo apuntas, pero lo pagarás
+// con la del día que toque. Cuánto vale hoy y, con lo que suele moverse el par
+// en un mes (el ± del gráfico), cuánto te puede bailar. Solo lo del par que
+// tienes puesto, que es la tasa que tengo.
+function exposicionPendientes(lista, { from, to, rate, pct = null }) {
+  if (from === to || !(rate > 0)) return null;
+  const suyos = leerPendientes(lista).filter((p) => p.from === from && p.to === to);
+  if (suyos.length === 0) return null;
+  const cantidad = suyos.reduce((suma, p) => suma + p.cantidad, 0);
+  const apuntado = suyos.reduce((suma, p) => suma + p.valor, 0);
+  const hoy = cantidad * rate;
+  return { from, to, cantidad, apuntado, hoy, diferencia: hoy - apuntado, baila: pct > 0 ? hoy * pct : null };
+}
+
+// La cifra y su divisa juntas, que en el panel "EUR" se quedaba solo en otra línea.
+function textoExposicion(r) {
+  if (!r) return null;
+  const dinero = numeros({ minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  const diferencia = Math.round(r.diferencia * 100) / 100;
+  const hoy = tr(diferencia === 0 ? "pendientes.hoyIgual" : diferencia > 0 ? "pendientes.hoyMas" : "pendientes.hoyMenos", {
+    hoy: `${dinero.format(r.hoy)}\u00a0${r.to}`,
+    diferencia: dinero.format(Math.abs(diferencia)),
+  });
+  const baila = r.baila === null ? "" : tr("pendientes.baila", { from: r.from, baila: `${dinero.format(r.baila)}\u00a0${r.to}` });
+  return { hoy, baila };
+}
+
 // Como un gasto, con la categoría sacada del concepto. Sin comisión: esa se
 // pone al pagarlo, que es cuando el banco la cobra.
 function crearPendiente({ id, from, to, cantidad, valor, concepto = "", cuando, vence }) {
@@ -9300,7 +9327,7 @@ if (typeof module !== "undefined") {
     puedeSerDeEmpresa, pasarAEmpresa, sacarDeEmpresa, notaDeGastos,
     AVISO_MEJOR_DIAS, techoDeSerie, crearAvisoMejor, ponerTechos,
     presupuestoSugerido, PARTES_VALIDAS, leerPartes, partesDe, repartirPorPartes, textoParte,
-    VIAJES_MAX, NOMBRE_VIAJE_MAX, leerViajes, leerPersonas, porPersona, consumoGente, leerPagador, leerGente, ponerNombre, nombrePersona, inicialPersona, cuentasViaje, frasePago, COBRO_GASTOS_MAX, mensajeCobro, leerEntre, entreDe, fraseEntre, cambiarEntre, leerSaldados, saldarPago, quitarSaldado, fraseSaldado, hayOtrosPagadores, NOMBRE_PERSONA_MAX, compararViajes, COLORES_VIAJE, leerColorViaje, colorLibre, siguienteColor, viajeActivo, ARCHIVADOS_MAX, archivarViaje, desarchivarViaje, borrarArchivado, todosLosViajes, crearViaje, nombreCopia, nombreDeDestino, duplicarViaje, renombrarViaje, elegirViaje, borrarViaje, moverGasto, cambiarViaje, TRAMOS_MAX, NOMBRE_TRAMO_MAX, leerTramos, ponerTramo, quitarTramo, tramoDelDia, divisaDelTramo, resumenTramos, curvaPresupuesto, FRANJAS, HORAS_MINIMO, horaFiable, porFranja, PENDIENTES_MAX, leerPendientes, crearPendiente, cambiarVence, pendientesPorFecha, tocaPagar, tonoVence, textoVence, PENDIENTE_HORA, tocaPendientes, avisadosPendientes, mensajePendientes, apuntarPendiente, quitarPendiente, totalPendiente, pagarPendiente, resumenViaje, archivoGastos, plegarIcs, eventosDelViaje, calendarioViaje, archivoCalendario,
+    VIAJES_MAX, NOMBRE_VIAJE_MAX, leerViajes, leerPersonas, porPersona, consumoGente, leerPagador, leerGente, ponerNombre, nombrePersona, inicialPersona, cuentasViaje, frasePago, COBRO_GASTOS_MAX, mensajeCobro, leerEntre, entreDe, fraseEntre, cambiarEntre, leerSaldados, saldarPago, quitarSaldado, fraseSaldado, hayOtrosPagadores, NOMBRE_PERSONA_MAX, compararViajes, COLORES_VIAJE, leerColorViaje, colorLibre, siguienteColor, viajeActivo, ARCHIVADOS_MAX, archivarViaje, desarchivarViaje, borrarArchivado, todosLosViajes, crearViaje, nombreCopia, nombreDeDestino, duplicarViaje, renombrarViaje, elegirViaje, borrarViaje, moverGasto, cambiarViaje, TRAMOS_MAX, NOMBRE_TRAMO_MAX, leerTramos, ponerTramo, quitarTramo, tramoDelDia, divisaDelTramo, resumenTramos, curvaPresupuesto, FRANJAS, HORAS_MINIMO, horaFiable, porFranja, PENDIENTES_MAX, leerPendientes, crearPendiente, cambiarVence, pendientesPorFecha, tocaPagar, tonoVence, textoVence, PENDIENTE_HORA, tocaPendientes, avisadosPendientes, mensajePendientes, apuntarPendiente, quitarPendiente, totalPendiente, exposicionPendientes, textoExposicion, pagarPendiente, resumenViaje, archivoGastos, plegarIcs, eventosDelViaje, calendarioViaje, archivoCalendario,
     diasHasta, leerPresupuesto, leerTopes, PRESUPUESTO_JUSTO, estadoPresupuesto, estadoTopes, alDiaAlli, inicioDelViaje, diaDelViaje, cuentaAtras, textoCuentaAtras, huchaViaje, loDeHoy, CELEBRADOS_MAX, leerCelebrados, anadirCelebrado, viajeParaCelebrar, textoCelebrar, RACHA_MINIMA, rachaPresupuesto, hastaCuandoLlega, previsionViaje, PREVISION_JUSTA, textoPrevision, loQueSeLleva, presupuestoEnTarjeta, textoPresupuestoTarjeta, redondearDias,
     EXTRAS_MAX, EXTRAS_POR_DEFECTO, leerExtras, anadirExtra, quitarExtra,
     extrasVisibles, disponiblesParaAnadir, convertirExtras, semanaDe, trazoMini, CHULETA, escalaChuleta, chuleta, TRUCO_TOLERANCIA, trucoDeCabeza, textoTruco, tituloTruco, chuletaParaCompartir, extrasParaCompartir,
