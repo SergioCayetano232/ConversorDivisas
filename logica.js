@@ -8870,11 +8870,18 @@ function leerCsvBanco(texto) {
 const PREFIJOS_BANCO = /^(compra|pago|cargo|adeudo|operacion)( con)?( en)?( tarj(eta|\.)?( de credito| de debito| credito| debito)?)?( en)?[\s.:-]*/i;
 
 function conceptoBanco(texto) {
-  const t = String(texto ?? "")
+  // El importe de allí y la tasa, si el banco los pone, ya van en el gasto: en el
+  // concepto solo estorban ("Lawson Shibuya 3.400,00 Jpy").
+  let sinImporte = String(texto ?? "").replace(TASA_EN_CONCEPTO, " ").replace(/\bimporte (de )?origen\b:?/gi, " ");
+  for (const p of buscarPrecios(sinImporte).reverse()) sinImporte = sinImporte.slice(0, p.inicio) + sinImporte.slice(p.fin);
+  const t = sinImporte
     .replace(/\s+/g, " ")
     .trim()
     .replace(PREFIJOS_BANCO, "")
     .replace(/[:*]*\b\d{4,}[\dX*]*\b/gi, "")
+    // ", Tarjeta 1234." detrás del comercio; delante ya lo quita el prefijo.
+    .replace(/[,;]\s*tarj(eta|\.)?\b.*$/i, "")
+    .replace(/[\s.,;:-]+$/, "")
     .replace(/\s+/g, " ")
     .trim();
   const bonito = t.toLocaleLowerCase(localeActual()).replace(/(^|\s)(\p{L})/gu, (_, sp, l) => sp + l.toLocaleUpperCase(localeActual()));
@@ -9028,18 +9035,25 @@ function gastosDelBanco(movimientos, { from, to = "EUR", tasas, existentes = [],
       return;
     }
     const tasa = tasaDeEseDia(tasas, m.fecha);
-    if (!(tasa > 0)) return;
+    // Si el concepto trae lo que pagaste allí, esa es la cantidad, y lo que se
+    // aparta del BCE es la comisión. Si no, la cantidad sale del BCE y la
+    // comisión no la sé.
+    const fuera = cargoEnDivisa(m.concepto);
+    const real = fuera?.divisa === from ? fuera.cantidad : null;
+    if (!real && !(tasa > 0)) return;
+    const margen = real && tasa > 0 ? m.importe / (real * tasa) - 1 : null;
+    const comision = margen !== null && margen >= COMISION_RARA.min && margen <= COMISION_RARA.max
+      ? Math.max(0, redondearComision(margen * 100)) : 0;
     const [a, mes, d] = m.fecha.split("-").map(Number);
     const concepto = conceptoBanco(m.concepto);
     const gasto = crearGasto({
       id: `${idBase}${i.toString(36)}`, from, to, cuando: new Date(a, mes - 1, d, 12).getTime(),
-      cantidad: Math.round((m.importe / tasa) * 100) / 100,
+      cantidad: real ?? Math.round((m.importe / tasa) * 100) / 100,
       valor: m.importe,
       concepto,
       categoria: adivinarCategoria(concepto) ?? CATEGORIA_POR_DEFECTO,
       pago: "tarjeta",
-      // Lo del banco ya lleva su comisión dentro y no sé cuánta.
-      comision: 0,
+      comision,
     });
     if (gasto) nuevos.push(gasto);
   });

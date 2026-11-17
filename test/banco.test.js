@@ -63,6 +63,38 @@ test("el concepto del banco, limpio y con la categoría bien", () => {
   assert.equal(conceptoBanco("COMPRA TARJETA DE CREDITO *1234 UBER TRIP"), "Uber Trip");
 });
 
+test("sin el importe de allí ni la tasa en el concepto, que ya van en el gasto", () => {
+  assert.equal(conceptoBanco("COMPRA TARJ. 5402XXXX1234 LAWSON SHIBUYA 3.400,00 JPY"), "Lawson Shibuya");
+  assert.equal(conceptoBanco("Compra Lawson Tokyo, Tarjeta 1234. Importe origen 45,00 USD"), "Lawson Tokyo");
+  assert.equal(conceptoBanco("LAWSON TOKYO 3400,00 JPY 1 EUR=162,1234 JPY"), "Lawson Tokyo");
+  assert.equal(conceptoBanco("AMAZON.CO.UK GBP 25.99 tipo cambio 0,8512"), "Amazon.co.uk");
+});
+
+test("con el importe de allí en el concepto, esa es la cantidad y lo demás la comisión", () => {
+  const movimientos = [
+    { fecha: "2026-11-03", concepto: "COMPRA TARJ. 5402XXXX1234 LAWSON SHIBUYA 3.400,00 JPY", importe: 21.67 },
+    { fecha: "2026-11-03", concepto: "COMPRA TARJ. 5402XXXX1234 TAXI", importe: 12.4 },
+  ];
+  const { nuevos } = gastosDelBanco(movimientos, { from: "JPY", tasas: { "2026-11-03": 0.0062 } });
+  const [lawson, taxi] = nuevos;
+  // 3.400 × 0,0062 = 21,08 justos: lo cargado es un 2,8 % más.
+  assert.equal(lawson.cantidad, 3400);
+  assert.equal(lawson.valor, 21.67);
+  assert.equal(lawson.comision, 2.8);
+  assert.equal(lawson.concepto, "Lawson Shibuya");
+  // Sin importe en el concepto, como antes: del BCE y sin comisión.
+  assert.equal(taxi.cantidad, 2000);
+  assert.equal(taxi.comision, 0);
+});
+
+test("con el importe de allí no hace falta la tasa; si es de otra divisa, no vale", () => {
+  const sinTasa = gastosDelBanco([{ fecha: "2026-11-03", concepto: "LAWSON 3.400,00 JPY", importe: 21.67 }], { from: "JPY", tasas: {} });
+  assert.equal(sinTasa.nuevos[0].cantidad, 3400);
+  assert.equal(sinTasa.nuevos[0].comision, 0);
+  const otra = gastosDelBanco([{ fecha: "2026-11-03", concepto: "DELI 45,00 USD", importe: 41 }], { from: "JPY", tasas: { "2026-11-03": 0.0062 } });
+  assert.equal(otra.nuevos[0].cantidad, Math.round((41 / 0.0062) * 100) / 100);
+});
+
 test("los fines de semana van con la tasa del viernes", () => {
   const tasas = { "2026-11-06": 0.0062, "2026-11-09": 0.0061 };
   assert.equal(tasaDeEseDia(tasas, "2026-11-08"), 0.0062);
