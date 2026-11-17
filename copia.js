@@ -42,6 +42,10 @@ const el = {
   bancoImportar: document.getElementById("banco-importar"),
   bancoCancelar: document.getElementById("banco-cancelar"),
   bancoHecho: document.getElementById("banco-hecho"),
+  comisionReal: document.getElementById("comision-real"),
+  comisionRealTitulo: document.getElementById("comision-real-titulo"),
+  comisionRealDetalle: document.getElementById("comision-real-detalle"),
+  comisionRealPoner: document.getElementById("comision-real-poner"),
   bancoHechoTexto: document.getElementById("banco-hecho-texto"),
   bancoDeshacer: document.getElementById("banco-deshacer"),
   grupoBajar: document.getElementById("grupo-bajar"),
@@ -299,6 +303,47 @@ async function leerBanco(archivo) {
   reiniciar(el.banco, "is-nueva");
   await pintarBanco();
   el.bancoImportar.focus();
+  mirarComisionReal();
+}
+
+// Con todo el extracto y no solo las fechas del viaje: cuantas más compras
+// fuera, mejor sale la media. Es un extra: si no hay tasas, no sale y ya.
+let comisionLeida = null;
+
+async function mirarComisionReal() {
+  el.comisionReal.hidden = true;
+  comisionLeida = null;
+  const divisas = new Set(movimientos.map((m) => cargoEnDivisa(m.concepto)?.divisa).filter(Boolean));
+  if (divisas.size === 0) return;
+  const tasas = {};
+  for (const divisa of divisas) {
+    try {
+      tasas[divisa] = await tasasDelBanco(divisa, movimientos[0].fecha, movimientos.at(-1).fecha);
+    } catch (error) {
+      console.warn(`No se pudieron obtener las tasas de ${divisa}`, error);
+    }
+  }
+  const r = comisionReal(movimientos, tasas);
+  if (!r) return;
+  const { comisionBanco } = await chrome.storage.local.get("comisionBanco");
+  const texto = textoComisionReal(r, leerComision(comisionBanco));
+  comisionLeida = r.pct;
+  el.comisionRealTitulo.textContent = texto.titulo;
+  el.comisionRealDetalle.textContent = texto.detalle;
+  el.comisionReal.title = tr("comisionReal.explicacion");
+  el.comisionRealPoner.textContent = tr(texto.igual ? "comisionReal.yaLaTienes" : "comisionReal.poner");
+  el.comisionRealPoner.disabled = texto.igual;
+  el.comisionRealPoner.classList.toggle("is-hecho", texto.igual);
+  el.comisionReal.hidden = false;
+  reiniciar(el.comisionReal, "is-nueva");
+}
+
+async function onPonerComision() {
+  if (comisionLeida === null) return;
+  await chrome.storage.local.set({ comisionBanco: comisionLeida });
+  el.comisionRealPoner.textContent = tr("comisionReal.puesta");
+  el.comisionRealPoner.disabled = true;
+  el.comisionRealPoner.classList.add("is-hecho");
 }
 
 // Las fechas del presupuesto si las tiene, que son las del viaje; si no, las del archivo.
@@ -748,6 +793,7 @@ function bindEvents() {
   for (const campo of [el.bancoDesde, el.bancoHasta]) campo.addEventListener("change", pintarBanco);
   el.bancoImportar.addEventListener("click", onImportarBanco);
   el.bancoCancelar.addEventListener("click", onCancelarBanco);
+  el.comisionRealPoner.addEventListener("click", onPonerComision);
   el.bancoDeshacer.addEventListener("click", onDeshacerBanco);
   el.descargar.addEventListener("click", onDescargar);
   el.archivo.addEventListener("change", () => leerArchivo(el.archivo.files[0]));

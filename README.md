@@ -525,6 +525,11 @@ que necesitaba una conversión rápida. Ahora es un clic en la barra del navegad
   la divisa de allí a la tasa del BCE de cada día y la categoría adivinada por
   el concepto. Antes de importar los ves y quitas los que no son del viaje; lo
   que ya tenías apuntado ese día con ese importe no se repite. Y se puede deshacer
+- Lo que te cobra de verdad tu tarjeta, con ese mismo CSV: si el banco pone en
+  el concepto lo que pagaste allí ("LAWSON SHIBUYA 3.400,00 JPY"), lo compara
+  con la tasa del BCE de ese día, suma las comisiones que cobre en otra línea y
+  te dice "Tu tarjeta te cobra un 2,9 % sobre el cambio del BCE", con un botón
+  para ponerla como tu comisión. Así la del popup deja de ser a ojo
 - Lo que llevabais en Splitwise o Tricount, también ahí: exportas el grupo en
   CSV y lo sueltas. Te pregunta quién eres tú y pasan los gastos con quién
   pagó y entre quiénes ("Museo · pagaste tú · entre 2"), cada uno a la tasa de

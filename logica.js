@@ -9046,6 +9046,64 @@ function gastosDelBanco(movimientos, { from, to = "EUR", tasas, existentes = [],
   return { nuevos, repetidos };
 }
 
+// Muchos bancos ponen en el concepto lo que pagaste allí: "LAWSON TOKYO
+// 3.400,00 JPY" o "Importe origen 45,00 USD". Con eso y la tasa del BCE de ese
+// día sale lo que te cobra de verdad la tarjeta. Lo de "1 EUR = 162,12 JPY" lo
+// quito antes, que si no los 162 yenes parecían la compra.
+const TASA_EN_CONCEPTO = /\b1\s*(?:EUR|€)\s*=\s*[\d.,]+\s*[A-Z]{3}\b|\b(?:tipo|cambio|tasa|rate)\b[^\d]{0,12}[\d.,]+/gi;
+
+function cargoEnDivisa(concepto) {
+  const limpio = String(concepto ?? "").replace(TASA_EN_CONCEPTO, " ");
+  const precio = buscarPrecios(limpio).find((p) => p.divisa !== "EUR");
+  return precio ? { cantidad: precio.cantidad, divisa: precio.divisa } : null;
+}
+
+// La comisión por compra en el extranjero, cuando el banco la cobra en otra línea.
+const LINEA_COMISION = /\bcomisi[oó]n\b|\bfee\b/i;
+
+// Lo que se aparta mucho no es comisión, es que he leído mal el concepto o la
+// compra se devolvió a medias: fuera del 15 % por arriba o del 3 % por abajo.
+const COMISION_RARA = { max: 0.15, min: -0.03 };
+
+// tasas[divisa][fecha]: lo que vale 1 de esa divisa en euros ese día, del BCE.
+function comisionReal(movimientos, tasas) {
+  if (!Array.isArray(movimientos)) return null;
+  const cargos = [];
+  let comisiones = 0;
+  for (const m of movimientos) {
+    const fuera = cargoEnDivisa(m.concepto);
+    if (!fuera) {
+      if (LINEA_COMISION.test(m.concepto ?? "")) comisiones += m.importe;
+      continue;
+    }
+    const tasa = tasaDeEseDia(tasas?.[fuera.divisa], m.fecha);
+    if (!(tasa > 0)) continue;
+    const justo = fuera.cantidad * tasa;
+    const margen = m.importe / justo - 1;
+    if (margen > COMISION_RARA.max || margen < COMISION_RARA.min) continue;
+    cargos.push({ ...m, ...fuera, justo, margen });
+  }
+  if (cargos.length === 0) return null;
+  // Las comisiones sueltas solo cuentan si hay compras fuera: si no, serán del
+  // mantenimiento de la cuenta.
+  const pagado = cargos.reduce((t, c) => t + c.importe, 0) + comisiones;
+  const justo = cargos.reduce((t, c) => t + c.justo, 0);
+  const pct = Math.max(0, Math.min(Math.round((pagado / justo - 1) * 1000) / 10, COMISION_MAX));
+  return { n: cargos.length, pagado, justo, deMas: pagado - justo, comisiones, pct, divisas: [...new Set(cargos.map((c) => c.divisa))] };
+}
+
+function textoComisionReal(r, actual = 0) {
+  if (!r) return null;
+  const dinero = numeros({ minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  // Sin partir el "2,9 %" en dos líneas.
+  const pct = porCiento(numeros({ maximumFractionDigits: 1 }).format(r.pct)).replace(" ", "\u00a0");
+  return {
+    titulo: tr("comisionReal.titulo", { pct }),
+    detalle: tr(r.n === 1 ? "comisionReal.detalleUna" : "comisionReal.detalle", { n: r.n, deMas: `${dinero.format(r.deMas)} EUR` }),
+    igual: Math.abs(r.pct - actual) < 0.05,
+  };
+}
+
 // La tarjeta del viaje, para enseñarla al volver: lo que cuenta de un vistazo.
 // Los días son los del presupuesto si los tiene; si no, del primer gasto del día
 // a día al último, como la media.
@@ -9475,7 +9533,7 @@ if (typeof module !== "undefined") {
     datosTarjeta,
     NOTA_MAX, limpiarNota, cambiarNota,
     esFijo, delDiaADia, marcarFijo,
-    numeroBanco, fechaBanco, leerCsvBanco, conceptoBanco, tasaDeEseDia, gastosDelBanco,
+    numeroBanco, fechaBanco, leerCsvBanco, conceptoBanco, tasaDeEseDia, gastosDelBanco, cargoEnDivisa, comisionReal, textoComisionReal,
     TAX_FREE, taxFree,
     tasaLegible, DIVISAS_BCE, DIVISAS_MERCADO, esDeMercado, parDeMercado, urlTasa, urlTasaDia, urlSerie, urlsTodas, aFormatoV1, juntarTasas, pedirTodas,
     CURRENCIES, isValidCode, nombreDe, parseAmount, isoLocal, hoy, isFresh,

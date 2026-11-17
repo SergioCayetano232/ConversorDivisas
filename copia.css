@@ -579,6 +579,80 @@ body::before {
   white-space: nowrap;
 }
 
+/* Lo que te cobra la tarjeta de verdad, encima de los cargos: es lo primero que
+   interesa del extracto aunque no vayas a importar nada. */
+.comision-real {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 14px;
+  padding: 12px 14px;
+  border: 1px solid var(--dorado-tenue);
+  border-radius: var(--radio-sm);
+  background: var(--dorado-fantasma);
+}
+
+.comision-real[hidden] {
+  display: none;
+}
+
+.comision-real.is-nueva {
+  animation: comision-entra var(--lento) var(--muelle) both;
+}
+
+@keyframes comision-entra {
+  from {
+    opacity: 0;
+    transform: translateY(6px) scale(0.98);
+  }
+}
+
+.comision-real__icono {
+  font-size: 22px;
+}
+
+.comision-real__texto {
+  flex: 1;
+  min-width: 0;
+}
+
+.comision-real__titulo {
+  margin: 0;
+  font-weight: 600;
+  color: var(--dorado);
+  font-variant-numeric: tabular-nums;
+}
+
+.comision-real__detalle {
+  margin: 2px 0 0;
+  font-size: 12px;
+  color: var(--tenue);
+  font-variant-numeric: tabular-nums;
+}
+
+.comision-real .boton {
+  align-self: center;
+  flex: none;
+}
+
+/* El .is-hecho general pinta el botón de verde lleno y el texto se perdía. */
+.comision-real .boton.is-hecho {
+  background: transparent;
+  color: var(--jade);
+  border-color: var(--jade);
+  opacity: 1;
+}
+
+@media (max-width: 520px) {
+  .comision-real {
+    flex-wrap: wrap;
+  }
+
+  .comision-real .boton {
+    flex-basis: 100%;
+  }
+}
+
 .banco__resumen {
   font-family: var(--mono);
   font-size: 13px;
