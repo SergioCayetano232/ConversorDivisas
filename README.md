@@ -337,6 +337,17 @@ que necesitaba una conversión rápida. Ahora es un clic en la barra del navegad
   entra ese importe tal cual, sin comisión. Si el viaje abierto tiene presupuesto,
   antes de apuntarlo ya ves lo que se come de lo que te queda ("Se lleva el 19 %
   de lo que te queda · ≈ 1,1 días"), con una barrita a rayas, o en cuánto te pasas
+- La trampa del "¿quiere pagar en euros?": si en la pantalla de pago seleccionas
+  el precio de allí y lo que te cobrarían en tu divisa ("USD 249.99 · EUR
+  240.50"), la tarjeta te dice cuánto pagas de más sobre el cambio real ("13,52
+  EUR de más (+6 %). Mejor en USD"). Si tienes puesta la comisión de tu tarjeta,
+  la tiene en cuenta: con un 3 %, aceptar un +1,8 % te vale
+- Lo que cuesta de verdad algo que te mandan de fuera de la UE: en la tarjeta,
+  **📦 Si te lo envían** despliega el precio con el IVA de importación de tu
+  país, que saca del idioma del navegador ("274,64 EUR con el IVA de importación
+  (21 %: 47,66 EUR)"), y si pasa de 150 € avisa de que puede haber aranceles.
+  Va plegado porque con el hotel o la cena del viaje no pinta nada. Solo con el
+  euro como tu divisa
 - Todos los precios de una web a la vez: clic derecho en la página, **Convertir
   los precios de la página**, y al lado de cada precio sale lo que vale en tu
   divisa. Solo cuenta los que llevan la divisa pegada (`49,99 €`, `$1,049.99`,

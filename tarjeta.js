@@ -259,6 +259,69 @@
     .nota { color: var(--dorado); opacity: 0.85; }
     .nota:empty { display: none; }
 
+    /* Plegado de entrada: con el hotel o la cena del viaje no pinta nada, y
+       solo quien compra algo para que se lo manden lo abre. */
+    .fuera[hidden] { display: none; }
+    .fuera { margin-top: 6px; }
+    .abrir-fuera {
+      padding: 0;
+      background: none;
+      border: none;
+      color: var(--tenue);
+      font-size: 10.5px;
+      transition: color 180ms ease;
+    }
+    .abrir-fuera::after {
+      content: "›";
+      display: inline-block;
+      margin-left: 4px;
+      transition: transform 260ms var(--muelle);
+    }
+    .abrir-fuera:hover { color: var(--dorado); }
+    .abrir-fuera[aria-expanded="true"] { color: var(--texto); }
+    .abrir-fuera[aria-expanded="true"]::after { transform: rotate(90deg); }
+    .abrir-fuera:focus-visible { outline: 2px solid var(--dorado); outline-offset: 2px; border-radius: 4px; }
+    .cuenta-fuera {
+      display: grid;
+      grid-template-rows: 0fr;
+      transition: grid-template-rows 320ms var(--suave);
+    }
+    .cuenta-fuera > div { overflow: hidden; }
+    .abrir-fuera[aria-expanded="true"] + .cuenta-fuera { grid-template-rows: 1fr; }
+    .fuera-total {
+      margin: 4px 0 0;
+      font-family: var(--mono);
+      font-size: 11px;
+      color: var(--texto);
+      font-variant-numeric: tabular-nums;
+    }
+    .fuera-detalle {
+      margin: 2px 0 0;
+      font-size: 10.5px;
+      line-height: 1.4;
+      color: var(--tenue);
+    }
+    /* Lo que te cobrarían en tu divisa contra el cambio real. Es lo más
+       importante de la tarjeta cuando sale, por eso va en caja y no en línea. */
+    .dcc[hidden] { display: none; }
+    .dcc {
+      --tono: var(--jade);
+      --tono-fondo: var(--jade-ghost);
+      margin: 8px 0 0;
+      padding: 6px 8px;
+      font-size: 11px;
+      line-height: 1.4;
+      color: var(--tono);
+      background: var(--tono-fondo);
+      border-left: 2px solid var(--tono);
+      border-radius: 4px 8px 8px 4px;
+      font-variant-numeric: tabular-nums;
+      animation: latido 420ms var(--muelle) 80ms both;
+    }
+    .dcc[data-tono="normal"] { --tono: var(--dorado); --tono-fondo: var(--dorado-ghost); }
+    .dcc[data-tono="caro"],
+    .dcc[data-tono="timo"] { --tono: var(--cinabrio); --tono-fondo: var(--cinabrio-ghost); }
+    .dcc[data-tono="timo"] { animation: latido 420ms var(--muelle) 80ms both, temblar 420ms ease 500ms; }
     /* Lo gastado del viaje, liso, y lo que se llevaría esto, a rayas detrás,
        como en la barra del presupuesto del popup. */
     .presupuesto[hidden] { display: none; }
@@ -433,9 +496,14 @@
       <div class="cifra" aria-live="polite"><span class="valor"></span><span class="codigo"></span></div>
       <p class="meta"></p>
       <p class="nota"></p>
+      <p class="dcc" hidden></p>
       <div class="presupuesto" hidden>
         <div class="pista"><span class="gastado"></span><span class="esto"></span></div>
         <p class="frase"></p>
+      </div>
+      <div class="fuera" hidden>
+        <button class="abrir-fuera" type="button" aria-expanded="false"></button>
+        <div class="cuenta-fuera"><div><p class="fuera-total"></p><p class="fuera-detalle"></p></div></div>
       </div>
       <p class="aviso" role="alert"></p>
       <div class="pie">
@@ -470,6 +538,12 @@
     $(".copiar").addEventListener("click", copiar);
     $(".cifra").addEventListener("dblclick", copiar);
     $(".gasto").addEventListener("click", apuntar);
+    $(".abrir-fuera").addEventListener("click", (event) => {
+      const boton = event.currentTarget;
+      boton.setAttribute("aria-expanded", String(boton.getAttribute("aria-expanded") !== "true"));
+      // Al abrirse crece, y si estaba encima de la selección tiene que subir.
+      setTimeout(colocar, 340);
+    });
     const campo = $(".concepto");
     campo.addEventListener("keydown", (event) => {
       // En japonés o chino el Enter acepta el carácter, no es que hayas acabado.
@@ -595,20 +669,48 @@
       $(".codigo").textContent = d.to;
       $(".meta").textContent = d.fecha ? `${d.tasa} · ${d.fecha}` : d.tasa;
       $(".nota").textContent = d.nota ?? "";
+      pintarDcc(d.dcc);
+      pintarFuera(d.fuera);
       pintarPresupuesto(d.presupuesto);
       contar(d.resultado);
     } else if (d.estado === "cargando") {
       $(".original").textContent = citar(d.original);
+      pintarDcc(null);
+      pintarFuera(null);
       pintarPresupuesto(null);
     } else {
       // Con el atajo y nada seleccionado no hay texto que citar: mejor nada que «».
       $(".original").textContent = d.original ? citar(d.original) : "";
       $(".aviso").textContent = d.mensaje;
+      pintarDcc(null);
+      pintarFuera(null);
       pintarPresupuesto(null);
     }
 
     colocar();
     if (d.estado === "ok") $(".copiar").focus({ preventScroll: true });
+  }
+
+  // Cerrado cada vez: lo que abriste para otro precio no tiene por qué seguir abierto.
+  function pintarFuera(f) {
+    const caja = $(".fuera");
+    caja.hidden = !f;
+    $(".abrir-fuera").setAttribute("aria-expanded", "false");
+    if (!f) return;
+    $(".abrir-fuera").textContent = f.boton;
+    $(".fuera-total").textContent = f.total;
+    $(".fuera-detalle").textContent = f.detalle;
+  }
+
+  function pintarDcc(d) {
+    const caja = $(".dcc");
+    caja.hidden = !d;
+    if (!d) return;
+    caja.dataset.tono = d.tono;
+    caja.textContent = d.texto;
+    caja.style.animation = "none";
+    void caja.offsetWidth;
+    caja.style.animation = "";
   }
 
   // Va con la tarjeta del viaje abierto; sin presupuesto o en otra divisa no sale.

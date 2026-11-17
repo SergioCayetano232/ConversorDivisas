@@ -318,16 +318,23 @@ function paraLaTarjeta(datos) {
 }
 
 async function calcular(texto) {
-  const suma = sumarSeleccion(texto);
-  const leido = suma ?? leerSeleccion(texto);
+  const parGuardado = await leerPar();
+  // Si los dos precios no parecen el mismo en dos divisas, la selección se lee como siempre.
+  let cobro = leerCobro(texto, parGuardado);
+  const dcc = cobro ? await analizarDcc(cobro) : null;
+  if (!dcc) cobro = null;
+  const suma = cobro ? null : sumarSeleccion(texto);
+  const leido = cobro ? { cantidad: cobro.cantidad, divisa: cobro.from } : suma ?? leerSeleccion(texto);
   if (!leido) return { estado: "nada", original: texto, mensaje: tr("tarjeta.nada") };
 
-  const { from, to } = destinoPara(leido.divisa, await leerPar());
+  const { from, to } = destinoPara(leido.divisa, parGuardado);
   try {
     const { rate, date } = await tasa(from, to);
     const resultado = leido.cantidad * rate;
     return {
       ...(await enElPresupuesto({ cantidad: leido.cantidad, from, to }, rate)),
+      ...(dcc ? { dcc } : {}),
+      ...siTeLoEnvian({ cantidad: leido.cantidad, from, to }, rate),
       estado: "ok",
       original: `${nf.format(leido.cantidad)} ${from}`,
       nota: suma ? notaDeSuma(suma.cantidades) : leido.divisa ? "" : tr("tarjeta.sinDivisa", { from }),
@@ -356,6 +363,24 @@ async function enElPresupuesto(precio, rate) {
   } catch (error) {
     console.warn("No se pudo mirar el presupuesto", error);
     return {};
+  }
+}
+
+// El país para el IVA sale del idioma del navegador, como el nivel de precios.
+function siTeLoEnvian(precio, rate) {
+  const textos = textoCompraDeFuera(compraDeFuera(precio, rate, navigator.languages));
+  return textos ? { fuera: { ...textos, boton: tr("fuera.boton") } } : {};
+}
+
+async function analizarDcc(cobro) {
+  try {
+    const { rate } = await tasa(cobro.from, cobro.to);
+    const { comisionBanco } = await chrome.storage.local.get("comisionBanco");
+    const r = analizarCobro(cobro, rate, leerComision(comisionBanco));
+    return r && { tono: r.aceptar ? "bien" : r.veredicto, texto: textoCobro(r) };
+  } catch (error) {
+    console.warn("No se pudo mirar el cobro", error);
+    return null;
   }
 }
 

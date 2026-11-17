@@ -2303,6 +2303,54 @@ function notaDeSuma(cantidades) {
   return tr("tarjeta.suma", { n: cantidades.length, partes: cantidades.map((n) => dinero.format(n)).join(" +\u00a0") });
 }
 
+// La pantalla de "¿quiere pagar en euros?" (DCC) enseña el precio de allí y lo
+// que te cobrarían en tu divisa. Lo que va en tu divisa es el cobro; si ninguno
+// lo está, el primero es el precio y el segundo el cobro, que es como lo ponen.
+function leerCobro(texto, par) {
+  const precios = buscarPrecios(texto);
+  const divisas = new Set(precios.map((p) => p.divisa));
+  if (precios.length !== 2 || divisas.size !== 2) return null;
+  const [a, b] = precios;
+  const cobro = a.divisa === par.to || (b.divisa !== par.to && b.divisa === par.from) ? a : b;
+  const precio = cobro === a ? b : a;
+  return { cantidad: precio.cantidad, from: precio.divisa, cobrado: cobro.cantidad, to: cobro.divisa };
+}
+
+// Más de un 25 % arriba o abajo ya no es un cambio de divisa: serán dos precios
+// que no tienen que ver ("£10 de envío, $20 el libro").
+const COBRO_RARO = 0.25;
+
+function analizarCobro(cobro, real, comision = 0) {
+  if (!cobro || !(cobro.cantidad > 0) || !(cobro.cobrado > 0) || !(real > 0)) return null;
+  const justo = cobro.cantidad * real;
+  const sobrecoste = cobro.cobrado / justo - 1;
+  if (Math.abs(sobrecoste) > COBRO_RARO) return null;
+  const HOLGURA = 1e-9;
+  const veredicto = sobrecoste <= 0 ? "bien" : MARGENES.find((m) => sobrecoste <= m.hasta + HOLGURA).veredicto;
+  // Si dices que no, pagas allí con tu tarjeta y su comisión: eso es lo que hay que ganar.
+  const conTarjeta = justo * (1 + comision / 100);
+  return {
+    ...cobro,
+    justo,
+    sobrecoste,
+    extra: cobro.cobrado - justo,
+    veredicto,
+    comision,
+    aceptar: cobro.cobrado <= conTarjeta + 0.005,
+  };
+}
+
+function textoCobro(r) {
+  if (!r) return "";
+  const dinero = numeros({ minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  const pct = tr("pct", { n: numeros({ maximumFractionDigits: Math.abs(r.sobrecoste) < 0.1 ? 1 : 0 }).format(Math.abs(r.sobrecoste) * 100) });
+  const datos = { to: r.to, from: r.from, pct, extra: `${dinero.format(r.extra)} ${r.to}`, comision: tr("pct", { n: numeros({ maximumFractionDigits: 2 }).format(r.comision) }) };
+  if (r.sobrecoste <= 0) return tr("dcc.mejor", datos);
+  if (r.aceptar && r.comision > 0) return tr("dcc.teVale", datos);
+  if (r.veredicto === "bien") return tr("dcc.casi", datos);
+  return tr("dcc.mejorAlli", datos);
+}
+
 // Para la página entera no vale cualquier número como en la selección: aquí
 // solo cuenta si lleva la divisa pegada, delante o detrás. Los símbolos largos
 // primero, que si no "US$" se quedaba en "$".
@@ -9012,6 +9060,56 @@ function paisDePrecios(code, idiomas = []) {
 
 // rate es lo que vale 1 de from en to. Allí es el lado que no es tu divisa,
 // esté arriba o abajo; si ninguno lo es, no hay "casa" con la que comparar.
+// El IVA general de cada país de la UE, a noviembre de 2026. Es lo que se paga
+// al importar casi cualquier cosa; los libros o la comida llevan menos, pero
+// eso ya no lo sé por el precio.
+const IVA_UE = {
+  AT: 20, BE: 21, BG: 20, CY: 19, CZ: 21, DE: 19, DK: 25, EE: 24, ES: 21, FI: 25.5,
+  FR: 20, GR: 24, HR: 25, HU: 27, IE: 23, IT: 22, LT: 21, LU: 17, LV: 21, MT: 18,
+  NL: 21, PL: 23, PT: 23, RO: 21, SE: 25, SI: 22, SK: 23,
+};
+// Por encima de 150 € de mercancía ya puede haber aranceles.
+const UMBRAL_ARANCEL = 150;
+// Sin país en el idioma ("es" a secas) solo me fío de las lenguas que, con el
+// euro puesto, casi seguro son de un país.
+const PAIS_DE_LENGUA = { es: "ES", de: "DE", fr: "FR", it: "IT", nl: "NL", pt: "PT", fi: "FI", el: "GR", sk: "SK", sl: "SI", et: "EE", lv: "LV", lt: "LT", hr: "HR", mt: "MT" };
+
+function paisIva(idiomas = []) {
+  const etiquetas = (Array.isArray(idiomas) ? idiomas : []).map((i) => String(i).split(/[-_]/));
+  for (const [, ...resto] of etiquetas) {
+    const region = resto.find((p) => /^[a-z]{2}$/i.test(p))?.toUpperCase();
+    if (region in IVA_UE) return region;
+  }
+  for (const [lengua, ...resto] of etiquetas) {
+    if (!resto.some((p) => /^[a-z]{2}$/i.test(p)) && PAIS_DE_LENGUA[lengua.toLowerCase()]) return PAIS_DE_LENGUA[lengua.toLowerCase()];
+  }
+  return null;
+}
+
+// Lo que te costaría de verdad si te lo envían desde fuera: el IVA de tu país
+// encima, y el aviso de aranceles si pasa del umbral. Solo con el euro como
+// tu divisa, que el umbral va en euros.
+function compraDeFuera({ cantidad, from, to }, rate, idiomas = []) {
+  // En divisa de la UE viene de dentro: no hay aduana.
+  if (to !== "EUR" || DIVISAS_UE.has(from) || !(cantidad > 0) || !(rate > 0)) return null;
+  const pais = paisIva(idiomas);
+  if (!pais) return null;
+  const valor = cantidad * rate;
+  const pct = IVA_UE[pais];
+  const iva = Math.round(valor * pct) / 100;
+  return { pais, pct, valor, iva, total: Math.round((valor + iva) * 100) / 100, aranceles: valor > UMBRAL_ARANCEL };
+}
+
+function textoCompraDeFuera(r) {
+  if (!r) return null;
+  const dinero = numeros({ minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  const pct = tr("pct", { n: numeros({ maximumFractionDigits: 1 }).format(r.pct) });
+  return {
+    total: tr("fuera.total", { total: `${dinero.format(r.total)} EUR`, iva: `${dinero.format(r.iva)} EUR`, pct }),
+    detalle: tr(r.aranceles ? "fuera.aranceles" : "fuera.sinAranceles", { umbral: `${UMBRAL_ARANCEL} EUR` }),
+  };
+}
+
 function nivelDePrecios(from, to, rate, idiomas = [], tuya = to) {
   if (from === to || !(rate > 0) || (tuya !== from && tuya !== to)) return null;
   const alReves = tuya === from;
@@ -9073,7 +9171,7 @@ if (typeof module !== "undefined") {
     RECIENTES_MAX, FIJOS_MAX, apuntarReciente, fijarReciente, leerRecientes, recientesVisibles,
     RANGOS, RANGO_POR_DEFECTO, leerRango, siguienteRango, coordenadas, alturaEn, MOMENTO_UMBRAL, momento, textoMomento,
     SEMANAS_MINIMAS, mejorDiaSemana, nombreDiaSemana, textoDiaSemana, indiceCercano, extremos, fechaCorta, largoEnPantalla,
-    leerNumero, divisaDe, leerSeleccion, sumarSeleccion, notaDeSuma, destinoPara, leerPegado, leerPegadoSuelto, leerColumna, cuentaDeColumna, buscarPrecios, precioEntero, leerOmnibox, leerMezcla, textoMezcla, precioUnidadBarra, leerGastoBarra, leerDictado, gastoDeBarra, gastoDeTarjeta, escaparXml,
+    leerNumero, divisaDe, leerSeleccion, sumarSeleccion, notaDeSuma, leerCobro, COBRO_RARO, analizarCobro, textoCobro, destinoPara, leerPegado, leerPegadoSuelto, leerColumna, cuentaDeColumna, buscarPrecios, precioEntero, leerOmnibox, leerMezcla, textoMezcla, precioUnidadBarra, leerGastoBarra, leerDictado, gastoDeBarra, gastoDeTarjeta, escaparXml,
     divisaDeIdioma, parPorIdioma, banderaDe, banderaDivisa,
     HISTORIAL_MAX, leerHistorial, apuntarConversion, quitarConversion, haceCuanto, ultimoDeHoy, textoParaCopiar, fraseParaCopiar, conversionParaCopiar, gastoParaCopiar, ultimoGasto, gastoMasCaro, totalParaCopiar, hoyParaCopiar, simboloDe, textoConSimbolo, fraseConSimbolo,
     celdaCsv, csvHistorial, csvGastos, csvViajes,
@@ -9107,6 +9205,6 @@ if (typeof module !== "undefined") {
     RECORDATORIO_HORA, RECORDATORIO_HORAS, leerHoraRecordatorio, viajesSinApuntar, tocaRecordar, mensajeRecordatorio, TAX_FREE_HORA, tocaTaxFree, mensajeTaxFree,
     ATAJOS, atajoPara, textoAtajo, FUNCIONES, FUNCIONES_MAX, buscarFunciones,
     esPanel, cambioDeFuera,
-    PPA_ANIO, PPA, PPA_EURO, NIVEL_IGUAL, paisDePrecios, nivelDePrecios, nombrePais, textoNivel,
+    PPA_ANIO, PPA, PPA_EURO, NIVEL_IGUAL, paisDePrecios, IVA_UE, UMBRAL_ARANCEL, paisIva, compraDeFuera, textoCompraDeFuera, nivelDePrecios, nombrePais, textoNivel,
   };
 }
