@@ -775,6 +775,24 @@ function desfase(zona, ahora) {
 // De noche (de diez a siete) allí estará casi todo cerrado.
 const esNoche = (h) => h >= 22 || h < 7;
 
+// El color del fondo según la hora de allí. El amanecer y el atardecer los
+// dejo en tres horas fijas: con la puesta de sol de verdad habría que saber la latitud.
+function momentoDelDia(horas) {
+  if (!Number.isInteger(horas) || horas < 0 || horas > 23) return null;
+  if (horas >= 6 && horas < 9) return "amanecer";
+  if (horas >= 9 && horas < 18) return "dia";
+  if (horas >= 18 && horas < 21) return "atardecer";
+  return "noche";
+}
+
+// A diferencia de horaAlli, aquí sí cuenta la misma hora que la tuya: el cielo
+// se pinta igual. Sin ciudad para la divisa, el tuyo.
+function cieloAlli(code, ahora = new Date(), local = -new Date(ahora).getTimezoneOffset()) {
+  const zona = ZONAS[code];
+  const minutos = zona ? desfase(zona[0], ahora) : local;
+  return momentoDelDia(new Date(Number(ahora) + minutos * 60000).getUTCHours());
+}
+
 // Si allí es la misma hora que aquí no digo nada. El día va como -1, 0 o 1
 // respecto al tuyo.
 function horaAlli(code, ahora = new Date(), local = -new Date(ahora).getTimezoneOffset()) {
@@ -9578,7 +9596,7 @@ if (typeof module !== "undefined") {
     urlImpresion, leerImpresion, chuletaParaImprimir,
     COMISION_MAX, COMISIONES_RAPIDAS, leerComision, leerPorcentaje, conComision,
     IMPUESTO_MAX, IMPUESTOS_RAPIDOS, leerImpuesto, leerImpuestoEscrito, loQuePagas,
-    COMPARAR_IGUAL, compararPrecios, inclinacion, ZONAS, desfase, esNoche, horaAlli, SIGLAS_ZONA, leerHoraZona, convertirHoraZona, textoHoraZona, textoDiferencia, relojDe, tituloHoraAlli, leerCafe, enCafes, textoCafes, HORAS_JORNADA, enHoras, textoHoras,
+    COMPARAR_IGUAL, compararPrecios, inclinacion, ZONAS, desfase, esNoche, momentoDelDia, cieloAlli, horaAlli, SIGLAS_ZONA, leerHoraZona, convertirHoraZona, textoHoraZona, textoDiferencia, relojDe, tituloHoraAlli, leerCafe, enCafes, textoCafes, HORAS_JORNADA, enHoras, textoHoras,
     PROPINAS_RAPIDAS, PROPINA_HABITUAL, propinaHabitual, leerPropina, textoPropina, ENCHUFES, leerEnchufe, enchufeDe, textoEnchufe, EMERGENCIAS, leerEmergencias, textoEmergencias, AGUA, leerAgua, textoAgua, POR_LA_IZQUIERDA, CARNE_EUROPEO, leerConducir, textoConducir, IDIOMA_DE_DIVISA, paraDecir, VOCES_DE_BROMA, elegirVoz, PREFIJOS, leerPrefijo, textoPrefijo, FRASES, leerGracias, textoGracias, IVA, leerIva, textoIva, PAGO_ALLI, CAJERO_NOTA, leerCajero, textoCajero, leerLlegar, textoLlegar, VISADOS, leerVisado, textoVisado, ROAMING, leerRoaming, textoRoaming, CON_TSE, leerSanitaria, textoSanitaria, APPS_TAXI, leerTaxi, textoTaxi, REGATEO, leerRegatear, textoRegatear, FESTIVOS, FESTIVOS_LUNA, pascuaOrtodoxa, fechaFestivo, festivosProximos, leerFestivos, textoFestivos, HORARIOS, leerHorario, textoHorario, PROPINA_MAX, PERSONAS_MAX, CUENTA_POR_DEFECTO, leerCuenta, redondoHaciaArriba, repartirCuenta, cuentaParaCompartir, gastoDeLaCuenta, BILLETES, leerBilletes, textoBilletes, PAGOS_MAX, pagosPosibles, vuelta, pagoJusto,
     MARGENES, tasaOfrecida, analizarCambio,
     domingoDePascua, hayTasaEl, tasaVieja, textoTasaVieja, horaBce, textoActualizado, proximaTasa, textoProximaTasa,

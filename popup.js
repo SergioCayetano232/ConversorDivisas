@@ -2428,6 +2428,7 @@ function pintarHoras() {
 // sitio cuando cambias de divisa; con el paso de los minutos solo se mueven.
 function pintarHoraAlli() {
   const code = el.from.value;
+  document.documentElement.dataset.cielo = cieloAlli(code) ?? "dia";
   const h = horaAlli(code);
   const nodo = el.alli;
   nodo.hidden = !h;

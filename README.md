@@ -428,7 +428,9 @@ que necesitaba una conversión rápida. Ahora es un clic en la barra del navegad
   qué te sale mejor
 - La hora que es allí, al lado de la divisa de origen, con un relojito que la
   marca de verdad: si es de noche sale una luna, que estará todo cerrado.
-  Pasando el ratón, la ciudad y cuántas horas te lleva
+  Pasando el ratón, la ciudad y cuántas horas te lleva. El fondo va con esa
+  hora: rosado al amanecer, naranja y morado al atardecer y azul con estrellas
+  de noche, y se funde al cambiar de divisa
 - Si allí es caro o barato: encima de la divisa de destino sale "🛒 allí −11 %"
   (en verde) o "allí +67 %" (en rojo), lo que cuesta la vida allí comparado
   con tu casa. Pasando el ratón, la frase entera y a cuánto te sale de verdad

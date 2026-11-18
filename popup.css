@@ -139,7 +139,115 @@
     --viaje-coral 600ms var(--ease),
     --viaje-jade 600ms var(--ease),
     --viaje-lila 600ms var(--ease),
-    --viaje-rosa 600ms var(--ease);
+    --viaje-rosa 600ms var(--ease),
+    --cielo-1 1600ms var(--ease),
+    --cielo-2 1600ms var(--ease),
+    --cielo-3 1600ms var(--ease),
+    --cielo-4 1600ms var(--ease);
+}
+
+/* El cielo de allí: las manchas cogen los colores de la hora que es en el
+   país de arriba. Registrados para que se fundan al cambiar de divisa o de
+   hora; el de día es el fondo de siempre. */
+@property --cielo-1 { syntax: "<color>"; inherits: true; initial-value: rgba(232, 183, 92, 0.30); }
+@property --cielo-2 { syntax: "<color>"; inherits: true; initial-value: rgba(188, 98, 208, 0.22); }
+@property --cielo-3 { syntax: "<color>"; inherits: true; initial-value: rgba(96, 134, 224, 0.26); }
+@property --cielo-4 { syntax: "<color>"; inherits: true; initial-value: rgba(78, 169, 107, 0.16); }
+
+:root {
+  --cielo-1: rgba(232, 183, 92, 0.30);
+  --cielo-2: rgba(188, 98, 208, 0.22);
+  --cielo-3: rgba(96, 134, 224, 0.26);
+  --cielo-4: rgba(78, 169, 107, 0.16);
+}
+
+:root[data-cielo="amanecer"] {
+  --cielo-1: rgba(248, 128, 104, 0.40);
+  --cielo-2: rgba(232, 121, 166, 0.28);
+  --cielo-3: rgba(250, 170, 120, 0.30);
+  --cielo-4: rgba(120, 170, 230, 0.14);
+}
+
+:root[data-cielo="atardecer"] {
+  --cielo-1: rgba(240, 112, 58, 0.34);
+  --cielo-2: rgba(196, 66, 140, 0.28);
+  --cielo-3: rgba(124, 82, 208, 0.26);
+  --cielo-4: rgba(232, 183, 92, 0.14);
+}
+
+:root[data-cielo="noche"] {
+  --cielo-1: rgba(54, 84, 196, 0.32);
+  --cielo-2: rgba(98, 62, 182, 0.28);
+  --cielo-3: rgba(46, 116, 214, 0.20);
+  --cielo-4: rgba(63, 184, 175, 0.10);
+}
+
+@media (prefers-color-scheme: light) {
+  :root {
+    --cielo-1: rgba(214, 158, 46, 0.34);
+    --cielo-4: rgba(78, 169, 107, 0.18);
+  }
+
+  :root[data-cielo="amanecer"] {
+    --cielo-1: rgba(240, 120, 96, 0.30);
+    --cielo-2: rgba(226, 110, 160, 0.20);
+    --cielo-3: rgba(242, 180, 90, 0.28);
+    --cielo-4: rgba(110, 160, 230, 0.16);
+  }
+
+  :root[data-cielo="atardecer"] {
+    --cielo-1: rgba(236, 110, 50, 0.32);
+    --cielo-2: rgba(200, 70, 140, 0.24);
+    --cielo-3: rgba(130, 90, 214, 0.22);
+    --cielo-4: rgba(214, 158, 46, 0.18);
+  }
+
+  /* En claro la noche no puede ser oscura: se queda en un azul de madrugada. */
+  :root[data-cielo="noche"] {
+    --cielo-1: rgba(70, 100, 210, 0.26);
+    --cielo-2: rgba(120, 90, 200, 0.24);
+    --cielo-3: rgba(60, 130, 220, 0.20);
+    --cielo-4: rgba(63, 184, 175, 0.12);
+  }
+}
+
+/* Las estrellas, solo de noche y solo en oscuro, que en claro no se verían. */
+html::after {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 1600ms var(--ease);
+  background:
+    radial-gradient(1px 1px at 14px 22px, #fff, transparent),
+    radial-gradient(1.5px 1.5px at 62px 8px, #fff, transparent),
+    radial-gradient(1px 1px at 118px 40px, #fff, transparent),
+    radial-gradient(2px 2px at 150px 96px, #fff, transparent),
+    radial-gradient(1px 1px at 40px 78px, #fff, transparent),
+    radial-gradient(1.5px 1.5px at 96px 124px, #fff, transparent),
+    radial-gradient(1px 1px at 22px 150px, #fff, transparent),
+    radial-gradient(1px 1px at 132px 160px, #fff, transparent);
+  background-size: 170px 170px;
+}
+
+:root[data-cielo="noche"]::after {
+  opacity: 0.7;
+  /* Con retraso, para que no le quite al fundido de entrada su opacidad. */
+  animation: titilar 5s ease-in-out 1600ms infinite alternate;
+}
+
+@keyframes titilar {
+  from { opacity: 0.7; }
+  to { opacity: 0.35; }
+}
+
+@media (prefers-color-scheme: light) {
+  :root[data-cielo="noche"]::after {
+    opacity: 0;
+    animation: none;
+  }
 }
 
 *,
@@ -218,16 +326,16 @@ body::before {
 body::before {
   z-index: -2;
   background:
-    radial-gradient(460px circle at 24% 20%, rgba(232, 183, 92, 0.30), transparent 60%),
-    radial-gradient(440px circle at 70% 79%, rgba(188, 98, 208, 0.22), transparent 60%);
+    radial-gradient(460px circle at 24% 20%, var(--cielo-1), transparent 60%),
+    radial-gradient(440px circle at 70% 79%, var(--cielo-2), transparent 60%);
   animation: deriva 48s ease-in-out infinite alternate;
 }
 
 html::before {
   z-index: -1;
   background:
-    radial-gradient(400px circle at 81% 30%, rgba(96, 134, 224, 0.26), transparent 58%),
-    radial-gradient(380px circle at 19% 67%, rgba(78, 169, 107, 0.16), transparent 58%);
+    radial-gradient(400px circle at 81% 30%, var(--cielo-3), transparent 58%),
+    radial-gradient(380px circle at 19% 67%, var(--cielo-4), transparent 58%);
   animation: deriva 36s ease-in-out -12s infinite alternate-reverse;
 }
 
@@ -268,18 +376,6 @@ body::after {
 }
 
 @media (prefers-color-scheme: light) {
-  body::before {
-    background:
-      radial-gradient(460px circle at 24% 20%, rgba(214, 158, 46, 0.34), transparent 60%),
-      radial-gradient(440px circle at 70% 79%, rgba(188, 98, 208, 0.22), transparent 60%);
-  }
-
-  html::before {
-    background:
-      radial-gradient(400px circle at 81% 30%, rgba(96, 134, 224, 0.26), transparent 58%),
-      radial-gradient(380px circle at 19% 67%, rgba(78, 169, 107, 0.18), transparent 58%);
-  }
-
   body::after {
     opacity: 0.028;
   }
