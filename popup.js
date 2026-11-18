@@ -8374,7 +8374,25 @@ async function refresh() {
   }
 }
 
+// Las dos divisas se cruzan volando. Para la transición, la de arriba se llama
+// "uno" antes y "dos" después, y al revés la otra: así el navegador cree que
+// cada una se ha ido al otro lado, que es lo que ha pasado.
 function onSwap() {
+  if (!document.startViewTransition || sinMovimiento.matches) return darLaVuelta();
+  el.from.style.viewTransitionName = "divisa-uno";
+  el.to.style.viewTransitionName = "divisa-dos";
+  const vuelta = document.startViewTransition(() => {
+    darLaVuelta();
+    el.from.style.viewTransitionName = "divisa-dos";
+    el.to.style.viewTransitionName = "divisa-uno";
+  });
+  vuelta.finished.finally(() => {
+    el.from.style.viewTransitionName = "";
+    el.to.style.viewTransitionName = "";
+  });
+}
+
+function darLaVuelta() {
   const from = el.from.value;
   buscadores.from.poner(el.to.value);
   buscadores.to.poner(from);

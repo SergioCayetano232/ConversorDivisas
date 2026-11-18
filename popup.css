@@ -1691,6 +1691,52 @@ body::after {
   to { transform: translateX(120%); }
 }
 
+/* Al dar la vuelta solo vuelan las dos divisas; lo demás cambia en el sitio,
+   como antes, que fundir el popup entero por esto era mucho. */
+::view-transition-old(root) {
+  display: none;
+}
+
+::view-transition-new(root) {
+  animation: none;
+}
+
+::view-transition-group(divisa-uno),
+::view-transition-group(divisa-dos) {
+  animation-duration: 460ms;
+  animation-timing-function: var(--ease-out);
+}
+
+/* Una pasa por encima, un poco más grande, y la otra por debajo: si no, se
+   cruzaban la una a través de la otra. */
+::view-transition-group(divisa-uno) {
+  z-index: 2;
+}
+
+::view-transition-image-pair(divisa-uno) {
+  animation: cruza-arriba 460ms var(--ease);
+}
+
+::view-transition-image-pair(divisa-dos) {
+  animation: cruza-abajo 460ms var(--ease);
+}
+
+@keyframes cruza-arriba {
+  50% {
+    translate: 0 -12px;
+    scale: 1.06;
+    filter: drop-shadow(0 8px 14px rgba(0, 0, 0, 0.35));
+  }
+}
+
+@keyframes cruza-abajo {
+  50% {
+    translate: 0 8px;
+    scale: 0.92;
+    opacity: 0.6;
+  }
+}
+
 .swap__icon {
   display: block;
   font-size: 15px;
