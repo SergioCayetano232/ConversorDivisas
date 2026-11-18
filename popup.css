@@ -1508,7 +1508,7 @@ body::after {
   overscroll-behavior: contain;
   list-style: none;
   scrollbar-width: thin;
-  scrollbar-color: var(--hairline-strong) transparent;
+  scrollbar-color: var(--barra, var(--hairline-strong)) transparent;
 }
 
 .buscador__opcion {
@@ -2463,7 +2463,7 @@ body::after {
   overflow-y: auto;
   overscroll-behavior: contain;
   scrollbar-width: thin;
-  scrollbar-color: var(--hairline-strong) transparent;
+  scrollbar-color: var(--barra, var(--hairline-strong)) transparent;
   list-style: none;
 }
 
@@ -2697,6 +2697,12 @@ body::after {
 .gastos[data-color="jade"] { --acento: var(--viaje-jade); }
 .gastos[data-color="lila"] { --acento: var(--viaje-lila); }
 .gastos[data-color="rosa"] { --acento: var(--viaje-rosa); }
+
+/* La barra de desplazar de las listas del panel, del color del viaje. La
+   selección y el cursor ya lo cogen solos, que van con --brass. */
+.gastos {
+  --barra: color-mix(in srgb, var(--brass) 45%, transparent);
+}
 
 .gastos[data-color]:not([data-color="oro"]) {
   --brass: var(--acento);
@@ -10682,7 +10688,7 @@ body::after {
   overflow-y: auto;
   overscroll-behavior: contain;
   scrollbar-width: thin;
-  scrollbar-color: var(--hairline-strong) transparent;
+  scrollbar-color: var(--barra, var(--hairline-strong)) transparent;
   mask-image: linear-gradient(to bottom, black calc(100% - 12px), transparent);
 }
 
