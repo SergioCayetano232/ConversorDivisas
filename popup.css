@@ -287,9 +287,32 @@ textarea {
   transition: transform var(--mid) var(--ease-spring);
 }
 
-:where(button:not(:disabled, .field__select, .header__tasa, .gastos__cabeza, .tramos__desde)):active {
+/* Con el teclado (o si el JS no lo aplasta) se queda el encoger de siempre. */
+:where(button:not(:disabled, .field__select, .header__tasa, .gastos__cabeza, .tramos__desde, .is-aplastado, .is-rebota)):active {
   transform: scale(0.94);
   transition-duration: 60ms;
+}
+
+/* Con el ratón se aplasta y rebota. Va con la propiedad scale y no con
+   transform, que muchos botones ya la usan para otras cosas. */
+:where(button.is-aplastado) {
+  animation: aplastar 90ms var(--ease-out) forwards;
+}
+
+:where(button.is-rebota) {
+  animation: rebotar 460ms var(--ease);
+}
+
+@keyframes aplastar {
+  to { scale: var(--aplaste-x) var(--aplaste-y); }
+}
+
+@keyframes rebotar {
+  0% { scale: var(--aplaste-x) var(--aplaste-y); }
+  /* Se pasa al otro lado con algo más de la mitad, y vuelve con un poco. */
+  35% { scale: calc(1.6 - 0.6 * var(--aplaste-x)) calc(1.6 - 0.6 * var(--aplaste-y)); }
+  65% { scale: calc(0.8 + 0.2 * var(--aplaste-x)) calc(0.8 + 0.2 * var(--aplaste-y)); }
+  100% { scale: 1 1; }
 }
 
 /* En el panel lateral el ancho lo pone Chrome (y lo puedes arrastrar), así que

@@ -9404,6 +9404,50 @@ function soltarOnda(event) {
 
 document.addEventListener("pointerdown", soltarOnda);
 
+const SIN_APLASTAR = ".field__select, .header__tasa, .gastos__cabeza, .tramos__desde";
+
+// Casi todos traen su :active que encoge; ese se lo quito mientras dura, que
+// sumado al aplaste se encogían el doble. Los que se mueven de otra forma
+// (girar, subir) se quedan como estaban.
+function aplastarBoton(event) {
+  if (event.button !== 0 || sinMovimiento.matches) return;
+  const boton = event.target.closest("button");
+  if (!boton || boton.disabled || boton.matches(SIN_APLASTAR)) return;
+  // Sin la transición, para leer adónde va y no por dónde va.
+  // El none va también sin transición, o el encoger que ya había empezado
+  // tardaba en deshacerse y se sumaba un rato.
+  boton.classList.add("is-aplastado");
+  boton.style.transition = "none";
+  const suyo = getComputedStyle(boton).transform;
+  const soloEncoge = /^matrix\(([\d.]+), 0, 0, \1, 0, 0\)$/.test(suyo);
+  if (soloEncoge) {
+    boton.style.transform = "none";
+    getComputedStyle(boton).transform;
+  }
+  boton.style.transition = "";
+  if (suyo !== "none" && !soloEncoge) return boton.classList.remove("is-aplastado");
+  const a = aplaste(boton.offsetWidth, boton.offsetHeight);
+  if (!a) return boton.classList.remove("is-aplastado");
+  boton.style.setProperty("--aplaste-x", a.x);
+  boton.style.setProperty("--aplaste-y", a.y);
+  boton.classList.remove("is-rebota");
+  const fin = new AbortController();
+  const soltar = () => {
+    fin.abort();
+    boton.classList.remove("is-aplastado");
+    boton.style.removeProperty("transform");
+    void boton.offsetWidth;
+    boton.classList.add("is-rebota");
+  };
+  addEventListener("pointerup", soltar, { signal: fin.signal });
+  addEventListener("pointercancel", soltar, { signal: fin.signal });
+}
+
+document.addEventListener("pointerdown", aplastarBoton);
+document.addEventListener("animationend", (event) => {
+  if (event.animationName === "rebotar") event.target.classList.remove("is-rebota");
+});
+
 for (const caja of [el.resultBox, el.from, el.to]) {
   caja.addEventListener("pointermove", seguirLuz);
   caja.addEventListener("pointerleave", () => caja.classList.remove("is-luz"));
