@@ -1898,6 +1898,76 @@ body::after {
   overflow: hidden;
 }
 
+/* La marca de agua, como en un billete: la roseta de la divisa a la derecha,
+   medio cortada por el borde, con su símbolo dentro. Va detrás de todo con el
+   z-index negativo, que el cristal ya hace de contexto. */
+.result__billete {
+  position: absolute;
+  z-index: -1;
+  top: -18px;
+  right: -44px;
+  width: 168px;
+  height: 168px;
+  display: grid;
+  place-items: center;
+  pointer-events: none;
+  color: var(--brass);
+  opacity: 0.11;
+}
+
+.result__billete svg {
+  position: absolute;
+  inset: 0;
+  overflow: visible;
+}
+
+.result__roseta {
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 0.45;
+  transform-origin: center;
+  transform-box: view-box;
+  animation: roseta-gira 140s linear infinite;
+}
+
+.result__roseta path:nth-child(2) {
+  stroke-dasharray: 1.2 1.6;
+}
+
+.result__simbolo {
+  position: relative;
+  font-family: var(--font-ui);
+  font-size: 52px;
+  font-weight: 700;
+  line-height: 1;
+  letter-spacing: -0.02em;
+  white-space: nowrap;
+}
+
+@keyframes roseta-gira {
+  to { rotate: 360deg; }
+}
+
+/* Al cambiar de divisa entra como un billete que te dan: girando un poco y
+   apareciendo. */
+.result__billete.is-nuevo {
+  animation: billete-entra 700ms var(--ease-out);
+}
+
+@keyframes billete-entra {
+  from {
+    opacity: 0;
+    rotate: -24deg;
+    scale: 0.8;
+  }
+}
+
+@media (prefers-color-scheme: light) {
+  .result__billete {
+    opacity: 0.14;
+  }
+}
+
 /* La línea de luz del borde de arriba, que es lo que da el aire de cristal. */
 .result::before {
   content: "";

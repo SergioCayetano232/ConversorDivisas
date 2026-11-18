@@ -2424,6 +2424,25 @@ function pintarHoras() {
   if (habia !== corto) restartAnimation(nodo, habia ? "is-tic" : "is-entra");
 }
 
+// La marca de agua del resultado, con la roseta y el símbolo de la divisa a
+// la que conviertes. Solo se rehace al cambiar de divisa, con su entrada.
+function pintarBillete(code) {
+  const caja = document.getElementById("result-billete");
+  if (caja.dataset.code === code) return;
+  const roseta = rosetaBillete(code);
+  caja.hidden = !roseta;
+  if (!roseta) return;
+  const habia = caja.dataset.code;
+  caja.dataset.code = code;
+  caja.querySelectorAll("path").forEach((trazo, i) => trazo.setAttribute("d", roseta.trazos[i]));
+  const simbolo = simboloDe(code);
+  const nodo = document.getElementById("result-simbolo");
+  nodo.textContent = simbolo;
+  // "CHF" o "MX$" a 52 px se salían de la roseta.
+  nodo.style.fontSize = `${[52, 52, 40, 30][Math.min(simbolo.length, 3)]}px`;
+  if (habia) restartAnimation(caja, "is-nuevo");
+}
+
 // La hora de la divisa de origen, que es la de allí. Las agujas giran hasta su
 // sitio cuando cambias de divisa; con el paso de los minutos solo se mueven.
 function pintarHoraAlli() {
@@ -8241,6 +8260,7 @@ async function refresh() {
   const from = el.from.value;
   const to = el.to.value;
   pintarHoraAlli();
+  pintarBillete(to);
   // Sube también con la misma divisa en los dos lados: si no, la petición que
   // estuviera en vuelo llegaba después y me pisaba el 1 con la tasa vieja.
   const currentRequest = ++requestId;
