@@ -5864,6 +5864,41 @@ body::after {
   animation-delay: calc(var(--i, 0) * 25ms);
 }
 
+/* Al desplazar la lista, lo que entra por abajo sube y aparece, y lo que se
+   va por arriba se encoge y se apaga. Va con el scroll y no con el tiempo, así
+   que si paras a mitad se queda a mitad. Lo que está entero dentro no se toca:
+   en una lista corta no se nota nada. Sobre el texto y no sobre la fila, que la
+   fila ya usa animation para entrar y salir. */
+@supports (animation-timeline: view()) {
+  @media (prefers-reduced-motion: no-preference) {
+    .gastos__lista .gastos__texto,
+    .gastos__lista .gastos__dia {
+      animation: asomar-al-bajar linear both;
+      animation-timeline: view();
+      animation-range: cover;
+    }
+  }
+}
+
+@keyframes asomar-al-bajar {
+  entry 0% {
+    opacity: 0;
+    translate: 0 10px;
+    scale: 0.94;
+  }
+  entry 100%,
+  exit 0% {
+    opacity: 1;
+    translate: 0 0;
+    scale: 1;
+  }
+  exit 100% {
+    opacity: 0;
+    translate: 0 -4px;
+    scale: 0.94;
+  }
+}
+
 .gastos__texto {
   flex: 1;
   min-width: 0;
