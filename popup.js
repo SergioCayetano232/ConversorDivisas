@@ -6502,8 +6502,22 @@ function onArchivarViaje(viaje, fila) {
     el.viajesLista.querySelector(".is-activo .viajes__elegir")?.focus();
   };
   if (sinMovimiento.matches) return acabar();
-  fila.classList.add("is-saliendo");
-  fila.addEventListener("animationend", acabar, { once: true });
+  // Le cae el sello, se dobla como una tarjeta de embarque y baja hasta
+  // Archivados. Si aún no se ve ese botón (es el primero), baja un poco y ya.
+  const desde = fila.getBoundingClientRect();
+  const hasta = el.viajesAbrirArchivo.getBoundingClientRect();
+  const bajar = hasta.height ? hasta.top + hasta.height / 2 - (desde.top + desde.height / 2) : 40;
+  fila.style.setProperty("--archivo-y", `${Math.round(bajar)}px`);
+  fila.dataset.sello = tr("viajes.sello");
+  fila.classList.add("is-archivando");
+  let hecho = false;
+  const una = () => {
+    if (hecho) return;
+    hecho = true;
+    acabar();
+  };
+  fila.addEventListener("animationend", (e) => e.target === fila && e.animationName === "archivar-baja" && una());
+  setTimeout(una, 1400);
 }
 
 function onSacarArchivado(viaje, boton) {
