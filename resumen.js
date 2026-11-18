@@ -397,6 +397,33 @@ async function init() {
   pintarPostal(piezas);
   el.descargar.addEventListener("click", onDescargar);
   el.copiar.addEventListener("click", onCopiar);
+  el.postal.addEventListener("pointermove", ladear);
+  el.postal.addEventListener("pointerleave", enderezar);
+}
+
+// Solo con ratón: en el móvil el dedo la taparía, y se movería al desplazar.
+// La imagen se dibuja aparte en el canvas, así que el ladeo no sale en ella.
+const sinMovimiento = matchMedia("(prefers-reduced-motion: reduce)");
+
+function ladear(event) {
+  if (event.pointerType !== "mouse" || sinMovimiento.matches) return;
+  const r = el.postal.getBoundingClientRect();
+  const l = ladeoPostal(event.clientX - r.left, event.clientY - r.top, r.width, r.height);
+  if (!l) return;
+  el.postal.classList.add("is-ladeada");
+  el.postal.style.setProperty("--girar-x", `${l.girarX}deg`);
+  el.postal.style.setProperty("--girar-y", `${l.girarY}deg`);
+  el.postal.style.setProperty("--luz-x", `${l.luzX}%`);
+  el.postal.style.setProperty("--luz-y", `${l.luzY}%`);
+  // La sombra se va al lado contrario, como si la luz viniera de delante.
+  el.postal.style.setProperty("--sombra-x", `${Math.round(-l.girarY * 2)}px`);
+  el.postal.style.setProperty("--sombra-y", `${Math.round(18 + l.girarX * 2)}px`);
+}
+
+function enderezar() {
+  el.postal.classList.remove("is-ladeada");
+  el.postal.style.removeProperty("--girar-x");
+  el.postal.style.removeProperty("--girar-y");
 }
 
 init();
