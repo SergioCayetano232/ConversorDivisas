@@ -6766,7 +6766,50 @@ function onApuntarGasto(event) {
   pintarGastos();
   restartAnimation(el.abrirGastos, "is-apuntado");
   el.gastosLista.scrollTop = 0;
+  monedaAlGasto(noches[0].id, `+${nf.format(gasto.valor)}`);
   el.gastosConcepto.focus();
+}
+
+// Desde el botón de apuntar, la cifra vuela en arco hasta su gasto en la
+// lista, y el importe da un salto al recibirla. Así se ve adónde ha ido a parar.
+function monedaAlGasto(id, texto) {
+  if (sinMovimiento.matches) return;
+  const destino = el.gastosLista.querySelector(`[data-id="${id}"] .gastos__valor`);
+  const desde = el.gastosApuntar.getBoundingClientRect();
+  if (!destino || !desde.width) return;
+  // La fila acaba de entrar y aún está creciendo: mido dónde quedará, con su
+  // animación adelantada al final un momento, que si no caía a un lado.
+  // Solo las de tiempo: la del scroll no tiene final que adelantar.
+  const entradas = destino.closest(".gastos__fila").getAnimations({ subtree: true })
+    .filter((a) => a.timeline instanceof DocumentTimeline && Number.isFinite(a.effect?.getComputedTiming().endTime));
+  const tiempos = entradas.map((a) => a.currentTime);
+  for (const a of entradas) a.currentTime = a.effect.getComputedTiming().endTime - 1;
+  const hasta = destino.getBoundingClientRect();
+  entradas.forEach((a, i) => (a.currentTime = tiempos[i]));
+  const origen = { x: desde.left + desde.width / 2, y: desde.top + desde.height / 2 };
+  const pasos = vueloMoneda(origen, { x: hasta.left + hasta.width / 2, y: hasta.top + hasta.height / 2 });
+  if (!pasos) return;
+  const moneda = document.createElement("span");
+  moneda.className = "moneda-vuela is-al-gasto";
+  // Va en el body, fuera del panel: le paso el color del viaje a mano.
+  const panel = getComputedStyle(el.gastos);
+  for (const v of ["--brass", "--brass-glow"]) moneda.style.setProperty(v, panel.getPropertyValue(v));
+  moneda.setAttribute("aria-hidden", "true");
+  moneda.textContent = texto;
+  moneda.style.left = `${origen.x}px`;
+  moneda.style.top = `${origen.y}px`;
+  document.body.append(moneda);
+  const vuelo = moneda.animate(pasos.map((p) => ({
+    offset: p.offset,
+    opacity: p.opacidad,
+    transform: `translate(-50%, -50%) translate(${p.x}px, ${p.y}px) scale(${p.escala})`,
+  })), { duration: 620, easing: "cubic-bezier(0.3, 0, 0.6, 1)" });
+  vuelo.finished.then(() => {
+    moneda.remove();
+    // Para cuando llega, la lista puede haberse vuelto a pintar: lo busco otra vez.
+    const ahora = el.gastosLista.querySelector(`[data-id="${id}"] .gastos__valor`);
+    if (ahora) restartAnimation(ahora, "is-recibe");
+  }, () => moneda.remove());
 }
 
 // La tasa de hoy solo si es de ese par: con la pantalla en otro, la que tengo

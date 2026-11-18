@@ -3600,6 +3600,13 @@ body::after {
   animation: moneda-vuela 900ms var(--ease-out) forwards;
 }
 
+/* La que va a la lista la mueve el JS, por su curva. */
+.moneda-vuela.is-al-gasto {
+  position: fixed;
+  z-index: 1000;
+  animation: none;
+}
+
 @keyframes moneda-vuela {
   0% { transform: translate(-50%, -20%) scale(0.6); opacity: 0; }
   25% { transform: translate(-50%, -110%) scale(1.08); opacity: 1; }
@@ -6579,6 +6586,19 @@ body::after {
   flex-shrink: 0;
   font-family: var(--font-mono);
   font-variant-numeric: tabular-nums;
+}
+
+/* El importe del gasto nuevo cuando le llega la cifra que vuela. */
+.gastos__valor.is-recibe {
+  animation: recibe 420ms var(--ease-spring);
+}
+
+@keyframes recibe {
+  35% {
+    scale: 1.22;
+    color: var(--chispa);
+    text-shadow: 0 0 10px var(--brass-glow);
+  }
 }
 
 .gastos__de {
