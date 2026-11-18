@@ -5640,6 +5640,54 @@ body::after {
   animation-delay: calc(var(--i, 0) * 30ms);
 }
 
+/* Deslizar para quitar: mientras tiras va pegada al dedo, y se va tiñendo de
+   rojo con lo que falta para que se quite. Con translate y no con transform,
+   que las de entrar y salir ya lo usan. */
+.gastos__lista {
+  overflow-x: hidden;
+}
+
+.gastos__fila[data-id] {
+  touch-action: pan-y;
+}
+
+.gastos__fila.is-tirando {
+  user-select: none;
+  cursor: grabbing;
+}
+
+.gastos__fila.is-tirando .gastos__texto,
+.gastos__fila.is-vuelve .gastos__texto,
+.gastos__fila.is-barrida .gastos__texto {
+  background: color-mix(in srgb, var(--cinnabar) calc(var(--tirar, 0) * 22%), var(--slate));
+  border-color: color-mix(in srgb, var(--cinnabar) calc(var(--tirar, 0) * 70%), var(--hairline));
+}
+
+.gastos__fila.is-tirando .gastos__quitar {
+  color: var(--cinnabar);
+  scale: calc(1 + var(--tirar, 0) * 0.25);
+  transition: scale var(--fast) var(--ease-spring);
+}
+
+/* Al llegar al umbral, el ✕ da un salto: ya puedes soltar. */
+.gastos__fila.is-listo .gastos__quitar {
+  animation: listo-quitar 260ms var(--ease-spring);
+}
+
+@keyframes listo-quitar {
+  50% { scale: 1.55; }
+}
+
+.gastos__fila.is-vuelve {
+  transition: translate 420ms var(--ease-spring);
+}
+
+.gastos__fila.is-barrida {
+  pointer-events: none;
+  opacity: 0;
+  transition: translate 240ms var(--ease), opacity 240ms var(--ease);
+}
+
 .gastos__fila.is-saliendo {
   animation: fuera 220ms var(--ease) forwards;
   animation-delay: calc(var(--i, 0) * 25ms);

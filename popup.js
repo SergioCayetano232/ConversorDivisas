@@ -6966,7 +6966,7 @@ function tiraDeDias(gasto, elegir, alternarFijo) {
   return tira;
 }
 
-function onQuitarGasto(id, fila) {
+function onQuitarGasto(id, fila, yaFuera = false) {
   const quitar = () => {
     const indice = gastos.findIndex((g) => g.id === id);
     if (indice === -1) return;
@@ -6977,10 +6977,100 @@ function onQuitarGasto(id, fila) {
     ofrecerDeshacer({ gasto, indice });
     (el.gastosLista.querySelector(".gastos__quitar") ?? el.gastosConcepto).focus();
   };
-  if (sinMovimiento.matches) return quitar();
+  if (yaFuera || sinMovimiento.matches) return quitar();
   fila.classList.remove("is-nueva");
   fila.classList.add("is-saliendo");
   fila.addEventListener("animationend", quitar, { once: true });
+}
+
+// Arrastrar un gasto a la izquierda para quitarlo. No empieza hasta que se ve
+// claro que vas de lado, que la fila está llena de botones y la lista se
+// desplaza en vertical.
+const DESLIZAR_ARRANQUE = 8;
+
+function empezarDeslizar(event) {
+  if (event.button !== 0 || !event.isPrimary) return;
+  const fila = event.target.closest(".gastos__fila[data-id]");
+  if (!fila || event.target.closest("input, textarea, select") || fila.querySelector(".gastos__editar")) return;
+  if (!gastos.some((g) => g.id === fila.dataset.id)) return;
+  const x0 = event.clientX;
+  const y0 = event.clientY;
+  const ancho = fila.offsetWidth;
+  let tirando = false;
+  let dx = 0;
+  let ultimo = { x: x0, t: event.timeStamp };
+  let velocidad = 0;
+  const fin = new AbortController();
+
+  const mover = (e) => {
+    if (e.pointerId !== event.pointerId) return;
+    dx = e.clientX - x0;
+    const dy = e.clientY - y0;
+    if (!tirando) {
+      if (Math.abs(dy) > DESLIZAR_ARRANQUE && Math.abs(dy) > Math.abs(dx)) return fin.abort();
+      if (dx > -DESLIZAR_ARRANQUE || Math.abs(dx) < Math.abs(dy) * 1.5) return;
+      tirando = true;
+      fila.setPointerCapture(e.pointerId);
+      getSelection()?.removeAllRanges();
+      // La onda del clic iría detrás del botón, fuera de la lista.
+      for (const onda of document.querySelectorAll(".onda")) onda.remove();
+      fila.classList.remove("is-vuelve");
+      fila.classList.add("is-tirando");
+    }
+    // La velocidad, de los últimos movimientos y no de todo el arrastre: es
+    // el gesto del final lo que dice si lo has lanzado.
+    const dt = e.timeStamp - ultimo.t;
+    if (dt > 0) velocidad = 0.6 * ((e.clientX - ultimo.x) / dt) + 0.4 * velocidad;
+    ultimo = { x: e.clientX, t: e.timeStamp };
+    const { x, progreso } = tirarGasto(dx, ancho);
+    fila.style.translate = `${x}px 0`;
+    fila.style.setProperty("--tirar", progreso.toFixed(3));
+    fila.classList.toggle("is-listo", progreso >= 1);
+  };
+
+  const soltar = (e) => {
+    if (e.pointerId !== event.pointerId) return;
+    fin.abort();
+    if (!tirando) return;
+    // El clic que viene detrás de soltar no tiene que abrir el concepto.
+    // Si no llega (has soltado fuera), se quita solo para no tragarse otro.
+    addEventListener("click", tragarClic, { capture: true, once: true });
+    setTimeout(() => removeEventListener("click", tragarClic, true), 0);
+    fila.classList.remove("is-tirando");
+    if (e.type === "pointerup" && quitarAlSoltar(dx, ancho, velocidad)) return barrerGasto(fila);
+    fila.classList.remove("is-listo");
+    fila.classList.add("is-vuelve");
+    fila.style.removeProperty("translate");
+    fila.style.removeProperty("--tirar");
+    // Fuera al acabar, que su fondo taparía la barra de lo que pesa.
+    const volver = () => fila.classList.remove("is-vuelve");
+    fila.addEventListener("transitionend", (t) => t.propertyName === "translate" && volver(), { once: true });
+    setTimeout(volver, 600);
+  };
+
+  addEventListener("pointermove", mover, { signal: fin.signal });
+  addEventListener("pointerup", soltar, { signal: fin.signal });
+  addEventListener("pointercancel", soltar, { signal: fin.signal });
+}
+
+function tragarClic(event) {
+  event.stopPropagation();
+  event.preventDefault();
+}
+
+function barrerGasto(fila) {
+  const id = fila.dataset.id;
+  if (sinMovimiento.matches) return onQuitarGasto(id, fila, true);
+  fila.classList.add("is-barrida");
+  fila.style.translate = `${-fila.offsetWidth - 24}px 0`;
+  let hecho = false;
+  const acabar = () => {
+    if (hecho) return;
+    hecho = true;
+    onQuitarGasto(id, fila, true);
+  };
+  fila.addEventListener("transitionend", (e) => e.propertyName === "translate" && acabar());
+  setTimeout(acabar, 400);
 }
 
 // Se quita de verdad en el momento y deshacer lo vuelve a meter. Así, si
@@ -9403,6 +9493,7 @@ function soltarOnda(event) {
 }
 
 document.addEventListener("pointerdown", soltarOnda);
+el.gastosLista.addEventListener("pointerdown", empezarDeslizar);
 
 const SIN_APLASTAR = ".field__select, .header__tasa, .gastos__cabeza, .tramos__desde";
 

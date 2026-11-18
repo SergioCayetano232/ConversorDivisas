@@ -62,7 +62,8 @@ que necesitaba una conversión rápida. Ahora es un clic en la barra del navegad
   ese momento, así que lo que gastaste el lunes no cambia aunque el euro suba
   el martes. Hasta 200, y para vaciarlo hay que darle dos veces. Si
   quitas uno o los vacías todos sin querer, tienes cinco segundos para
-  deshacerlo
+  deshacerlo. También se quita arrastrándolo a la izquierda: se va tiñendo de
+  rojo y, pasado un tercio de la fila (o lanzándolo rápido), sale volando
 - Dictar el gasto, con el micrófono del concepto: dices "cena cuarenta y
   cinco", "doce con cincuenta de taxi" o "500 de metro en efectivo" y se
   apunta, con su concepto, su categoría y cómo pagaste (eso, solo para ese
