@@ -11686,6 +11686,30 @@ kbd {
   70%, 100% { box-shadow: 0 0 0 5px transparent; }
 }
 
+/* La onda al pulsar: un círculo del color del texto del botón, así sale
+   clara en los oscuros y oscura en los dorados sin elegir nada. */
+.onda {
+  position: absolute;
+  z-index: 1000;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.onda__circulo {
+  position: absolute;
+  border-radius: 50%;
+  background: currentColor;
+  opacity: 0;
+  transform: scale(0);
+  animation: onda-pulsar 560ms var(--ease-out);
+}
+
+@keyframes onda-pulsar {
+  0% { opacity: 0.32; transform: scale(0); }
+  50% { opacity: 0.22; }
+  100% { opacity: 0; transform: scale(1); }
+}
+
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,

@@ -9367,6 +9367,43 @@ function soltarSwap() {
 document.addEventListener("pointermove", atraerSwap);
 document.documentElement.addEventListener("pointerleave", soltarSwap);
 
+// La onda va encima del botón y no dentro: meterla dentro obligaba a poner
+// position y overflow a todos, y más de uno lleva cosas que se salen.
+function soltarOnda(event) {
+  if (event.button !== 0 || sinMovimiento.matches) return;
+  const boton = event.target.closest("button");
+  if (!boton || boton.disabled) return;
+  const r = boton.getBoundingClientRect();
+  const x = event.clientX - r.left;
+  const y = event.clientY - r.top;
+  const radio = radioOnda(r.width, r.height, x, y);
+  if (!radio) return;
+  const estilo = getComputedStyle(boton);
+  const capa = document.createElement("span");
+  capa.className = "onda";
+  capa.setAttribute("aria-hidden", "true");
+  Object.assign(capa.style, { borderRadius: estilo.borderRadius, color: estilo.color });
+  // Al pulsar el botón encoge (y el de la vuelta se va con el imán): la capa
+  // lo sigue en cada fotograma para no asomar por fuera.
+  const seguir = () => {
+    if (!capa.isConnected) return;
+    const b = boton.getBoundingClientRect();
+    Object.assign(capa.style, { left: `${b.left + scrollX}px`, top: `${b.top + scrollY}px`, width: `${b.width}px`, height: `${b.height}px` });
+    requestAnimationFrame(seguir);
+  };
+  const circulo = document.createElement("span");
+  circulo.className = "onda__circulo";
+  Object.assign(circulo.style, { left: `${x - radio}px`, top: `${y - radio}px`, width: `${radio * 2}px`, height: `${radio * 2}px` });
+  capa.append(circulo);
+  document.body.append(capa);
+  seguir();
+  circulo.addEventListener("animationend", () => capa.remove());
+  // Por si la animación no llega a acabar (la pestaña se va a segundo plano).
+  setTimeout(() => capa.remove(), 1000);
+}
+
+document.addEventListener("pointerdown", soltarOnda);
+
 for (const caja of [el.resultBox, el.from, el.to]) {
   caja.addEventListener("pointermove", seguirLuz);
   caja.addEventListener("pointerleave", () => caja.classList.remove("is-luz"));
