@@ -696,6 +696,70 @@ async function onDiscreto() {
   }
 }
 
+// Apagado de primeras: una extensión que suena sin pedirlo se desinstala.
+const SONIDO_KEY = "sonido";
+let sonido = false;
+let audio = null;
+
+async function cargarSonido() {
+  try {
+    return (await chrome.storage.local.get(SONIDO_KEY))[SONIDO_KEY] === true;
+  } catch (error) {
+    console.warn("No se pudo leer el sonido", error);
+    return false;
+  }
+}
+
+function pintarSonido() {
+  const boton = document.getElementById("sonido");
+  boton.setAttribute("aria-pressed", String(sonido));
+  boton.title = tr(sonido ? "sonido.quitar" : "sonido.poner");
+  boton.setAttribute("aria-label", boton.title);
+}
+
+async function onSonido() {
+  sonido = !sonido;
+  pintarSonido();
+  // Al encenderlo suena una vez, para saber cómo es y que está puesto.
+  sonar("moneda");
+  try {
+    await chrome.storage.local.set({ [SONIDO_KEY]: sonido });
+  } catch (error) {
+    console.warn("No se pudo guardar el sonido", error);
+  }
+}
+
+// El AudioContext se crea con el primer sonido, que siempre viene de un clic
+// o una tecla: antes de eso Chrome no deja que suene.
+function sonar(nombre) {
+  if (!sonido) return;
+  try {
+    navigator.vibrate?.(VIBRACIONES[nombre] ?? 0);
+  } catch {}
+  const notas = notasDe(nombre);
+  if (!notas.length) return;
+  try {
+    audio ??= new AudioContext();
+    if (audio.state === "suspended") audio.resume();
+    const t0 = audio.currentTime + 0.01;
+    for (const n of notas) {
+      const osc = audio.createOscillator();
+      const volumen = audio.createGain();
+      osc.type = n.tipo;
+      osc.frequency.value = n.hz;
+      // Rampas exponenciales y no cortes: con cortes secos hace un clic feo.
+      volumen.gain.setValueAtTime(0.0001, t0 + n.empieza);
+      volumen.gain.exponentialRampToValueAtTime(Math.max(n.volumen, 0.0002), t0 + n.empieza + 0.006);
+      volumen.gain.exponentialRampToValueAtTime(0.0001, t0 + n.empieza + n.dura);
+      osc.connect(volumen).connect(audio.destination);
+      osc.start(t0 + n.empieza);
+      osc.stop(t0 + n.empieza + n.dura + 0.02);
+    }
+  } catch (error) {
+    console.warn("No se pudo sonar", error);
+  }
+}
+
 async function cargarCantidad() {
   try {
     const guardado = await chrome.storage.local.get(CANTIDAD_KEY);
@@ -4816,6 +4880,7 @@ function onPagarPendiente(id) {
   if (!gasto) return;
   viajes = cambiarViaje(viajes, viajes.activo, { pendientes: quitarPendiente(pendientes, id) });
   gastos = apuntarGasto(gastos, gasto);
+  sonar("moneda");
   gastoNuevo = gasto.id;
   if (filtroCategoria && filtroCategoria !== gasto.categoria) filtroCategoria = null;
   dejarVerGasto(gasto);
@@ -5769,6 +5834,7 @@ function onApuntarCuenta() {
   const gasto = gastoDeCuenta();
   if (!gasto || cuentaApuntada === claveCuenta(gasto)) return;
   gastos = apuntarGasto(gastos, gasto);
+  sonar("moneda");
   gastoNuevo = gasto.id;
   if (filtroCategoria && filtroCategoria !== gasto.categoria) filtroCategoria = null;
   dejarVerGasto(gasto);
@@ -6685,6 +6751,7 @@ function onApuntarGasto(event) {
   raroAvisado = null;
   repetidoAvisado = null;
   gastos = noches.length > 1 ? apuntarNoches(gastos, noches) : apuntarGasto(gastos, gasto);
+  sonar("moneda");
   gastoNuevo = noches[0].id;
   nochesNuevas = 1;
   el.gastosConcepto.value = "";
@@ -6718,6 +6785,7 @@ function onRepetirGasto(original) {
   }), cajero);
   if (!gasto) return;
   gastos = apuntarGasto(gastos, gasto);
+  sonar("moneda");
   gastoNuevo = gasto.id;
   if (filtroCategoria && filtroCategoria !== gasto.categoria) filtroCategoria = null;
   dejarVerGasto(gasto);
@@ -6944,6 +7012,7 @@ function onDevolverGasto(original) {
   });
   if (!gasto) return;
   gastos = apuntarGasto(gastos, gasto);
+  sonar("moneda");
   gastoNuevo = gasto.id;
   guardarViajes();
   pintarGastos();
@@ -8714,11 +8783,15 @@ function onShift(event) {
 async function copiar(texto) {
   try {
     await navigator.clipboard.writeText(texto);
+    sonar("copiar");
     return true;
   } catch (error) {
     // El portapapeles moderno puede negarse según cómo esté el foco. El truco
     // del campo oculto es viejo pero no pide permisos y aquí siempre funciona.
-    if (copiarALaAntigua(texto)) return true;
+    if (copiarALaAntigua(texto)) {
+      sonar("copiar");
+      return true;
+    }
     console.warn("No se pudo copiar", error);
     return false;
   }
@@ -8998,6 +9071,7 @@ function bindEvents() {
   document.addEventListener("keydown", onAtajo);
   el.abrirAyuda.addEventListener("click", abrirAyuda);
   el.abrirCopia.addEventListener("click", () => chrome.runtime.openOptionsPage());
+  document.getElementById("sonido").addEventListener("click", onSonido);
   el.abrirPanel.hidden = !puedePanel;
   el.abrirPanel.addEventListener("click", abrirPanel);
   el.abrirFunciones.addEventListener("click", abrirFunciones);
@@ -9377,6 +9451,10 @@ async function init() {
   ]);
   discreto = discretoGuardado;
   pintarDiscreto();
+  cargarSonido().then((guardado) => {
+    sonido = guardado;
+    pintarSonido();
+  });
   pagoNuevo = pagoGuardado;
   tarjetas = tarjetasGuardadas;
   pintarTarjetas();

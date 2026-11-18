@@ -11592,6 +11592,34 @@ body::after {
   stroke-linecap: round;
 }
 
+/* El altavoz: con ondas si está puesto y con una cruz si no. */
+.footer__sonido svg {
+  width: 13px;
+  height: 13px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.3;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.footer__sonido-onda,
+.footer__sonido-cruz {
+  transition: opacity var(--fast) var(--ease), scale var(--mid) var(--ease-spring);
+  transform-origin: 9px 7px;
+  transform-box: view-box;
+}
+
+.footer__sonido[aria-pressed="false"] .footer__sonido-onda,
+.footer__sonido[aria-pressed="true"] .footer__sonido-cruz {
+  opacity: 0;
+  scale: 0.4;
+}
+
+.footer__sonido[aria-pressed="true"] {
+  color: var(--brass);
+}
+
 .footer__copia svg {
   width: 13px;
   height: 13px;
