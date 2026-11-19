@@ -140,6 +140,12 @@ const el = {
   cajeroDivisa: document.getElementById("cajero-divisa"),
   cajeroSugerencia: document.getElementById("cajero-sugerencia"),
   cajeroTraer: document.getElementById("cajero-traer"),
+  cajeroGratisVer: document.getElementById("cajero-gratis-ver"),
+  cajeroGratisForm: document.getElementById("cajero-gratis-form"),
+  cajeroGratisNombre: document.getElementById("cajero-gratis-nombre"),
+  cajeroGratisCampo: document.getElementById("cajero-gratis-campo"),
+  cajeroGratisEn: document.getElementById("cajero-gratis-en"),
+  cajeroGratisAviso: document.getElementById("cajero-gratis-aviso"),
   gastosPersonas: document.getElementById("gastos-personas"),
   personasMenos: document.getElementById("personas-menos"),
   personasN: document.getElementById("personas-n"),
@@ -765,6 +771,8 @@ let cadaDiaHoyNo = { dia: "", claves: [] };
 let conTique = new Set();
 let tiqueAbierto = null;
 let tiqueParaElegir = null;
+const CAJERO_GRATIS_KEY = "cajeroGratis";
+let cajeroGratis = {};
 let sonido = false;
 let audio = null;
 
@@ -4503,6 +4511,8 @@ function pintarCajero() {
     texto.textContent = `${nombreDia(isoLocal(new Date(r.cuando)))} · ${cifraEfectivo(r.cantidad, r.divisa)}`;
     const otro = nombreDeOtroViaje(r.de ?? r.a);
     if (otro) texto.textContent += ` · ${tr(r.de ? "cajero.traido" : "cajero.llevado", { viaje: otro })}`;
+    // Con una sola tarjeta no hace falta decir cuál.
+    if (r.tarjeta && tarjetas.length > 1) texto.textContent += ` · ${r.tarjeta}`;
     if (r.coste) {
       const coste = `${nf.format(r.coste)} ${r.en}`;
       const sobre = sobreElBce(r);
@@ -4541,6 +4551,78 @@ function pintarCajero() {
   retiradaNueva = null;
   pintarSugerenciaCajero();
   pintarTraer();
+  pintarGratis();
+}
+
+// La tarjeta con la que sacas es la elegida; sin ninguna puesta, "" y "tu tarjeta".
+const tarjetaDelCajero = () => tarjetaActual(tarjetas, comision)?.nombre ?? "";
+
+function pintarGratis() {
+  const tarjeta = tarjetaDelCajero();
+  const nombre = tarjeta || tr("cajero.tuTarjeta");
+  const limite = cajeroGratis[tarjeta];
+  const g = gratisDelMes(conPantalla(viajes), tarjeta, limite);
+  const boton = el.cajeroGratisVer;
+  const dinero = (n) => `${nf.format(n)} ${limite?.en}`;
+  boton.classList.toggle("is-vacio", !g);
+  if (!g) {
+    boton.textContent = tr("cajero.gratisPoner", { tarjeta: nombre });
+    boton.title = tr("cajero.gratisPonerTitulo");
+    delete boton.dataset.tono;
+  } else {
+    boton.textContent = g.pasado > 0
+      ? tr("cajero.gratisPasado", { tarjeta: nombre, pasado: dinero(g.pasado) })
+      : tr("cajero.gratisQueda", { tarjeta: nombre, queda: dinero(g.queda), importe: dinero(g.importe) });
+    boton.title = tr("cajero.gratisTitulo", { tarjeta: nombre, usado: dinero(g.usado) });
+    boton.dataset.tono = g.pasado > 0 || g.queda === 0 ? "falta" : g.queda / g.importe < EFECTIVO_POCO ? "poco" : "bien";
+  }
+  // Lo que vas a sacar, a lo de hoy en la divisa del límite.
+  const cantidad = leerImporte(el.cajeroCantidad.value);
+  const tasa = g ? tasaDeHoy(el.from.value, g.en) : null;
+  const pasa = g && tasa ? pasaDelGratis(g, cantidad * tasa) : 0;
+  el.cajeroGratisAviso.hidden = !(pasa > 0);
+  if (pasa > 0) el.cajeroGratisAviso.textContent = tr("cajero.gratisTePasas", { pasa: dinero(pasa) });
+}
+
+function abrirGratis() {
+  const tarjeta = tarjetaDelCajero();
+  const limite = cajeroGratis[tarjeta];
+  el.cajeroGratisNombre.textContent = tr("cajero.gratisCampo", { tarjeta: tarjeta || tr("cajero.tuTarjeta") });
+  el.cajeroGratisEn.textContent = limite?.en ?? el.to.value;
+  el.cajeroGratisCampo.value = limite ? nf.format(limite.importe) : "";
+  el.cajeroGratisVer.hidden = true;
+  el.cajeroGratisForm.hidden = false;
+  el.cajeroGratisCampo.focus();
+  el.cajeroGratisCampo.select();
+}
+
+function cerrarGratis() {
+  if (el.cajeroGratisForm.hidden) return false;
+  el.cajeroGratisForm.hidden = true;
+  el.cajeroGratisVer.hidden = false;
+  el.cajeroGratisVer.focus();
+  return true;
+}
+
+// Vacío o cero lo quita, como el sueldo o el café.
+async function onGuardarGratis(event) {
+  event.preventDefault();
+  const texto = el.cajeroGratisCampo.value.trim();
+  const importe = texto === "" ? 0 : leerImporte(texto);
+  if (texto !== "" && !(importe > 0)) {
+    restartAnimation(el.cajeroGratisCampo, "is-mal");
+    return;
+  }
+  cajeroGratis = ponerCajeroGratis(cajeroGratis, tarjetaDelCajero(), importe, el.cajeroGratisEn.textContent);
+  cerrarGratis();
+  pintarGratis();
+  restartAnimation(el.cajeroGratisVer, "is-tic");
+  try {
+    if (Object.keys(cajeroGratis).length) await chrome.storage.local.set({ [CAJERO_GRATIS_KEY]: cajeroGratis });
+    else await chrome.storage.local.remove(CAJERO_GRATIS_KEY);
+  } catch (error) {
+    console.warn("No se pudo guardar el límite del cajero", error);
+  }
 }
 
 const nombreDeOtroViaje = (id) => (id ? todosLosViajes(viajes).find((v) => v.id === id)?.nombre ?? null : null);
@@ -5537,6 +5619,9 @@ function onQuitarTramo(id) {
 }
 
 function abrirCajero() {
+  // Si lo cerraste a medio poner el límite, se abre como estaba antes.
+  el.cajeroGratisForm.hidden = true;
+  el.cajeroGratisVer.hidden = false;
   cerrarViajes();
   cerrarTramos();
   cerrarPendientes();
@@ -5574,6 +5659,7 @@ function onSacar(event) {
     coste: leerImporte(el.cajeroCoste.value),
     en: el.to.value,
     bce: tasaDeHoy(el.from.value, el.to.value),
+    tarjeta: tarjetaDelCajero(),
   });
   if (!retirada) {
     restartAnimation(el.cajeroCantidad, "is-mal");
@@ -10005,11 +10091,22 @@ function bindEvents() {
   el.tramosNombre.addEventListener("animationend", () => el.tramosNombre.classList.remove("is-mal"));
   el.gastosEfectivo.addEventListener("animationend", () => el.gastosEfectivo.classList.remove("is-tic"));
   el.cajeroForm.addEventListener("submit", onSacar);
-  el.cajeroCantidad.addEventListener("input", pintarPistaCoste);
+  el.cajeroCantidad.addEventListener("input", () => {
+    pintarPistaCoste();
+    pintarGratis();
+  });
   el.cajeroCantidad.addEventListener("animationend", () => el.cajeroCantidad.classList.remove("is-mal", "is-cambiado"));
   el.cajeroSugerencia.addEventListener("click", onSugerencia);
   el.cajeroTraer.addEventListener("click", onTraer);
   el.cadaDiaCerrar.addEventListener("click", onCadaDiaNo);
+  el.cajeroGratisVer.addEventListener("click", abrirGratis);
+  el.cajeroGratisForm.addEventListener("submit", onGuardarGratis);
+  el.cajeroGratisCampo.addEventListener("keydown", (event) => {
+    if (event.key !== "Escape") return;
+    event.preventDefault();
+    event.stopPropagation();
+    cerrarGratis();
+  });
   el.tiqueCerrar.addEventListener("click", cerrarTique);
   el.tiqueQuitar.addEventListener("click", onQuitarTique);
   el.tiqueCambiar.addEventListener("click", () => {
@@ -10311,6 +10408,9 @@ async function init() {
     casa = guardado;
     pintarCasa(mediaPorDia(gastos));
   });
+  chrome.storage.local.get(CAJERO_GRATIS_KEY).then((guardado) => {
+    cajeroGratis = leerCajeroGratis(guardado[CAJERO_GRATIS_KEY]);
+  }).catch((error) => console.warn("No se pudo leer el límite del cajero", error));
   chrome.storage.local.get(CADA_DIA_KEY).then((guardado) => {
     const { dia, claves } = guardado[CADA_DIA_KEY] ?? {};
     if (typeof dia === "string" && Array.isArray(claves)) cadaDiaHoyNo = { dia, claves: claves.filter((c) => typeof c === "string") };

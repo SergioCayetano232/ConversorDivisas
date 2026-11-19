@@ -960,6 +960,16 @@
         </form>
         <button class="cajero__sugerencia" type="button" id="cajero-sugerencia" hidden></button>
         <button class="cajero__sugerencia cajero__traer" type="button" id="cajero-traer" hidden></button>
+        <div class="cajero__gratis" id="cajero-gratis">
+          <button class="cajero__gratis-ver" type="button" id="cajero-gratis-ver"></button>
+          <form class="cajero__gratis-form" id="cajero-gratis-form" novalidate hidden>
+            <label class="cajero__gratis-nombre" for="cajero-gratis-campo" id="cajero-gratis-nombre"></label>
+            <input class="gastos__concepto cajero__gratis-campo" type="text" id="cajero-gratis-campo" inputmode="decimal" autocomplete="off" spellcheck="false" placeholder="200">
+            <span class="cajero__divisa" id="cajero-gratis-en"></span>
+            <button class="gastos__apuntar" type="submit" data-t="cajero.gratisGuardar">Vale</button>
+          </form>
+          <p class="cajero__gratis-aviso" id="cajero-gratis-aviso" role="status" hidden></p>
+        </div>
         <ul class="cajero__lista" id="cajero-lista"></ul>
       </div>
       <div class="cajero empresa" id="empresa" role="group" aria-labelledby="empresa-titulo" hidden>

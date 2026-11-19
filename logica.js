@@ -4887,7 +4887,15 @@ function costeDeRetirada({ divisa, coste, en, bce }) {
 function leerRetiradas(guardado) {
   if (!Array.isArray(guardado)) return [];
   return guardado.filter(esRetiradaBuena).slice(0, RETIRADAS_MAX)
-    .map((r) => ({ id: r.id, cantidad: r.cantidad, divisa: r.divisa, cuando: r.cuando, ...costeDeRetirada(r), ...enlaceDeRetirada(r) }));
+    .map((r) => ({ id: r.id, cantidad: r.cantidad, divisa: r.divisa, cuando: r.cuando, ...costeDeRetirada(r), ...enlaceDeRetirada(r), ...tarjetaDeRetirada(r) }));
+}
+
+// Con qué tarjeta la sacaste ("" si no tienes ninguna puesta) y lo que valía al
+// BCE en la tuya: es lo que cuenta para el límite sin comisión del mes.
+function tarjetaDeRetirada({ tarjeta, vale, valeEn }) {
+  if (typeof tarjeta !== "string") return {};
+  const nombre = tarjeta.slice(0, NOMBRE_TARJETA_MAX);
+  return Number.isFinite(vale) && vale > 0 && isValidCode(valeEn) ? { tarjeta: nombre, vale: Math.round(vale * 100) / 100, valeEn } : { tarjeta: nombre };
 }
 
 // Lo que te llevas de un viaje a otro va en los dos con el mismo id: en el
@@ -4897,9 +4905,51 @@ function enlaceDeRetirada({ de, a }) {
   return typeof de === "string" && de ? { de } : {};
 }
 
-function crearRetirada({ id, cantidad, divisa, cuando, coste, en, bce }) {
+function crearRetirada({ id, cantidad, divisa, cuando, coste, en, bce, tarjeta }) {
   const r = { id, cantidad: Math.round(cantidad * 100) / 100, divisa, cuando };
-  return esRetiradaBuena(r) ? { ...r, ...costeDeRetirada({ divisa, coste, en, bce }) } : null;
+  if (!esRetiradaBuena(r)) return null;
+  const vale = divisa === en ? r.cantidad : Number.isFinite(bce) && bce > 0 ? r.cantidad * bce : null;
+  return { ...r, ...costeDeRetirada({ divisa, coste, en, bce }), ...tarjetaDeRetirada({ tarjeta, vale, valeEn: en }) };
+}
+
+// Lo que te deja sacar gratis cada tarjeta al mes ("" es la de sin nombre).
+// Aparte de las tarjetas, que esas solo son nombre y comisión.
+function leerCajeroGratis(guardado) {
+  const limpio = {};
+  if (!guardado || typeof guardado !== "object") return limpio;
+  for (const [tarjeta, limite] of Object.entries(guardado)) {
+    if (tarjeta.length <= NOMBRE_TARJETA_MAX && Number.isFinite(limite?.importe) && limite.importe > 0 && isValidCode(limite.en)) {
+      limpio[tarjeta] = { importe: Math.round(limite.importe * 100) / 100, en: limite.en };
+    }
+  }
+  return limpio;
+}
+
+function ponerCajeroGratis(gratis, tarjeta, importe, en) {
+  const { [tarjeta]: _, ...resto } = gratis;
+  return importe > 0 && isValidCode(en) ? { ...resto, [tarjeta]: { importe: Math.round(importe * 100) / 100, en } } : resto;
+}
+
+// Lo sacado este mes con esa tarjeta, en todos los viajes. Lo que pasa de un
+// viaje a otro no cuenta, que no ha salido de ningún cajero.
+function gratisDelMes(viajes, tarjeta, limite, hoyIso = hoy()) {
+  if (!limite) return null;
+  const mes = hoyIso.slice(0, 7);
+  let usado = 0;
+  for (const v of [...(viajes?.lista ?? []), ...(viajes?.archivados ?? [])]) {
+    for (const r of v.cajero ?? []) {
+      if (r.tarjeta !== tarjeta || r.de || r.a || isoLocal(new Date(r.cuando)).slice(0, 7) !== mes) continue;
+      if (r.valeEn === limite.en) usado += r.vale;
+    }
+  }
+  usado = Math.round(usado * 100) / 100;
+  return { usado, queda: Math.max(limite.importe - usado, 0), pasado: Math.max(usado - limite.importe, 0), importe: limite.importe, en: limite.en };
+}
+
+// Si lo que vas a sacar se come lo que queda: cuánto te van a cobrar con comisión.
+function pasaDelGratis(gratis, vale) {
+  if (!gratis || !(vale > 0)) return 0;
+  return Math.round(Math.max(vale - gratis.queda, 0) * 100) / 100;
 }
 
 // A cuánto te ha salido cada yen de verdad, con todo lo que has sacado y sabes
@@ -10222,6 +10272,7 @@ function limpiarCopia(crudo) {
   if (d.rangoGrafico !== undefined) datos.rangoGrafico = leerRango(d.rangoGrafico);
   if (d.comisionBanco !== undefined) datos.comisionBanco = leerComision(d.comisionBanco);
   if (Array.isArray(d.tarjetasBanco)) datos.tarjetasBanco = leerTarjetas(d.tarjetasBanco);
+  if (Object.keys(leerCajeroGratis(d.cajeroGratis)).length) datos.cajeroGratis = leerCajeroGratis(d.cajeroGratis);
   if (d.impuestoVenta !== undefined) datos.impuestoVenta = leerImpuesto(d.impuestoVenta);
   if (leerCafe(d.precioCafe)) datos.precioCafe = leerCafe(d.precioCafe);
   if (leerCafe(d.sueldoHora)) datos.sueldoHora = leerCafe(d.sueldoHora);
@@ -10241,7 +10292,7 @@ function limpiarCopia(crudo) {
 const CLAVES_COPIA = [
   "viajes", "gastosViaje", "presupuestoViaje", "lastPair", "paresRecientes", "divisasExtra", "avisos",
   "historialConversiones", "rangoGrafico", "comisionBanco", "tarjetasBanco", "impuestoVenta", "pagoGasto", "cuentaReparto", "insigniaActiva", "tasaAlReves", "idioma",
-  "recordatorioActivo", "recordatorioHora", "precioCafe", "sueldoHora", "categoriasPropias", "suscripciones",
+  "recordatorioActivo", "recordatorioHora", "precioCafe", "sueldoHora", "categoriasPropias", "suscripciones", "cajeroGratis",
 ];
 
 // Lo que se lleva tu cuenta de Chrome a tus otros ordenadores: cómo lo tienes
@@ -10250,7 +10301,7 @@ const CLAVES_COPIA = [
 // tampoco: saltarían en cada ordenador que tengas abierto.
 const CLAVES_SYNC = [
   "comisionBanco", "tarjetasBanco", "impuestoVenta", "precioCafe", "sueldoHora", "pagoGasto", "cuentaReparto", "divisasExtra",
-  "paresRecientes", "rangoGrafico", "insigniaActiva", "tasaAlReves", "idioma", "recordatorioActivo", "recordatorioHora",
+  "paresRecientes", "rangoGrafico", "insigniaActiva", "tasaAlReves", "idioma", "recordatorioActivo", "recordatorioHora", "cajeroGratis",
 ];
 
 // Lo que llega de otro ordenador pasa por los mismos lectores que la copia: si
@@ -10550,7 +10601,7 @@ if (typeof module !== "undefined") {
     HISTORIAL_MAX, leerHistorial, apuntarConversion, quitarConversion, haceCuanto, ultimoDeHoy, textoParaCopiar, fraseParaCopiar, conversionParaCopiar, gastoParaCopiar, ultimoGasto, gastoMasCaro, totalParaCopiar, hoyParaCopiar, simboloDe, textoConSimbolo, fraseConSimbolo,
     celdaCsv, csvHistorial, csvGastos, csvViajes,
     GASTOS_MAX, CONCEPTO_MAX, crearGasto, leerGastos, esDevolucion, devolucionDe, apuntarGasto, NOCHES_MAX, repartirCentimos, repartirNoches, repartoPorDias, apuntarNoches, quitarGasto, cambiarConcepto, cambiarDia, buscarGastos, preguntarGastos, textoPregunta, trozosResaltados, repetirGasto, devolverGasto, devolverTodos, sumarPorDivisa, gastosPorDia, huecoEntre, cifraEnMarcha, categoriaDelDia, pesoDeLosDias, ordenarPorImporte, masCarosDelDia, pesoDeLosGastos, RARO_VECES, mediana, gastoRaro, REPETIDO_MS, gastoRepetido, mediaPorDia, DIAS_POR_MES, COMO_EN_CASA, comparaConCasa, textoCasa, categoriasAlDia, mediaPorGasto, comisionesPagadas, cambioDelViaje, cifraCambio, textoCambio, pagadoEnEfectivo, ahorroEnEfectivo,
-    RETIRADAS_MAX, leerRetiradas, crearRetirada, cambioDelCajero, sobreElBce, alCambioDelCajero, apuntarRetirada, quitarRetirada, efectivoQueda, EFECTIVO_POCO, tonoEfectivo, redondoDeCajero, cuantoSacar, loQueSobra, gastadoHoy, nombreDia,
+    RETIRADAS_MAX, leerRetiradas, crearRetirada, leerCajeroGratis, ponerCajeroGratis, gratisDelMes, pasaDelGratis, cambioDelCajero, sobreElBce, alCambioDelCajero, apuntarRetirada, quitarRetirada, efectivoQueda, EFECTIVO_POCO, tonoEfectivo, redondoDeCajero, cuantoSacar, loQueSobra, gastadoHoy, nombreDia,
     CATEGORIAS, CATEGORIA_POR_DEFECTO, CATEGORIAS_PROPIAS_MAX, NOMBRE_CATEGORIA_MAX, esCategoria, leerCategoriasPropias, ponerCategoriasPropias, todasCategorias, nombreCategoria, emojiCategoria, crearCategoriaPropia, quitarCategoriaPropia, sinCategoria, adivinarCategoria, PAGOS, PAGO_POR_DEFECTO, leerPago, comisionDelPago, desglose, conceptosUsados, conceptosFrecuentes, completarConcepto,
     EMOJI_CATEGORIA, destacados, resumenParaCompartir, FINDE_MINIMO, findeContraSemana, ESTRELLA_MINIMO, conceptoEstrella, INDICE_MAX, indiceCafe,
     TARJETAS_MAX, NOMBRE_TARJETA_MAX, anadirTarjeta, leerTarjetas, quitarTarjeta, tarjetaActual, siguientePago, mejorTarjeta,

@@ -5548,6 +5548,91 @@ body::after {
 
 /* Lo que te toca sacar: a rayas mientras es una propuesta, se rellena al
    pasar por encima. Cuando ya te llega, en verde y sin botón. */
+/* Lo que te deja sacar gratis la tarjeta este mes. Sin límite puesto, solo una invitación. */
+.cajero__gratis {
+  margin-top: 6px;
+}
+
+.cajero__gratis-ver {
+  --tono: var(--jade);
+  display: block;
+  width: 100%;
+  padding: 4px 8px;
+  background: color-mix(in srgb, var(--tono) 8%, transparent);
+  border: 1px solid color-mix(in srgb, var(--tono) 40%, transparent);
+  border-radius: var(--r-sm);
+  color: var(--tono);
+  font: inherit;
+  font-size: 10px;
+  font-variant-numeric: tabular-nums;
+  text-align: left;
+  cursor: pointer;
+  transition: background var(--fast) var(--ease), transform var(--fast) var(--ease-spring);
+}
+
+.cajero__gratis-ver[data-tono="poco"] {
+  --tono: var(--brass);
+}
+
+.cajero__gratis-ver[data-tono="falta"] {
+  --tono: var(--cinnabar);
+}
+
+.cajero__gratis-ver.is-vacio {
+  --tono: var(--muted);
+  border-style: dashed;
+  background: transparent;
+}
+
+.cajero__gratis-ver:hover,
+.cajero__gratis-ver:focus-visible {
+  background: color-mix(in srgb, var(--tono) 16%, transparent);
+  transform: translateY(-1px);
+}
+
+.cajero__gratis-ver.is-tic {
+  animation: beat var(--mid) var(--ease-spring);
+}
+
+.cajero__gratis-form {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.cajero__gratis-form[hidden] {
+  display: none;
+}
+
+.cajero__gratis-nombre {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 10px;
+  color: var(--muted);
+}
+
+.cajero__gratis-campo {
+  flex: none;
+  width: 64px;
+  text-align: right;
+}
+
+.cajero__gratis-campo.is-mal {
+  animation: shake 360ms var(--ease);
+}
+
+.cajero__gratis-aviso {
+  margin-top: 4px;
+  padding-left: 8px;
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--cinnabar);
+  animation: shake 360ms var(--ease);
+}
+
 .cajero__sugerencia {
   --tono: var(--brass);
   display: flex;

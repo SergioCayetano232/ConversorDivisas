@@ -209,6 +209,13 @@ que necesitaba una conversión rápida. Ahora es un clic en la barra del navegad
   dice "Tienes 3.000 JPY de 🇯🇵 Japón", y con **🧳 Ponerme los 3.000 JPY**
   pasan a este, con lo que te costaron, y en el otro dejan de contar. Si los
   quitas de cualquiera de los dos, vuelven a donde estaban
+- Lo que puedes sacar gratis este mes: en el mismo panel del efectivo le dices
+  cuánto deja sacar sin comisión la tarjeta que tienes elegida (Revolut, 200
+  EUR al mes) y te dice "te quedan 50,00 EUR de 200,00 EUR", sumando lo que has
+  sacado con ella este mes en todos los viajes, archivados también. Mientras
+  escribes lo que vas a sacar, si te pasas te dice cuánto ("Con esto te pasas
+  64,38 EUR del gratis"). Cada tarjeta con el suyo, y con varias, cada retirada
+  dice con cuál fue. Lo que pasa de un viaje a otro no cuenta
 - Cada gasto con su categoría (comida, transporte, alojamiento, ocio, compras
   u otros), que sale sola por el concepto ("taxi", "cena", "hotel") y se cambia
   con un clic. Arriba, en qué se te va el dinero en porcentajes; pulsando una
