@@ -5477,6 +5477,17 @@ body::after {
   animation: sacar-baja 700ms var(--ease-spring) infinite alternate;
 }
 
+.cajero__sugerencia.cajero__traer {
+  --tono: var(--jade);
+}
+
+/* La maleta no baja como los billetes del cajero. */
+.cajero__sugerencia.cajero__traer::before {
+  content: "🧳";
+  font-size: 11px;
+  animation: none;
+}
+
 .cajero__sugerencia:disabled {
   --tono: var(--jade);
   border-style: solid;

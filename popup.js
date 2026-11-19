@@ -139,6 +139,7 @@ const el = {
   cajeroEn: document.getElementById("cajero-en"),
   cajeroDivisa: document.getElementById("cajero-divisa"),
   cajeroSugerencia: document.getElementById("cajero-sugerencia"),
+  cajeroTraer: document.getElementById("cajero-traer"),
   gastosPersonas: document.getElementById("gastos-personas"),
   personasMenos: document.getElementById("personas-menos"),
   personasN: document.getElementById("personas-n"),
@@ -4366,6 +4367,11 @@ function pintarEfectivo() {
     el.gastosEfectivo.title = tr("cajero.titulo.quedan", {
       sacado: cifraEfectivo(cuenta.sacado, cuenta.divisa), gastado: cifraEfectivo(cuenta.gastado, cuenta.divisa),
     });
+  } else if (!pagado && efectivoParaTraer(viajes, el.from.value, el.to.value)) {
+    const traer = efectivoParaTraer(viajes, el.from.value, el.to.value);
+    texto = tr("cajero.traes", { importe: cifraEfectivo(traer.queda, traer.divisa), viaje: traer.desde.nombre });
+    el.gastosEfectivo.dataset.tono = "bien";
+    el.gastosEfectivo.title = tr("cajero.traesTitulo", { viaje: traer.desde.nombre });
   } else {
     texto = pagado ? tr("gastos.efectivo", { importe: nf.format(pagado.total) })
       : pagoNuevo === "efectivo" ? tr("cajero.anadir") : "";
@@ -4376,7 +4382,7 @@ function pintarEfectivo() {
   }
   el.gastosEfectivo.hidden = !texto;
   el.gastosEfectivo.textContent = texto;
-  el.gastosEfectivo.classList.toggle("is-vacio", !cuenta && !pagado);
+  el.gastosEfectivo.classList.toggle("is-vacio", !cuenta && !pagado && el.gastosEfectivo.dataset.tono !== "bien");
   if (habia && texto && habia !== texto) restartAnimation(el.gastosEfectivo, "is-tic");
   if (!el.cajero.hidden) pintarCajero();
 }
@@ -4424,6 +4430,8 @@ function pintarCajero() {
     fila.style.setProperty("--i", i);
     const texto = document.createElement("span");
     texto.textContent = `${nombreDia(isoLocal(new Date(r.cuando)))} · ${cifraEfectivo(r.cantidad, r.divisa)}`;
+    const otro = nombreDeOtroViaje(r.de ?? r.a);
+    if (otro) texto.textContent += ` · ${tr(r.de ? "cajero.traido" : "cajero.llevado", { viaje: otro })}`;
     if (r.coste) {
       const coste = `${nf.format(r.coste)} ${r.en}`;
       const sobre = sobreElBce(r);
@@ -4446,9 +4454,12 @@ function pintarCajero() {
     quitar.type = "button";
     quitar.className = "gastos__quitar historial__quitar";
     quitar.textContent = "✕";
-    quitar.setAttribute("aria-label", tr("cajero.quitar", { importe: cifraEfectivo(r.cantidad, r.divisa) }));
+    quitar.setAttribute("aria-label", otro
+      ? tr(r.de ? "cajero.quitarEnlazado" : "cajero.quitarLlevado", { importe: cifraEfectivo(r.cantidad, r.divisa), viaje: otro })
+      : tr("cajero.quitar", { importe: cifraEfectivo(r.cantidad, r.divisa) }));
     quitar.addEventListener("click", () => {
-      cajero = quitarRetirada(cajero, r.id);
+      viajes = quitarRetiradaDeViajes(cambiarViaje(viajes, viajes.activo, { gastos, presupuesto, cajero }), r.id);
+      cajero = viajeActivo(viajes).cajero;
       guardarViajes();
       pintarEfectivo();
       (el.cajeroLista.querySelector(".gastos__quitar") ?? el.cajeroCantidad).focus();
@@ -4458,6 +4469,29 @@ function pintarCajero() {
   }));
   retiradaNueva = null;
   pintarSugerenciaCajero();
+  pintarTraer();
+}
+
+const nombreDeOtroViaje = (id) => (id ? todosLosViajes(viajes).find((v) => v.id === id)?.nombre ?? null : null);
+
+function pintarTraer() {
+  const traer = efectivoParaTraer(viajes, el.from.value, el.to.value);
+  el.cajeroTraer.hidden = !traer;
+  if (!traer) return;
+  el.cajeroTraer.textContent = tr("cajero.traer", { importe: cifraEfectivo(traer.queda, traer.divisa), viaje: traer.desde.nombre });
+  el.cajeroTraer.title = tr("cajero.traerTitulo", { viaje: traer.desde.nombre });
+}
+
+function onTraer() {
+  const id = `${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`;
+  // Lo de la pantalla primero dentro de viajes, que traerEfectivo trabaja con todos.
+  viajes = traerEfectivo(cambiarViaje(viajes, viajes.activo, { gastos, presupuesto, cajero }), el.from.value, el.to.value, id);
+  cajero = viajeActivo(viajes).cajero;
+  if (!cajero.some((r) => r.id === id)) return;
+  retiradaNueva = id;
+  guardarViajes();
+  pintarEfectivo();
+  el.cajeroCantidad.focus();
 }
 
 function pintarPersonas(conSalto = false) {
@@ -9708,6 +9742,7 @@ function bindEvents() {
   el.cajeroCantidad.addEventListener("input", pintarPistaCoste);
   el.cajeroCantidad.addEventListener("animationend", () => el.cajeroCantidad.classList.remove("is-mal", "is-cambiado"));
   el.cajeroSugerencia.addEventListener("click", onSugerencia);
+  el.cajeroTraer.addEventListener("click", onTraer);
   el.personasMenos.addEventListener("click", () => onPersonas(-1));
   el.personasMas.addEventListener("click", () => onPersonas(1));
   el.personasCabeza.addEventListener("click", () => (el.gente.hidden ? abrirGente() : cerrarGente()));

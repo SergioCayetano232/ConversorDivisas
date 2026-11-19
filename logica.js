@@ -4847,7 +4847,14 @@ function costeDeRetirada({ divisa, coste, en, bce }) {
 function leerRetiradas(guardado) {
   if (!Array.isArray(guardado)) return [];
   return guardado.filter(esRetiradaBuena).slice(0, RETIRADAS_MAX)
-    .map((r) => ({ id: r.id, cantidad: r.cantidad, divisa: r.divisa, cuando: r.cuando, ...costeDeRetirada(r) }));
+    .map((r) => ({ id: r.id, cantidad: r.cantidad, divisa: r.divisa, cuando: r.cuando, ...costeDeRetirada(r), ...enlaceDeRetirada(r) }));
+}
+
+// Lo que te llevas de un viaje a otro va en los dos con el mismo id: en el
+// nuevo con "de", como si lo sacaras; en el viejo con "a", como si lo gastaras.
+function enlaceDeRetirada({ de, a }) {
+  if (typeof a === "string" && a) return { a };
+  return typeof de === "string" && de ? { de } : {};
 }
 
 function crearRetirada({ id, cantidad, divisa, cuando, coste, en, bce }) {
@@ -4890,7 +4897,8 @@ function efectivoQueda(retiradas, gastos) {
   const cuentas = new Map();
   for (const r of retiradas) {
     const c = cuentas.get(r.divisa) ?? { divisa: r.divisa, sacado: 0, gastado: 0 };
-    c.sacado += r.cantidad;
+    if (r.a) c.gastado += r.cantidad;
+    else c.sacado += r.cantidad;
     cuentas.set(r.divisa, c);
   }
   for (const g of gastos) {
@@ -4945,6 +4953,59 @@ function loQueSobra(presupuesto, gastos, retiradas, tasa, hoyIso = hoy(), empres
     queda: cuenta.queda, divisa: cuenta.divisa, valor, to: presupuesto.to,
     cuando: hoyIso === presupuesto.hasta ? "ultimo" : "acabado",
   };
+}
+
+// Los billetes que te sobraron en otro viaje, para el que tienes abierto. Del
+// más reciente si hay varios, que son los que aún llevas en el cajón.
+function efectivoParaTraer(viajes, divisa, to) {
+  const activo = viajeActivo(viajes);
+  if (!activo || !isValidCode(divisa)) return null;
+  let mejor = null;
+  for (const v of todosLosViajes(viajes)) {
+    // Lo que te llevaste de aquí no se ofrece de vuelta: para eso se quita.
+    if (v.id === activo.id || v.cajero.some((r) => r.de === activo.id && r.divisa === divisa)) continue;
+    const cuenta = efectivoQueda(v.cajero ?? [], [...v.gastos, ...(v.empresa ?? [])]).find((c) => c.divisa === divisa);
+    // Un céntimo de yen no es nada que llevarse.
+    if (!(cuenta?.queda >= 0.5)) continue;
+    const ultima = Math.max(...v.cajero.filter((r) => r.divisa === divisa).map((r) => r.cuando));
+    if (mejor && mejor.ultima >= ultima) continue;
+    const queda = Math.round(cuenta.queda * 100) / 100;
+    const cambio = to && to !== divisa ? cambioDelCajero(v.cajero, divisa, to) : null;
+    mejor = { ultima, desde: { id: v.id, nombre: v.nombre }, divisa, queda, ...(cambio ? { coste: queda * cambio.tasa, en: to } : {}) };
+  }
+  if (!mejor) return null;
+  const { ultima: _, ...traer } = mejor;
+  return traer;
+}
+
+const cambiarCajeroDe = (viajes, id, cambiar) => {
+  const cambio = (v) => (v.id === id ? { ...v, cajero: cambiar(v.cajero) } : v);
+  return { ...viajes, lista: viajes.lista.map(cambio), ...(viajes.archivados ? { archivados: viajes.archivados.map(cambio) } : {}) };
+};
+
+// Los billetes cambian de viaje con lo que te costaron, así lo que pagues con
+// ellos sigue yendo al cambio del cajero y no al de hoy.
+function traerEfectivo(viajes, divisa, to, id, cuando = Date.now()) {
+  const traer = efectivoParaTraer(viajes, divisa, to);
+  const activo = viajeActivo(viajes);
+  const origen = traer && todosLosViajes(viajes).find((v) => v.id === traer.desde.id);
+  // Con el cajero lleno se caería la retirada más vieja y las cuentas ya no saldrían.
+  if (!traer || origen.cajero.length >= RETIRADAS_MAX || activo.cajero.length >= RETIRADAS_MAX) return viajes;
+  const entra = { ...crearRetirada({ id, cantidad: traer.queda, divisa, cuando, coste: traer.coste, en: traer.en }), de: origen.id };
+  const sale = { id, cantidad: entra.cantidad, divisa, cuando, a: activo.id };
+  const conSalida = cambiarCajeroDe(viajes, origen.id, (lista) => apuntarRetirada(lista, sale));
+  return cambiarCajeroDe(conSalida, activo.id, (lista) => apuntarRetirada(lista, entra));
+}
+
+// Quitar uno de los dos lados quita el otro: si no, los billetes estarían en
+// los dos viajes o en ninguno.
+function quitarRetiradaDeViajes(viajes, id) {
+  let enlazada = false;
+  for (const v of todosLosViajes(viajes)) {
+    if (v.cajero.some((r) => r.id === id && (r.de || r.a))) enlazada = true;
+  }
+  if (!enlazada) return cambiarCajeroDe(viajes, viajes.activo, (lista) => quitarRetirada(lista, id));
+  return todosLosViajes(viajes).reduce((acc, v) => cambiarCajeroDe(acc, v.id, (lista) => quitarRetirada(lista, id)), viajes);
 }
 
 // Por gasto y no por día: dice si vas de muchos cafés o de pocas cenas.
@@ -10101,7 +10162,7 @@ if (typeof module !== "undefined") {
     urlImpresion, leerImpresion, chuletaParaImprimir,
     COMISION_MAX, COMISIONES_RAPIDAS, leerComision, leerPorcentaje, conComision,
     IMPUESTO_MAX, IMPUESTOS_RAPIDOS, leerImpuesto, leerImpuestoEscrito, loQuePagas,
-    COMPARAR_IGUAL, compararPrecios, inclinacion, leerTamano, compararTamanos, ZONAS, desfase, esNoche, momentoDelDia, cieloAlli, horaAlli, SIGLAS_ZONA, leerHoraZona, convertirHoraZona, textoHoraZona, textoDiferencia, relojDe, tituloHoraAlli, leerCafe, enCafes, textoCafes, HORAS_JORNADA, enHoras, textoHoras,
+    COMPARAR_IGUAL, compararPrecios, inclinacion, leerTamano, compararTamanos, efectivoParaTraer, traerEfectivo, quitarRetiradaDeViajes, ZONAS, desfase, esNoche, momentoDelDia, cieloAlli, horaAlli, SIGLAS_ZONA, leerHoraZona, convertirHoraZona, textoHoraZona, textoDiferencia, relojDe, tituloHoraAlli, leerCafe, enCafes, textoCafes, HORAS_JORNADA, enHoras, textoHoras,
     PROPINAS_RAPIDAS, PROPINA_HABITUAL, propinaHabitual, leerPropina, textoPropina, ENCHUFES, leerEnchufe, enchufeDe, textoEnchufe, EMERGENCIAS, leerEmergencias, textoEmergencias, AGUA, leerAgua, textoAgua, POR_LA_IZQUIERDA, CARNE_EUROPEO, leerConducir, textoConducir, IDIOMA_DE_DIVISA, paraDecir, FRASE_REGATEO, paraEnsenar, VOCES_DE_BROMA, elegirVoz, PREFIJOS, leerPrefijo, textoPrefijo, FRASES, leerGracias, textoGracias, IVA, leerIva, textoIva, PAGO_ALLI, CAJERO_NOTA, leerCajero, textoCajero, leerLlegar, textoLlegar, VISADOS, leerVisado, textoVisado, ROAMING, leerRoaming, textoRoaming, CON_TSE, leerSanitaria, textoSanitaria, APPS_TAXI, leerTaxi, textoTaxi, REGATEO, leerRegatear, textoRegatear, FESTIVOS, FESTIVOS_LUNA, pascuaOrtodoxa, fechaFestivo, festivosProximos, leerFestivos, textoFestivos, HORARIOS, leerHorario, textoHorario, PROPINA_MAX, PERSONAS_MAX, CUENTA_POR_DEFECTO, leerCuenta, redondoHaciaArriba, repartirCuenta, cuentaParaCompartir, gastoDeLaCuenta, BILLETES, leerBilletes, textoBilletes, PAGOS_MAX, pagosPosibles, vuelta, vueltaEnBilletes, pagoJusto,
     MARGENES, tasaOfrecida, analizarCambio,
     domingoDePascua, hayTasaEl, tasaVieja, textoTasaVieja, horaBce, textoActualizado, proximaTasa, textoProximaTasa,

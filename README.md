@@ -196,7 +196,11 @@ que necesitaba una conversión rápida. Ahora es un clic en la barra del navegad
   quedan"): lo que te toca al día, por la parte que sueles pagar en efectivo,
   menos lo que llevas, y redondeado a lo que da un cajero. Pulsándolo se pone.
   El último día y a la vuelta te dice lo que te sobra y lo que vale en tu
-  divisa ("Te sobran 3.000 JPY ≈ 16,92"), para gastarlo o cambiarlo
+  divisa ("Te sobran 3.000 JPY ≈ 16,92"), para gastarlo o cambiarlo. O
+  para el siguiente: en otro viaje con la misma divisa, la línea verde te
+  dice "Tienes 3.000 JPY de 🇯🇵 Japón", y con **🧳 Ponerme los 3.000 JPY**
+  pasan a este, con lo que te costaron, y en el otro dejan de contar. Si los
+  quitas de cualquiera de los dos, vuelven a donde estaban
 - Cada gasto con su categoría (comida, transporte, alojamiento, ocio, compras
   u otros), que sale sola por el concepto ("taxi", "cena", "hotel") y se cambia
   con un clic. Arriba, en qué se te va el dinero en porcentajes; pulsando una
