@@ -7969,9 +7969,19 @@ function cerrarFunciones(volver = true) {
   if (volver) focoAntesDeFunciones?.focus?.();
 }
 
+// "taxis en Kioto" también es una pregunta a los gastos: la respuesta va la
+// primera. Si no hay ninguno así, solo lo digo cuando tampoco hay funciones.
+function preguntaDeFunciones(consulta, halladas) {
+  const r = preguntarGastos(consulta, { ...viajeActivo(viajes), gastos });
+  if (!r || (r.n === 0 && halladas.length)) return null;
+  return { accion: "pregunta", nombre: textoPregunta(r), pregunta: r };
+}
+
 function pintarFunciones() {
   const todas = FUNCIONES.filter((f) => funcionPosible(f.accion)).map((f) => ({ ...f, nombre: nombreFuncion(f.accion) }));
   funcionesHalladas = buscarFunciones(el.funcionesBuscar.value, todas);
+  const pregunta = preguntaDeFunciones(el.funcionesBuscar.value, funcionesHalladas);
+  if (pregunta) funcionesHalladas = [pregunta, ...funcionesHalladas].slice(0, FUNCIONES_MAX);
   funcionElegida = 0;
   el.funcionesLista.replaceChildren(...funcionesHalladas.map((f, i) => {
     const fila = document.createElement("li");
@@ -7983,6 +7993,12 @@ function pintarFunciones() {
     nombre.className = "funciones__nombre";
     nombre.textContent = f.nombre;
     fila.append(nombre);
+    if (f.pregunta) {
+      fila.classList.add("funciones__respuesta");
+      fila.classList.toggle("is-nada", f.pregunta.n === 0);
+      fila.prepend(Object.assign(document.createElement("span"), { className: "funciones__icono", textContent: "🔎", ariaHidden: "true" }));
+      if (f.pregunta.n > 0) fila.append(Object.assign(document.createElement("span"), { className: "funciones__ver", textContent: tr("pregunta.ver") }));
+    }
     const tecla = teclaDeFuncion(f.accion);
     if (tecla) {
       const kbd = document.createElement("kbd");
@@ -7992,7 +8008,7 @@ function pintarFunciones() {
     // mousedown y no click: si no, el campo pierde el foco antes y se cierra todo.
     fila.addEventListener("mousedown", (event) => {
       event.preventDefault();
-      hacerFuncion(f.accion);
+      hacerFuncion(f.accion, f);
     });
     fila.addEventListener("mousemove", () => elegirFuncion(i));
     return fila;
@@ -8025,7 +8041,7 @@ function onTeclaFunciones(event) {
     elegirFuncion((funcionElegida + paso + funcionesHalladas.length) % funcionesHalladas.length);
   } else if (event.key === "Enter") {
     event.preventDefault();
-    if (funcionesHalladas[funcionElegida]) hacerFuncion(funcionesHalladas[funcionElegida].accion);
+    if (funcionesHalladas[funcionElegida]) hacerFuncion(funcionesHalladas[funcionElegida].accion, funcionesHalladas[funcionElegida]);
     else restartAnimation(el.funcionesBuscar, "is-mal");
   } else if (event.key === "Escape") {
     event.preventDefault();
@@ -8036,12 +8052,25 @@ function onTeclaFunciones(event) {
 
 // Las de los atajos van por hacerAtajo, igual que con la tecla. Las demás abren
 // su panel dentro de los gastos, que es donde viven.
-function hacerFuncion(accion) {
-  cerrarFunciones(false);
+function hacerFuncion(accion, funcion = null) {
   const enGastos = (abrir) => {
     if (el.gastos.hidden) abrirGastos();
     abrir();
   };
+  if (accion === "pregunta") {
+    if (funcion.pregunta.n === 0) return restartAnimation(el.funcionesBuscar, "is-mal");
+    cerrarFunciones(false);
+    // La lupa no sabe de días ni de tramos: le paso lo que buscabas, y si no
+    // había palabras, el panel tal cual.
+    return enGastos(() => {
+      if (!funcion.pregunta.palabras.length) return;
+      if (el.buscar.hidden) abrirBusqueda();
+      el.buscarCampo.value = funcion.pregunta.palabras.join(" ");
+      busqueda = el.buscarCampo.value;
+      pintarGastos();
+    });
+  }
+  cerrarFunciones(false);
   const abrirPestana = (url) => chrome.tabs.create({ url });
   if (accion === "presupuesto") enGastos(() => (el.presupuestoAnadir.hidden ? el.presupuestoVer.click() : editarPresupuesto()));
   else if (accion === "tramos") enGastos(abrirTramos);

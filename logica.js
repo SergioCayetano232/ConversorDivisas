@@ -3519,6 +3519,10 @@ function cambiarDia(lista, id, dia, hoyIso = hoy()) {
   return lista.map((g) => (g.id === id ? { ...g, cuando } : g)).sort((x, y) => y.cuando - x.cuando);
 }
 
+// "taxis" tiene que encontrar el "Taxi" que apuntaste, y "hoteles", el "Hotel".
+const raicesDe = (p) => [p, p.length > 4 && p.endsWith("es") && p.slice(0, -2), p.length > 3 && p.endsWith("s") && p.slice(0, -1)].filter(Boolean);
+const casaPalabra = (texto, p) => raicesDe(p).some((r) => texto.includes(r));
+
 // Tienen que estar todas las palabras, en el concepto o en el nombre de la
 // categoría: así "comida" encuentra la cena aunque no lo pusieras.
 function buscarGastos(gastos, consulta) {
@@ -3526,8 +3530,59 @@ function buscarGastos(gastos, consulta) {
   if (palabras.length === 0) return gastos;
   return gastos.filter((g) => {
     const texto = normalizar(`${g.concepto} ${nombreCategoria(g.categoria)} ${g.nota ?? ""}`);
-    return palabras.every((p) => texto.includes(p));
+    return palabras.every((p) => casaPalabra(texto, p));
   });
+}
+
+// Preguntar a los gastos desde Ctrl+K: "cuánto llevo en taxis en Kioto", "comida
+// ayer", "efectivo hoy". Lo que sobra de la frase se tira; lo que queda se busca
+// como en la lupa.
+const RELLENO_PREGUNTA = new Set(("cuanto cuanta cuantos cuantas llevo llevamos he hemos gastado gaste gastamos "
+  + "gasto gastos en de del el la los las mi mis total y con pagado pague al a por que "
+  + "how much many did i we spend spent on in the my have for paid with what").split(" "));
+const DIAS_PREGUNTA = { hoy: 0, today: 0, ayer: 1, yesterday: 1, anteayer: 2 };
+const PAGO_PREGUNTA = { efectivo: "efectivo", cash: "efectivo", metalico: "efectivo", tarjeta: "tarjeta", tarjetas: "tarjeta", card: "tarjeta" };
+
+function preguntarGastos(consulta, viaje, hoyIso = hoy()) {
+  let resto = ` ${normalizar(String(consulta ?? "")).replace(/[^a-z0-9\s]/g, " ").replace(/\s+/g, " ").trim()} `;
+  if (!resto.trim() || !viaje?.gastos?.length) return null;
+  // El tramo primero, que su nombre puede tener varias palabras ("San Francisco").
+  const tramos = leerTramos(viaje.tramos);
+  let tramo = null;
+  for (const [i, t] of tramos.entries()) {
+    const nombre = ` ${normalizar(t.nombre).replace(/[^a-z0-9\s]/g, " ").replace(/\s+/g, " ").trim()} `;
+    if (nombre.trim() && resto.includes(nombre)) {
+      tramo = { desde: t.desde, hasta: tramos[i + 1]?.desde ?? null };
+      resto = resto.replace(nombre, " ");
+      break;
+    }
+  }
+  let dia = null;
+  let pago = null;
+  const palabras = [];
+  for (const p of resto.split(" ").filter(Boolean)) {
+    if (p in DIAS_PREGUNTA) dia = otroDia(hoyIso, -DIAS_PREGUNTA[p]);
+    else if (p in PAGO_PREGUNTA) pago = PAGO_PREGUNTA[p];
+    else if (!RELLENO_PREGUNTA.has(p)) palabras.push(p);
+  }
+  // Sin nada por lo que filtrar no es una pregunta: "cuánto" a secas es el total.
+  if (!tramo && !dia && !pago && !palabras.length) return null;
+  const lista = viaje.gastos.filter((g) => {
+    const d = isoLocal(new Date(g.cuando));
+    if (dia && d !== dia) return false;
+    if (tramo && (d < tramo.desde || (tramo.hasta && d >= tramo.hasta))) return false;
+    if (pago && g.pago !== pago) return false;
+    const texto = normalizar(`${g.concepto} ${nombreCategoria(g.categoria)} ${g.nota ?? ""}`);
+    return palabras.every((p) => casaPalabra(texto, p));
+  });
+  return { n: lista.length, totales: sumarPorDivisa(lista), palabras };
+}
+
+function textoPregunta({ n, totales }) {
+  if (n === 0) return tr("pregunta.nada");
+  const dinero = numeros({ minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  const total = totales.map((t) => `${dinero.format(t.total)} ${t.to}`).join(" + ");
+  return tr(n === 1 ? "pregunta.uno" : "pregunta.varios", { n, total });
 }
 
 // El concepto en trozos, marcando lo que coincide con la búsqueda. Normalizo
@@ -3536,7 +3591,9 @@ function trozosResaltados(texto, consulta) {
   const palabras = normalizar(String(consulta ?? "")).split(/\s+/).filter(Boolean);
   const plano = [...texto].map((c) => normalizar(c).charAt(0) || c).join("");
   const marcadas = new Array(plano.length).fill(false);
-  for (const p of palabras) {
+  for (const palabra of palabras) {
+    // Con "taxis", lo que se marca es el "Taxi" que hay.
+    const p = raicesDe(palabra).find((r) => plano.includes(r)) ?? palabra;
     for (let i = plano.indexOf(p); i !== -1; i = plano.indexOf(p, i + p.length)) marcadas.fill(true, i, i + p.length);
   }
   const trozos = [];
@@ -9827,7 +9884,7 @@ if (typeof module !== "undefined") {
     divisaDeIdioma, parPorIdioma, banderaDe, banderaDivisa,
     HISTORIAL_MAX, leerHistorial, apuntarConversion, quitarConversion, haceCuanto, ultimoDeHoy, textoParaCopiar, fraseParaCopiar, conversionParaCopiar, gastoParaCopiar, ultimoGasto, gastoMasCaro, totalParaCopiar, hoyParaCopiar, simboloDe, textoConSimbolo, fraseConSimbolo,
     celdaCsv, csvHistorial, csvGastos, csvViajes,
-    GASTOS_MAX, CONCEPTO_MAX, crearGasto, leerGastos, esDevolucion, devolucionDe, apuntarGasto, NOCHES_MAX, repartirCentimos, repartirNoches, repartoPorDias, apuntarNoches, quitarGasto, cambiarConcepto, cambiarDia, buscarGastos, trozosResaltados, repetirGasto, devolverGasto, devolverTodos, sumarPorDivisa, gastosPorDia, huecoEntre, cifraEnMarcha, categoriaDelDia, pesoDeLosDias, ordenarPorImporte, masCarosDelDia, pesoDeLosGastos, RARO_VECES, mediana, gastoRaro, REPETIDO_MS, gastoRepetido, mediaPorDia, categoriasAlDia, mediaPorGasto, comisionesPagadas, cambioDelViaje, cifraCambio, textoCambio, pagadoEnEfectivo, ahorroEnEfectivo,
+    GASTOS_MAX, CONCEPTO_MAX, crearGasto, leerGastos, esDevolucion, devolucionDe, apuntarGasto, NOCHES_MAX, repartirCentimos, repartirNoches, repartoPorDias, apuntarNoches, quitarGasto, cambiarConcepto, cambiarDia, buscarGastos, preguntarGastos, textoPregunta, trozosResaltados, repetirGasto, devolverGasto, devolverTodos, sumarPorDivisa, gastosPorDia, huecoEntre, cifraEnMarcha, categoriaDelDia, pesoDeLosDias, ordenarPorImporte, masCarosDelDia, pesoDeLosGastos, RARO_VECES, mediana, gastoRaro, REPETIDO_MS, gastoRepetido, mediaPorDia, categoriasAlDia, mediaPorGasto, comisionesPagadas, cambioDelViaje, cifraCambio, textoCambio, pagadoEnEfectivo, ahorroEnEfectivo,
     RETIRADAS_MAX, leerRetiradas, crearRetirada, cambioDelCajero, sobreElBce, alCambioDelCajero, apuntarRetirada, quitarRetirada, efectivoQueda, EFECTIVO_POCO, tonoEfectivo, redondoDeCajero, cuantoSacar, loQueSobra, gastadoHoy, nombreDia,
     CATEGORIAS, CATEGORIA_POR_DEFECTO, CATEGORIAS_PROPIAS_MAX, NOMBRE_CATEGORIA_MAX, esCategoria, leerCategoriasPropias, ponerCategoriasPropias, todasCategorias, nombreCategoria, emojiCategoria, crearCategoriaPropia, quitarCategoriaPropia, sinCategoria, adivinarCategoria, PAGOS, PAGO_POR_DEFECTO, leerPago, comisionDelPago, desglose, conceptosUsados, completarConcepto,
     EMOJI_CATEGORIA, destacados, resumenParaCompartir, FINDE_MINIMO, findeContraSemana, ESTRELLA_MINIMO, conceptoEstrella, INDICE_MAX, indiceCafe,

@@ -12014,6 +12014,35 @@ kbd {
   color: var(--brass);
 }
 
+/* La respuesta a una pregunta a los gastos: la cifra manda, en dorado. */
+.funciones__respuesta {
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+  color: var(--brass);
+}
+
+.funciones__respuesta.is-nada {
+  font-weight: 400;
+  color: var(--muted);
+  cursor: default;
+}
+
+.funciones__icono {
+  flex-shrink: 0;
+  font-size: 11px;
+}
+
+.funciones__ver {
+  flex-shrink: 0;
+  font-size: 10px;
+  font-weight: 400;
+  color: var(--muted);
+}
+
+.funciones__fila.is-elegida .funciones__ver {
+  color: var(--brass);
+}
+
 .funciones__nada {
   padding: 10px;
   font-size: 12px;

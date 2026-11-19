@@ -503,7 +503,12 @@ que necesitaba una conversión rápida. Ahora es un clic en la barra del navegad
   escribes "presupuesto", "tax free", "netflix" o "excel" y te lleva ahí, con
   las flechas y Enter. Busca por el principio de las palabras, sin tildes y
   en los dos idiomas, y al lado de cada una sale su atajo, si tiene. Lo que
-  no se puede hacer ahora no sale: sin gastos no hay CSV que bajar
+  no se puede hacer ahora no sale: sin gastos no hay CSV que bajar. También
+  se le pregunta a los gastos del viaje: "taxis en Kioto", "comida ayer" o
+  "cuánto en efectivo hoy", y arriba del todo sale "🔎 3 gastos: 40,00 EUR".
+  Entiende el tramo por su nombre, hoy y ayer, tarjeta o efectivo, y el
+  plural ("taxis" encuentra el "Taxi"). Con Enter abre los gastos con la lupa
+  puesta
 - Atajos dentro del popup: `S` da la vuelta al par, `I` a la tasa de arriba, `C` copia, `T` copia la tasa ("1 EUR = 1,1253 USD"; con Shift, al revés), `Y` copia el resultado con su símbolo ("42,79 $"; con Shift, la frase: "38,90 € = 42,79 $"), `D` y `A` abren
   los desplegables, `G` los gastos, `U` apunta la cantidad en ellos (con Shift, en efectivo), `/` busca en ellos, `E` cambia entre tarjeta y efectivo, `V` abre la lista de viajes, `N` empieza uno nuevo, `P` dividir la cuenta, `B` la balanza, `R` las últimas conversiones, `O` el modo discreto, `M` cambia el periodo del gráfico, `X` baja los gastos en CSV (con Shift, los de todos los viajes), `W` copia el resumen del viaje para WhatsApp, `J` copia el total del viaje ("Japón: 40,46 EUR en 3 días"; con Shift, lo de hoy: "Japón, hoy: 42,00 EUR en 3 gastos"), `Q` el último gasto ("Cena · 27,60 EUR (4.500,00 JPY)"; con Shift, el más caro del viaje), `K` la chuleta (con Shift, la imprime), `L` las otras divisas, `F` fija el par que tienes puesto, `Z` (o `Cmd+Z`, `Ctrl+Z`) deshace lo último que
   has quitado de los gastos y del `1` al `6` cambian de pestaña, y el `0` pone la cantidad en 1, para ver la tasa. Si estás escribiendo en
