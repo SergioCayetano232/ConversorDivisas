@@ -6427,6 +6427,15 @@ function crearFilaArchivado(viaje, i) {
     if (hoyViaje.titulo) linea.title = hoyViaje.titulo;
     sacar.append(linea);
   }
+  const antes = textoCambioAntes(cambiosAntes.get(viaje.id));
+  if (antes) {
+    const linea = document.createElement("span");
+    linea.className = "viajes__hoy viajes__antes";
+    linea.dataset.tono = cambiosAntes.get(viaje.id).bien ? "barato" : "igual";
+    linea.textContent = antes.texto;
+    linea.title = antes.titulo;
+    sacar.append(linea);
+  }
   sacar.setAttribute("aria-label", tr(lleno ? "viajes.sacarLleno" : "viajes.sacar", { nombre: nombreViaje(viaje), n: VIAJES_MAX }));
   sacar.title = sacar.getAttribute("aria-label");
   sacar.addEventListener("click", () => onSacarArchivado(viaje, sacar));
@@ -6465,7 +6474,10 @@ function pintarArchivo() {
   // Abierto ocupa el sitio de la lista: debajo no cabe y el popup no crece más de 600 px.
   el.viajes.classList.toggle("is-archivo", archivoAbierto);
   el.viajesArchivados.replaceChildren(...(archivoAbierto ? archivados.map(crearFilaArchivado) : []));
-  if (archivoAbierto) cargarTasasArchivo(archivados);
+  if (archivoAbierto) {
+    cargarTasasArchivo(archivados);
+    cargarCambiosAntes(archivados);
+  }
 }
 
 // Las tasas de hoy hacia la divisa de cada archivado, una vez por divisa. Sin red
@@ -6477,6 +6489,45 @@ async function cargarTasasArchivo(archivados) {
   if (faltan.size === 0) return;
   for (const to of faltan) tasasArchivo.set(to, null);
   for (const to of faltan) tasasArchivo.set(to, await tasasHacia(to));
+  if (archivoAbierto) pintarArchivo();
+}
+
+// La serie del mes antes de cada archivado. Es del pasado y no va a cambiar,
+// así que en la caché no caduca: solo sale si la echan otras más nuevas.
+const cambiosAntes = new Map();
+
+async function serieEntre(from, to, desde, hasta) {
+  const key = `serie:${from}:${to}:${desde}:${hasta}`;
+  const cache = await loadCache();
+  if (cache[key]?.puntos) return cache[key].puntos;
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), TIMEOUT_MS);
+  try {
+    const response = await fetch(urlSerie(from, to, desde, hasta), { signal: controller.signal });
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+    const data = aFormatoV1(await response.json(), true);
+    const puntos = Object.keys(data.rates ?? {}).sort()
+      .map((fecha) => ({ fecha, valor: data.rates[fecha]?.[to] }))
+      .filter((p) => typeof p.valor === "number");
+    if (puntos.length) saveCache({ [key]: { puntos, saved: Date.now() } });
+    return puntos;
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+async function cargarCambiosAntes(archivados) {
+  const faltan = archivados.filter((v) => !cambiosAntes.has(v.id) && cambioAntes(v));
+  if (faltan.length === 0) return;
+  for (const v of faltan) cambiosAntes.set(v.id, null);
+  for (const v of faltan) {
+    const { from, to, desde, hasta } = cambioAntes(v);
+    try {
+      cambiosAntes.set(v.id, ahorroCambiandoAntes(v, await serieEntre(from, to, desde, hasta)));
+    } catch (error) {
+      console.warn("No se pudo mirar el mes antes del viaje", error);
+    }
+  }
   if (archivoAbierto) pintarArchivo();
 }
 

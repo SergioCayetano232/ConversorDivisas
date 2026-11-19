@@ -4288,6 +4288,57 @@ function textoViajeHoy(r) {
   };
 }
 
+// ¿Y si hubieras cambiado antes? En un viaje acabado, lo que te habrías
+// ahorrado comprando la divisa de allí el mejor día del mes de antes de salir.
+// Solo la tasa: la comisión la habrías pagado igual.
+const DIAS_ANTES_DE_CAMBIAR = 30;
+
+function cambioAntes(viaje) {
+  const gastos = (viaje?.gastos ?? []).filter((g) => g.cantidad > 0 && g.from !== g.to);
+  if (!gastos.length) return null;
+  const to = sumarPorDivisa(gastos)[0].to;
+  const porDivisa = new Map();
+  for (const g of gastos) if (g.to === to) porDivisa.set(g.from, (porDivisa.get(g.from) ?? 0) + g.valor);
+  const from = [...porDivisa].sort((a, b) => b[1] - a[1])[0]?.[0];
+  if (!from) return null;
+  const primero = isoLocal(new Date(Math.min(...gastos.map((g) => g.cuando))));
+  const inicio = viaje.presupuesto?.desde && viaje.presupuesto.desde < primero ? viaje.presupuesto.desde : primero;
+  return { from, to, desde: otroDia(inicio, -DIAS_ANTES_DE_CAMBIAR), hasta: otroDia(inicio, -1) };
+}
+
+// Por debajo de un 1 % no merece la pena: cambiaste bien.
+const AHORRO_MINIMO = 0.01;
+
+function ahorroCambiandoAntes(viaje, serie) {
+  const par = cambioAntes(viaje);
+  const puntos = (Array.isArray(serie) ? serie : []).filter((p) => p.valor > 0 && esIso(p.fecha));
+  if (!par || !puntos.length) return null;
+  const mejor = puntos.reduce((a, b) => (b.valor < a.valor ? b : a));
+  let pagado = 0;
+  let conMejor = 0;
+  for (const g of viaje.gastos) {
+    if (g.from !== par.from || g.to !== par.to || !(g.cantidad > 0)) continue;
+    pagado += g.valor / (1 + leerComision(g.comision) / 100);
+    conMejor += g.cantidad * mejor.valor;
+  }
+  if (!(pagado > 0)) return null;
+  const ahorro = pagado - conMejor;
+  return { ...par, dia: mejor.fecha, tasa: mejor.valor, pagado, ahorro, pct: ahorro / pagado, bien: ahorro / pagado < AHORRO_MINIMO };
+}
+
+function textoCambioAntes(r) {
+  if (!r) return null;
+  const titulo = tr("cambioAntes.titulo", { from: r.from, dia: fechaCorta(r.dia), tasa: `1 ${r.from} = ${tasaLegible(r.tasa)} ${r.to}` });
+  if (r.bien) return { texto: tr("cambioAntes.bien"), titulo };
+  const dinero = numeros({ maximumFractionDigits: 0 });
+  const texto = tr("cambioAntes.ahorro", {
+    ahorro: `${dinero.format(r.ahorro)}\u00a0${r.to}`,
+    pct: porCiento(Math.round(r.pct * 100)),
+    dia: fechaCorta(r.dia),
+  });
+  return { texto, titulo };
+}
+
 const EMOJI_CATEGORIA = {
   comida: "🍽️", transporte: "🚕", alojamiento: "🏨", ocio: "🎟️", compras: "🛍️", otros: "📌",
 };
@@ -9965,7 +10016,7 @@ if (typeof module !== "undefined") {
     puedeSerDeEmpresa, pasarAEmpresa, sacarDeEmpresa, notaDeGastos,
     AVISO_MEJOR_DIAS, techoDeSerie, crearAvisoMejor, ponerTechos,
     presupuestoSugerido, PARTES_VALIDAS, leerPartes, partesDe, repartirPorPartes, textoParte,
-    VIAJES_MAX, NOMBRE_VIAJE_MAX, leerViajes, leerPersonas, porPersona, consumoGente, leerPagador, leerGente, ponerNombre, nombrePersona, inicialPersona, cuentasViaje, frasePago, COBRO_GASTOS_MAX, mensajeCobro, leerEntre, entreDe, fraseEntre, cambiarEntre, leerSaldados, saldarPago, quitarSaldado, fraseSaldado, hayOtrosPagadores, NOMBRE_PERSONA_MAX, compararViajes, viajeConTasasDeHoy, VIAJE_HOY_IGUAL, textoViajeHoy, COLORES_VIAJE, leerColorViaje, colorLibre, siguienteColor, viajeActivo, ARCHIVADOS_MAX, archivarViaje, desarchivarViaje, borrarArchivado, todosLosViajes, crearViaje, nombreCopia, nombreDeDestino, duplicarViaje, renombrarViaje, elegirViaje, borrarViaje, moverGasto, cambiarViaje, TRAMOS_MAX, NOMBRE_TRAMO_MAX, leerTramos, ponerTramo, quitarTramo, tramoDelDia, divisaDelTramo, resumenTramos, curvaPresupuesto, FRANJAS, HORAS_MINIMO, horaFiable, porFranja, PENDIENTES_MAX, leerPendientes, crearPendiente, cambiarVence, pendientesPorFecha, tocaPagar, tonoVence, textoVence, PENDIENTE_HORA, tocaPendientes, avisadosPendientes, mensajePendientes, apuntarPendiente, quitarPendiente, totalPendiente, exposicionPendientes, textoExposicion, pagarPendiente, resumenViaje, archivoGastos, plegarIcs, eventosDelViaje, calendarioViaje, archivoCalendario,
+    VIAJES_MAX, NOMBRE_VIAJE_MAX, leerViajes, leerPersonas, porPersona, consumoGente, leerPagador, leerGente, ponerNombre, nombrePersona, inicialPersona, cuentasViaje, frasePago, COBRO_GASTOS_MAX, mensajeCobro, leerEntre, entreDe, fraseEntre, cambiarEntre, leerSaldados, saldarPago, quitarSaldado, fraseSaldado, hayOtrosPagadores, NOMBRE_PERSONA_MAX, compararViajes, viajeConTasasDeHoy, DIAS_ANTES_DE_CAMBIAR, cambioAntes, AHORRO_MINIMO, ahorroCambiandoAntes, textoCambioAntes, VIAJE_HOY_IGUAL, textoViajeHoy, COLORES_VIAJE, leerColorViaje, colorLibre, siguienteColor, viajeActivo, ARCHIVADOS_MAX, archivarViaje, desarchivarViaje, borrarArchivado, todosLosViajes, crearViaje, nombreCopia, nombreDeDestino, duplicarViaje, renombrarViaje, elegirViaje, borrarViaje, moverGasto, cambiarViaje, TRAMOS_MAX, NOMBRE_TRAMO_MAX, leerTramos, ponerTramo, quitarTramo, tramoDelDia, divisaDelTramo, resumenTramos, curvaPresupuesto, FRANJAS, HORAS_MINIMO, horaFiable, porFranja, PENDIENTES_MAX, leerPendientes, crearPendiente, cambiarVence, pendientesPorFecha, tocaPagar, tonoVence, textoVence, PENDIENTE_HORA, tocaPendientes, avisadosPendientes, mensajePendientes, apuntarPendiente, quitarPendiente, totalPendiente, exposicionPendientes, textoExposicion, pagarPendiente, resumenViaje, archivoGastos, plegarIcs, eventosDelViaje, calendarioViaje, archivoCalendario,
     diasHasta, leerPresupuesto, leerTopes, PRESUPUESTO_JUSTO, estadoPresupuesto, estadoTopes, alDiaAlli, inicioDelViaje, diaDelViaje, cuentaAtras, textoCuentaAtras, destinoDelViaje, antesDeSalir, leerListo, marcarListo, progresoMaleta, huchaViaje, loDeHoy, CELEBRADOS_MAX, leerCelebrados, anadirCelebrado, viajeParaCelebrar, textoCelebrar, RACHA_MINIMA, rachaPresupuesto, hastaCuandoLlega, previsionViaje, PREVISION_JUSTA, textoPrevision, loQueSeLleva, presupuestoEnTarjeta, textoPresupuestoTarjeta, redondearDias,
     EXTRAS_MAX, EXTRAS_POR_DEFECTO, leerExtras, anadirExtra, quitarExtra,
     extrasVisibles, disponiblesParaAnadir, convertirExtras, semanaDe, trazoMini, CHULETA, escalaChuleta, chuleta, TRUCO_TOLERANCIA, trucoDeCabeza, textoTruco, tituloTruco, chuletaParaCompartir, extrasParaCompartir,
