@@ -320,14 +320,16 @@ function paraLaTarjeta(datos) {
   };
 }
 
-async function calcular(texto) {
+// La url es la de la pestaña: en amazon.co.jp un "1.299" sin nada son yenes.
+async function calcular(texto, url = null) {
+  const web = divisaDeLaWeb(url);
   const parGuardado = await leerPar();
   // Si los dos precios no parecen el mismo en dos divisas, la selección se lee como siempre.
   let cobro = leerCobro(texto, parGuardado);
   const dcc = cobro ? await analizarDcc(cobro) : null;
   if (!dcc) cobro = null;
-  const suma = cobro ? null : sumarSeleccion(texto);
-  const leido = cobro ? { cantidad: cobro.cantidad, divisa: cobro.from } : suma ?? leerSeleccion(texto);
+  const suma = cobro ? null : sumarSeleccion(texto, web);
+  const leido = cobro ? { cantidad: cobro.cantidad, divisa: cobro.from } : suma ?? leerSeleccion(texto, web);
   if (!leido) return { estado: "nada", original: texto, mensaje: tr("tarjeta.nada") };
 
   const { from, to } = destinoPara(leido.divisa, parGuardado);
@@ -340,7 +342,7 @@ async function calcular(texto) {
       ...siTeLoEnvian({ cantidad: leido.cantidad, from, to }, rate),
       estado: "ok",
       original: `${nf.format(leido.cantidad)} ${from}`,
-      nota: suma ? notaDeSuma(suma.cantidades) : leido.divisa ? "" : tr("tarjeta.sinDivisa", { from }),
+      nota: notaDeLaTarjeta({ suma, leido, from, url }),
       resultado,
       copia: textoParaCopiar(resultado),
       frase: fraseParaCopiar({ cantidad: leido.cantidad, from, valor: resultado, to }),
@@ -354,6 +356,12 @@ async function calcular(texto) {
   } catch (error) {
     return { estado: "error", original: texto, mensaje: errorMessageFor(error) };
   }
+}
+
+function notaDeLaTarjeta({ suma, leido, from, url }) {
+  if (suma) return notaDeSuma(suma.cantidades);
+  if (leido.deLaWeb) return tr("tarjeta.deLaWeb", { from, web: new URL(url).hostname.replace(/^www\./, "") });
+  return leido.divisa ? "" : tr("tarjeta.sinDivisa", { from });
 }
 
 // Con el mismo gasto que apuntaría el botón, comisión incluida, para que lo que
@@ -395,6 +403,9 @@ function enPagina(tabId, datos) {
   });
 }
 
+// Dentro de un iframe manda la tienda del iframe, no la de la pestaña.
+const paginaDe = (info, tab) => info.frameUrl ?? info.pageUrl ?? tab?.url ?? null;
+
 async function convertirSeleccion(info, tab) {
   await idiomaListo;
   try {
@@ -402,7 +413,8 @@ async function convertirSeleccion(info, tab) {
   } catch (error) {
     // En chrome://, la Web Store o el visor de PDF no se puede inyectar nada.
     // Ahí abro el popup con la cantidad ya puesta.
-    const leido = sumarSeleccion(info.selectionText) ?? leerSeleccion(info.selectionText);
+    const web = divisaDeLaWeb(paginaDe(info, tab));
+    const leido = sumarSeleccion(info.selectionText, web) ?? leerSeleccion(info.selectionText, web);
     if (leido) {
       const par = destinoPara(leido.divisa, await leerPar());
       await chrome.storage.session.set({ pendiente: { cantidad: leido.cantidad, ...par } });
@@ -417,7 +429,7 @@ async function convertirSeleccion(info, tab) {
 
   // La tarjeta sale ya, cargando; la cifra llega cuando responda la API.
   await enPagina(tab.id, paraLaTarjeta({ estado: "cargando", original: info.selectionText }));
-  await enPagina(tab.id, paraLaTarjeta(await calcular(info.selectionText)));
+  await enPagina(tab.id, paraLaTarjeta(await calcular(info.selectionText, paginaDe(info, tab))));
 }
 
 // Va en tres pasos porque las tasas las pido yo y no la página: primero busca

@@ -7,6 +7,8 @@
   // Con más que esto ya no es una tienda, es un listado entero, y pintarlo todo
   // se nota al hacer scroll.
   const MAX = 400;
+  // En amazon.com.mx el "$" son pesos.
+  const WEB = divisaDeLaWeb(location.href);
   const NO_MIRAR = "script, style, noscript, textarea, input, select, option, code, pre, svg, [contenteditable], conversor-precio, conversor-divisas, conversor-aviso";
 
   const CSS_PASTILLA = `
@@ -290,7 +292,7 @@
       if (el.childElementCount === 0) continue;
       // Con <sup> los céntimos van sin coma ("49<sup>99</sup>") y leería 4999.
       if (el.querySelector("sup")) return null;
-      const precio = precioEntero(el.textContent);
+      const precio = precioEntero(el.textContent, WEB);
       if (precio) return { el, precio };
     }
     return null;
@@ -306,7 +308,7 @@
       if (!padre || padre.closest(NO_MIRAR)) continue;
       // "$49" seguido de <sup>99</sup> parece un precio entero y no lo es.
       if (nodo.nextSibling?.nodeName === "SUP") continue;
-      const precios = buscarPrecios(nodo.data);
+      const precios = buscarPrecios(nodo.data, WEB);
       if (precios.length) {
         if (seVe(padre)) encontrados.push({ despues: nodo, precios });
         continue;

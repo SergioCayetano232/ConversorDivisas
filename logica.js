@@ -2335,12 +2335,12 @@ const PISTAS = [
   [/r\$/, "BRL"], [/mx\$/, "MXN"], [/(ca|c)\$/, "CAD"], [/(au|a)\$/, "AUD"], [/us\$/, "USD"],
   [/hk\$/, "HKD"], [/nz\$/, "NZD"], [/s\$/, "SGD"],
   [/cn¥|元|rmb/, "CNY"],
-  [/€/, "EUR"], [/£/, "GBP"], [/¥|円/, "JPY"], [/₺/, "TRY"], [/zł/, "PLN"],
+  [/€/, "EUR"], [/£/, "GBP"], [/円/, "JPY"], [/[¥￥]/, "¥"], [/₺/, "TRY"], [/zł/, "PLN"],
   [/₹/, "INR"], [/₩/, "KRW"], [/₪/, "ILS"], [/฿/, "THB"], [/₱/, "PHP"],
   // Kč llega sin el acento de la c porque normalizar lo quita.
   [/\bkc\b/, "CZK"], [/\brp\b/, "IDR"], [/\brm\b/, "MYR"],
   // Un símbolo es más fiable que una palabra: "real estate $500" son dólares.
-  [/\$/, "USD"],
+  [/\$/, "$"],
   [/\beuros?\b/, "EUR"],
   // Los dólares con apellido antes que el dólar a secas.
   [/\bdolar(es)? canadienses?\b|\bcanadian dollars?\b/, "CAD"],
@@ -2373,7 +2373,16 @@ const PISTAS = [
   [/\brands?\b/, "ZAR"],
 ];
 
-function divisaDe(texto) {
+// El "$" a secas y el "¥" dependen de dónde estés: en amazon.com.mx el "$" son
+// pesos, y en una tienda china el "¥" son yuanes.
+const CON_DOLAR = new Set(["USD", "CAD", "AUD", "MXN", "NZD", "SGD", "HKD", "ARS", "CLP", "COP", "UYU", "TWD", "DOP"]);
+const simboloSuelto = (code, web) => {
+  if (code === "$") return CON_DOLAR.has(web) ? web : "USD";
+  if (code === "¥") return web === "CNY" ? "CNY" : "JPY";
+  return code;
+};
+
+function divisaDe(texto, web = null) {
   // Un código ISO gana a cualquier símbolo, pero solo en mayúsculas: en
   // minúscula "try it for $5" salía en liras turcas.
   for (const { code } of CURRENCIES) {
@@ -2381,29 +2390,59 @@ function divisaDe(texto) {
   }
   const t = normalizar(texto);
   for (const [patron, code] of PISTAS) {
-    if (patron.test(t)) return code;
+    if (patron.test(t)) return simboloSuelto(code, web);
   }
   return null;
+}
+
+// La divisa de una web por su dominio: amazon.co.jp, en yenes. Los .com no
+// dicen nada, y tampoco los dominios que se usan para otra cosa (.co, .io, .tv).
+const DOMINIOS = {
+  jp: "JPY", uk: "GBP", ca: "CAD", au: "AUD", mx: "MXN", br: "BRL", ch: "CHF", li: "CHF", se: "SEK", no: "NOK",
+  dk: "DKK", pl: "PLN", tr: "TRY", cz: "CZK", hu: "HUF", id: "IDR", il: "ILS", in: "INR", is: "ISK", kr: "KRW",
+  my: "MYR", nz: "NZD", ph: "PHP", ro: "RON", sg: "SGD", th: "THB", za: "ZAR", cn: "CNY", hk: "HKD", vn: "VND",
+  ar: "ARS", ma: "MAD", pe: "PEN", cl: "CLP", eg: "EGP", ae: "AED", tw: "TWD", uy: "UYU", cr: "CRC", do: "DOP",
+  tn: "TND", ke: "KES", lk: "LKR", np: "NPR", kh: "KHR", jo: "JOD", qa: "QAR", sa: "SAR", ge: "GEL", rs: "RSD",
+  bo: "BOB", gt: "GTQ", py: "PYG",
+  de: "EUR", fr: "EUR", es: "EUR", it: "EUR", nl: "EUR", be: "EUR", at: "EUR", pt: "EUR", ie: "EUR", fi: "EUR",
+  gr: "EUR", sk: "EUR", si: "EUR", ee: "EUR", lv: "EUR", lt: "EUR", lu: "EUR", mt: "EUR", cy: "EUR", hr: "EUR",
+  bg: "EUR",
+};
+
+function divisaDeLaWeb(url) {
+  let host;
+  try {
+    host = new URL(url).hostname;
+  } catch {
+    return null;
+  }
+  const trozos = host.toLowerCase().split(".");
+  // Colombia va por .com.co: el .co a secas es de startups de todo el mundo.
+  if (trozos.at(-1) === "co") return trozos.at(-2) === "com" ? "COP" : null;
+  return trozos.length > 1 ? DOMINIOS[trozos.at(-1)] ?? null : null;
 }
 
 // Los espacios solo cuentan como separador si detrás van tres cifras justas:
 // así "20 30" es un 20 y no un 2030.
 const NUMERO = /\d{1,3}(?:[\s  '.,]\d{3})+(?:[.,]\d{1,2})?(?!\d)|\d+(?:[.,]\d+)?/;
 
-function leerSeleccion(texto) {
+// Sin divisa en el texto, la de la web, avisando de que la he supuesto.
+function leerSeleccion(texto, web = null) {
   if (typeof texto !== "string") return null;
   const hallado = texto.match(NUMERO);
   if (!hallado) return null;
   const cantidad = leerNumero(hallado[0]);
   if (cantidad === null) return null;
-  return { cantidad, divisa: divisaDe(texto) };
+  const divisa = divisaDe(texto, web);
+  if (!divisa && isValidCode(web)) return { cantidad, divisa: web, deLaWeb: true };
+  return { cantidad, divisa };
 }
 
 // Varios precios seleccionados, como la lista de la compra de una web: se suman
 // si van en la misma divisa. Con dos distintas no sé sumarlos sin otra tasa, y
 // me quedo con el primero, como siempre.
-function sumarSeleccion(texto) {
-  const precios = buscarPrecios(texto);
+function sumarSeleccion(texto, web = null) {
+  const precios = buscarPrecios(texto, web);
   if (precios.length < 2 || precios.some((p) => p.divisa !== precios[0].divisa)) return null;
   const cantidades = precios.map((p) => p.cantidad);
   const cantidad = Math.round(cantidades.reduce((a, b) => a + b, 0) * 100) / 100;
@@ -2472,20 +2511,21 @@ function textoCobro(r) {
 // solo cuenta si lleva la divisa pegada, delante o detrás. Los símbolos largos
 // primero, que si no "US$" se quedaba en "$".
 const CODIGOS = CURRENCIES.map((c) => c.code).filter((c) => !CODIGOS_QUE_SON_PALABRA.has(c)).join("|");
-const DIVISA_DELANTE = `R\\$|US\\$|MX\\$|CA?\\$|AU?\\$|HK\\$|NZ\\$|S\\$|CN¥|[$€£¥₹₩₪฿₱₺]|\\b(?:${CODIGOS})\\b`;
-const DIVISA_DETRAS = `[$€£¥₹₩₪฿₱₺円元]|zł|Kč|\\b(?:${CODIGOS})\\b|\\b[Ee]uros?\\b`;
+// En Japón y China el yen va casi siempre a lo ancho: "￥1,299".
+const DIVISA_DELANTE = `R\\$|US\\$|MX\\$|CA?\\$|AU?\\$|HK\\$|NZ\\$|S\\$|CN¥|[$€£¥￥₹₩₪฿₱₺]|\\b(?:${CODIGOS})\\b`;
+const DIVISA_DETRAS = `[$€£¥￥₹₩₪฿₱₺円元]|zł|Kč|\\b(?:${CODIGOS})\\b|\\b[Ee]uros?\\b`;
 // Detrás de una letra o de otra cifra no empieza un precio: "A4 €" no son 4 €.
 const PRECIO = new RegExp(
   `(${DIVISA_DELANTE})\\s?(${NUMERO.source})|(?<![\\w.,])(${NUMERO.source})\\s?(${DIVISA_DETRAS})`,
   "g",
 );
 
-function buscarPrecios(texto) {
+function buscarPrecios(texto, web = null) {
   if (typeof texto !== "string") return [];
   const precios = [];
   for (const m of texto.matchAll(PRECIO)) {
     const cantidad = leerNumero(m[2] ?? m[3]);
-    const divisa = divisaDe(m[1] ?? m[4]);
+    const divisa = divisaDe(m[1] ?? m[4], web);
     if (cantidad > 0 && divisa) precios.push({ inicio: m.index, fin: m.index + m[0].length, cantidad, divisa });
   }
   return precios;
@@ -2493,9 +2533,9 @@ function buscarPrecios(texto) {
 
 // Hay tiendas que parten el precio en trozos ("$" "49" "." "99"), cada uno en
 // su etiqueta. Juntos solo me valen si el texto entero es un precio y nada más.
-function precioEntero(texto) {
+function precioEntero(texto, web = null) {
   const limpio = String(texto ?? "").trim();
-  const precios = buscarPrecios(limpio);
+  const precios = buscarPrecios(limpio, web);
   if (precios.length !== 1 || precios[0].inicio !== 0 || precios[0].fin !== limpio.length) return null;
   const { cantidad, divisa } = precios[0];
   return { cantidad, divisa };
@@ -9783,7 +9823,7 @@ if (typeof module !== "undefined") {
     RECIENTES_MAX, FIJOS_MAX, apuntarReciente, fijarReciente, leerRecientes, recientesVisibles,
     RANGOS, RANGO_POR_DEFECTO, leerRango, siguienteRango, coordenadas, alturaEn, MOMENTO_UMBRAL, momento, textoMomento,
     SEMANAS_MINIMAS, mejorDiaSemana, ABANICO_MINIMO, abanicoTasa, textoAbanico, nombreDiaSemana, textoDiaSemana, indiceCercano, extremos, fechaCorta, largoEnPantalla,
-    leerNumero, divisaDe, leerSeleccion, sumarSeleccion, notaDeSuma, leerCobro, COBRO_RARO, analizarCobro, textoCobro, destinoPara, leerPegado, leerPegadoSuelto, leerColumna, leerFechaReserva, leerReserva, cuentaDeColumna, buscarPrecios, precioEntero, leerOmnibox, leerMezcla, textoMezcla, precioUnidadBarra, leerGastoBarra, leerDictado, gastoDeBarra, gastoDeTarjeta, escaparXml,
+    leerNumero, divisaDe, DOMINIOS, divisaDeLaWeb, leerSeleccion, sumarSeleccion, notaDeSuma, leerCobro, COBRO_RARO, analizarCobro, textoCobro, destinoPara, leerPegado, leerPegadoSuelto, leerColumna, leerFechaReserva, leerReserva, cuentaDeColumna, buscarPrecios, precioEntero, leerOmnibox, leerMezcla, textoMezcla, precioUnidadBarra, leerGastoBarra, leerDictado, gastoDeBarra, gastoDeTarjeta, escaparXml,
     divisaDeIdioma, parPorIdioma, banderaDe, banderaDivisa,
     HISTORIAL_MAX, leerHistorial, apuntarConversion, quitarConversion, haceCuanto, ultimoDeHoy, textoParaCopiar, fraseParaCopiar, conversionParaCopiar, gastoParaCopiar, ultimoGasto, gastoMasCaro, totalParaCopiar, hoyParaCopiar, simboloDe, textoConSimbolo, fraseConSimbolo,
     celdaCsv, csvHistorial, csvGastos, csvViajes,
