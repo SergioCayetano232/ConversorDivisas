@@ -881,6 +881,9 @@
               <svg class="compartir__icono" viewBox="0 0 12 12" aria-hidden="true"><path d="M2 9.5V3a1.2 1.2 0 0 1 1.2-1.2h5.6A1.2 1.2 0 0 1 10 3v3.6a1.2 1.2 0 0 1-1.2 1.2H4.2z"/><path class="compartir__puntos" d="M4.4 4.8h.01M6 4.8h.01M7.6 4.8h.01"/></svg>
               <svg class="compartir__ok" viewBox="0 0 12 12" aria-hidden="true"><path d="M2.5 6.3l2.3 2.2 4.7-5"/></svg>
             </button>
+            <button class="csv compartir" type="button" id="gastos-qr" title="Pasar el resumen al móvil con un QR" aria-label="Pasar el resumen al móvil con un QR" data-t-title="qr" data-t-aria-label="qr">
+              <svg viewBox="0 0 12 12" aria-hidden="true"><path d="M1.8 1.8h3v3h-3zM7.2 1.8h3v3h-3zM1.8 7.2h3v3h-3z"/><path d="M7.2 7.2h1.2v1.2M10.2 7.2v.01M8.4 10.2h1.8V9"/></svg>
+            </button>
             <button class="csv" type="button" id="gastos-csv" title="Descargar los gastos en CSV, para una hoja de cálculo" aria-label="Descargar los gastos en CSV, para una hoja de cálculo" data-t="csv.boton" data-t-title="csv.gastos" data-t-aria-label="csv.gastos">CSV</button>
             <button class="historial__borrar" type="button" id="gastos-vaciar" data-t="gastos.vaciar">Vaciar</button>
           </div>
@@ -1178,6 +1181,15 @@
       </div>
     </div>
     <input type="file" id="tique-archivo" accept="image/*" hidden>
+
+    <div class="tique qr" id="qr" role="dialog" aria-modal="true" aria-labelledby="qr-titulo" tabindex="-1" hidden>
+      <p class="tique__titulo" id="qr-titulo"></p>
+      <div class="qr__codigo" id="qr-codigo" role="img"></div>
+      <p class="qr__pista" id="qr-pista"></p>
+      <div class="tique__pie">
+        <button class="gastos__cerrar" type="button" id="qr-cerrar" aria-label="Cerrar" data-t-aria-label="cerrar">✕</button>
+      </div>
+    </div>
 
   </div>
 

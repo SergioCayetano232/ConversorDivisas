@@ -4561,7 +4561,7 @@ function indiceCafe(lista) {
 // Para pegarlo en WhatsApp: lo de entre asteriscos sale en negrita, y en
 // cualquier otro sitio se lee igual de bien. Los días van del primero al último,
 // que es como se cuenta un viaje.
-function resumenParaCompartir({ nombre, gastos, presupuesto, personas, gente, saldados }, hoyIso = hoy()) {
+function resumenParaCompartir({ nombre, gastos, presupuesto, personas, gente, saldados }, hoyIso = hoy(), { sinDias = false } = {}) {
   if (gastos.length === 0) return "";
   const dinero = (n, to) => `${numeros({ minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(n)} ${to}`;
   const sumas = (totales) => totales.map(({ total, to }) => dinero(total, to)).join(" + ");
@@ -4633,7 +4633,7 @@ function resumenParaCompartir({ nombre, gastos, presupuesto, personas, gente, sa
   const fijos = gastos.filter(esFijo);
   if (fijos.length) lineas.push("", tr("compartir.fijos", { total: sumas(sumarPorDivisa(fijos)) }));
   const dias = gastosPorDia(delDiaADia(gastos));
-  if (dias.length > 1) {
+  if (dias.length > 1 && !sinDias) {
     lineas.push("", `*${tr("compartir.dias")}*`);
     for (const { dia, totales } of [...dias].reverse()) lineas.push(`${nombreDia(dia, hoyIso)}: ${sumas(totales)}`);
   }
@@ -5046,6 +5046,287 @@ function quitarRetiradaDeViajes(viajes, id) {
   }
   if (!enlazada) return cambiarCajeroDe(viajes, viajes.activo, (lista) => quitarRetirada(lista, id));
   return todosLosViajes(viajes).reduce((acc, v) => cambiarCajeroDe(acc, v.id, (lista) => quitarRetirada(lista, id)), viajes);
+}
+
+// El QR, hecho a mano para no meter una librería. Solo lo que hace falta aquí:
+// modo byte (UTF-8, que el resumen lleva tildes y emojis) y corrección M, que
+// aguanta un 15 % de manchas o reflejos en la pantalla. Sigue la norma ISO 18004.
+const QR_EC_POR_BLOQUE = [0, 10, 16, 26, 18, 24, 16, 18, 22, 22, 26, 30, 22, 22, 24, 24, 28, 28, 26, 26, 26, 26, 28, 28, 28, 28, 28, 28, 28, 28, 28, 28, 28, 28, 28, 28, 28, 28, 28, 28, 28];
+const QR_BLOQUES = [0, 1, 1, 1, 2, 2, 4, 4, 4, 5, 5, 5, 8, 9, 9, 10, 10, 11, 13, 14, 16, 17, 17, 18, 20, 21, 23, 25, 26, 28, 29, 31, 33, 35, 37, 38, 40, 43, 45, 47, 49];
+
+// Los módulos que quedan para datos después de los dibujos fijos.
+function modulosDeDatosQR(version) {
+  let n = (16 * version + 128) * version + 64;
+  if (version >= 2) {
+    const alineados = Math.floor(version / 7) + 2;
+    n -= (25 * alineados - 10) * alineados - 55;
+    if (version >= 7) n -= 36;
+  }
+  return n;
+}
+
+const bytesDeDatosQR = (version) => Math.floor(modulosDeDatosQR(version) / 8) - QR_EC_POR_BLOQUE[version] * QR_BLOQUES[version];
+
+// Multiplicar en GF(256) con el polinomio del QR, 0x11D.
+function porGF(a, b) {
+  let r = 0;
+  for (let i = 7; i >= 0; i -= 1) {
+    r = (r << 1) ^ ((r >>> 7) * 0x11d);
+    r ^= ((b >>> i) & 1) * a;
+  }
+  return r;
+}
+
+function divisorReedSolomon(grado) {
+  const r = new Array(grado).fill(0);
+  r[grado - 1] = 1;
+  let raiz = 1;
+  for (let i = 0; i < grado; i += 1) {
+    for (let j = 0; j < grado; j += 1) {
+      r[j] = porGF(r[j], raiz);
+      if (j + 1 < grado) r[j] ^= r[j + 1];
+    }
+    raiz = porGF(raiz, 0x02);
+  }
+  return r;
+}
+
+// Los bytes de corrección de un bloque: el resto de dividir por el polinomio.
+function restoReedSolomon(datos, grado) {
+  const divisor = divisorReedSolomon(grado);
+  const r = new Array(grado).fill(0);
+  for (const b of datos) {
+    const factor = b ^ r.shift();
+    r.push(0);
+    divisor.forEach((d, i) => { r[i] ^= porGF(d, factor); });
+  }
+  return r;
+}
+
+// 15 bits: el nivel (M es 00) y la máscara, con su propia corrección.
+function formatoQR(mascara) {
+  const datos = mascara;
+  let resto = datos;
+  for (let i = 0; i < 10; i += 1) resto = (resto << 1) ^ ((resto >>> 9) * 0x537);
+  return ((datos << 10) | resto) ^ 0x5412;
+}
+
+function versionQR(version) {
+  let resto = version;
+  for (let i = 0; i < 12; i += 1) resto = (resto << 1) ^ ((resto >>> 11) * 0x1f25);
+  return (version << 12) | resto;
+}
+
+function posicionesAlineadoQR(version, lado) {
+  if (version === 1) return [];
+  const n = Math.floor(version / 7) + 2;
+  const paso = Math.floor((version * 8 + n * 3 + 5) / (n * 4 - 4)) * 2;
+  const r = [6];
+  for (let pos = lado - 7; r.length < n; pos -= paso) r.splice(1, 0, pos);
+  return r;
+}
+
+const MASCARAS_QR = [
+  (x, y) => (x + y) % 2 === 0,
+  (x, y) => y % 2 === 0,
+  (x) => x % 3 === 0,
+  (x, y) => (x + y) % 3 === 0,
+  (x, y) => (Math.floor(x / 3) + Math.floor(y / 2)) % 2 === 0,
+  (x, y) => ((x * y) % 2) + ((x * y) % 3) === 0,
+  (x, y) => (((x * y) % 2) + ((x * y) % 3)) % 2 === 0,
+  (x, y) => (((x + y) % 2) + ((x * y) % 3)) % 2 === 0,
+];
+
+// Los bytes con su cabecera, partidos en bloques y entrelazados como manda la norma.
+function codewordsQR(bytes, version) {
+  const bits = [];
+  const poner = (valor, n) => { for (let i = n - 1; i >= 0; i -= 1) bits.push((valor >>> i) & 1); };
+  poner(0b0100, 4);
+  poner(bytes.length, version <= 9 ? 8 : 16);
+  for (const b of bytes) poner(b, 8);
+  const capacidad = bytesDeDatosQR(version) * 8;
+  poner(0, Math.min(4, capacidad - bits.length));
+  poner(0, (8 - (bits.length % 8)) % 8);
+  for (let relleno = 0xec; bits.length < capacidad; relleno ^= 0xec ^ 0x11) poner(relleno, 8);
+  const datos = [];
+  for (let i = 0; i < bits.length; i += 8) datos.push(bits.slice(i, i + 8).reduce((a, b) => (a << 1) | b, 0));
+
+  const bloques = QR_BLOQUES[version];
+  const ec = QR_EC_POR_BLOQUE[version];
+  const total = Math.floor(modulosDeDatosQR(version) / 8);
+  const cortos = bloques - (total % bloques);
+  const largoCorto = Math.floor(total / bloques);
+  const partes = [];
+  for (let i = 0, k = 0; i < bloques; i += 1) {
+    const n = largoCorto - ec + (i < cortos ? 0 : 1);
+    const trozo = datos.slice(k, k + n);
+    k += n;
+    // Los cortos llevan un hueco para que todos midan igual al entrelazar.
+    partes.push([...trozo, ...(i < cortos ? [null] : []), ...restoReedSolomon(trozo, ec)]);
+  }
+  const salida = [];
+  for (let i = 0; i < partes[0].length; i += 1) {
+    for (const parte of partes) if (parte[i] !== null) salida.push(parte[i]);
+  }
+  return salida;
+}
+
+// Cuánto se parece a lo que confunde a un lector: rachas, cuadrados, falsos
+// localizadores y demasiado de un color. Gana la máscara con menos.
+function penalizacionQR(m) {
+  const lado = m.length;
+  let p = 0;
+  const lineas = [...m, ...m.map((_, x) => m.map((fila) => fila[x]))];
+  for (const linea of lineas) {
+    let racha = 1;
+    for (let i = 1; i <= lado; i += 1) {
+      if (i < lado && linea[i] === linea[i - 1]) racha += 1;
+      else {
+        if (racha >= 5) p += racha - 2;
+        racha = 1;
+      }
+    }
+    const t = linea.map(Number).join("");
+    for (const patron of ["10111010000", "00001011101"]) {
+      for (let i = t.indexOf(patron); i !== -1; i = t.indexOf(patron, i + 1)) p += 40;
+    }
+  }
+  for (let y = 0; y < lado - 1; y += 1) {
+    for (let x = 0; x < lado - 1; x += 1) {
+      const c = m[y][x];
+      if (c === m[y][x + 1] && c === m[y + 1][x] && c === m[y + 1][x + 1]) p += 3;
+    }
+  }
+  const oscuros = m.flat().filter(Boolean).length;
+  p += Math.floor(Math.abs(oscuros * 20 - lado * lado * 10) / (lado * lado)) * 10;
+  return p;
+}
+
+// El texto en módulos: filas de true (negro) y false. Si no cabe ni en el más
+// grande, null.
+function codigoQR(texto) {
+  const bytes = [...new TextEncoder().encode(String(texto ?? ""))];
+  let version = 1;
+  while (version <= 40 && 4 + (version <= 9 ? 8 : 16) + bytes.length * 8 > bytesDeDatosQR(version) * 8) version += 1;
+  if (version > 40) return null;
+
+  const lado = version * 4 + 17;
+  const m = Array.from({ length: lado }, () => new Array(lado).fill(false));
+  const fijo = Array.from({ length: lado }, () => new Array(lado).fill(false));
+  const fija = (x, y, negro) => { m[y][x] = negro; fijo[y][x] = true; };
+
+  for (let i = 0; i < lado; i += 1) {
+    fija(6, i, i % 2 === 0);
+    fija(i, 6, i % 2 === 0);
+  }
+  for (const [cx, cy] of [[3, 3], [lado - 4, 3], [3, lado - 4]]) {
+    for (let dy = -4; dy <= 4; dy += 1) {
+      for (let dx = -4; dx <= 4; dx += 1) {
+        const x = cx + dx;
+        const y = cy + dy;
+        const d = Math.max(Math.abs(dx), Math.abs(dy));
+        if (x >= 0 && x < lado && y >= 0 && y < lado) fija(x, y, d !== 2 && d !== 4);
+      }
+    }
+  }
+  const alineado = posicionesAlineadoQR(version, lado);
+  const ultimo = alineado.length - 1;
+  alineado.forEach((ax, i) => alineado.forEach((ay, j) => {
+    // Los de las esquinas caerían encima de los localizadores.
+    if ((i === 0 && j === 0) || (i === 0 && j === ultimo) || (i === ultimo && j === 0)) return;
+    for (let dy = -2; dy <= 2; dy += 1) {
+      for (let dx = -2; dx <= 2; dx += 1) fija(ax + dx, ay + dy, Math.max(Math.abs(dx), Math.abs(dy)) !== 1);
+    }
+  }));
+  const ponerFormato = (mascara) => {
+    const bits = formatoQR(mascara);
+    const bit = (i) => ((bits >>> i) & 1) === 1;
+    for (let i = 0; i <= 5; i += 1) fija(8, i, bit(i));
+    fija(8, 7, bit(6));
+    fija(8, 8, bit(7));
+    fija(7, 8, bit(8));
+    for (let i = 9; i < 15; i += 1) fija(14 - i, 8, bit(i));
+    for (let i = 0; i < 8; i += 1) fija(lado - 1 - i, 8, bit(i));
+    for (let i = 8; i < 15; i += 1) fija(8, lado - 15 + i, bit(i));
+    fija(8, lado - 8, true);
+  };
+  ponerFormato(0);
+  if (version >= 7) {
+    const bits = versionQR(version);
+    for (let i = 0; i < 18; i += 1) {
+      const negro = ((bits >>> i) & 1) === 1;
+      const a = lado - 11 + (i % 3);
+      const b = Math.floor(i / 3);
+      fija(a, b, negro);
+      fija(b, a, negro);
+    }
+  }
+
+  // En zigzag de dos columnas, de abajo arriba y vuelta, saltándose la del tiempo.
+  const datos = codewordsQR(bytes, version);
+  let i = 0;
+  for (let derecha = lado - 1; derecha >= 1; derecha -= 2) {
+    if (derecha === 6) derecha = 5;
+    for (let vert = 0; vert < lado; vert += 1) {
+      for (let j = 0; j < 2; j += 1) {
+        const x = derecha - j;
+        const subiendo = ((derecha + 1) & 2) === 0;
+        const y = subiendo ? lado - 1 - vert : vert;
+        if (!fijo[y][x] && i < datos.length * 8) {
+          m[y][x] = ((datos[i >>> 3] >>> (7 - (i & 7))) & 1) === 1;
+          i += 1;
+        }
+      }
+    }
+  }
+
+  let mejor = null;
+  for (let mascara = 0; mascara < 8; mascara += 1) {
+    const prueba = m.map((fila, y) => fila.map((v, x) => (fijo[y][x] ? v : v !== MASCARAS_QR[mascara](x, y))));
+    const bits = formatoQR(mascara);
+    const bit = (k) => ((bits >>> k) & 1) === 1;
+    for (let k = 0; k <= 5; k += 1) prueba[k][8] = bit(k);
+    prueba[7][8] = bit(6);
+    prueba[8][8] = bit(7);
+    prueba[8][7] = bit(8);
+    for (let k = 9; k < 15; k += 1) prueba[8][14 - k] = bit(k);
+    for (let k = 0; k < 8; k += 1) prueba[8][lado - 1 - k] = bit(k);
+    for (let k = 8; k < 15; k += 1) prueba[lado - 15 + k][8] = bit(k);
+    const puntos = penalizacionQR(prueba);
+    if (!mejor || puntos < mejor.puntos) mejor = { puntos, modulos: prueba, mascara };
+  }
+  return { version, lado, mascara: mejor.mascara, modulos: mejor.modulos };
+}
+
+// Pasada la 25 los módulos salen de 2 px en el popup y la cámara ya duda. Antes
+// de rendirme quito los días, que es lo que crece con el viaje.
+const QR_VERSION_MAX = 25;
+
+function resumenParaQR(viaje, hoyIso = hoy()) {
+  for (const sinDias of [false, true]) {
+    const texto = resumenParaCompartir(viaje, hoyIso, { sinDias });
+    const qr = codigoQR(texto);
+    if (qr && qr.version <= QR_VERSION_MAX) return { texto, qr, sinDias };
+  }
+  return null;
+}
+
+// En SVG, un trazo por racha de negros de cada fila: con un rect por módulo el
+// de la versión 20 serían miles de nodos. Con su margen blanco de cuatro.
+function svgQR(qr) {
+  const margen = 4;
+  const total = qr.lado + margen * 2;
+  let d = "";
+  qr.modulos.forEach((fila, y) => {
+    for (let x = 0; x < qr.lado; x += 1) {
+      if (!fila[x]) continue;
+      let fin = x;
+      while (fin + 1 < qr.lado && fila[fin + 1]) fin += 1;
+      d += `M${x + margen} ${y + margen}h${fin - x + 1}v1h${-(fin - x + 1)}z`;
+      x = fin;
+    }
+  });
+  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${total} ${total}" shape-rendering="crispEdges"><rect width="${total}" height="${total}" fill="#fff"/><path d="${d}" fill="#000"/></svg>`;
 }
 
 // Por gasto y no por día: dice si vas de muchos cafés o de pocas cenas.
@@ -10280,7 +10561,7 @@ if (typeof module !== "undefined") {
     urlImpresion, leerImpresion, chuletaParaImprimir,
     COMISION_MAX, COMISIONES_RAPIDAS, leerComision, leerPorcentaje, conComision,
     IMPUESTO_MAX, IMPUESTOS_RAPIDOS, leerImpuesto, leerImpuestoEscrito, loQuePagas,
-    COMPARAR_IGUAL, compararPrecios, inclinacion, leerTamano, compararTamanos, efectivoParaTraer, traerEfectivo, quitarRetiradaDeViajes, deCadaDia, semanaDelViaje, tocaSemana, mensajeSemana, FOTO_LADO, medidasFoto, fotosSinGasto, ZONAS, desfase, esNoche, momentoDelDia, cieloAlli, horaAlli, SIGLAS_ZONA, leerHoraZona, convertirHoraZona, textoHoraZona, textoDiferencia, relojDe, tituloHoraAlli, leerCafe, enCafes, textoCafes, HORAS_JORNADA, enHoras, textoHoras,
+    COMPARAR_IGUAL, compararPrecios, inclinacion, leerTamano, compararTamanos, efectivoParaTraer, traerEfectivo, quitarRetiradaDeViajes, deCadaDia, semanaDelViaje, tocaSemana, mensajeSemana, FOTO_LADO, medidasFoto, fotosSinGasto, restoReedSolomon, formatoQR, versionQR, bytesDeDatosQR, codigoQR, svgQR, QR_VERSION_MAX, resumenParaQR, ZONAS, desfase, esNoche, momentoDelDia, cieloAlli, horaAlli, SIGLAS_ZONA, leerHoraZona, convertirHoraZona, textoHoraZona, textoDiferencia, relojDe, tituloHoraAlli, leerCafe, enCafes, textoCafes, HORAS_JORNADA, enHoras, textoHoras,
     PROPINAS_RAPIDAS, PROPINA_HABITUAL, propinaHabitual, leerPropina, textoPropina, ENCHUFES, leerEnchufe, enchufeDe, textoEnchufe, EMERGENCIAS, leerEmergencias, textoEmergencias, AGUA, leerAgua, textoAgua, POR_LA_IZQUIERDA, CARNE_EUROPEO, leerConducir, textoConducir, IDIOMA_DE_DIVISA, paraDecir, FRASE_REGATEO, paraEnsenar, VOCES_DE_BROMA, elegirVoz, PREFIJOS, leerPrefijo, textoPrefijo, FRASES, leerGracias, textoGracias, IVA, leerIva, textoIva, PAGO_ALLI, CAJERO_NOTA, leerCajero, textoCajero, leerLlegar, textoLlegar, VISADOS, leerVisado, textoVisado, ROAMING, leerRoaming, textoRoaming, CON_TSE, leerSanitaria, textoSanitaria, APPS_TAXI, leerTaxi, textoTaxi, REGATEO, leerRegatear, textoRegatear, FESTIVOS, FESTIVOS_LUNA, pascuaOrtodoxa, fechaFestivo, festivosProximos, leerFestivos, textoFestivos, HORARIOS, leerHorario, textoHorario, PROPINA_MAX, PERSONAS_MAX, CUENTA_POR_DEFECTO, leerCuenta, redondoHaciaArriba, repartirCuenta, cuentaParaCompartir, gastoDeLaCuenta, BILLETES, leerBilletes, textoBilletes, PAGOS_MAX, pagosPosibles, vuelta, vueltaEnBilletes, pagoJusto,
     MARGENES, tasaOfrecida, analizarCambio,
     domingoDePascua, hayTasaEl, tasaVieja, textoTasaVieja, horaBce, textoActualizado, proximaTasa, textoProximaTasa,

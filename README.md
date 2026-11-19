@@ -167,6 +167,11 @@ que necesitaba una conversión rápida. Ahora es un clic en la barra del navegad
   38,40 EUR"), lo que se ha llevado el banco, en
   qué se ha ido, lo de cada día y cómo va el presupuesto,
   con negritas y emojis para que en WhatsApp se lea bien
+- Y al móvil, con el cuadradito de al lado: el mismo resumen en un código QR,
+  para leerlo con la cámara y copiarlo o mandarlo desde ahí. El QR está hecho a
+  mano, sin librerías (modo byte en UTF-8, corrección M). Si el viaje es muy
+  largo, va sin la lista de días, que con todos los módulos saldrían
+  demasiado pequeños para la cámara
 - Cada gasto dice si fue con tarjeta o en efectivo, con el botón que hay al
   lado de la categoría. En efectivo no se le suma la comisión del banco, y en
   la lista lleva un puntito verde. Se queda como lo dejes. Arriba, con un

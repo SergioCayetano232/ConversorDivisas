@@ -1020,6 +1020,41 @@ body::after {
   animation: shake 360ms var(--ease);
 }
 
+/* El QR siempre en blanco y negro, también en oscuro: los lectores lo quieren así. */
+.qr {
+  align-items: center;
+}
+
+.qr__codigo {
+  flex: 1;
+  min-height: 0;
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.qr__codigo svg {
+  width: auto;
+  height: 100%;
+  max-width: 100%;
+  aspect-ratio: 1;
+  border-radius: var(--r-sm);
+  box-shadow: var(--shadow-md);
+  animation: pop var(--slow) var(--ease-spring);
+}
+
+.qr__pista {
+  max-width: 300px;
+  font-size: 11px;
+  text-align: center;
+  color: var(--muted);
+}
+
+.qr .tique__pie {
+  align-self: stretch;
+}
+
 /* En la fila, pegado al concepto: dice que hay foto sin quitarle sitio a la cifra. */
 .gastos__tique {
   flex-shrink: 0;

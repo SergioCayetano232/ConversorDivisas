@@ -294,6 +294,12 @@ const el = {
   historialCsv: document.getElementById("historial-csv"),
   gastosCsv: document.getElementById("gastos-csv"),
   gastosCompartir: document.getElementById("gastos-compartir"),
+  gastosQr: document.getElementById("gastos-qr"),
+  qr: document.getElementById("qr"),
+  qrTitulo: document.getElementById("qr-titulo"),
+  qrCodigo: document.getElementById("qr-codigo"),
+  qrPista: document.getElementById("qr-pista"),
+  qrCerrar: document.getElementById("qr-cerrar"),
   deshacer: document.getElementById("gastos-deshacer"),
   deshacerTexto: document.getElementById("gastos-deshacer-texto"),
   deshacerBoton: document.getElementById("gastos-deshacer-boton"),
@@ -7157,6 +7163,26 @@ async function onCompartir() {
   mostrarFlash([tr(bien ? "compartir.flash" : "compartir.fallo")], 2200);
 }
 
+// Lo mismo que se copia para WhatsApp, pero para la cámara del móvil.
+function abrirQr() {
+  const viaje = viajeActivo(cambiarViaje(viajes, viajes.activo, { gastos, presupuesto, cajero }));
+  const nombre = viaje.nombre || tr("gastos");
+  const hecho = resumenParaQR({ ...viaje, nombre });
+  el.qrTitulo.textContent = tr("qr.titulo", { viaje: nombre });
+  el.qrCodigo.innerHTML = hecho ? svgQR(hecho.qr) : "";
+  el.qrCodigo.hidden = !hecho;
+  el.qrCodigo.setAttribute("aria-label", tr("qr.aria"));
+  el.qrPista.textContent = !hecho ? tr("qr.noCabe") : hecho.sinDias ? `${tr("qr.pista")}. ${tr("qr.sinDias")}` : tr("qr.pista");
+  el.qr.hidden = false;
+  el.qr.focus();
+}
+
+function cerrarQr() {
+  if (el.qr.hidden) return;
+  el.qr.hidden = true;
+  el.gastosQr.focus();
+}
+
 function abrirGastos() {
   cerrarBurbuja();
   cerrarHistorial();
@@ -9853,6 +9879,17 @@ function bindEvents() {
   el.historialBorrar.addEventListener("click", onBorrarHistorial);
   el.historialCsv.addEventListener("click", () => descargarCsv(csvHistorial(historial), tr("csv.archivoHistorial"), el.historialCsv));
   el.gastosCompartir.addEventListener("click", onCompartir);
+  el.gastosQr.addEventListener("click", abrirQr);
+  el.qrCerrar.addEventListener("click", cerrarQr);
+  el.qr.addEventListener("click", (event) => {
+    if (event.target === el.qr) cerrarQr();
+  });
+  el.qr.addEventListener("keydown", (event) => {
+    if (event.key !== "Escape") return;
+    event.preventDefault();
+    event.stopPropagation();
+    cerrarQr();
+  });
   el.chuletaCompartir.addEventListener("click", onCompartirChuleta);
   el.extrasCompartir.addEventListener("click", onCompartirExtras);
   el.chuletaImprimir.addEventListener("click", onImprimirChuleta);
@@ -10164,7 +10201,7 @@ function bindEvents() {
   });
   document.addEventListener("mousedown", (event) => {
     // El tique va por encima de todo: lo que se toca ahí no es tocar fuera de los paneles.
-    if (el.tique.contains(event.target)) return;
+    if (el.tique.contains(event.target) || el.qr.contains(event.target)) return;
     if (!el.bandeja.hidden && !el.bandeja.contains(event.target)) cerrarBandeja();
     // La pastilla se cierra a sí misma con su clic; si la cerrara aquí, el clic
     // la volvería a abrir.
