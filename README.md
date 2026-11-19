@@ -279,8 +279,8 @@ que necesitaba una conversión rápida. Ahora es un clic en la barra del navegad
   lo editas). Desde el popup se abre una pestaña para elegirla, que Chrome no
   deja coger archivos desde ahí; en el panel lateral, directamente. El gasto
   lleva un 🧾 y pulsándolo la ves en grande, la cambias o la quitas. Se guarda
-  reducida (una de 4000 px queda en unos 30 KB) y solo en este ordenador: no va
-  en la copia de seguridad
+  reducida (una de 4000 px queda en unos 30 KB) en este ordenador, y va en la
+  copia de seguridad
 - Lo pendiente de pagar: el hotel que se paga al salir o la cena ya
   reservada. Con **⏳ Pendiente**, debajo del total, lo apuntas con lo que
   vale hoy. No cuenta como gastado, pero sí sale de lo que te queda al día y
@@ -594,8 +594,9 @@ que necesitaba una conversión rápida. Ahora es un clic en la barra del navegad
   derecho en el icono → **Opciones**) se abre una página para bajarte en un
   archivo tus viajes, gastos, avisos, historial y preferencias, y para
   restaurarlos arrastrándolo. Antes de restaurar te enseña qué trae la copia,
-  porque sustituye lo que tienes. Como la extensión se carga a mano, si borras
-  la carpeta lo perderías todo
+  porque sustituye lo que tienes. Las fotos de los tiques van también, en el
+  mismo archivo ("🧾 Con 2 fotos de tiques"). Como la extensión se carga a
+  mano, si borras la carpeta lo perderías todo
 - Los gastos del banco, en esa misma página: sueltas el CSV de movimientos de
   tu banco (BBVA, Santander, CaixaBank, ING… el que da los importes en euros)
   y los cargos de las fechas del viaje pasan a sus gastos, con la cantidad en

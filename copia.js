@@ -11,6 +11,8 @@ const el = {
   previa: document.getElementById("previa"),
   previaFecha: document.getElementById("previa-fecha"),
   previaCifras: document.getElementById("previa-cifras"),
+  ahoraTiques: document.getElementById("ahora-tiques"),
+  previaTiques: document.getElementById("previa-tiques"),
   restaurar: document.getElementById("restaurar"),
   cancelar: document.getElementById("cancelar"),
   hecho: document.getElementById("hecho"),
@@ -69,6 +71,7 @@ const el = {
 
 
 let pendiente = null;
+let tiquesPendientes = {};
 
 function reiniciar(nodo, clase) {
   nodo.classList.remove(clase);
@@ -121,8 +124,40 @@ async function leerTodo() {
   return chrome.storage.local.get(null);
 }
 
+function pintarTiques(nodo, n) {
+  nodo.hidden = !n;
+  if (n) nodo.textContent = n === 1 ? tr("copia.tique") : tr("copia.tiques", { n: numeros({ maximumFractionDigits: 0 }).format(n) });
+}
+
+// Las fotos, en texto para que quepan en el JSON. Si IndexedDB falla, la copia
+// sale sin ellas antes que no salir.
+async function leerTiques() {
+  try {
+    const claves = await fotos.claves();
+    const pares = await Promise.all(claves.map(async (id) => {
+      const foto = await fotos.leer(id);
+      if (!foto) return null;
+      const url = await new Promise((resolver, fallar) => {
+        const lector = new FileReader();
+        lector.onload = () => resolver(lector.result);
+        lector.onerror = () => fallar(lector.error);
+        lector.readAsDataURL(foto);
+      });
+      return [id, url];
+    }));
+    return Object.fromEntries(pares.filter(Boolean));
+  } catch (error) {
+    console.warn("No se pudieron leer los tiques", error);
+    return {};
+  }
+}
+
 async function pintarAhora() {
-  pintarCifras(el.cifras, resumenCopia(crearCopia(await leerTodo()).datos));
+  const { datos } = crearCopia(await leerTodo());
+  pintarCifras(el.cifras, resumenCopia(datos));
+  // Solo las de gastos que siguen ahí: son las que van a ir en la copia.
+  const claves = await fotos.claves().catch(() => []);
+  pintarTiques(el.ahoraTiques, claves.length - fotosSinGasto(claves, datos.viajes).length);
   await pintarBajarGrupo();
 }
 
@@ -138,7 +173,7 @@ function bajarJson(objeto, nombre) {
 }
 
 async function onDescargar() {
-  bajarJson(crearCopia(await leerTodo()), `${tr("copia.archivo")}-${hoy()}.json`);
+  bajarJson(crearCopia(await leerTodo(), new Date(), await leerTiques()), `${tr("copia.archivo")}-${hoy()}.json`);
 
   el.descargarTexto.textContent = tr("copia.descargada");
   reiniciar(el.descargar, "is-hecho");
@@ -151,6 +186,7 @@ async function onDescargar() {
 
 function mostrarError(clave) {
   pendiente = null;
+  tiquesPendientes = {};
   el.previa.hidden = true;
   el.hecho.hidden = true;
   el.error.textContent = tr(clave);
@@ -165,12 +201,14 @@ async function leerArchivo(archivo) {
   if (leida.error) return mostrarError(`copia.error.${leida.error}`);
 
   pendiente = leida.datos;
+  tiquesPendientes = leida.tiques ?? {};
   el.error.hidden = true;
   el.previaFecha.textContent = leida.creada
     ? tr("copia.deFecha", { fecha: fechas({ dateStyle: "long", timeStyle: "short" }).format(new Date(leida.creada)) })
     : tr("copia.sinFecha");
   el.previaCifras.replaceChildren();
   pintarCifras(el.previaCifras, resumenCopia(pendiente));
+  pintarTiques(el.previaTiques, Object.keys(tiquesPendientes).length);
   el.previa.hidden = false;
   reiniciar(el.previa, "is-nueva");
   el.restaurar.focus();
@@ -187,6 +225,16 @@ async function onRestaurar() {
     console.warn("No se pudo restaurar la copia", error);
     return mostrarError("copia.error.guardar");
   }
+  // Las fotos después de los datos: si alguna falla, lo apuntado ya está a salvo.
+  // Las que había de gastos que ya no están, el popup las limpia al abrirse.
+  for (const [id, url] of Object.entries(tiquesPendientes)) {
+    try {
+      await fotos.guardar(id, await (await fetch(url)).blob());
+    } catch (error) {
+      console.warn("No se pudo restaurar un tique", error);
+    }
+  }
+  tiquesPendientes = {};
   pendiente = null;
   el.archivo.value = "";
   el.previa.hidden = true;
@@ -198,6 +246,7 @@ async function onRestaurar() {
 
 function onCancelar() {
   pendiente = null;
+  tiquesPendientes = {};
   el.archivo.value = "";
   el.previa.hidden = true;
   el.soltar.focus();

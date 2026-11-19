@@ -10329,8 +10329,22 @@ function mezclaInicial(local, nube) {
   return { aLocal: cambiosSync(deNube, deLocal), aNube: sube };
 }
 
-function crearCopia(crudo, ahora = new Date()) {
-  return { app: COPIA_APP, version: COPIA_VERSION, creada: ahora.toISOString(), datos: limpiarCopia(crudo) };
+// Las fotos de los tiques van al lado de los datos y no dentro: no están en el
+// almacenamiento, sino en IndexedDB. Sin subir la versión, que una copia con
+// fotos se puede restaurar igual con la extensión de antes; solo no las verá.
+const TIQUE_EN_COPIA = /^data:image\/(?:jpeg|png|webp);base64,[A-Za-z0-9+/]+=*$/;
+
+// Solo las de gastos que van en la copia, y solo si son imágenes de verdad.
+function tiquesDeCopia(tiques, viajes) {
+  if (!tiques || typeof tiques !== "object" || Array.isArray(tiques)) return {};
+  const ids = new Set(todosLosViajes(viajes).flatMap((v) => [...v.gastos, ...(v.empresa ?? [])].map((g) => g.id)));
+  return Object.fromEntries(Object.entries(tiques).filter(([id, url]) => ids.has(id) && typeof url === "string" && TIQUE_EN_COPIA.test(url)));
+}
+
+function crearCopia(crudo, ahora = new Date(), tiques = {}) {
+  const datos = limpiarCopia(crudo);
+  const fotos = tiquesDeCopia(tiques, datos.viajes);
+  return { app: COPIA_APP, version: COPIA_VERSION, creada: ahora.toISOString(), datos, ...(Object.keys(fotos).length ? { tiques: fotos } : {}) };
 }
 
 function leerCopia(texto) {
@@ -10343,7 +10357,9 @@ function leerCopia(texto) {
   if (!copia || copia.app !== COPIA_APP || !copia.datos || typeof copia.datos !== "object") return { error: "otra" };
   if (!Number.isInteger(copia.version) || copia.version > COPIA_VERSION) return { error: "version" };
   const creada = typeof copia.creada === "string" && !Number.isNaN(Date.parse(copia.creada)) ? copia.creada : null;
-  return { datos: limpiarCopia(copia.datos), creada };
+  const datos = limpiarCopia(copia.datos);
+  const tiques = tiquesDeCopia(copia.tiques, datos.viajes);
+  return { datos, creada, ...(Object.keys(tiques).length ? { tiques } : {}) };
 }
 
 // Un viaje para pasárselo al grupo. Con su propio tipo, para que no se pueda
@@ -10618,7 +10634,7 @@ if (typeof module !== "undefined") {
     urlImpresion, leerImpresion, chuletaParaImprimir,
     COMISION_MAX, COMISIONES_RAPIDAS, leerComision, leerPorcentaje, conComision,
     IMPUESTO_MAX, IMPUESTOS_RAPIDOS, leerImpuesto, leerImpuestoEscrito, loQuePagas,
-    COMPARAR_IGUAL, compararPrecios, inclinacion, leerTamano, compararTamanos, efectivoParaTraer, traerEfectivo, quitarRetiradaDeViajes, deCadaDia, semanaDelViaje, tocaSemana, mensajeSemana, FOTO_LADO, medidasFoto, fotosSinGasto, restoReedSolomon, formatoQR, versionQR, bytesDeDatosQR, codigoQR, svgQR, QR_VERSION_MAX, resumenParaQR, ZONAS, desfase, esNoche, momentoDelDia, cieloAlli, horaAlli, SIGLAS_ZONA, leerHoraZona, convertirHoraZona, textoHoraZona, textoDiferencia, relojDe, tituloHoraAlli, leerCafe, enCafes, textoCafes, HORAS_JORNADA, enHoras, textoHoras,
+    COMPARAR_IGUAL, compararPrecios, inclinacion, leerTamano, compararTamanos, efectivoParaTraer, traerEfectivo, quitarRetiradaDeViajes, deCadaDia, semanaDelViaje, tocaSemana, mensajeSemana, FOTO_LADO, medidasFoto, fotosSinGasto, tiquesDeCopia, restoReedSolomon, formatoQR, versionQR, bytesDeDatosQR, codigoQR, svgQR, QR_VERSION_MAX, resumenParaQR, ZONAS, desfase, esNoche, momentoDelDia, cieloAlli, horaAlli, SIGLAS_ZONA, leerHoraZona, convertirHoraZona, textoHoraZona, textoDiferencia, relojDe, tituloHoraAlli, leerCafe, enCafes, textoCafes, HORAS_JORNADA, enHoras, textoHoras,
     PROPINAS_RAPIDAS, PROPINA_HABITUAL, propinaHabitual, leerPropina, textoPropina, ENCHUFES, leerEnchufe, enchufeDe, textoEnchufe, EMERGENCIAS, leerEmergencias, textoEmergencias, AGUA, leerAgua, textoAgua, POR_LA_IZQUIERDA, CARNE_EUROPEO, leerConducir, textoConducir, IDIOMA_DE_DIVISA, paraDecir, FRASE_REGATEO, paraEnsenar, VOCES_DE_BROMA, elegirVoz, PREFIJOS, leerPrefijo, textoPrefijo, FRASES, leerGracias, textoGracias, IVA, leerIva, textoIva, PAGO_ALLI, CAJERO_NOTA, leerCajero, textoCajero, leerLlegar, textoLlegar, VISADOS, leerVisado, textoVisado, ROAMING, leerRoaming, textoRoaming, CON_TSE, leerSanitaria, textoSanitaria, APPS_TAXI, leerTaxi, textoTaxi, REGATEO, leerRegatear, textoRegatear, FESTIVOS, FESTIVOS_LUNA, pascuaOrtodoxa, fechaFestivo, festivosProximos, leerFestivos, textoFestivos, HORARIOS, leerHorario, textoHorario, PROPINA_MAX, PERSONAS_MAX, CUENTA_POR_DEFECTO, leerCuenta, redondoHaciaArriba, repartirCuenta, cuentaParaCompartir, gastoDeLaCuenta, BILLETES, leerBilletes, textoBilletes, PAGOS_MAX, pagosPosibles, vuelta, vueltaEnBilletes, pagoJusto,
     MARGENES, tasaOfrecida, analizarCambio,
     domingoDePascua, hayTasaEl, tasaVieja, textoTasaVieja, horaBce, textoActualizado, proximaTasa, textoProximaTasa,

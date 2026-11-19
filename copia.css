@@ -442,6 +442,17 @@ body::before {
   stroke-linejoin: round;
 }
 
+/* Debajo de las cifras, que con una quinta casilla no cabrían en el móvil. */
+.copia__tiques {
+  margin-top: -8px;
+  font-size: 13px;
+  color: var(--tenue);
+}
+
+.copia__tiques[hidden] {
+  display: none;
+}
+
 .tarjeta__nota {
   margin-top: -8px;
   font-size: 13px;

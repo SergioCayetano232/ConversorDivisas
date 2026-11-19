@@ -21,6 +21,7 @@
     <section class="tarjeta" aria-labelledby="ahora-titulo">
       <h2 class="tarjeta__titulo" id="ahora-titulo" data-t="copia.ahora">Lo que tienes ahora</h2>
       <ul class="cifras" id="cifras" aria-live="polite"></ul>
+      <p class="copia__tiques" id="ahora-tiques" hidden></p>
       <button class="boton boton--dorado" type="button" id="descargar">
         <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 2v8M4.5 6.8L8 10.3l3.5-3.5M2.5 13.5h11"/></svg>
         <span id="descargar-texto" data-t="copia.descargar">Descargar la copia</span>
@@ -39,6 +40,7 @@
       <div class="vista-previa" id="previa" hidden>
         <p class="vista-previa__fecha" id="previa-fecha"></p>
         <ul class="cifras cifras--pequenas" id="previa-cifras"></ul>
+        <p class="copia__tiques" id="previa-tiques" hidden></p>
         <p class="vista-previa__aviso" data-t="copia.sustituye">Sustituye todo lo que tienes ahora por lo de la copia.</p>
         <div class="vista-previa__botones">
           <button class="boton boton--dorado" type="button" id="restaurar" data-t="copia.si">Restaurar</button>
@@ -190,6 +192,7 @@
 
   <script src="textos.js"></script>
   <script src="logica.js"></script>
+  <script src="fotos.js"></script>
   <script src="copia.js"></script>
 </body>
 </html>
