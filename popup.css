@@ -3459,6 +3459,19 @@ body::after {
   font-size: 13px;
 }
 
+/* Con qué billetes debería llegarte, para contarlo en la mano. */
+.cuenta__vuelta {
+  flex-wrap: wrap;
+}
+
+.cuenta__vuelta-billetes {
+  flex-basis: 100%;
+  padding-left: 19px;
+  font-size: 10px;
+  font-weight: 400;
+  color: var(--muted);
+}
+
 .cuenta__vuelta.is-entra {
   animation: vuelta-entra var(--slow) var(--ease-out);
 }

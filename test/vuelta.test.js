@@ -1,6 +1,7 @@
 const { test } = require("node:test");
 const assert = require("node:assert");
-const { BILLETES, DIVISAS_BCE, pagosPosibles, vuelta, pagoJusto } = require("../logica.js");
+const { BILLETES, DIVISAS_BCE, pagosPosibles, vuelta, vueltaEnBilletes, pagoJusto } = require("../logica.js");
+const { ponerIdioma } = require("../textos.js");
 
 test("hay billetes para todas las divisas, de menor a mayor", () => {
   for (const { code } of DIVISAS_BCE) {
@@ -48,4 +49,18 @@ test("por debajo del billete más pequeño, todo en monedas", () => {
 
 test("los céntimos no se pierden por los decimales", () => {
   assert.equal(pagoJusto(0.1 + 0.2 + 5, "EUR").monedas, 0.3);
+});
+
+test("con qué te llega la vuelta", () => {
+  ponerIdioma("es");
+  assert.equal(vueltaEnBilletes(37.2, 50, "EUR"), "10 + 2,80 en monedas");
+  assert.equal(vueltaEnBilletes(3200, 10000, "JPY"), "5.000 + 1.000 + 800 en monedas");
+  assert.equal(vueltaEnBilletes(10, 50, "EUR"), "20 + 20");
+  assert.equal(vueltaEnBilletes(48.5, 50, "EUR"), "1,50 en monedas");
+});
+
+test("sin vuelta o sin billetes conocidos, nada", () => {
+  assert.equal(vueltaEnBilletes(50, 50, "EUR"), "");
+  assert.equal(vueltaEnBilletes(60, 50, "EUR"), "");
+  assert.equal(vueltaEnBilletes(20000, 50000, "VND"), "");
 });

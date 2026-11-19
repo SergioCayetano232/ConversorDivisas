@@ -5930,8 +5930,14 @@ function pintarVuelta(cantidad, from) {
   nodo.hidden = pagoCon === null;
   if (pagoCon === null) return;
   const texto = tr("cuenta.vuelta", { importe: `${nf.format(vuelta(cantidad, pagoCon))} ${from}` });
-  if (texto === habia) return;
-  nodo.textContent = texto;
+  const billetes = vueltaEnBilletes(cantidad, pagoCon, from);
+  if (`${texto}${billetes}` === habia) return;
+  const frase = document.createElement("span");
+  frase.textContent = texto;
+  const como = document.createElement("span");
+  como.className = "cuenta__vuelta-billetes";
+  como.textContent = billetes;
+  nodo.replaceChildren(frase, ...(billetes ? [como] : []));
   restartAnimation(nodo, habia ? "is-tic" : "is-entra");
 }
 
