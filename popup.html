@@ -22,12 +22,17 @@
 
         <div class="field field--decir">
           <label class="field__label" for="amount" data-t="cantidad">Cantidad</label>
-          <button class="decir" type="button" id="decir" hidden>
-            <svg viewBox="0 0 14 14" aria-hidden="true"><path class="decir__altavoz" d="M2 5.2h2.2L7.4 2.6v8.8L4.2 8.8H2z"/><path class="decir__onda decir__onda--1" d="M9.4 5.1a2.6 2.6 0 0 1 0 3.8"/><path class="decir__onda decir__onda--2" d="M11 3.5a5 5 0 0 1 0 7"/></svg>
-          </button>
-          <button class="decir oir" type="button" id="oir" aria-pressed="false" hidden>
-            <svg viewBox="0 0 12 12" aria-hidden="true"><rect x="4.4" y="1.3" width="3.2" height="5.6" rx="1.6"/><path d="M2.6 5.6a3.4 3.4 0 0 0 6.8 0M6 9v1.8"/></svg>
-          </button>
+          <span class="field__botones">
+            <button class="decir ensenar-abrir" type="button" id="ensenar-abrir" aria-haspopup="dialog" hidden>
+              <svg viewBox="0 0 12 12" aria-hidden="true"><path d="M1.5 4.2V1.5h2.7M7.8 1.5h2.7v2.7M10.5 7.8v2.7H7.8M4.2 10.5H1.5V7.8"/></svg>
+            </button>
+            <button class="decir oir" type="button" id="oir" aria-pressed="false" hidden>
+              <svg viewBox="0 0 12 12" aria-hidden="true"><rect x="4.4" y="1.3" width="3.2" height="5.6" rx="1.6"/><path d="M2.6 5.6a3.4 3.4 0 0 0 6.8 0M6 9v1.8"/></svg>
+            </button>
+            <button class="decir" type="button" id="decir" hidden>
+              <svg viewBox="0 0 14 14" aria-hidden="true"><path class="decir__altavoz" d="M2 5.2h2.2L7.4 2.6v8.8L4.2 8.8H2z"/><path class="decir__onda decir__onda--1" d="M9.4 5.1a2.6 2.6 0 0 1 0 3.8"/><path class="decir__onda decir__onda--2" d="M11 3.5a5 5 0 0 1 0 7"/></svg>
+            </button>
+          </span>
           <div class="field__caja">
             <input
               class="field__input"
@@ -1119,6 +1124,13 @@
     </div>
 
     <div class="tecla-flash" id="tecla-flash" aria-hidden="true"></div>
+
+    <div class="ensenar" id="ensenar" role="dialog" aria-modal="true" aria-labelledby="ensenar-precio" tabindex="-1" hidden>
+      <p class="ensenar__precio" id="ensenar-precio"></p>
+      <p class="ensenar__frase" id="ensenar-frase" hidden></p>
+      <p class="ensenar__tuyo" id="ensenar-tuyo"></p>
+      <p class="ensenar__pie" data-t="ensenar.pie">Toca o pulsa una tecla para volver</p>
+    </div>
 
   </div>
 

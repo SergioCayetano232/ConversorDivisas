@@ -1544,6 +1544,26 @@ function paraDecir(cantidad, code) {
   return { lang, texto };
 }
 
+// Enseñar el precio al vendedor: grande y escrito como allí. Donde se regatea,
+// con la frase para pedirlo por ese precio. Solo las que sé decir bien; en el
+// resto de mercados (Nepal, Camboya, Kenia…) va en inglés, que lo entienden.
+const FRASE_REGATEO = {
+  es: "¿Me lo deja en {p}?", en: "Can you do {p}?", zh: "{p}可以吗？", "zh-HK": "{p}得唔得？",
+  th: "{p} ได้ไหม", vi: "{p} được không?", id: "Boleh {p}?", ms: "Boleh {p}?", fil: "Pwede ba {p}?",
+  tr: "{p} olur mu?", ar: "ممكن {p}؟", hi: "क्या {p} में दे सकते हैं?",
+};
+
+function paraEnsenar(cantidad, code) {
+  if (!isValidCode(code) || !Number.isFinite(cantidad) || cantidad <= 0) return null;
+  const dicho = paraDecir(cantidad, code);
+  // Con el euro no hay idioma de allí: en el tuyo.
+  const lang = dicho?.lang ?? localeActual();
+  const precio = dicho?.texto ?? new Intl.NumberFormat(lang, { style: "currency", currency: code }).format(cantidad);
+  const regatea = Object.values(REGATEO).some((r) => r.codes.includes(code));
+  const plantilla = regatea ? FRASE_REGATEO[lang] ?? FRASE_REGATEO[lang.split("-")[0]] ?? FRASE_REGATEO.en : null;
+  return { precio, lang, rtl: lang.startsWith("ar"), frase: plantilla ? plantilla.replace("{p}", precio) : null };
+}
+
 // Las de broma de macOS: "Albert" diciendo un precio suena a robot de feria.
 // Chrome las da con el nombre traducido al idioma del sistema y sin ningún id
 // fijo, así que van en inglés y en español, que son los idiomas de la extensión.
@@ -8962,6 +8982,7 @@ const FUNCIONES = [
   { accion: "fijar", claves: "chincheta guardar par favorito pin favourite favorite" },
   { accion: "historial", claves: "recientes conversiones anteriores history recent" },
   { accion: "cuenta", claves: "dividir restaurante propina cuenta split bill tip" },
+  { accion: "ensenar", claves: "enseñar mostrar vendedor regatear grande pantalla show seller haggle big screen" },
   { accion: "comparar", claves: "barato caro precio balanza cheaper price compare" },
   { accion: "comision", claves: "comision banco tarjeta impuesto iva cafes horas fee bank tax" },
   { accion: "vista:evolucion", claves: "grafico historico tendencia chart trend" },
@@ -9952,7 +9973,7 @@ if (typeof module !== "undefined") {
     COMISION_MAX, COMISIONES_RAPIDAS, leerComision, leerPorcentaje, conComision,
     IMPUESTO_MAX, IMPUESTOS_RAPIDOS, leerImpuesto, leerImpuestoEscrito, loQuePagas,
     COMPARAR_IGUAL, compararPrecios, inclinacion, ZONAS, desfase, esNoche, momentoDelDia, cieloAlli, horaAlli, SIGLAS_ZONA, leerHoraZona, convertirHoraZona, textoHoraZona, textoDiferencia, relojDe, tituloHoraAlli, leerCafe, enCafes, textoCafes, HORAS_JORNADA, enHoras, textoHoras,
-    PROPINAS_RAPIDAS, PROPINA_HABITUAL, propinaHabitual, leerPropina, textoPropina, ENCHUFES, leerEnchufe, enchufeDe, textoEnchufe, EMERGENCIAS, leerEmergencias, textoEmergencias, AGUA, leerAgua, textoAgua, POR_LA_IZQUIERDA, CARNE_EUROPEO, leerConducir, textoConducir, IDIOMA_DE_DIVISA, paraDecir, VOCES_DE_BROMA, elegirVoz, PREFIJOS, leerPrefijo, textoPrefijo, FRASES, leerGracias, textoGracias, IVA, leerIva, textoIva, PAGO_ALLI, CAJERO_NOTA, leerCajero, textoCajero, leerLlegar, textoLlegar, VISADOS, leerVisado, textoVisado, ROAMING, leerRoaming, textoRoaming, CON_TSE, leerSanitaria, textoSanitaria, APPS_TAXI, leerTaxi, textoTaxi, REGATEO, leerRegatear, textoRegatear, FESTIVOS, FESTIVOS_LUNA, pascuaOrtodoxa, fechaFestivo, festivosProximos, leerFestivos, textoFestivos, HORARIOS, leerHorario, textoHorario, PROPINA_MAX, PERSONAS_MAX, CUENTA_POR_DEFECTO, leerCuenta, redondoHaciaArriba, repartirCuenta, cuentaParaCompartir, gastoDeLaCuenta, BILLETES, leerBilletes, textoBilletes, PAGOS_MAX, pagosPosibles, vuelta, vueltaEnBilletes, pagoJusto,
+    PROPINAS_RAPIDAS, PROPINA_HABITUAL, propinaHabitual, leerPropina, textoPropina, ENCHUFES, leerEnchufe, enchufeDe, textoEnchufe, EMERGENCIAS, leerEmergencias, textoEmergencias, AGUA, leerAgua, textoAgua, POR_LA_IZQUIERDA, CARNE_EUROPEO, leerConducir, textoConducir, IDIOMA_DE_DIVISA, paraDecir, FRASE_REGATEO, paraEnsenar, VOCES_DE_BROMA, elegirVoz, PREFIJOS, leerPrefijo, textoPrefijo, FRASES, leerGracias, textoGracias, IVA, leerIva, textoIva, PAGO_ALLI, CAJERO_NOTA, leerCajero, textoCajero, leerLlegar, textoLlegar, VISADOS, leerVisado, textoVisado, ROAMING, leerRoaming, textoRoaming, CON_TSE, leerSanitaria, textoSanitaria, APPS_TAXI, leerTaxi, textoTaxi, REGATEO, leerRegatear, textoRegatear, FESTIVOS, FESTIVOS_LUNA, pascuaOrtodoxa, fechaFestivo, festivosProximos, leerFestivos, textoFestivos, HORARIOS, leerHorario, textoHorario, PROPINA_MAX, PERSONAS_MAX, CUENTA_POR_DEFECTO, leerCuenta, redondoHaciaArriba, repartirCuenta, cuentaParaCompartir, gastoDeLaCuenta, BILLETES, leerBilletes, textoBilletes, PAGOS_MAX, pagosPosibles, vuelta, vueltaEnBilletes, pagoJusto,
     MARGENES, tasaOfrecida, analizarCambio,
     domingoDePascua, hayTasaEl, tasaVieja, textoTasaVieja, horaBce, textoActualizado, proximaTasa, textoProximaTasa,
     FECHA_MINIMA, fechaLarga, fechaValida, diaDelGrafico, mesesAtras, FECHAS_RAPIDAS, leerFecha, cambioDesde, notaDiaHabil,

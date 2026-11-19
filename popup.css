@@ -859,10 +859,16 @@ body::after {
   position: relative;
 }
 
-.decir {
+/* Altavoz, micro y enseñar, en fila a la derecha de "Cantidad". */
+.field__botones {
   position: absolute;
   top: -3px;
   right: 0;
+  display: flex;
+  gap: 2px;
+}
+
+.decir {
   display: grid;
   place-items: center;
   width: 20px;
@@ -918,11 +924,6 @@ body::after {
   animation-delay: 150ms;
 }
 
-/* El micro de convertir hablando, a la izquierda del altavoz si lo hay. */
-.decir:not([hidden]) + .oir {
-  right: 22px;
-}
-
 .oir svg {
   width: 12px;
   height: 12px;
@@ -936,6 +937,91 @@ body::after {
 
 .oir.is-mal {
   animation: shake 360ms var(--ease);
+}
+
+.ensenar-abrir svg {
+  width: 11px;
+  height: 11px;
+}
+
+/* Enseñar el precio: todo el popup para la cifra, de lejos y con mal pulso.
+   Sin cristal ni manchas: aquí manda que se lea. */
+.ensenar {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--s-3);
+  padding: 24px 16px;
+  background: var(--graphite);
+  text-align: center;
+  cursor: pointer;
+  animation: ensenar-entra var(--mid) var(--ease-out);
+}
+
+.ensenar[hidden] {
+  display: none;
+}
+
+.ensenar:focus {
+  outline: none;
+}
+
+.ensenar__precio {
+  max-width: 100%;
+  font-family: var(--font-mono);
+  font-size: clamp(36px, 15vw, 72px);
+  font-weight: 700;
+  line-height: 1.05;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.02em;
+  overflow-wrap: anywhere;
+  color: var(--brass);
+  animation: ensenar-precio 520ms var(--ease-spring) backwards 60ms;
+}
+
+/* La árabe en monoespaciada sale con huecos entre las letras. */
+.ensenar__precio:lang(ar) {
+  font-family: var(--font-ui);
+  letter-spacing: 0;
+}
+
+.ensenar__frase {
+  max-width: 100%;
+  font-size: clamp(20px, 7vw, 30px);
+  font-weight: 600;
+  line-height: 1.3;
+  color: var(--mist);
+  animation: ensenar-entra var(--mid) var(--ease-out) backwards 160ms;
+}
+
+.ensenar__frase[hidden] {
+  display: none;
+}
+
+.ensenar__tuyo {
+  font-family: var(--font-mono);
+  font-size: 13px;
+  font-variant-numeric: tabular-nums;
+  color: var(--muted);
+}
+
+.ensenar__pie {
+  position: absolute;
+  bottom: 14px;
+  font-size: 10px;
+  color: var(--muted);
+}
+
+@keyframes ensenar-entra {
+  from { opacity: 0; }
+}
+
+@keyframes ensenar-precio {
+  from { opacity: 0; transform: scale(0.85); }
 }
 
 @keyframes decir-onda {

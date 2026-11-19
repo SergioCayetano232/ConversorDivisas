@@ -303,6 +303,11 @@ const el = {
   semanaTexto: document.getElementById("semana-texto"),
   decir: document.getElementById("decir"),
   oir: document.getElementById("oir"),
+  ensenar: document.getElementById("ensenar"),
+  ensenarAbrir: document.getElementById("ensenar-abrir"),
+  ensenarPrecio: document.getElementById("ensenar-precio"),
+  ensenarFrase: document.getElementById("ensenar-frase"),
+  ensenarTuyo: document.getElementById("ensenar-tuyo"),
   abanico: document.getElementById("trend-abanico"),
   abanicoRango: document.getElementById("abanico-rango"),
   abanicoDinero: document.getElementById("abanico-dinero"),
@@ -1452,12 +1457,23 @@ function cargarVoces() {
   pintarDecir();
 }
 
-function pintarDecir() {
+// El lado de allí: arriba, salvo que arriba esté la tuya.
+function precioDeAlli() {
   const tuya = miDivisa();
   const cantidad = cantidadOrigen();
   const from = el.from.value;
   const to = el.to.value;
-  const d = from !== tuya ? paraDecir(cantidad, from) : to !== tuya && rate ? paraDecir(cantidad * rate, to) : null;
+  if (from !== tuya) return { cantidad, code: from, tuyo: rate && to === tuya ? { cantidad: cantidad * rate, code: to } : null };
+  if (to !== tuya && rate) return { cantidad: cantidad * rate, code: to, tuyo: { cantidad, code: from } };
+  return null;
+}
+
+function pintarDecir() {
+  const alli = precioDeAlli();
+  el.ensenarAbrir.hidden = !(alli?.cantidad > 0);
+  el.ensenarAbrir.title = tr("ensenar.abrir");
+  el.ensenarAbrir.setAttribute("aria-label", el.ensenarAbrir.title);
+  const d = alli ? paraDecir(alli.cantidad, alli.code) : null;
   const voz = d && elegirVoz(voces, d.lang);
   paraHablar = voz ? { ...d, voz } : null;
   el.decir.hidden = !paraHablar;
@@ -1465,6 +1481,32 @@ function pintarDecir() {
   const idioma = new Intl.DisplayNames([localeActual()], { type: "language" }).of(d.lang);
   el.decir.title = tr("decir.titulo", { idioma, texto: d.texto });
   el.decir.setAttribute("aria-label", el.decir.title);
+}
+
+let focoAntesDeEnsenar = null;
+
+function abrirEnsenar() {
+  const alli = precioDeAlli();
+  const e = alli && paraEnsenar(alli.cantidad, alli.code);
+  if (!e) return;
+  el.ensenarPrecio.textContent = e.precio;
+  el.ensenarPrecio.lang = e.lang;
+  el.ensenarFrase.hidden = !e.frase;
+  el.ensenarFrase.textContent = e.frase ?? "";
+  el.ensenarFrase.lang = e.lang;
+  el.ensenarFrase.dir = e.rtl ? "rtl" : "auto";
+  // Abajo y pequeño, lo tuyo: para ti, no para el vendedor.
+  el.ensenarTuyo.textContent = alli.tuyo ? `≈ ${nf.format(alli.tuyo.cantidad)} ${alli.tuyo.code}` : "";
+  focoAntesDeEnsenar = document.activeElement;
+  el.ensenar.hidden = false;
+  el.ensenar.focus();
+}
+
+function cerrarEnsenar() {
+  if (el.ensenar.hidden) return false;
+  el.ensenar.hidden = true;
+  focoAntesDeEnsenar?.focus?.();
+  return true;
 }
 
 function onDecir() {
@@ -7991,6 +8033,7 @@ function funcionPosible(accion) {
   const conGastos = ["csv", "compartir", "copiarTotal", "copiarGasto", "tarjetaViaje", "curva"];
   if (conGastos.includes(accion)) return gastos.length > 0;
   if (accion === "deshacer") return Boolean(quitado);
+  if (accion === "ensenar") return precioDeAlli()?.cantidad > 0;
   if (accion === "panel") return puedePanel;
   if (accion === "empresa") return deEmpresa().length > 0;
   if (accion === "gente") return Boolean(cuentasViaje(gastos, viajeActivo(viajes).personas));
@@ -8140,6 +8183,7 @@ function hacerFuncion(accion, funcion = null) {
     (accion === "indiceCafe" ? el.viajesAbrirIndice : el.viajesAbrirArchivo).click();
   } else if (accion === "tarjetaViaje") abrirPestana(`resumen.html?viaje=${encodeURIComponent(viajes.activo)}`);
   else if (accion === "anio") abrirPestana(`resumen.html?anio=${aniosConGastos(todosLosViajes(viajes))[0]}`);
+  else if (accion === "ensenar") abrirEnsenar();
   else if (accion === "comision") abrirBurbuja();
   else if (accion === "copiaSeguridad") chrome.runtime.openOptionsPage();
   else if (accion === "panel") abrirPanel();
@@ -9422,6 +9466,14 @@ function bindEvents() {
   el.empresaImprimir.addEventListener("click", onImprimirEmpresa);
   el.pendientesForm.addEventListener("submit", onApuntarPendiente);
   el.decir.addEventListener("click", onDecir);
+  el.ensenarAbrir.addEventListener("click", abrirEnsenar);
+  el.ensenar.addEventListener("click", cerrarEnsenar);
+  el.ensenar.addEventListener("keydown", (event) => {
+    // Cualquier tecla lo cierra, y que no siga hasta los atajos de debajo.
+    event.preventDefault();
+    event.stopPropagation();
+    cerrarEnsenar();
+  });
   // Chrome carga las voces tarde: la primera vez getVoices() viene vacío.
   globalThis.speechSynthesis?.addEventListener("voiceschanged", cargarVoces);
   cargarVoces();

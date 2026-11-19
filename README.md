@@ -37,6 +37,12 @@ que necesitaba una conversión rápida. Ahora es un clic en la barra del navegad
   y pone el par y la cantidad. Sin decir adónde, a tu divisa; y si dices la
   tuya ("doce euros con cincuenta"), la pone abajo. Entiende lo mismo que el
   dictado de los gastos, y como ese, el reconocimiento es el de Chrome
+- Enseñar el precio al vendedor, con el botón de las esquinas al lado del
+  micrófono: todo el popup para la cifra, escrita como allí ("฿300",
+  "￥84,000"), y pequeño debajo lo que es en la tuya. Donde se regatea
+  (Marruecos, Tailandia, Vietnam, México…), con la frase para pedirlo por ese
+  precio en su idioma ("฿300 ได้ไหม", "¿Me lo deja en $200?"); donde no la sé
+  decir bien, en inglés. Se cierra tocando o con cualquier tecla
 - Buscas la divisa escribiendo: pones "mex" y sale el peso mexicano
 - Un botón para dar la vuelta al par sin tocar los dos desplegables
 - Un botón para copiar el resultado. Con Shift (clic o `Shift+C`) copia la
