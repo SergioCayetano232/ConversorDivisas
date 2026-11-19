@@ -284,6 +284,8 @@ const el = {
   cafeDivisa: document.getElementById("cafe-divisa"),
   resultCafes: document.getElementById("result-cafes"),
   sueldoCampo: document.getElementById("sueldo-campo"),
+  gastosCasa: document.getElementById("gastos-casa"),
+  gastosCasaCampo: document.getElementById("gastos-casa-campo"),
   sueldoDivisa: document.getElementById("sueldo-divisa"),
   resultHoras: document.getElementById("result-horas"),
   resultPistas: document.getElementById("result-pistas"),
@@ -384,6 +386,7 @@ let tarjetas = [];
 let impuesto = 0;
 let cafe = null;
 let sueldo = null;
+let casa = null;
 // La última cuenta que apuntaste, para que un segundo clic no la meta dos veces.
 let cuentaApuntada = null;
 // El billete con el que pagas en el tique. No lo guardo: es de esa cuenta.
@@ -501,6 +504,7 @@ const TARJETAS_KEY = "tarjetasBanco";
 const IMPUESTO_KEY = "impuestoVenta";
 const CAFE_KEY = "precioCafe";
 const SUELDO_KEY = "sueldoHora";
+const CASA_KEY = "gastoCasa";
 const PAGO_KEY = "pagoGasto";
 const FECHA_KEY = "fechaConsulta";
 const HISTORIAL_KEY = "historialConversiones";
@@ -597,6 +601,17 @@ async function cargarSueldo() {
     return leerCafe(guardado[SUELDO_KEY]);
   } catch (error) {
     console.warn("No se pudo leer el sueldo", error);
+    return null;
+  }
+}
+
+// Lo de casa, también con la forma del café: lo que gastas al mes y en qué divisa.
+async function cargarCasa() {
+  try {
+    const guardado = await chrome.storage.local.get(CASA_KEY);
+    return leerCafe(guardado[CASA_KEY]);
+  } catch (error) {
+    console.warn("No se pudo leer lo de casa", error);
     return null;
   }
 }
@@ -2599,6 +2614,60 @@ function turnarPistas() {
   const horas = pistas.classList.toggle("is-horas");
   pintarPistas();
   restartAnimation(horas ? el.resultHoras : el.resultCafes, "is-entra");
+}
+
+// Sin lo de casa puesto, la pregunta; con él, cuánto más (o menos) al día. Si
+// lo de casa va en otra divisa que el viaje, no comparo: no sabría a qué tasa.
+function pintarCasa(media) {
+  const editando = !el.gastosCasaCampo.hidden;
+  const r = comparaConCasa(media, casa);
+  el.gastosCasa.hidden = editando || !media || (casa && !r);
+  if (el.gastosCasa.hidden) return;
+  el.gastosCasa.dataset.tono = r?.tono ?? "";
+  el.gastosCasa.textContent = r ? textoCasa(r) : tr("casa.anadir");
+  el.gastosCasa.title = r
+    ? tr("casa.titulo", { mes: `${nf.format(casa.precio)} ${casa.divisa}`, dia: nf.format(r.diaCasa), media: `${nf.format(media.media)} ${media.to}` })
+    : tr("casa.anadirTitulo");
+}
+
+function editarCasa() {
+  const media = mediaPorDia(gastos);
+  if (!media) return;
+  el.gastosCasaCampo.value = casa?.divisa === media.to ? nf.format(casa.precio) : "";
+  el.gastosCasaCampo.placeholder = tr("casa.campo");
+  el.gastosCasaCampo.setAttribute("aria-label", tr("casa.campoAria", { divisa: media.to }));
+  el.gastosCasaCampo.dataset.divisa = media.to;
+  el.gastosCasaCampo.hidden = false;
+  el.gastosCasa.hidden = true;
+  el.gastosCasaCampo.focus();
+  el.gastosCasaCampo.select();
+}
+
+function dejarCasa(guardar) {
+  if (el.gastosCasaCampo.hidden) return false;
+  const texto = el.gastosCasaCampo.value.trim();
+  const nuevo = texto === "" ? null : leerCafe({ precio: leerImporte(texto), divisa: el.gastosCasaCampo.dataset.divisa });
+  if (guardar && texto !== "" && !nuevo) {
+    restartAnimation(el.gastosCasaCampo, "is-mal");
+    return true;
+  }
+  el.gastosCasaCampo.hidden = true;
+  if (guardar) {
+    const antes = textoCasa(comparaConCasa(mediaPorDia(gastos), casa));
+    casa = nuevo;
+    try {
+      if (casa) chrome.storage.local.set({ [CASA_KEY]: casa });
+      else chrome.storage.local.remove(CASA_KEY);
+    } catch (error) {
+      console.warn("No se pudo guardar lo de casa", error);
+    }
+    pintarCasa(mediaPorDia(gastos));
+    if (textoCasa(comparaConCasa(mediaPorDia(gastos), casa)) !== antes) restartAnimation(el.gastosCasa, "is-tic");
+  } else {
+    pintarCasa(mediaPorDia(gastos));
+  }
+  el.gastosCasa.focus();
+  return true;
 }
 
 function onCampoSueldo() {
@@ -5435,6 +5504,7 @@ function pintarGastos() {
       : tr("gastos.media", { media: `${nf.format(media.media)} ${media.to}` });
     el.gastosMedia.title = tr("gastos.mediaTitulo", { dias: media.dias });
   }
+  pintarCasa(media);
   pintarComisiones();
   pintarEfectivo();
   pintarTramo();
@@ -9502,6 +9572,16 @@ function bindEvents() {
   el.gastosTramo.addEventListener("click", () => (el.tramos.hidden ? abrirTramos() : cerrarTramos()));
   el.tramosForm.addEventListener("submit", onPonerTramo);
   el.curvaAbrir.addEventListener("click", () => (el.curva.hidden ? abrirCurva() : cerrarCurva()));
+  el.gastosCasa.addEventListener("click", editarCasa);
+  el.gastosCasaCampo.addEventListener("keydown", (event) => {
+    if (event.key === "Enter" || event.key === "Escape") {
+      event.preventDefault();
+      // Que el Escape no cierre también el panel de los gastos.
+      event.stopPropagation();
+      dejarCasa(event.key === "Enter");
+    }
+  });
+  el.gastosCasaCampo.addEventListener("blur", () => dejarCasa(true));
   el.maletaAbrir.addEventListener("click", () => (el.maleta.hidden ? abrirMaleta() : cerrarMaleta()));
   el.maletaLista.addEventListener("change", onMarcarMaleta);
   el.curvaSvg.addEventListener("pointermove", (event) => {
@@ -9807,6 +9887,10 @@ async function init() {
   cargarSonido().then((guardado) => {
     sonido = guardado;
     pintarSonido();
+  });
+  cargarCasa().then((guardado) => {
+    casa = guardado;
+    pintarCasa(mediaPorDia(gastos));
   });
   pagoNuevo = pagoGuardado;
   tarjetas = tarjetasGuardadas;

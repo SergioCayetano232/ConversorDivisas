@@ -125,6 +125,11 @@ que necesitaba una conversión rápida. Ahora es un clic en la barra del navegad
 - Cada viaje con su color (dorado, azul, coral, turquesa, lila o rosa): el panel
   de los gastos se tiñe del suyo, así sabes de un vistazo en cuál apuntas. Se
   cambia pulsando el puntito de delante del nombre, y el nuevo coge uno libre
+- ¿Más caro que quedarte en casa? Debajo de la media, con **🏠 ¿Y en casa?**
+  pones lo que gastas al mes en casa sin el alquiler ni las facturas (que esos
+  los pagas igual), y te dice cuánto más o menos te cuesta cada día del viaje
+  ("🏠 +30,43/día vs. casa"). Va con la media, que ya no cuenta el vuelo ni lo
+  pagado aparte. Por debajo de un 5 % es "Como en casa"
 - Cuántos sois: debajo del total, con el − y el +, y te dice lo que sale por
   cabeza. Va también en el resumen para WhatsApp ("Entre 3: 40,00 EUR cada uno")
 - Quién ha pagado: siendo varios, al lado de tarjeta/efectivo sale un botón

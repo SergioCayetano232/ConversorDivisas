@@ -4910,6 +4910,29 @@ function mediaPorDia(todos) {
   return { media: principal.total / total, to: principal.to, dias: total };
 }
 
+// ¿Más caro que quedarte en casa? Lo de casa es al mes y sin el alquiler ni las
+// facturas, que esos los pagas igual estés donde estés. Se compara con la media
+// del viaje, que ya va sin lo pagado aparte (el vuelo, el hotel de antes).
+const DIAS_POR_MES = 365.25 / 12;
+// Por debajo de un 5 % es como en casa: un café arriba o abajo.
+const COMO_EN_CASA = 0.05;
+
+function comparaConCasa(media, casa) {
+  if (!media || !casa || casa.divisa !== media.to || !(casa.precio > 0)) return null;
+  const diaCasa = casa.precio / DIAS_POR_MES;
+  const diferencia = media.media - diaCasa;
+  const pct = diferencia / diaCasa;
+  const tono = Math.abs(pct) < COMO_EN_CASA ? "igual" : diferencia > 0 ? "mas" : "menos";
+  return { diaCasa, diferencia, pct, tono, to: media.to };
+}
+
+function textoCasa(r) {
+  if (!r) return "";
+  const dinero = numeros({ minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  if (r.tono === "igual") return tr("casa.igual");
+  return tr(r.tono === "mas" ? "casa.mas" : "casa.menos", { diferencia: dinero.format(Math.abs(r.diferencia)) });
+}
+
 // Un viaje con dos cafés apuntados no dice lo que gastas al día.
 const GASTOS_PARA_SUGERIR = 5;
 
@@ -10005,7 +10028,7 @@ if (typeof module !== "undefined") {
     divisaDeIdioma, parPorIdioma, banderaDe, banderaDivisa,
     HISTORIAL_MAX, leerHistorial, apuntarConversion, quitarConversion, haceCuanto, ultimoDeHoy, textoParaCopiar, fraseParaCopiar, conversionParaCopiar, gastoParaCopiar, ultimoGasto, gastoMasCaro, totalParaCopiar, hoyParaCopiar, simboloDe, textoConSimbolo, fraseConSimbolo,
     celdaCsv, csvHistorial, csvGastos, csvViajes,
-    GASTOS_MAX, CONCEPTO_MAX, crearGasto, leerGastos, esDevolucion, devolucionDe, apuntarGasto, NOCHES_MAX, repartirCentimos, repartirNoches, repartoPorDias, apuntarNoches, quitarGasto, cambiarConcepto, cambiarDia, buscarGastos, preguntarGastos, textoPregunta, trozosResaltados, repetirGasto, devolverGasto, devolverTodos, sumarPorDivisa, gastosPorDia, huecoEntre, cifraEnMarcha, categoriaDelDia, pesoDeLosDias, ordenarPorImporte, masCarosDelDia, pesoDeLosGastos, RARO_VECES, mediana, gastoRaro, REPETIDO_MS, gastoRepetido, mediaPorDia, categoriasAlDia, mediaPorGasto, comisionesPagadas, cambioDelViaje, cifraCambio, textoCambio, pagadoEnEfectivo, ahorroEnEfectivo,
+    GASTOS_MAX, CONCEPTO_MAX, crearGasto, leerGastos, esDevolucion, devolucionDe, apuntarGasto, NOCHES_MAX, repartirCentimos, repartirNoches, repartoPorDias, apuntarNoches, quitarGasto, cambiarConcepto, cambiarDia, buscarGastos, preguntarGastos, textoPregunta, trozosResaltados, repetirGasto, devolverGasto, devolverTodos, sumarPorDivisa, gastosPorDia, huecoEntre, cifraEnMarcha, categoriaDelDia, pesoDeLosDias, ordenarPorImporte, masCarosDelDia, pesoDeLosGastos, RARO_VECES, mediana, gastoRaro, REPETIDO_MS, gastoRepetido, mediaPorDia, DIAS_POR_MES, COMO_EN_CASA, comparaConCasa, textoCasa, categoriasAlDia, mediaPorGasto, comisionesPagadas, cambioDelViaje, cifraCambio, textoCambio, pagadoEnEfectivo, ahorroEnEfectivo,
     RETIRADAS_MAX, leerRetiradas, crearRetirada, cambioDelCajero, sobreElBce, alCambioDelCajero, apuntarRetirada, quitarRetirada, efectivoQueda, EFECTIVO_POCO, tonoEfectivo, redondoDeCajero, cuantoSacar, loQueSobra, gastadoHoy, nombreDia,
     CATEGORIAS, CATEGORIA_POR_DEFECTO, CATEGORIAS_PROPIAS_MAX, NOMBRE_CATEGORIA_MAX, esCategoria, leerCategoriasPropias, ponerCategoriasPropias, todasCategorias, nombreCategoria, emojiCategoria, crearCategoriaPropia, quitarCategoriaPropia, sinCategoria, adivinarCategoria, PAGOS, PAGO_POR_DEFECTO, leerPago, comisionDelPago, desglose, conceptosUsados, completarConcepto,
     EMOJI_CATEGORIA, destacados, resumenParaCompartir, FINDE_MINIMO, findeContraSemana, ESTRELLA_MINIMO, conceptoEstrella, INDICE_MAX, indiceCafe,

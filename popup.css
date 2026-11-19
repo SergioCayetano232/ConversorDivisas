@@ -4572,6 +4572,72 @@ body::after {
   cursor: default;
 }
 
+/* Lo de casa: una línea más bajo la media, que se pulsa para cambiarlo. */
+.gastos__casa {
+  display: block;
+  max-width: 100%;
+  padding: 0;
+  border: none;
+  background: none;
+  font: inherit;
+  font-size: 10px;
+  font-variant-numeric: tabular-nums;
+  text-align: left;
+  color: var(--muted);
+  cursor: pointer;
+  transition: color var(--fast) var(--ease);
+}
+
+.gastos__casa[hidden] {
+  display: none;
+}
+
+.gastos__casa:hover,
+.gastos__casa:focus-visible {
+  outline: none;
+  color: var(--brass);
+}
+
+.gastos__casa[data-tono="mas"] {
+  color: color-mix(in srgb, var(--cinnabar) 80%, var(--muted));
+}
+
+.gastos__casa[data-tono="menos"] {
+  color: var(--jade);
+}
+
+.gastos__casa.is-tic {
+  animation: beat var(--mid) var(--ease-spring);
+}
+
+.gastos__casa-campo {
+  display: block;
+  width: 100%;
+  max-width: 220px;
+  margin: 2px 0;
+  padding: 3px 6px;
+  border: 1px solid var(--brass);
+  border-radius: 6px;
+  background: var(--slate);
+  font: inherit;
+  font-size: 10px;
+  font-variant-numeric: tabular-nums;
+  color: var(--mist);
+  box-shadow: 0 0 0 3px var(--brass-ghost);
+}
+
+.gastos__casa-campo:focus {
+  outline: none;
+}
+
+.gastos__casa-campo[hidden] {
+  display: none;
+}
+
+.gastos__casa-campo.is-mal {
+  animation: shake 360ms var(--ease);
+}
+
 /* Lo del banco en rojo apagado: que escueza, pero sin gritar más que el total. */
 .gastos__comisiones {
   display: block;
