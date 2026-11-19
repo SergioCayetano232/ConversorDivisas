@@ -5596,6 +5596,7 @@ body::after {
 
 .cajero__gratis-form {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   gap: 4px;
 }
@@ -5604,8 +5605,9 @@ body::after {
   display: none;
 }
 
+/* El nombre arriba solo: al lado, con el día, no cabía a 320 px. */
 .cajero__gratis-nombre {
-  flex: 1;
+  flex-basis: 100%;
   min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -5614,10 +5616,28 @@ body::after {
   color: var(--muted);
 }
 
-.cajero__gratis-campo {
+/* Con la del formulario delante, que .gastos__concepto va más abajo y los estiraba. */
+.cajero__gratis-form .cajero__gratis-campo {
   flex: none;
-  width: 64px;
+  width: 72px;
+  min-width: 0;
   text-align: right;
+}
+
+.cajero__gratis-dia {
+  display: flex;
+  flex: 1;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 4px;
+  font-size: 10px;
+  color: var(--muted);
+}
+
+.cajero__gratis-form .cajero__gratis-campo--dia {
+  width: 36px;
+  padding-inline: 4px;
+  text-align: center;
 }
 
 .cajero__gratis-campo.is-mal {

@@ -215,7 +215,10 @@ que necesitaba una conversión rápida. Ahora es un clic en la barra del navegad
   sacado con ella este mes en todos los viajes, archivados también. Mientras
   escribes lo que vas a sacar, si te pasas te dice cuánto ("Con esto te pasas
   64,38 EUR del gratis"). Cada tarjeta con el suyo, y con varias, cada retirada
-  dice con cuál fue. Lo que pasa de un viaje a otro no cuenta
+  dice con cuál fue. Lo que pasa de un viaje a otro no cuenta. Si tu banco no
+  empieza a contar el día 1 sino otro (el de cuando abriste la cuenta), se lo
+  pones al lado y cuenta desde ahí ("desde el 12 nov"); con el 31, en los meses
+  cortos vale el último día
 - Cada gasto con su categoría (comida, transporte, alojamiento, ocio, compras
   u otros), que sale sola por el concepto ("taxi", "cena", "hotel") y se cambia
   con un clic. Arriba, en qué se te va el dinero en porcentajes; pulsando una

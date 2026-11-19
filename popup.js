@@ -145,6 +145,7 @@ const el = {
   cajeroGratisNombre: document.getElementById("cajero-gratis-nombre"),
   cajeroGratisCampo: document.getElementById("cajero-gratis-campo"),
   cajeroGratisEn: document.getElementById("cajero-gratis-en"),
+  cajeroGratisDia: document.getElementById("cajero-gratis-dia"),
   cajeroGratisAviso: document.getElementById("cajero-gratis-aviso"),
   gastosPersonas: document.getElementById("gastos-personas"),
   personasMenos: document.getElementById("personas-menos"),
@@ -4570,10 +4571,11 @@ function pintarGratis() {
     boton.title = tr("cajero.gratisPonerTitulo");
     delete boton.dataset.tono;
   } else {
-    boton.textContent = g.pasado > 0
-      ? tr("cajero.gratisPasado", { tarjeta: nombre, pasado: dinero(g.pasado) })
-      : tr("cajero.gratisQueda", { tarjeta: nombre, queda: dinero(g.queda), importe: dinero(g.importe) });
-    boton.title = tr("cajero.gratisTitulo", { tarjeta: nombre, usado: dinero(g.usado) });
+    // Del 1 se dice "este mes", que es como lo piensa todo el mundo; si no, desde qué día.
+    const desde = g.dia === 1 ? "" : "Desde";
+    const datos = { tarjeta: nombre, pasado: dinero(g.pasado), queda: dinero(g.queda), importe: dinero(g.importe), usado: dinero(g.usado), desde: fechaCorta(g.desde) };
+    boton.textContent = tr(g.pasado > 0 ? `cajero.gratisPasado${desde}` : `cajero.gratisQueda${desde}`, datos);
+    boton.title = tr(`cajero.gratisTitulo${desde}`, datos);
     boton.dataset.tono = g.pasado > 0 || g.queda === 0 ? "falta" : g.queda / g.importe < EFECTIVO_POCO ? "poco" : "bien";
   }
   // Lo que vas a sacar, a lo de hoy en la divisa del límite.
@@ -4590,6 +4592,7 @@ function abrirGratis() {
   el.cajeroGratisNombre.textContent = tr("cajero.gratisCampo", { tarjeta: tarjeta || tr("cajero.tuTarjeta") });
   el.cajeroGratisEn.textContent = limite?.en ?? el.to.value;
   el.cajeroGratisCampo.value = limite ? nf.format(limite.importe) : "";
+  el.cajeroGratisDia.value = limite?.dia ? String(limite.dia) : "";
   el.cajeroGratisVer.hidden = true;
   el.cajeroGratisForm.hidden = false;
   el.cajeroGratisCampo.focus();
@@ -4613,7 +4616,14 @@ async function onGuardarGratis(event) {
     restartAnimation(el.cajeroGratisCampo, "is-mal");
     return;
   }
-  cajeroGratis = ponerCajeroGratis(cajeroGratis, tarjetaDelCajero(), importe, el.cajeroGratisEn.textContent);
+  const diaTexto = el.cajeroGratisDia.value.trim();
+  const dia = diaTexto === "" ? 1 : Number(diaTexto);
+  if (!Number.isInteger(dia) || dia < 1 || dia > 31) {
+    restartAnimation(el.cajeroGratisDia, "is-mal");
+    el.cajeroGratisDia.focus();
+    return;
+  }
+  cajeroGratis = ponerCajeroGratis(cajeroGratis, tarjetaDelCajero(), importe, el.cajeroGratisEn.textContent, dia);
   cerrarGratis();
   pintarGratis();
   restartAnimation(el.cajeroGratisVer, "is-tic");
@@ -10101,12 +10111,14 @@ function bindEvents() {
   el.cadaDiaCerrar.addEventListener("click", onCadaDiaNo);
   el.cajeroGratisVer.addEventListener("click", abrirGratis);
   el.cajeroGratisForm.addEventListener("submit", onGuardarGratis);
-  el.cajeroGratisCampo.addEventListener("keydown", (event) => {
-    if (event.key !== "Escape") return;
-    event.preventDefault();
-    event.stopPropagation();
-    cerrarGratis();
-  });
+  for (const campo of [el.cajeroGratisCampo, el.cajeroGratisDia]) {
+    campo.addEventListener("keydown", (event) => {
+      if (event.key !== "Escape") return;
+      event.preventDefault();
+      event.stopPropagation();
+      cerrarGratis();
+    });
+  }
   el.tiqueCerrar.addEventListener("click", cerrarTique);
   el.tiqueQuitar.addEventListener("click", onQuitarTique);
   el.tiqueCambiar.addEventListener("click", () => {

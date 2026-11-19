@@ -4913,37 +4913,58 @@ function crearRetirada({ id, cantidad, divisa, cuando, coste, en, bce, tarjeta }
 }
 
 // Lo que te deja sacar gratis cada tarjeta al mes ("" es la de sin nombre).
-// Aparte de las tarjetas, que esas solo son nombre y comisión.
+// Aparte de las tarjetas, que esas solo son nombre y comisión. El día es en el
+// que tu banco vuelve a empezar a contar; el 1 no lo guardo, que es lo normal.
+const diaDeReinicio = (dia) => (Number.isInteger(dia) && dia >= 2 && dia <= 31 ? dia : null);
+
 function leerCajeroGratis(guardado) {
   const limpio = {};
   if (!guardado || typeof guardado !== "object") return limpio;
   for (const [tarjeta, limite] of Object.entries(guardado)) {
     if (tarjeta.length <= NOMBRE_TARJETA_MAX && Number.isFinite(limite?.importe) && limite.importe > 0 && isValidCode(limite.en)) {
-      limpio[tarjeta] = { importe: Math.round(limite.importe * 100) / 100, en: limite.en };
+      const dia = diaDeReinicio(limite.dia);
+      limpio[tarjeta] = { importe: Math.round(limite.importe * 100) / 100, en: limite.en, ...(dia ? { dia } : {}) };
     }
   }
   return limpio;
 }
 
-function ponerCajeroGratis(gratis, tarjeta, importe, en) {
+function ponerCajeroGratis(gratis, tarjeta, importe, en, dia = 1) {
   const { [tarjeta]: _, ...resto } = gratis;
-  return importe > 0 && isValidCode(en) ? { ...resto, [tarjeta]: { importe: Math.round(importe * 100) / 100, en } } : resto;
+  const reinicio = diaDeReinicio(dia);
+  return importe > 0 && isValidCode(en)
+    ? { ...resto, [tarjeta]: { importe: Math.round(importe * 100) / 100, en, ...(reinicio ? { dia: reinicio } : {}) } }
+    : resto;
+}
+
+// Desde cuándo cuenta el periodo de hoy. Con el 31, en los meses cortos cuenta
+// el último día, que es lo que hacen los bancos.
+function inicioDelPeriodo(hoyIso, dia = 1) {
+  const [y, m, d] = hoyIso.split("-").map(Number);
+  const diaEn = (anio, mes) => Math.min(dia, new Date(anio, mes, 0).getDate());
+  if (d >= diaEn(y, m)) return isoLocal(new Date(y, m - 1, diaEn(y, m)));
+  const [ya, ma] = m === 1 ? [y - 1, 12] : [y, m - 1];
+  return isoLocal(new Date(ya, ma - 1, diaEn(ya, ma)));
 }
 
 // Lo sacado este mes con esa tarjeta, en todos los viajes. Lo que pasa de un
 // viaje a otro no cuenta, que no ha salido de ningún cajero.
 function gratisDelMes(viajes, tarjeta, limite, hoyIso = hoy()) {
   if (!limite) return null;
-  const mes = hoyIso.slice(0, 7);
+  const desde = inicioDelPeriodo(hoyIso, limite.dia ?? 1);
   let usado = 0;
   for (const v of [...(viajes?.lista ?? []), ...(viajes?.archivados ?? [])]) {
     for (const r of v.cajero ?? []) {
-      if (r.tarjeta !== tarjeta || r.de || r.a || isoLocal(new Date(r.cuando)).slice(0, 7) !== mes) continue;
+      const dia = isoLocal(new Date(r.cuando));
+      if (r.tarjeta !== tarjeta || r.de || r.a || dia < desde || dia > hoyIso) continue;
       if (r.valeEn === limite.en) usado += r.vale;
     }
   }
   usado = Math.round(usado * 100) / 100;
-  return { usado, queda: Math.max(limite.importe - usado, 0), pasado: Math.max(usado - limite.importe, 0), importe: limite.importe, en: limite.en };
+  return {
+    usado, queda: Math.max(limite.importe - usado, 0), pasado: Math.max(usado - limite.importe, 0),
+    importe: limite.importe, en: limite.en, desde, dia: limite.dia ?? 1,
+  };
 }
 
 // Si lo que vas a sacar se come lo que queda: cuánto te van a cobrar con comisión.
@@ -10617,7 +10638,7 @@ if (typeof module !== "undefined") {
     HISTORIAL_MAX, leerHistorial, apuntarConversion, quitarConversion, haceCuanto, ultimoDeHoy, textoParaCopiar, fraseParaCopiar, conversionParaCopiar, gastoParaCopiar, ultimoGasto, gastoMasCaro, totalParaCopiar, hoyParaCopiar, simboloDe, textoConSimbolo, fraseConSimbolo,
     celdaCsv, csvHistorial, csvGastos, csvViajes,
     GASTOS_MAX, CONCEPTO_MAX, crearGasto, leerGastos, esDevolucion, devolucionDe, apuntarGasto, NOCHES_MAX, repartirCentimos, repartirNoches, repartoPorDias, apuntarNoches, quitarGasto, cambiarConcepto, cambiarDia, buscarGastos, preguntarGastos, textoPregunta, trozosResaltados, repetirGasto, devolverGasto, devolverTodos, sumarPorDivisa, gastosPorDia, huecoEntre, cifraEnMarcha, categoriaDelDia, pesoDeLosDias, ordenarPorImporte, masCarosDelDia, pesoDeLosGastos, RARO_VECES, mediana, gastoRaro, REPETIDO_MS, gastoRepetido, mediaPorDia, DIAS_POR_MES, COMO_EN_CASA, comparaConCasa, textoCasa, categoriasAlDia, mediaPorGasto, comisionesPagadas, cambioDelViaje, cifraCambio, textoCambio, pagadoEnEfectivo, ahorroEnEfectivo,
-    RETIRADAS_MAX, leerRetiradas, crearRetirada, leerCajeroGratis, ponerCajeroGratis, gratisDelMes, pasaDelGratis, cambioDelCajero, sobreElBce, alCambioDelCajero, apuntarRetirada, quitarRetirada, efectivoQueda, EFECTIVO_POCO, tonoEfectivo, redondoDeCajero, cuantoSacar, loQueSobra, gastadoHoy, nombreDia,
+    RETIRADAS_MAX, leerRetiradas, crearRetirada, leerCajeroGratis, ponerCajeroGratis, inicioDelPeriodo, gratisDelMes, pasaDelGratis, cambioDelCajero, sobreElBce, alCambioDelCajero, apuntarRetirada, quitarRetirada, efectivoQueda, EFECTIVO_POCO, tonoEfectivo, redondoDeCajero, cuantoSacar, loQueSobra, gastadoHoy, nombreDia,
     CATEGORIAS, CATEGORIA_POR_DEFECTO, CATEGORIAS_PROPIAS_MAX, NOMBRE_CATEGORIA_MAX, esCategoria, leerCategoriasPropias, ponerCategoriasPropias, todasCategorias, nombreCategoria, emojiCategoria, crearCategoriaPropia, quitarCategoriaPropia, sinCategoria, adivinarCategoria, PAGOS, PAGO_POR_DEFECTO, leerPago, comisionDelPago, desglose, conceptosUsados, conceptosFrecuentes, completarConcepto,
     EMOJI_CATEGORIA, destacados, resumenParaCompartir, FINDE_MINIMO, findeContraSemana, ESTRELLA_MINIMO, conceptoEstrella, INDICE_MAX, indiceCafe,
     TARJETAS_MAX, NOMBRE_TARJETA_MAX, anadirTarjeta, leerTarjetas, quitarTarjeta, tarjetaActual, siguientePago, mejorTarjeta,

@@ -66,3 +66,32 @@ test("los límites guardados, limpios", () => {
   assert.deepEqual(ponerCajeroGratis(g, "Revolut", 0, "EUR"), {}, "con cero se quita");
   assert.deepEqual(ponerCajeroGratis(g, "", 100, "GBP"), { Revolut: { importe: 200, en: "EUR" }, "": { importe: 100, en: "GBP" } });
 });
+
+test("el periodo empieza el día que reinicia tu banco", () => {
+  const { inicioDelPeriodo } = require("../logica.js");
+  assert.equal(inicioDelPeriodo("2026-11-19"), "2026-11-01");
+  assert.equal(inicioDelPeriodo("2026-11-19", 12), "2026-11-12");
+  assert.equal(inicioDelPeriodo("2026-11-12", 12), "2026-11-12", "ese mismo día ya empieza");
+  assert.equal(inicioDelPeriodo("2026-11-11", 12), "2026-10-12");
+  assert.equal(inicioDelPeriodo("2026-01-05", 20), "2025-12-20", "cruzando el año");
+  // Sin 31 en noviembre ni 30 en febrero: el último del mes.
+  assert.equal(inicioDelPeriodo("2026-11-30", 31), "2026-11-30");
+  assert.equal(inicioDelPeriodo("2026-11-29", 31), "2026-10-31");
+  assert.equal(inicioDelPeriodo("2026-03-10", 30), "2026-02-28");
+});
+
+test("con el día puesto, cuenta desde ahí y no desde el 1", () => {
+  const viajes = leerViajes({ activo: "a", lista: [viaje("a", [sacar("1", 16000, "2026-11-05"), sacar("2", 8000, "2026-11-15"), sacar("3", 8000, "2026-10-20")])] });
+  assert.equal(gratisDelMes(viajes, "Revolut", LIMITE, "2026-11-19").usado, 150, "del 1: el 5 y el 15");
+  const g = gratisDelMes(viajes, "Revolut", { ...LIMITE, dia: 12 }, "2026-11-19");
+  assert.equal(g.usado, 50, "desde el 12: solo el 15");
+  assert.equal(g.desde, "2026-11-12");
+  assert.equal(gratisDelMes(viajes, "Revolut", { ...LIMITE, dia: 12 }, "2026-11-10").usado, 150, "el 10 aún va del 12 de octubre: el del 20 y el del 5");
+});
+
+test("el día se guarda solo si no es el 1, y bien", () => {
+  assert.deepEqual(ponerCajeroGratis({}, "Revolut", 200, "EUR", 12), { Revolut: { importe: 200, en: "EUR", dia: 12 } });
+  assert.deepEqual(ponerCajeroGratis({}, "Revolut", 200, "EUR", 1), { Revolut: { importe: 200, en: "EUR" } });
+  assert.deepEqual(ponerCajeroGratis({}, "Revolut", 200, "EUR", 40), { Revolut: { importe: 200, en: "EUR" } });
+  assert.deepEqual(leerCajeroGratis({ R: { importe: 200, en: "EUR", dia: 31 }, B: { importe: 50, en: "EUR", dia: 0 } }), { R: { importe: 200, en: "EUR", dia: 31 }, B: { importe: 50, en: "EUR" } });
+});

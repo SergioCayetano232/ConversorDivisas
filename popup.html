@@ -966,6 +966,10 @@
             <label class="cajero__gratis-nombre" for="cajero-gratis-campo" id="cajero-gratis-nombre"></label>
             <input class="gastos__concepto cajero__gratis-campo" type="text" id="cajero-gratis-campo" inputmode="decimal" autocomplete="off" spellcheck="false" placeholder="200">
             <span class="cajero__divisa" id="cajero-gratis-en"></span>
+            <label class="cajero__gratis-dia">
+              <span data-t="cajero.gratisDia">desde el día</span>
+              <input class="gastos__concepto cajero__gratis-campo cajero__gratis-campo--dia" type="text" id="cajero-gratis-dia" inputmode="numeric" maxlength="2" autocomplete="off" placeholder="1" aria-label="Día del mes en que tu banco vuelve a contar" data-t-aria-label="cajero.gratisDiaAria">
+            </label>
             <button class="gastos__apuntar" type="submit" data-t="cajero.gratisGuardar">Vale</button>
           </form>
           <p class="cajero__gratis-aviso" id="cajero-gratis-aviso" role="status" hidden></p>
