@@ -3601,6 +3601,32 @@ function repetirGasto({ nota, ...gasto }, { id, cuando, tasa = null, comision = 
 const esFijo = (g) => g.fijo === true;
 const delDiaADia = (gastos) => gastos.filter((g) => !esFijo(g));
 
+// El metro, el desayuno del hotel: si lo apuntaste ayer y anteayer y hoy aún
+// no, te lo propongo. Por el concepto y la divisa, que el importe puede variar
+// un poco; va el de la última vez. Las noches repartidas no, que ya están todas.
+const CADA_DIA_MAX = 3;
+const claveCadaDia = (g) => `${normalizar(g.concepto).trim()}|${g.from}`;
+
+function deCadaDia(gastos, hoyIso = hoy(), descartados = []) {
+  const [y, m, d] = hoyIso.split("-").map(Number);
+  const ayer = isoLocal(new Date(y, m - 1, d - 1));
+  const anteayer = isoLocal(new Date(y, m - 1, d - 2));
+  const porClave = new Map();
+  for (const g of gastos) {
+    if (esFijo(g) || esDevolucion(g) || g.pagador || !g.concepto || /^\d+\/\d+(?: ·|$)/.test(g.concepto)) continue;
+    const clave = claveCadaDia(g);
+    const c = porClave.get(clave) ?? { dias: new Set(), ultimo: g };
+    c.dias.add(isoLocal(new Date(g.cuando)));
+    if (g.cuando > c.ultimo.cuando) c.ultimo = g;
+    porClave.set(clave, c);
+  }
+  return [...porClave.entries()]
+    .filter(([clave, c]) => c.dias.has(ayer) && c.dias.has(anteayer) && !c.dias.has(hoyIso) && !descartados.includes(clave))
+    .map(([clave, c]) => ({ clave, gasto: c.ultimo, dias: c.dias.size }))
+    .sort((a, b) => b.dias - a.dias || b.gasto.cuando - a.gasto.cuando)
+    .slice(0, CADA_DIA_MAX);
+}
+
 function marcarFijo(lista, id, fijo) {
   return lista.map((g) => {
     if (g.id !== id || esFijo(g) === fijo) return g;
@@ -10162,7 +10188,7 @@ if (typeof module !== "undefined") {
     urlImpresion, leerImpresion, chuletaParaImprimir,
     COMISION_MAX, COMISIONES_RAPIDAS, leerComision, leerPorcentaje, conComision,
     IMPUESTO_MAX, IMPUESTOS_RAPIDOS, leerImpuesto, leerImpuestoEscrito, loQuePagas,
-    COMPARAR_IGUAL, compararPrecios, inclinacion, leerTamano, compararTamanos, efectivoParaTraer, traerEfectivo, quitarRetiradaDeViajes, ZONAS, desfase, esNoche, momentoDelDia, cieloAlli, horaAlli, SIGLAS_ZONA, leerHoraZona, convertirHoraZona, textoHoraZona, textoDiferencia, relojDe, tituloHoraAlli, leerCafe, enCafes, textoCafes, HORAS_JORNADA, enHoras, textoHoras,
+    COMPARAR_IGUAL, compararPrecios, inclinacion, leerTamano, compararTamanos, efectivoParaTraer, traerEfectivo, quitarRetiradaDeViajes, deCadaDia, ZONAS, desfase, esNoche, momentoDelDia, cieloAlli, horaAlli, SIGLAS_ZONA, leerHoraZona, convertirHoraZona, textoHoraZona, textoDiferencia, relojDe, tituloHoraAlli, leerCafe, enCafes, textoCafes, HORAS_JORNADA, enHoras, textoHoras,
     PROPINAS_RAPIDAS, PROPINA_HABITUAL, propinaHabitual, leerPropina, textoPropina, ENCHUFES, leerEnchufe, enchufeDe, textoEnchufe, EMERGENCIAS, leerEmergencias, textoEmergencias, AGUA, leerAgua, textoAgua, POR_LA_IZQUIERDA, CARNE_EUROPEO, leerConducir, textoConducir, IDIOMA_DE_DIVISA, paraDecir, FRASE_REGATEO, paraEnsenar, VOCES_DE_BROMA, elegirVoz, PREFIJOS, leerPrefijo, textoPrefijo, FRASES, leerGracias, textoGracias, IVA, leerIva, textoIva, PAGO_ALLI, CAJERO_NOTA, leerCajero, textoCajero, leerLlegar, textoLlegar, VISADOS, leerVisado, textoVisado, ROAMING, leerRoaming, textoRoaming, CON_TSE, leerSanitaria, textoSanitaria, APPS_TAXI, leerTaxi, textoTaxi, REGATEO, leerRegatear, textoRegatear, FESTIVOS, FESTIVOS_LUNA, pascuaOrtodoxa, fechaFestivo, festivosProximos, leerFestivos, textoFestivos, HORARIOS, leerHorario, textoHorario, PROPINA_MAX, PERSONAS_MAX, CUENTA_POR_DEFECTO, leerCuenta, redondoHaciaArriba, repartirCuenta, cuentaParaCompartir, gastoDeLaCuenta, BILLETES, leerBilletes, textoBilletes, PAGOS_MAX, pagosPosibles, vuelta, vueltaEnBilletes, pagoJusto,
     MARGENES, tasaOfrecida, analizarCambio,
     domingoDePascua, hayTasaEl, tasaVieja, textoTasaVieja, horaBce, textoActualizado, proximaTasa, textoProximaTasa,

@@ -235,6 +235,9 @@ const el = {
   gastosSugerencia: document.getElementById("gastos-sugerencia"),
   gastosApuntar: document.getElementById("gastos-apuntar"),
   gastosRaro: document.getElementById("gastos-raro"),
+  cadaDia: document.getElementById("cada-dia"),
+  cadaDiaChips: document.getElementById("cada-dia-chips"),
+  cadaDiaCerrar: document.getElementById("cada-dia-cerrar"),
   gastosLista: document.getElementById("gastos-lista"),
   gastosVacio: document.getElementById("gastos-vacio"),
   gastosCerrar: document.getElementById("gastos-cerrar"),
@@ -741,6 +744,9 @@ async function onDiscreto() {
 
 // Apagado de primeras: una extensión que suena sin pedirlo se desinstala.
 const SONIDO_KEY = "sonido";
+// Lo que dijiste que hoy no, solo para hoy: mañana vuelve a preguntar.
+const CADA_DIA_KEY = "cadaDiaHoyNo";
+let cadaDiaHoyNo = { dia: "", claves: [] };
 let sonido = false;
 let audio = null;
 
@@ -5519,6 +5525,7 @@ function pintarGastos() {
   if (el.gastos.hidden) return;
 
   pintarTituloViaje();
+  pintarCadaDia();
   const totales = n ? sumarPorDivisa(gastos) : [{ to: el.to.value, total: 0 }];
   const suma = textoTotales(totales);
   const una = totales.length === 1 ? totales[0] : null;
@@ -7273,6 +7280,47 @@ function monedaAlGasto(id, texto) {
 function tasaDeHoy(from, to) {
   if (rate !== null && el.from.value === from && el.to.value === to) return rate;
   return tasasBase?.de === from ? tasasBase.rates[to] ?? null : null;
+}
+
+// Con el viaje acabado, el metro de allí ya no toca.
+function pintarCadaDia() {
+  const hoyIso = hoy();
+  const acabado = presupuesto?.hasta && hoyIso > presupuesto.hasta;
+  const fuera = cadaDiaHoyNo.dia === hoyIso ? cadaDiaHoyNo.claves : [];
+  const lista = acabado ? [] : deCadaDia(gastos, hoyIso, fuera);
+  el.cadaDia.hidden = lista.length === 0;
+  const antes = new Set([...el.cadaDiaChips.children].map((b) => b.dataset.clave));
+  el.cadaDiaChips.replaceChildren(...lista.map(({ clave, gasto }) => {
+    const boton = document.createElement("button");
+    boton.type = "button";
+    boton.className = "cada-dia__chip";
+    boton.dataset.clave = clave;
+    if (!antes.has(clave)) boton.classList.add("is-nuevo");
+    const cantidad = cifraEfectivo(gasto.cantidad, gasto.from);
+    const concepto = document.createElement("span");
+    concepto.className = "cada-dia__concepto";
+    concepto.textContent = `${emojiCategoria(gasto.categoria)} ${gasto.concepto}`;
+    const cifra = document.createElement("span");
+    cifra.className = "cada-dia__cifra";
+    cifra.textContent = cantidad;
+    boton.append(concepto, cifra);
+    boton.title = tr("cadaDia.apuntar", { concepto: gasto.concepto, cantidad });
+    boton.addEventListener("click", () => onRepetirGasto(gasto));
+    return boton;
+  }));
+}
+
+async function onCadaDiaNo() {
+  const hoyIso = hoy();
+  const claves = [...el.cadaDiaChips.children].map((b) => b.dataset.clave);
+  cadaDiaHoyNo = { dia: hoyIso, claves: [...(cadaDiaHoyNo.dia === hoyIso ? cadaDiaHoyNo.claves : []), ...claves] };
+  pintarCadaDia();
+  el.gastosConcepto.focus();
+  try {
+    await chrome.storage.local.set({ [CADA_DIA_KEY]: cadaDiaHoyNo });
+  } catch (error) {
+    console.warn("No se pudo guardar lo de hoy no", error);
+  }
 }
 
 function onRepetirGasto(original) {
@@ -9743,6 +9791,7 @@ function bindEvents() {
   el.cajeroCantidad.addEventListener("animationend", () => el.cajeroCantidad.classList.remove("is-mal", "is-cambiado"));
   el.cajeroSugerencia.addEventListener("click", onSugerencia);
   el.cajeroTraer.addEventListener("click", onTraer);
+  el.cadaDiaCerrar.addEventListener("click", onCadaDiaNo);
   el.personasMenos.addEventListener("click", () => onPersonas(-1));
   el.personasMas.addEventListener("click", () => onPersonas(1));
   el.personasCabeza.addEventListener("click", () => (el.gente.hidden ? abrirGente() : cerrarGente()));
@@ -10021,6 +10070,11 @@ async function init() {
     casa = guardado;
     pintarCasa(mediaPorDia(gastos));
   });
+  chrome.storage.local.get(CADA_DIA_KEY).then((guardado) => {
+    const { dia, claves } = guardado[CADA_DIA_KEY] ?? {};
+    if (typeof dia === "string" && Array.isArray(claves)) cadaDiaHoyNo = { dia, claves: claves.filter((c) => typeof c === "string") };
+    pintarCadaDia();
+  }).catch((error) => console.warn("No se pudo leer lo de hoy no", error));
   chrome.storage.local.get(COMPARAR_MODO_KEY).then((guardado) => {
     if (guardado[COMPARAR_MODO_KEY] === "tamano") compararModo = "tamano";
   }).catch((error) => console.warn("No se pudo leer qué comparar", error));

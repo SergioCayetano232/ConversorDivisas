@@ -66,7 +66,10 @@ que necesitaba una conversión rápida. Ahora es un clic en la barra del navegad
   Ahí mismo sale una tira con **Hoy**, **Ayer** y un calendario, para la cena
   que se te olvidó apuntar: el gasto se va a su día con lo que valía.
   Con las flechas de al lado lo vuelves a apuntar hoy, para el metro o el café
-  de cada día, con la tasa de hoy. Arriba sale el total en tu divisa y lo que llevas de media
+  de cada día, con la tasa de hoy. Y si algo lo apuntaste ayer y anteayer y hoy
+  aún no, arriba de la lista te pregunta "¿Hoy también?" con el metro o el
+  desayuno ("🚕 Metro 300 JPY"), y pulsándolo se apunta. Con la ✕, hoy no
+  vuelve a preguntar. Arriba sale el total en tu divisa y lo que llevas de media
   al día, y debajo los gastos por días con lo de cada día, cuántos son y una barrita que dice cuánto pesa al lado del día que más. Entre
   dos días con gastos, los que no apuntaste nada salen a rayas ("🧘 2 días sin
   gastos"), por si se te olvidó algo. Cada uno se guarda con la tasa y la comisión de
