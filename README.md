@@ -372,6 +372,11 @@ que necesitaba una conversión rápida. Ahora es un clic en la barra del navegad
   y cuánto ("Allí te ahorras 255,20 EUR, un 22 %"). La balanza baja hacia el
   lado caro. Lo de allí lleva tu comisión y tu impuesto, y por debajo de un 1 %
   lo da por igual
+- Qué tamaño sale más barato, en la misma balanza, con **Tamaños** arriba: pones
+  el precio y el tamaño de los dos ("500 g" a 3,20 y "1 kg" a 5,90) y te dice
+  lo que sale el kilo, el litro o la unidad de cada uno, también en tu divisa, y
+  cuál gana ("El de 1 kg sale un 8 % más barato"). Vale con packs ("6 x 330
+  ml") y con onzas y libras. Se queda en el modo que lo dejes
 - Seleccionas un precio en cualquier web, clic derecho, **Convertir**, y te sale
   el resultado en una tarjeta al lado del texto. Entiende "1.299,00 €",
   "$1,049.99", "R$ 10,50" o "20 euros". Si seleccionas varios, como el carrito

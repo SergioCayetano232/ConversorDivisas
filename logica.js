@@ -1289,6 +1289,61 @@ function inclinacion(comparacion, maximo = 14) {
   return comparacion.donde === "alli" ? grados : -grados;
 }
 
+// Todo a gramos, mililitros o unidades, para poder dividir. La onza a secas es
+// la de peso; la de líquidos lleva su "fl" delante.
+const TAMANOS = {
+  mg: [0.001, "peso"], g: [1, "peso"], kg: [1000, "peso"], oz: [28.3495231, "peso"], lb: [453.59237, "peso"],
+  ml: [1, "volumen"], cl: [10, "volumen"], dl: [100, "volumen"], l: [1000, "volumen"],
+  floz: [29.5735296, "volumen"], gal: [3785.41178, "volumen"],
+  ud: [1, "unidades"],
+};
+const POR_MAGNITUD = { peso: [1000, "kg"], volumen: [1000, "l"], unidades: [1, "ud"] };
+
+const HAY_TAMANO = /\s*(fl\.?\s*oz|kg|kilos?|mg|gr?s?|gramos?|oz|onzas?|lbs?|libras?|ml|cl|dl|l|lt|litros?|gal(?:ones|lons?|[oó]n)?|uds?|u|unidades?|units?|pcs|piezas?)\.?\s*$/i;
+
+function unidadTamano(u) {
+  const t = u.toLowerCase().replace(/[\s.]/g, "");
+  if (t.startsWith("fl")) return "floz";
+  if (/^(kg|kilo)/.test(t)) return "kg";
+  if (t === "mg") return "mg";
+  if (t.startsWith("gal")) return "gal";
+  if (/^(g|gr|gram)/.test(t)) return "g";
+  if (/^(oz|onza)/.test(t)) return "oz";
+  if (/^(lb|libra)/.test(t)) return "lb";
+  if (["ml", "cl", "dl"].includes(t)) return t;
+  if (/^(l|lt|litro)/.test(t)) return "l";
+  return "ud";
+}
+
+// "500 g", "1,5 l", "6 x 330 ml" o "12": sin unidad son unidades, los huevos o
+// las latas. El "6 x" va con la cuenta de siempre.
+function leerTamano(texto) {
+  const t = String(texto ?? "").trim();
+  if (!t) return null;
+  const m = t.match(HAY_TAMANO);
+  const resto = m && m.index > 0 ? t.slice(0, m.index) : t;
+  if (m && m.index === 0) return null;
+  const n = evaluar(resto.trim());
+  if (!(n > 0)) return null;
+  const [factor, magnitud] = TAMANOS[m ? unidadTamano(m[1]) : "ud"];
+  return { cantidad: n * factor, magnitud };
+}
+
+// Lo que sale el kilo, el litro o la unidad de cada uno. El porcentaje va sobre
+// el caro, como en la balanza, y por debajo de un 1 % lo doy por igual.
+function compararTamanos(a, b) {
+  const ta = leerTamano(a?.tamano);
+  const tb = leerTamano(b?.tamano);
+  if (!(a?.precio > 0) || !(b?.precio > 0) || !ta || !tb) return null;
+  if (ta.magnitud !== tb.magnitud) return { donde: "distinto" };
+  const [base, unidad] = POR_MAGNITUD[ta.magnitud];
+  const porA = (a.precio / ta.cantidad) * base;
+  const porB = (b.precio / tb.cantidad) * base;
+  const fraccion = Math.abs(porA - porB) / Math.max(porA, porB);
+  const donde = fraccion < COMPARAR_IGUAL ? "igual" : porA < porB ? "a" : "b";
+  return { donde, porA, porB, unidad, fraccion };
+}
+
 // Lo que te cuesta un café en casa, para hacerte a la idea de lo que vale algo.
 // Va con su divisa: 1,50 en euros no es lo mismo que 1,50 en libras.
 function leerCafe(guardado) {
@@ -10046,7 +10101,7 @@ if (typeof module !== "undefined") {
     urlImpresion, leerImpresion, chuletaParaImprimir,
     COMISION_MAX, COMISIONES_RAPIDAS, leerComision, leerPorcentaje, conComision,
     IMPUESTO_MAX, IMPUESTOS_RAPIDOS, leerImpuesto, leerImpuestoEscrito, loQuePagas,
-    COMPARAR_IGUAL, compararPrecios, inclinacion, ZONAS, desfase, esNoche, momentoDelDia, cieloAlli, horaAlli, SIGLAS_ZONA, leerHoraZona, convertirHoraZona, textoHoraZona, textoDiferencia, relojDe, tituloHoraAlli, leerCafe, enCafes, textoCafes, HORAS_JORNADA, enHoras, textoHoras,
+    COMPARAR_IGUAL, compararPrecios, inclinacion, leerTamano, compararTamanos, ZONAS, desfase, esNoche, momentoDelDia, cieloAlli, horaAlli, SIGLAS_ZONA, leerHoraZona, convertirHoraZona, textoHoraZona, textoDiferencia, relojDe, tituloHoraAlli, leerCafe, enCafes, textoCafes, HORAS_JORNADA, enHoras, textoHoras,
     PROPINAS_RAPIDAS, PROPINA_HABITUAL, propinaHabitual, leerPropina, textoPropina, ENCHUFES, leerEnchufe, enchufeDe, textoEnchufe, EMERGENCIAS, leerEmergencias, textoEmergencias, AGUA, leerAgua, textoAgua, POR_LA_IZQUIERDA, CARNE_EUROPEO, leerConducir, textoConducir, IDIOMA_DE_DIVISA, paraDecir, FRASE_REGATEO, paraEnsenar, VOCES_DE_BROMA, elegirVoz, PREFIJOS, leerPrefijo, textoPrefijo, FRASES, leerGracias, textoGracias, IVA, leerIva, textoIva, PAGO_ALLI, CAJERO_NOTA, leerCajero, textoCajero, leerLlegar, textoLlegar, VISADOS, leerVisado, textoVisado, ROAMING, leerRoaming, textoRoaming, CON_TSE, leerSanitaria, textoSanitaria, APPS_TAXI, leerTaxi, textoTaxi, REGATEO, leerRegatear, textoRegatear, FESTIVOS, FESTIVOS_LUNA, pascuaOrtodoxa, fechaFestivo, festivosProximos, leerFestivos, textoFestivos, HORARIOS, leerHorario, textoHorario, PROPINA_MAX, PERSONAS_MAX, CUENTA_POR_DEFECTO, leerCuenta, redondoHaciaArriba, repartirCuenta, cuentaParaCompartir, gastoDeLaCuenta, BILLETES, leerBilletes, textoBilletes, PAGOS_MAX, pagosPosibles, vuelta, vueltaEnBilletes, pagoJusto,
     MARGENES, tasaOfrecida, analizarCambio,
     domingoDePascua, hayTasaEl, tasaVieja, textoTasaVieja, horaBce, textoActualizado, proximaTasa, textoProximaTasa,

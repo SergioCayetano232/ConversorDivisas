@@ -697,6 +697,11 @@
       <div class="cuenta__cabeza">
         <p class="historial__titulo" id="comparar-titulo" data-t="comparar">¿Dónde sale más barato?</p>
         <span class="gastos__arriba">
+          <span class="rangos comparar__modos" id="comparar-modos" role="group" aria-label="Qué comparar" data-t-aria-label="comparar.modos">
+            <span class="rangos__pildora" aria-hidden="true"></span>
+            <button class="rango is-activo" type="button" data-modo="sitio" aria-pressed="true" data-t="comparar.modo.sitio">Allí/aquí</button>
+            <button class="rango" type="button" data-modo="tamano" aria-pressed="false" data-t="comparar.modo.tamano">Tamaños</button>
+          </span>
           <button class="gastos__cerrar" type="button" id="comparar-cerrar" aria-label="Cerrar" data-t-aria-label="cerrar">✕</button>
         </span>
       </div>
@@ -707,7 +712,7 @@
         <g class="comparar__plato" id="comparar-plato-alli"><path d="M40 18v12"/><path d="M22 30h36a18 8 0 0 1-36 0z"/></g>
         <g class="comparar__plato" id="comparar-plato-aqui"><path d="M180 18v12"/><path d="M162 30h36a18 8 0 0 1-36 0z"/></g>
       </svg>
-      <div class="comparar__lados">
+      <div class="comparar__lados" id="comparar-sitios">
         <div class="comparar__lado" id="comparar-lado-alli">
           <span class="cuenta__etiqueta" data-t="comparar.alli">Allí</span>
           <span class="comparar__cifra" id="comparar-alli">—</span>
@@ -727,6 +732,28 @@
               data-t-placeholder="comparar.pista">
             <span class="comparar__codigo" id="comparar-codigo"></span>
           </span>
+        </div>
+      </div>
+      <div class="comparar__lados" id="comparar-tamanos" hidden>
+        <div class="comparar__lado" id="comparar-lado-a">
+          <span class="cuenta__etiqueta" data-t="comparar.a">Uno</span>
+          <span class="comparar__caja">
+            <input class="burbuja__campo comparar__campo" type="text" id="comparar-precio-a" inputmode="decimal" autocomplete="off" spellcheck="false" placeholder="Precio" data-t-placeholder="comparar.precio">
+            <span class="comparar__codigo comparar__codigo-tamano"></span>
+          </span>
+          <input class="burbuja__campo comparar__campo comparar__tamano" type="text" id="comparar-tamano-a" autocomplete="off" spellcheck="false" placeholder="500 g" aria-label="Tamaño" data-t-aria-label="comparar.tamano">
+          <span class="comparar__cifra" id="comparar-por-a">—</span>
+          <span class="comparar__nota" id="comparar-por-a-nota"></span>
+        </div>
+        <div class="comparar__lado" id="comparar-lado-b">
+          <span class="cuenta__etiqueta" data-t="comparar.b">Otro</span>
+          <span class="comparar__caja">
+            <input class="burbuja__campo comparar__campo" type="text" id="comparar-precio-b" inputmode="decimal" autocomplete="off" spellcheck="false" placeholder="Precio" data-t-placeholder="comparar.precio">
+            <span class="comparar__codigo comparar__codigo-tamano"></span>
+          </span>
+          <input class="burbuja__campo comparar__campo comparar__tamano" type="text" id="comparar-tamano-b" autocomplete="off" spellcheck="false" placeholder="1 kg" aria-label="Tamaño" data-t-aria-label="comparar.tamano">
+          <span class="comparar__cifra" id="comparar-por-b">—</span>
+          <span class="comparar__nota" id="comparar-por-b-nota"></span>
         </div>
       </div>
       <p class="comparar__veredicto" id="comparar-veredicto" aria-live="polite"></p>

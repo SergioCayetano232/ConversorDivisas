@@ -93,6 +93,19 @@ const el = {
   compararCampo: document.getElementById("comparar-campo"),
   compararCodigo: document.getElementById("comparar-codigo"),
   compararVeredicto: document.getElementById("comparar-veredicto"),
+  compararModos: document.getElementById("comparar-modos"),
+  compararSitios: document.getElementById("comparar-sitios"),
+  compararTamanos: document.getElementById("comparar-tamanos"),
+  compararLadoA: document.getElementById("comparar-lado-a"),
+  compararLadoB: document.getElementById("comparar-lado-b"),
+  compararPrecioA: document.getElementById("comparar-precio-a"),
+  compararPrecioB: document.getElementById("comparar-precio-b"),
+  compararTamanoA: document.getElementById("comparar-tamano-a"),
+  compararTamanoB: document.getElementById("comparar-tamano-b"),
+  compararPorA: document.getElementById("comparar-por-a"),
+  compararPorB: document.getElementById("comparar-por-b"),
+  compararPorANota: document.getElementById("comparar-por-a-nota"),
+  compararPorBNota: document.getElementById("comparar-por-b-nota"),
   cuentaCerrar: document.getElementById("cuenta-cerrar"),
   cuentaCompartir: document.getElementById("cuenta-compartir"),
   cuentaEtiqueta: document.getElementById("cuenta-etiqueta"),
@@ -329,7 +342,7 @@ const el = {
   funcionesPie: document.getElementById("funciones-pie"),
   abrirFunciones: document.getElementById("abrir-funciones"),
   trendChange: document.getElementById("trend-change"),
-  rangos: document.querySelectorAll(".rango"),
+  rangos: document.querySelectorAll("#rangos .rango"),
   grupoRangos: document.getElementById("rangos"),
   trendLine: document.getElementById("trend-line"),
   trendArea: document.getElementById("trend-area"),
@@ -443,6 +456,8 @@ let cajero = [];
 let pagadorNuevo = 0;
 // El precio de aquí va en la divisa de destino: si cambia, el de antes ya no vale.
 let compararDivisa = null;
+let compararModo = "sitio";
+const COMPARAR_MODO_KEY = "compararModo";
 let pidiendoTasa = false;
 let retiradaNueva = null;
 let saldadoNuevo = null;
@@ -6262,6 +6277,16 @@ function abrirCuenta() {
 
 function pintarComparar() {
   if (el.comparar.hidden) return;
+  const tamanos = compararModo === "tamano";
+  el.compararSitios.hidden = tamanos;
+  el.compararTamanos.hidden = !tamanos;
+  el.compararModos.style.setProperty("--indice", tamanos ? 1 : 0);
+  for (const b of el.compararModos.querySelectorAll(".rango")) {
+    const activo = b.dataset.modo === compararModo;
+    b.classList.toggle("is-activo", activo);
+    b.setAttribute("aria-pressed", String(activo));
+  }
+  if (tamanos) return pintarTamanos();
   const to = el.to.value;
   if (compararDivisa !== to) {
     if (compararDivisa !== null) el.compararCampo.value = "";
@@ -6282,16 +6307,9 @@ function pintarComparar() {
   el.compararAlliNota.textContent = alli === null ? ""
     : `${nf.format(cantidadOrigen() ?? 0)} ${el.from.value}${con ? ` · ${tr(con)}` : ""}`;
 
-  // Los platos no giran con el brazo: suben y bajan colgados de sus puntas.
-  const grados = sinMovimiento.matches ? inclinacion(r) / 2 : inclinacion(r);
-  const caida = Math.sin((grados * Math.PI) / 180) * 70;
-  el.compararBrazo.style.transform = `rotate(${grados}deg)`;
-  el.compararPlatoAlli.style.transform = `translateY(${-caida}px)`;
-  el.compararPlatoAqui.style.transform = `translateY(${caida}px)`;
+  moverBalanza(r);
   el.compararLadoAlli.classList.toggle("is-gana", r?.donde === "alli");
   el.compararLadoAqui.classList.toggle("is-gana", r?.donde === "aqui");
-  el.compararPlatoAlli.classList.toggle("is-gana", r?.donde === "alli");
-  el.compararPlatoAqui.classList.toggle("is-gana", r?.donde === "aqui");
 
   let texto;
   if (alli === null) texto = tr("comparar.faltaAlli");
@@ -6302,12 +6320,84 @@ function pintarComparar() {
       ahorro: `${nf.format(r.ahorro)} ${to}`, pct: porCientoEntero(r.fraccion),
     });
   }
-  const donde = r?.donde ?? "";
+  ponerVeredicto(texto, r?.donde ?? "");
+}
+
+// El de la izquierda va donde "allí" en la balanza, así inclinacion() vale igual.
+function moverBalanza(r) {
+  const grados = sinMovimiento.matches ? inclinacion(r) / 2 : inclinacion(r);
+  // Los platos no giran con el brazo: suben y bajan colgados de sus puntas.
+  const caida = Math.sin((grados * Math.PI) / 180) * 70;
+  el.compararBrazo.style.transform = `rotate(${grados}deg)`;
+  el.compararPlatoAlli.style.transform = `translateY(${-caida}px)`;
+  el.compararPlatoAqui.style.transform = `translateY(${caida}px)`;
+  el.compararPlatoAlli.classList.toggle("is-gana", r?.donde === "alli");
+  el.compararPlatoAqui.classList.toggle("is-gana", r?.donde === "aqui");
+}
+
+function ponerVeredicto(texto, donde) {
   if (el.compararVeredicto.textContent !== texto) {
     el.compararVeredicto.textContent = texto;
-    if (r && el.compararVeredicto.dataset.donde !== donde) restartAnimation(el.compararVeredicto, "is-nuevo");
+    if (donde && el.compararVeredicto.dataset.donde !== donde) restartAnimation(el.compararVeredicto, "is-nuevo");
   }
   el.compararVeredicto.dataset.donde = donde;
+}
+
+// Los precios van en la divisa de arriba, la de la tienda; el kilo, también en la tuya.
+function pintarTamanos() {
+  const from = el.from.value;
+  const to = el.to.value;
+  for (const codigo of el.compararTamanos.querySelectorAll(".comparar__codigo-tamano")) codigo.textContent = from;
+  el.compararPrecioA.setAttribute("aria-label", tr("comparar.precioAria", { lado: tr("comparar.a"), from }));
+  el.compararPrecioB.setAttribute("aria-label", tr("comparar.precioAria", { lado: tr("comparar.b"), from }));
+  const a = { precio: leerImporte(el.compararPrecioA.value), tamano: el.compararTamanoA.value };
+  const b = { precio: leerImporte(el.compararPrecioB.value), tamano: el.compararTamanoB.value };
+  const r = compararTamanos(a, b);
+  const valido = r && r.donde !== "distinto";
+  const unidad = valido ? (r.unidad === "ud" ? tr("comparar.unidad.ud") : r.unidad) : "";
+  const convertir = from !== to && rate !== null;
+
+  const lados = [[r?.porA, el.compararPorA, el.compararPorANota, el.compararLadoA, "a"], [r?.porB, el.compararPorB, el.compararPorBNota, el.compararLadoB, "b"]];
+  for (const [por, cifra, nota, lado, cual] of lados) {
+    const texto = valido ? `${nf.format(convertir ? por * rate : por)} ${convertir ? to : from}/${unidad}` : "—";
+    if (cifra.textContent !== texto) {
+      cifra.textContent = texto;
+      if (valido) restartAnimation(cifra, "is-tic");
+    }
+    nota.textContent = valido && convertir ? `${nf.format(por)} ${from}/${unidad}` : "";
+    lado.classList.toggle("is-gana", r?.donde === cual);
+  }
+  moverBalanza(valido && r.donde !== "igual" ? { donde: r.donde === "a" ? "alli" : "aqui", fraccion: r.fraccion } : null);
+
+  let texto;
+  if (!r) texto = tr("comparar.tamanoFalta");
+  else if (r.donde === "distinto") texto = tr("comparar.tamanoDistinto");
+  else if (r.donde === "igual") texto = tr("comparar.igual");
+  else {
+    const tamano = (r.donde === "a" ? el.compararTamanoA : el.compararTamanoB).value.trim();
+    texto = tr("comparar.tamanoGana", { tamano, pct: porCientoEntero(r.fraccion) });
+  }
+  ponerVeredicto(texto, valido && r.donde !== "igual" ? "alli" : r?.donde === "igual" ? "igual" : "");
+}
+
+async function cambiarModoComparar(modo) {
+  if (modo === compararModo) return;
+  compararModo = modo;
+  pintarComparar();
+  enfocarComparar();
+  try {
+    await chrome.storage.local.set({ [COMPARAR_MODO_KEY]: modo });
+  } catch (error) {
+    console.warn("No se pudo guardar qué comparar", error);
+  }
+}
+
+function enfocarComparar() {
+  const campo = compararModo === "tamano"
+    ? [el.compararPrecioA, el.compararTamanoA, el.compararPrecioB, el.compararTamanoB].find((c) => !c.value) ?? el.compararPrecioA
+    : el.compararCampo;
+  campo.focus();
+  campo.select();
 }
 
 function abrirComparar() {
@@ -6319,8 +6409,7 @@ function abrirComparar() {
   el.comparar.hidden = false;
   el.abrirComparar.setAttribute("aria-expanded", "true");
   pintarComparar();
-  el.compararCampo.focus();
-  el.compararCampo.select();
+  enfocarComparar();
 }
 
 function cerrarComparar() {
@@ -9643,6 +9732,11 @@ function bindEvents() {
   el.abrirComparar.addEventListener("click", () => (el.comparar.hidden ? abrirComparar() : cerrarComparar()));
   el.compararCerrar.addEventListener("click", () => cerrarComparar()?.focus());
   el.compararCampo.addEventListener("input", pintarComparar);
+  for (const campo of [el.compararPrecioA, el.compararPrecioB, el.compararTamanoA, el.compararTamanoB]) campo.addEventListener("input", pintarComparar);
+  el.compararModos.addEventListener("click", (e) => {
+    const boton = e.target.closest(".rango");
+    if (boton) cambiarModoComparar(boton.dataset.modo);
+  });
   el.compararAlli.addEventListener("animationend", () => el.compararAlli.classList.remove("is-tic"));
   el.compararVeredicto.addEventListener("animationend", () => el.compararVeredicto.classList.remove("is-nuevo"));
   el.cuentaCompartir.addEventListener("click", onCompartirCuenta);
@@ -9892,6 +9986,9 @@ async function init() {
     casa = guardado;
     pintarCasa(mediaPorDia(gastos));
   });
+  chrome.storage.local.get(COMPARAR_MODO_KEY).then((guardado) => {
+    if (guardado[COMPARAR_MODO_KEY] === "tamano") compararModo = "tamano";
+  }).catch((error) => console.warn("No se pudo leer qué comparar", error));
   pagoNuevo = pagoGuardado;
   tarjetas = tarjetasGuardadas;
   pintarTarjetas();
