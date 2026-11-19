@@ -962,6 +962,81 @@ body::after {
   animation: ensenar-entra var(--mid) var(--ease-out);
 }
 
+/* El tique, a toda la pantalla del popup para que se lea. */
+.tique {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-2);
+  padding: 12px;
+  background: color-mix(in srgb, var(--graphite) 94%, transparent);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  animation: ensenar-entra var(--mid) var(--ease-out);
+}
+
+.tique[hidden] {
+  display: none;
+}
+
+.tique:focus {
+  outline: none;
+}
+
+.tique__titulo {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--mist);
+}
+
+.tique__imagen {
+  flex: 1;
+  min-height: 0;
+  width: 100%;
+  object-fit: contain;
+  border-radius: var(--r-sm);
+  box-shadow: var(--shadow-sm);
+}
+
+.tique__pie {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 6px;
+}
+
+/* Con dos clases, que si no gana el verde de .gente__saldar, que va más abajo. */
+.tique__pie .tique__quitar {
+  color: var(--cinnabar);
+  border-color: color-mix(in srgb, var(--cinnabar) 45%, transparent);
+}
+
+.gastos__texto.is-mal {
+  animation: shake 360ms var(--ease);
+}
+
+/* En la fila, pegado al concepto: dice que hay foto sin quitarle sitio a la cifra. */
+.gastos__tique {
+  flex-shrink: 0;
+  padding: 0;
+  background: none;
+  border: none;
+  font-size: 11px;
+  line-height: 1;
+  cursor: zoom-in;
+  transition: transform var(--fast) var(--ease-spring);
+}
+
+.gastos__tique:hover,
+.gastos__tique:focus-visible {
+  transform: scale(1.2);
+}
+
 .ensenar[hidden] {
   display: none;
 }

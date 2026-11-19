@@ -262,6 +262,13 @@ que necesitaba una conversión rápida. Ahora es un clic en la barra del navegad
   un campo para lo que no cabe en él ("pedir factura", "pagó Ana"). Sale en
   pequeño debajo del gasto y la lupa también busca ahí. Al volver a apuntarlo
   hoy la nota no se copia, que era de aquel
+- La foto del tique, para los gastos de empresa o para reclamar: al pulsar el
+  concepto, con el 📎 de al lado de la nota (o pegándola con Ctrl+V mientras
+  lo editas). Desde el popup se abre una pestaña para elegirla, que Chrome no
+  deja coger archivos desde ahí; en el panel lateral, directamente. El gasto
+  lleva un 🧾 y pulsándolo la ves en grande, la cambias o la quitas. Se guarda
+  reducida (una de 4000 px queda en unos 30 KB) y solo en este ordenador: no va
+  en la copia de seguridad
 - Lo pendiente de pagar: el hotel que se paga al salir o la cena ya
   reservada. Con **⏳ Pendiente**, debajo del total, lo apuntas con lo que
   vale hoy. No cuenta como gastado, pero sí sale de lo que te queda al día y
@@ -646,6 +653,8 @@ popup.js         lo que reacciona a los clics
 copia.*          la página de la copia de seguridad (las opciones)
 imprimir.*       la chuleta en tamaño tarjeta, para imprimir
 permiso.*        la pestaña que pide el micrófono para dictar
+tique.*          la pestaña para elegir la foto del tique
+fotos.js         las fotos de los tiques, en IndexedDB
 background.js    el menú del clic derecho y la tasa para la tarjeta
 tarjeta.js       la tarjeta que sale en la web, en un shadow DOM
 precios.js       las pastillas con los precios de toda la página

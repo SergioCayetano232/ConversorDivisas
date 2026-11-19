@@ -237,6 +237,13 @@ const el = {
   gastosRaro: document.getElementById("gastos-raro"),
   cadaDia: document.getElementById("cada-dia"),
   gastosFrecuentes: document.getElementById("gastos-frecuentes"),
+  tique: document.getElementById("tique"),
+  tiqueTitulo: document.getElementById("tique-titulo"),
+  tiqueImagen: document.getElementById("tique-imagen"),
+  tiqueCambiar: document.getElementById("tique-cambiar"),
+  tiqueQuitar: document.getElementById("tique-quitar"),
+  tiqueCerrar: document.getElementById("tique-cerrar"),
+  tiqueArchivo: document.getElementById("tique-archivo"),
   cadaDiaChips: document.getElementById("cada-dia-chips"),
   cadaDiaCerrar: document.getElementById("cada-dia-cerrar"),
   gastosLista: document.getElementById("gastos-lista"),
@@ -748,6 +755,10 @@ const SONIDO_KEY = "sonido";
 // Lo que dijiste que hoy no, solo para hoy: mañana vuelve a preguntar.
 const CADA_DIA_KEY = "cadaDiaHoyNo";
 let cadaDiaHoyNo = { dia: "", claves: [] };
+// Los gastos con foto del tique. Las fotos van aparte, en fotos.js; aquí solo los ids.
+let conTique = new Set();
+let tiqueAbierto = null;
+let tiqueParaElegir = null;
 let sonido = false;
 let audio = null;
 
@@ -4150,7 +4161,18 @@ function crearFilaGasto(gasto, i, peso, rey = false) {
     icono.classList.add("is-de-otro");
     icono.append(cara);
   }
-  texto.append(icono, que, de, cuanto);
+  texto.append(icono, que);
+  if (conTique.has(gasto.id)) {
+    const tique = document.createElement("button");
+    tique.type = "button";
+    tique.className = "gastos__tique";
+    tique.textContent = "🧾";
+    tique.title = tr("tique.ver");
+    tique.setAttribute("aria-label", tr("tique.ver"));
+    tique.addEventListener("click", () => abrirTique(gasto));
+    texto.append(tique);
+  }
+  texto.append(de, cuanto);
   const entre = entreDe(gasto, personas);
   const partes = partesDe(gasto, personas);
   if (entre || partes) {
@@ -7362,6 +7384,94 @@ async function onCadaDiaNo() {
   }
 }
 
+// En el popup el selector de archivos lo cierra al perder el foco y la foto se
+// pierde: ahí va a su pestaña. En el panel no se cierra, así que vale tal cual.
+function elegirTique(gasto) {
+  if (!enPanel) {
+    chrome.tabs.create({ url: `tique.html?gasto=${encodeURIComponent(gasto.id)}` });
+    return;
+  }
+  tiqueParaElegir = gasto;
+  el.tiqueArchivo.value = "";
+  el.tiqueArchivo.click();
+}
+
+async function guardarTique(gasto, archivo) {
+  try {
+    await fotos.guardar(gasto.id, await reducirFoto(archivo));
+    conTique.add(gasto.id);
+    pintarGastos();
+    abrirTique(gasto);
+  } catch (error) {
+    console.warn("No se pudo guardar el tique", error);
+    const fila = el.gastosLista.querySelector(`[data-id="${gasto.id}"] .gastos__texto`);
+    if (fila) restartAnimation(fila, "is-mal");
+    if (fila) fila.title = tr("tique.mal");
+  }
+}
+
+async function abrirTique(gasto) {
+  let foto = null;
+  try {
+    foto = await fotos.leer(gasto.id);
+  } catch (error) {
+    console.warn("No se pudo leer el tique", error);
+  }
+  if (!foto) {
+    conTique.delete(gasto.id);
+    pintarGastos();
+    return;
+  }
+  if (el.tiqueImagen.src) URL.revokeObjectURL(el.tiqueImagen.src);
+  el.tiqueImagen.src = URL.createObjectURL(foto);
+  const concepto = gasto.concepto || tr("gastos.sinConcepto");
+  el.tiqueTitulo.textContent = `${tr("tique.de", { concepto })} · ${nf.format(gasto.cantidad)} ${gasto.from}`;
+  el.tiqueImagen.alt = el.tiqueTitulo.textContent;
+  tiqueAbierto = gasto;
+  el.tique.hidden = false;
+  el.tique.focus();
+}
+
+function cerrarTique() {
+  if (el.tique.hidden) return;
+  el.tique.hidden = true;
+  URL.revokeObjectURL(el.tiqueImagen.src);
+  el.tiqueImagen.removeAttribute("src");
+  const id = tiqueAbierto?.id;
+  tiqueAbierto = null;
+  el.gastosLista.querySelector(`[data-id="${id}"] .gastos__que`)?.focus();
+}
+
+async function onQuitarTique() {
+  const gasto = tiqueAbierto;
+  if (!gasto) return;
+  try {
+    await fotos.quitar(gasto.id);
+  } catch (error) {
+    console.warn("No se pudo quitar el tique", error);
+    return;
+  }
+  conTique.delete(gasto.id);
+  cerrarTique();
+  pintarGastos();
+}
+
+// Las de gastos que ya no están: se borraron, o se vació el viaje.
+async function cargarTiques() {
+  try {
+    const claves = await fotos.claves();
+    const sobran = fotosSinGasto(claves, conPantalla(viajes));
+    await Promise.all(sobran.map((id) => fotos.quitar(id)));
+    conTique = new Set(claves.filter((id) => !sobran.includes(id)));
+    pintarGastos();
+  } catch (error) {
+    console.warn("No se pudieron leer los tiques", error);
+  }
+}
+
+// Lo de la pantalla aún puede no estar en viajes: guardarViajes lo mete al guardar.
+const conPantalla = (v) => cambiarViaje(v, v.activo, { gastos, presupuesto, cajero });
+
 function onRepetirGasto(original) {
   const gasto = alCambioDelCajero(repetirGasto(original, {
     id: `${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`,
@@ -7451,6 +7561,18 @@ function editarConcepto(gasto, que) {
     });
     notaFila.append(trabajo);
   }
+  const clip = document.createElement("button");
+  clip.type = "button";
+  clip.className = "gastos__devolver gastos__clip";
+  clip.textContent = conTique.has(gasto.id) ? "🧾" : "📎";
+  clip.title = tr(conTique.has(gasto.id) ? "tique.ver" : "tique.poner");
+  clip.setAttribute("aria-label", clip.title);
+  clip.addEventListener("click", () => {
+    acabar(true);
+    if (conTique.has(gasto.id)) abrirTique(gasto);
+    else elegirTique(gasto);
+  });
+  notaFila.append(clip);
   const otros = viajes.lista.filter((v) => v.id !== viajes.activo);
   if (otros.length) {
     const mover = document.createElement("select");
@@ -7541,6 +7663,16 @@ function editarConcepto(gasto, que) {
     });
     pintarCada();
     entreFila.append(nombre, ...caras, modo, cadaUno);
+  }
+  // Pegar una imagen mientras lo editas es la forma de ponerle el tique sin salir del popup.
+  for (const caja of [campo, notaCampo]) {
+    caja.addEventListener("paste", (event) => {
+      const imagen = [...(event.clipboardData?.files ?? [])].find((f) => f.type.startsWith("image/"));
+      if (!imagen) return;
+      event.preventDefault();
+      acabar(true);
+      guardarTique(gasto, imagen);
+    });
   }
   for (const caja of [campo, notaCampo]) {
     caja.addEventListener("keydown", (event) => {
@@ -9833,6 +9965,27 @@ function bindEvents() {
   el.cajeroSugerencia.addEventListener("click", onSugerencia);
   el.cajeroTraer.addEventListener("click", onTraer);
   el.cadaDiaCerrar.addEventListener("click", onCadaDiaNo);
+  el.tiqueCerrar.addEventListener("click", cerrarTique);
+  el.tiqueQuitar.addEventListener("click", onQuitarTique);
+  el.tiqueCambiar.addEventListener("click", () => {
+    const gasto = tiqueAbierto;
+    cerrarTique();
+    if (gasto) elegirTique(gasto);
+  });
+  el.tique.addEventListener("click", (event) => {
+    if (event.target === el.tique) cerrarTique();
+  });
+  el.tique.addEventListener("keydown", (event) => {
+    if (event.key !== "Escape") return;
+    event.preventDefault();
+    event.stopPropagation();
+    cerrarTique();
+  });
+  el.tiqueArchivo.addEventListener("change", () => {
+    const [archivo] = el.tiqueArchivo.files;
+    if (archivo && tiqueParaElegir) guardarTique(tiqueParaElegir, archivo);
+    tiqueParaElegir = null;
+  });
   el.personasMenos.addEventListener("click", () => onPersonas(-1));
   el.personasMas.addEventListener("click", () => onPersonas(1));
   el.personasCabeza.addEventListener("click", () => (el.gente.hidden ? abrirGente() : cerrarGente()));
@@ -10010,6 +10163,8 @@ function bindEvents() {
     }
   });
   document.addEventListener("mousedown", (event) => {
+    // El tique va por encima de todo: lo que se toca ahí no es tocar fuera de los paneles.
+    if (el.tique.contains(event.target)) return;
     if (!el.bandeja.hidden && !el.bandeja.contains(event.target)) cerrarBandeja();
     // La pastilla se cierra a sí misma con su clic; si la cerrara aquí, el clic
     // la volvería a abrir.
@@ -10130,6 +10285,7 @@ async function init() {
   ({ gastos, presupuesto, cajero } = viajeActivo(viajes));
   pintarCategoriaNueva();
   pintarGastos();
+  cargarTiques();
   comision = comisionGuardada;
   pintarPago();
   pintarTarjetas();

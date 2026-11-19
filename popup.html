@@ -1168,10 +1168,22 @@
       <p class="ensenar__pie" data-t="ensenar.pie">Toca o pulsa una tecla para volver</p>
     </div>
 
+    <div class="tique" id="tique" role="dialog" aria-modal="true" aria-labelledby="tique-titulo" tabindex="-1" hidden>
+      <p class="tique__titulo" id="tique-titulo"></p>
+      <img class="tique__imagen" id="tique-imagen" alt="">
+      <div class="tique__pie">
+        <button class="gente__saldar" type="button" id="tique-cambiar" data-t="tique.cambiar">Cambiar</button>
+        <button class="gente__saldar tique__quitar" type="button" id="tique-quitar" data-t="tique.quitar">Quitar</button>
+        <button class="gastos__cerrar" type="button" id="tique-cerrar" aria-label="Cerrar" data-t-aria-label="cerrar">✕</button>
+      </div>
+    </div>
+    <input type="file" id="tique-archivo" accept="image/*" hidden>
+
   </div>
 
   <script src="textos.js"></script>
   <script src="logica.js"></script>
+  <script src="fotos.js"></script>
   <script src="popup.js"></script>
 </body>
 </html>

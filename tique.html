@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>ConversorDivisas · Foto del tique</title>
+  <link rel="icon" href="icons/icon48.png">
+  <link rel="stylesheet" href="copia.css">
+  <link rel="stylesheet" href="tique.css">
+</head>
+<body>
+  <main class="pagina">
+    <header class="cabeza">
+      <img class="cabeza__logo" src="icons/icon128.png" alt="" width="44" height="44">
+      <div>
+        <p class="cabeza__app">ConversorDivisas</p>
+        <h1 class="cabeza__titulo" data-t="tique.pagina">Foto del tique</h1>
+      </div>
+    </header>
+    <p class="intro" data-t="tique.intro">La foto se queda en este ordenador, con el gasto.</p>
+
+    <section class="tarjeta" aria-labelledby="tique-gasto">
+      <h2 class="tarjeta__titulo" id="tique-gasto"></h2>
+      <label class="soltar" id="soltar">
+        <input class="soltar__archivo" type="file" id="archivo" accept="image/*">
+        <svg class="soltar__icono" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 3h12v18l-2-1.5-2 1.5-2-1.5-2 1.5-2-1.5L6 21z"/><path d="M9 8h6M9 12h6M9 16h3"/></svg>
+        <span class="soltar__texto" data-t="tique.soltar">Suelta aquí la foto, pégala con Ctrl+V o</span>
+        <span class="soltar__pista" data-t="tique.elegir">elígela</span>
+      </label>
+      <p class="error" id="error" role="alert" hidden></p>
+      <img class="tique-foto" id="foto" alt="" hidden>
+      <p class="hecho" id="hecho" role="status" hidden>
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>
+        <span data-t="tique.guardado">Guardada. Ya puedes cerrar esta pestaña.</span>
+      </p>
+    </section>
+  </main>
+
+  <script src="textos.js"></script>
+  <script src="logica.js"></script>
+  <script src="fotos.js"></script>
+  <script src="tique.js"></script>
+</body>
+</html>

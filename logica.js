@@ -9074,6 +9074,26 @@ function tocaRecordar(viajes, avisadoEl, ahora = new Date(), hora = RECORDATORIO
   return viajesSinApuntar(viajes, hoyIso)[0] ?? null;
 }
 
+// La foto del tique, a lo justo para leerla: una del móvil pesa 4 MB y con
+// 1600 px por el lado largo el total y el CIF se siguen leyendo.
+const FOTO_LADO = 1600;
+
+function medidasFoto(ancho, alto, lado = FOTO_LADO) {
+  if (!(ancho > 0) || !(alto > 0)) return null;
+  const escala = Math.min(1, lado / Math.max(ancho, alto));
+  return { ancho: Math.round(ancho * escala), alto: Math.round(alto * escala) };
+}
+
+// Las fotos cuyo gasto ya no está en ningún viaje, ni archivado ni de empresa.
+// Lo que está esperando a que se pueda deshacer aún cuenta como suyo.
+function fotosSinGasto(claves, viajes, esperando = []) {
+  const vivos = new Set(esperando);
+  for (const v of [...(viajes?.lista ?? []), ...(viajes?.archivados ?? [])]) {
+    for (const g of [...(v.gastos ?? []), ...(v.empresa ?? [])]) vivos.add(g.id);
+  }
+  return claves.filter((id) => !vivos.has(id));
+}
+
 // Cada siete días de viaje, la semana en un aviso. El último día no, que para
 // eso está el resumen del viaje entero. Sin fechas no sé qué día del viaje es.
 const SEMANA = 7;
@@ -10260,7 +10280,7 @@ if (typeof module !== "undefined") {
     urlImpresion, leerImpresion, chuletaParaImprimir,
     COMISION_MAX, COMISIONES_RAPIDAS, leerComision, leerPorcentaje, conComision,
     IMPUESTO_MAX, IMPUESTOS_RAPIDOS, leerImpuesto, leerImpuestoEscrito, loQuePagas,
-    COMPARAR_IGUAL, compararPrecios, inclinacion, leerTamano, compararTamanos, efectivoParaTraer, traerEfectivo, quitarRetiradaDeViajes, deCadaDia, semanaDelViaje, tocaSemana, mensajeSemana, ZONAS, desfase, esNoche, momentoDelDia, cieloAlli, horaAlli, SIGLAS_ZONA, leerHoraZona, convertirHoraZona, textoHoraZona, textoDiferencia, relojDe, tituloHoraAlli, leerCafe, enCafes, textoCafes, HORAS_JORNADA, enHoras, textoHoras,
+    COMPARAR_IGUAL, compararPrecios, inclinacion, leerTamano, compararTamanos, efectivoParaTraer, traerEfectivo, quitarRetiradaDeViajes, deCadaDia, semanaDelViaje, tocaSemana, mensajeSemana, FOTO_LADO, medidasFoto, fotosSinGasto, ZONAS, desfase, esNoche, momentoDelDia, cieloAlli, horaAlli, SIGLAS_ZONA, leerHoraZona, convertirHoraZona, textoHoraZona, textoDiferencia, relojDe, tituloHoraAlli, leerCafe, enCafes, textoCafes, HORAS_JORNADA, enHoras, textoHoras,
     PROPINAS_RAPIDAS, PROPINA_HABITUAL, propinaHabitual, leerPropina, textoPropina, ENCHUFES, leerEnchufe, enchufeDe, textoEnchufe, EMERGENCIAS, leerEmergencias, textoEmergencias, AGUA, leerAgua, textoAgua, POR_LA_IZQUIERDA, CARNE_EUROPEO, leerConducir, textoConducir, IDIOMA_DE_DIVISA, paraDecir, FRASE_REGATEO, paraEnsenar, VOCES_DE_BROMA, elegirVoz, PREFIJOS, leerPrefijo, textoPrefijo, FRASES, leerGracias, textoGracias, IVA, leerIva, textoIva, PAGO_ALLI, CAJERO_NOTA, leerCajero, textoCajero, leerLlegar, textoLlegar, VISADOS, leerVisado, textoVisado, ROAMING, leerRoaming, textoRoaming, CON_TSE, leerSanitaria, textoSanitaria, APPS_TAXI, leerTaxi, textoTaxi, REGATEO, leerRegatear, textoRegatear, FESTIVOS, FESTIVOS_LUNA, pascuaOrtodoxa, fechaFestivo, festivosProximos, leerFestivos, textoFestivos, HORARIOS, leerHorario, textoHorario, PROPINA_MAX, PERSONAS_MAX, CUENTA_POR_DEFECTO, leerCuenta, redondoHaciaArriba, repartirCuenta, cuentaParaCompartir, gastoDeLaCuenta, BILLETES, leerBilletes, textoBilletes, PAGOS_MAX, pagosPosibles, vuelta, vueltaEnBilletes, pagoJusto,
     MARGENES, tasaOfrecida, analizarCambio,
     domingoDePascua, hayTasaEl, tasaVieja, textoTasaVieja, horaBce, textoActualizado, proximaTasa, textoProximaTasa,
