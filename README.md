@@ -32,6 +32,11 @@ que necesitaba una conversión rápida. Ahora es un clic en la barra del navegad
   la voz del navegador dice la cantidad de allí en su idioma ("￥84,000" en
   japonés), para repetirla en un mercado o un taxi. Si no tienes ninguna voz de
   ese idioma, el botón no sale. Con el euro tampoco, que no tiene un idioma
+- Convertir hablando, con el micrófono de al lado del altavoz: dices "¿cuánto
+  son 30 dólares?", "20 libras en yenes" o "how much is 30 dollars in pounds"
+  y pone el par y la cantidad. Sin decir adónde, a tu divisa; y si dices la
+  tuya ("doce euros con cincuenta"), la pone abajo. Entiende lo mismo que el
+  dictado de los gastos, y como ese, el reconocimiento es el de Chrome
 - Buscas la divisa escribiendo: pones "mex" y sale el peso mexicano
 - Un botón para dar la vuelta al par sin tocar los dos desplegables
 - Un botón para copiar el resultado. Con Shift (clic o `Shift+C`) copia la

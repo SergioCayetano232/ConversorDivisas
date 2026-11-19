@@ -302,6 +302,7 @@ const el = {
   semanaBarras: document.getElementById("semana-barras"),
   semanaTexto: document.getElementById("semana-texto"),
   decir: document.getElementById("decir"),
+  oir: document.getElementById("oir"),
   abanico: document.getElementById("trend-abanico"),
   abanicoRango: document.getElementById("abanico-rango"),
   abanicoDinero: document.getElementById("abanico-dinero"),
@@ -3301,6 +3302,8 @@ function ponerPago(pago) {
 // por los mismos avisos (el cero de más, el repetido) que uno escrito a mano.
 const Reconocimiento = globalThis.SpeechRecognition ?? globalThis.webkitSpeechRecognition;
 let escucha = null;
+// Hay dos micros: el del concepto apunta un gasto y el de la cantidad convierte.
+let escuchaPara = null;
 
 function idiomaDeVoz() {
   const idioma = idiomaActual();
@@ -3308,19 +3311,26 @@ function idiomaDeVoz() {
 }
 
 function pintarVoz() {
-  const oyendo = Boolean(escucha);
+  const oyendo = Boolean(escucha) && escuchaPara === "gasto";
   el.gastosVoz.classList.toggle("is-escuchando", oyendo);
   el.gastosVoz.setAttribute("aria-pressed", String(oyendo));
   el.gastosVoz.title = tr(oyendo ? "voz.parar" : "voz.dictar");
   el.gastosVoz.setAttribute("aria-label", el.gastosVoz.title);
   el.gastosConcepto.placeholder = oyendo ? tr("voz.oyendo") : tr("gastos.conceptoCorto");
+  const convirtiendo = Boolean(escucha) && escuchaPara === "cantidad";
+  el.oir.classList.toggle("is-escuchando", convirtiendo);
+  el.oir.setAttribute("aria-pressed", String(convirtiendo));
+  el.oir.title = tr(convirtiendo ? "voz.parar" : "voz.convertir");
+  el.oir.setAttribute("aria-label", el.oir.title);
 }
 
-function onDictar() {
+function onDictar(para = "gasto") {
+  // Con cualquiera de los dos abierto, pulsar cierra: dos a la vez se pisan.
   if (escucha) {
     escucha.stop();
     return;
   }
+  escuchaPara = para;
   const r = new Reconocimiento();
   r.lang = idiomaDeVoz();
   r.interimResults = true;
@@ -3328,8 +3338,10 @@ function onDictar() {
   let dicho = "";
   r.addEventListener("result", (event) => {
     dicho = [...event.results].map((x) => x[0].transcript).join(" ").trim();
-    // Mientras hablas lo ves en el concepto, en gris, como una sugerencia.
-    el.gastosConcepto.placeholder = dicho;
+    // Mientras hablas lo ves en gris, como una sugerencia: en el concepto, o
+    // debajo de la cantidad al convertir.
+    if (para === "gasto") el.gastosConcepto.placeholder = dicho;
+    else mostrarFlash([`🎙 ${dicho}…`], 1500);
   });
   r.addEventListener("error", (event) => {
     if (event.error === "not-allowed" || event.error === "service-not-allowed") {
@@ -3342,7 +3354,7 @@ function onDictar() {
   r.addEventListener("end", () => {
     escucha = null;
     pintarVoz();
-    if (dicho) aplicarDictado(dicho);
+    if (dicho) (para === "gasto" ? aplicarDictado : aplicarConversionDicha)(dicho);
   });
   try {
     r.start();
@@ -3351,6 +3363,43 @@ function onDictar() {
     console.warn("No se pudo empezar a escuchar", error);
   }
   pintarVoz();
+}
+
+async function aplicarConversionDicha(texto) {
+  const leido = leerConversionDicha(texto, { from: el.from.value, to: el.to.value });
+  if (!leido) {
+    mostrarFlash([`🎙 «${texto}»: ${tr("voz.sinCantidad")}`], 3200);
+    restartAnimation(el.oir, "is-mal");
+    return;
+  }
+  // "Doce euros" sin decir a qué: tu divisa va abajo y se calcula la de arriba.
+  const enLaTuya = !leido.conDestino && leido.from === el.to.value;
+  const from = enLaTuya ? el.from.value : leido.from;
+  const to = enLaTuya ? el.to.value : leido.conDestino ? leido.to : el.to.value;
+  if (from !== el.from.value || to !== el.to.value) {
+    if (from !== el.from.value) {
+      buscadores.from.poner(from);
+      restartAnimation(el.from, "is-cambiado");
+    }
+    if (to !== el.to.value) {
+      buscadores.to.poner(to);
+      restartAnimation(el.to, "is-cambiado");
+    }
+    savePair(el.from.value, el.to.value);
+    apuntarPar();
+    await refresh();
+  }
+  const cifra = Number.isInteger(leido.cantidad) ? nfEntero.format(leido.cantidad) : nf.format(leido.cantidad);
+  ladoActivo = enLaTuya ? "result" : "amount";
+  if (enLaTuya) {
+    pararCuentaResultado();
+    el.result.value = cifra;
+    onResultInput();
+  } else {
+    el.amount.value = cifra;
+    onAmountInput();
+  }
+  mostrarFlash([`🎙 ${cifra} ${leido.from} → ${enLaTuya ? el.from.value : el.to.value}`], 2600);
 }
 
 async function aplicarDictado(texto) {
@@ -9318,9 +9367,11 @@ function bindEvents() {
   el.gastosForm.addEventListener("submit", onApuntarGasto);
   el.gastosConcepto.addEventListener("input", onConceptoGasto);
   el.gastosVoz.hidden = !Reconocimiento;
+  el.oir.hidden = !Reconocimiento;
   if (Reconocimiento) {
     pintarVoz();
-    el.gastosVoz.addEventListener("click", onDictar);
+    el.gastosVoz.addEventListener("click", () => onDictar("gasto"));
+    el.oir.addEventListener("click", () => onDictar("cantidad"));
   }
   el.gastosConcepto.addEventListener("keydown", onTeclaConcepto);
   // Mover el cursor no lanza input, y la sugerencia solo vale con él al final.

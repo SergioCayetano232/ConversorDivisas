@@ -918,6 +918,26 @@ body::after {
   animation-delay: 150ms;
 }
 
+/* El micro de convertir hablando, a la izquierda del altavoz si lo hay. */
+.decir:not([hidden]) + .oir {
+  right: 22px;
+}
+
+.oir svg {
+  width: 12px;
+  height: 12px;
+}
+
+.oir.is-escuchando {
+  color: #fff;
+  background: var(--cinnabar);
+  animation: voz-late 1.2s var(--ease) infinite;
+}
+
+.oir.is-mal {
+  animation: shake 360ms var(--ease);
+}
+
 @keyframes decir-onda {
   50% {
     opacity: 0.2;

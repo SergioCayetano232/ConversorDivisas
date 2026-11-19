@@ -2772,6 +2772,38 @@ function leerDictado(texto, par) {
   return leido && { ...leido, concepto: leido.concepto.charAt(0).toLocaleUpperCase() + leido.concepto.slice(1) };
 }
 
+// Convertir hablando: "cuánto son 30 dólares", "mil yenes en euros", "how much is
+// 30 dollars in pounds". Lo de detrás del último "a", "en" o "in" es adónde, si
+// es una divisa; lo demás lo lee el dictado de los gastos, y el concepto sobra.
+const HACIA_DICHO = /^(?:a|al|en|in|to|into)$/i;
+
+function divisaDicha(palabras, par) {
+  const texto = palabras.join(" ");
+  const raiz = normalizar(palabras[0] ?? "").replace(/(es|s)$/, "");
+  // "pesos" con el peso colombiano puesto son esos, como en el dictado.
+  const suya = raiz.length >= 3 ? [par?.from, par?.to].find((c) => isValidCode(c) && normalizar(nombreDe(c)).startsWith(raiz)) : null;
+  return suya ?? divisaDe(texto) ?? (isValidCode(texto.toUpperCase()) ? texto.toUpperCase() : null);
+}
+
+function leerConversionDicha(texto, par) {
+  if (typeof texto !== "string" || !texto.trim()) return null;
+  // El punto del final fuera, pero no el de "50.000".
+  const palabras = texto.trim().replace(/[¿?¡!]|\.(?!\d)/g, " ").split(/\s+/).filter(Boolean);
+  let destino = null;
+  let hasta = palabras.length;
+  const corte = palabras.findLastIndex((p) => HACIA_DICHO.test(p));
+  if (corte > 0 && corte < palabras.length - 1 && palabras.length - corte <= 3) {
+    destino = divisaDicha(palabras.slice(corte + 1), par);
+    if (destino) hasta = corte;
+  }
+  const leido = leerDictado(palabras.slice(0, hasta).join(" "), par);
+  if (!leido) return null;
+  const { cantidad, from } = leido;
+  // "30 euros en euros" no tiene nada que convertir: me quedo con lo de siempre.
+  const to = destino && destino !== from ? destino : leido.to;
+  return { cantidad, from, to, conDestino: Boolean(destino && destino !== from) };
+}
+
 // Con la categoría que le diste la última vez a ese concepto; si es nuevo, la que
 // sale por el nombre.
 function gastoDeBarra(leido, { id, cuando, tasa, comision, pago, usados = [] }) {
@@ -9880,7 +9912,7 @@ if (typeof module !== "undefined") {
     RECIENTES_MAX, FIJOS_MAX, apuntarReciente, fijarReciente, leerRecientes, recientesVisibles,
     RANGOS, RANGO_POR_DEFECTO, leerRango, siguienteRango, coordenadas, alturaEn, MOMENTO_UMBRAL, momento, textoMomento,
     SEMANAS_MINIMAS, mejorDiaSemana, ABANICO_MINIMO, abanicoTasa, textoAbanico, nombreDiaSemana, textoDiaSemana, indiceCercano, extremos, fechaCorta, largoEnPantalla,
-    leerNumero, divisaDe, DOMINIOS, divisaDeLaWeb, leerSeleccion, sumarSeleccion, notaDeSuma, leerCobro, COBRO_RARO, analizarCobro, textoCobro, destinoPara, leerPegado, leerPegadoSuelto, leerColumna, leerFechaReserva, leerReserva, cuentaDeColumna, buscarPrecios, precioEntero, leerOmnibox, leerMezcla, textoMezcla, precioUnidadBarra, leerGastoBarra, leerDictado, gastoDeBarra, gastoDeTarjeta, escaparXml,
+    leerNumero, divisaDe, DOMINIOS, divisaDeLaWeb, leerSeleccion, sumarSeleccion, notaDeSuma, leerCobro, COBRO_RARO, analizarCobro, textoCobro, destinoPara, leerPegado, leerPegadoSuelto, leerColumna, leerFechaReserva, leerReserva, cuentaDeColumna, buscarPrecios, precioEntero, leerOmnibox, leerMezcla, textoMezcla, precioUnidadBarra, leerGastoBarra, leerDictado, leerConversionDicha, gastoDeBarra, gastoDeTarjeta, escaparXml,
     divisaDeIdioma, parPorIdioma, banderaDe, banderaDivisa,
     HISTORIAL_MAX, leerHistorial, apuntarConversion, quitarConversion, haceCuanto, ultimoDeHoy, textoParaCopiar, fraseParaCopiar, conversionParaCopiar, gastoParaCopiar, ultimoGasto, gastoMasCaro, totalParaCopiar, hoyParaCopiar, simboloDe, textoConSimbolo, fraseConSimbolo,
     celdaCsv, csvHistorial, csvGastos, csvViajes,
