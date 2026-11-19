@@ -236,6 +236,7 @@ const el = {
   gastosApuntar: document.getElementById("gastos-apuntar"),
   gastosRaro: document.getElementById("gastos-raro"),
   cadaDia: document.getElementById("cada-dia"),
+  gastosFrecuentes: document.getElementById("gastos-frecuentes"),
   cadaDiaChips: document.getElementById("cada-dia-chips"),
   cadaDiaCerrar: document.getElementById("cada-dia-cerrar"),
   gastosLista: document.getElementById("gastos-lista"),
@@ -3577,7 +3578,43 @@ async function aplicarDictado(texto) {
   pintarEfectivo();
 }
 
+// Solo con el campo vacío y el cursor dentro: en cuanto escribes, manda el autocompletado.
+function pintarFrecuentes() {
+  const caja = el.gastosFrecuentes;
+  const toca = document.activeElement === el.gastosConcepto && el.gastosConcepto.value === "";
+  const todos = viajes.lista.flatMap((v) => (v.id === viajes.activo ? gastos : v.gastos));
+  const lista = toca ? conceptosFrecuentes(todos) : [];
+  const estaba = !caja.hidden;
+  caja.hidden = lista.length === 0;
+  if (caja.hidden || (estaba && caja.children.length === lista.length)) return;
+  caja.replaceChildren(...lista.map(({ concepto, categoria }, i) => {
+    const boton = document.createElement("button");
+    boton.type = "button";
+    boton.className = "cada-dia__chip frecuentes__chip";
+    boton.style.setProperty("--i", i);
+    boton.textContent = `${emojiCategoria(categoria)} ${concepto}`;
+    boton.title = tr("frecuentes.poner", { concepto });
+    // Sin esto el campo pierde el foco al pulsar y las pastillas se van antes del clic.
+    boton.addEventListener("mousedown", (event) => event.preventDefault());
+    boton.addEventListener("click", () => ponerFrecuente(concepto, categoria));
+    return boton;
+  }));
+}
+
+function ponerFrecuente(concepto, categoria) {
+  el.gastosConcepto.value = concepto;
+  el.gastosConcepto.focus();
+  restartAnimation(el.gastosConcepto, "is-completado");
+  if (!categoriaAMano && categoria !== categoriaNueva) {
+    categoriaNueva = categoria;
+    pintarCategoriaNueva(true);
+  }
+  pintarFrecuentes();
+  pintarBotonGasto();
+}
+
 function onConceptoGasto() {
+  pintarFrecuentes();
   pintarBotonGasto();
   const sugerencia = sugerenciaConcepto();
   const hay = pintarSugerencia(sugerencia);
@@ -7231,6 +7268,8 @@ function onApuntarGasto(event) {
   el.gastosLista.scrollTop = 0;
   monedaAlGasto(noches[0].id, `+${nf.format(gasto.valor)}`);
   el.gastosConcepto.focus();
+  // Ya tenía el foco, así que no salta el evento: las pinto a mano para el siguiente.
+  pintarFrecuentes();
 }
 
 // Desde el botón de apuntar, la cifra vuela en arco hasta su gasto en la
@@ -9716,6 +9755,8 @@ function bindEvents() {
     el.oir.addEventListener("click", () => onDictar("cantidad"));
   }
   el.gastosConcepto.addEventListener("keydown", onTeclaConcepto);
+  el.gastosConcepto.addEventListener("focus", pintarFrecuentes);
+  el.gastosConcepto.addEventListener("blur", pintarFrecuentes);
   // Mover el cursor no lanza input, y la sugerencia solo vale con él al final.
   el.gastosConcepto.addEventListener("keyup", (event) => {
     if (["ArrowLeft", "ArrowRight", "Home", "End"].includes(event.key)) pintarSugerencia(sugerenciaConcepto());

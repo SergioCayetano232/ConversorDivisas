@@ -3148,6 +3148,10 @@ function adivinarCategoria(concepto) {
 // Los conceptos que ya has usado: el más repetido primero y, si empatan, el
 // último. Me quedo con la categoría del último, que si la cambiaste a mano es esa.
 function conceptosUsados(gastos) {
+  return contarConceptos(gastos).map(({ concepto, categoria }) => ({ concepto, categoria }));
+}
+
+function contarConceptos(gastos) {
   const vistos = new Map();
   for (const g of gastos) {
     const concepto = limpiarConcepto(g.concepto);
@@ -3162,7 +3166,17 @@ function conceptosUsados(gastos) {
   }
   return [...vistos.values()]
     .sort((a, b) => b.veces - a.veces || b.cuando - a.cuando)
-    .map(({ concepto, categoria }) => ({ concepto, categoria: categoriaBuena(categoria) }));
+    .map(({ concepto, categoria, veces }) => ({ concepto, categoria: categoriaBuena(categoria), veces }));
+}
+
+// Los de siempre, para ponerlos con un clic con el campo aún vacío. Desde dos
+// veces, que uno suelto no es costumbre; las noches repartidas no cuentan.
+const FRECUENTES_MAX = 4;
+function conceptosFrecuentes(gastos, max = FRECUENTES_MAX) {
+  return contarConceptos(gastos.filter((g) => !/^\d+\/\d+(?: ·|$)/.test(g.concepto ?? "")))
+    .filter((c) => c.veces >= 2)
+    .slice(0, max)
+    .map(({ concepto, categoria }) => ({ concepto, categoria }));
 }
 
 // Con una letra sola saldría siempre lo mismo, así que espero a la segunda.
@@ -10230,7 +10244,7 @@ if (typeof module !== "undefined") {
     celdaCsv, csvHistorial, csvGastos, csvViajes,
     GASTOS_MAX, CONCEPTO_MAX, crearGasto, leerGastos, esDevolucion, devolucionDe, apuntarGasto, NOCHES_MAX, repartirCentimos, repartirNoches, repartoPorDias, apuntarNoches, quitarGasto, cambiarConcepto, cambiarDia, buscarGastos, preguntarGastos, textoPregunta, trozosResaltados, repetirGasto, devolverGasto, devolverTodos, sumarPorDivisa, gastosPorDia, huecoEntre, cifraEnMarcha, categoriaDelDia, pesoDeLosDias, ordenarPorImporte, masCarosDelDia, pesoDeLosGastos, RARO_VECES, mediana, gastoRaro, REPETIDO_MS, gastoRepetido, mediaPorDia, DIAS_POR_MES, COMO_EN_CASA, comparaConCasa, textoCasa, categoriasAlDia, mediaPorGasto, comisionesPagadas, cambioDelViaje, cifraCambio, textoCambio, pagadoEnEfectivo, ahorroEnEfectivo,
     RETIRADAS_MAX, leerRetiradas, crearRetirada, cambioDelCajero, sobreElBce, alCambioDelCajero, apuntarRetirada, quitarRetirada, efectivoQueda, EFECTIVO_POCO, tonoEfectivo, redondoDeCajero, cuantoSacar, loQueSobra, gastadoHoy, nombreDia,
-    CATEGORIAS, CATEGORIA_POR_DEFECTO, CATEGORIAS_PROPIAS_MAX, NOMBRE_CATEGORIA_MAX, esCategoria, leerCategoriasPropias, ponerCategoriasPropias, todasCategorias, nombreCategoria, emojiCategoria, crearCategoriaPropia, quitarCategoriaPropia, sinCategoria, adivinarCategoria, PAGOS, PAGO_POR_DEFECTO, leerPago, comisionDelPago, desglose, conceptosUsados, completarConcepto,
+    CATEGORIAS, CATEGORIA_POR_DEFECTO, CATEGORIAS_PROPIAS_MAX, NOMBRE_CATEGORIA_MAX, esCategoria, leerCategoriasPropias, ponerCategoriasPropias, todasCategorias, nombreCategoria, emojiCategoria, crearCategoriaPropia, quitarCategoriaPropia, sinCategoria, adivinarCategoria, PAGOS, PAGO_POR_DEFECTO, leerPago, comisionDelPago, desglose, conceptosUsados, conceptosFrecuentes, completarConcepto,
     EMOJI_CATEGORIA, destacados, resumenParaCompartir, FINDE_MINIMO, findeContraSemana, ESTRELLA_MINIMO, conceptoEstrella, INDICE_MAX, indiceCafe,
     TARJETAS_MAX, NOMBRE_TARJETA_MAX, anadirTarjeta, leerTarjetas, quitarTarjeta, tarjetaActual, siguientePago, mejorTarjeta,
     aniosConGastos, datosAnio, COPIA_APP, COPIA_VERSION, CLAVES_COPIA, CLAVES_SYNC, limpiarSync, cambiosSync, mezclaInicial, limpiarCopia, crearCopia, leerCopia, resumenCopia,

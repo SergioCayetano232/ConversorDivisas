@@ -8415,6 +8415,18 @@ body::after {
   transform: scale(0.94);
 }
 
+.frecuentes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin: calc(var(--s-1) * -1) 0 var(--s-2);
+}
+
+.frecuentes__chip {
+  animation: pop 360ms var(--ease-spring) both;
+  animation-delay: calc(var(--i, 0) * 40ms);
+}
+
 .cada-dia__chip.is-nuevo {
   animation: pop 420ms var(--ease-spring) both;
 }
@@ -12509,6 +12521,7 @@ kbd {
   .chuleta__fila.is-nueva,
   .historial__fila,
   .gastos__fila.is-nueva,
+  .frecuentes__chip,
   .cajero__retirada.is-nueva,
   .gastos__dia-rapido,
   .gastos__dia-fecha,
