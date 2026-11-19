@@ -105,6 +105,7 @@ chrome.runtime.onStartup.addListener(() => {
   actualizarInsignia();
   revisarAvisos();
   recordarGastos();
+  resumirSemana();
   avisarTaxFree();
   avisarPendientes();
   avisarCambioDePais();
@@ -117,6 +118,7 @@ chrome.alarms.onAlarm.addListener((alarma) => {
   actualizarInsignia();
   revisarAvisos();
   recordarGastos();
+  resumirSemana();
   avisarTaxFree();
   avisarPendientes();
   avisarCambioDePais();
@@ -1594,6 +1596,32 @@ async function recordarGastos() {
   }
 }
 
+// Las semanas ya avisadas, "viaje:semana". Con las últimas veinte sobra.
+const SEMANAS_AVISADAS_MAX = 20;
+
+async function resumirSemana() {
+  try {
+    await idiomaListo;
+    const { recordatorioActivo = true, recordatorioHora, semanasAvisadas, viajes } = await chrome.storage.local.get(["recordatorioActivo", "recordatorioHora", "semanasAvisadas", "viajes"]);
+    if (!recordatorioActivo || !viajes) return;
+    const avisadas = Array.isArray(semanasAvisadas) ? semanasAvisadas : [];
+    const toca = tocaSemana(leerViajes(viajes), avisadas, new Date(), recordatorioHora);
+    if (!toca) return;
+    const clave = `${toca.viaje.id}:${toca.resumen.semana}`;
+    await chrome.storage.local.set({ semanasAvisadas: [clave, ...avisadas].slice(0, SEMANAS_AVISADAS_MAX) });
+    const { titulo, cuerpo } = mensajeSemana(toca.viaje, toca.resumen);
+    await chrome.notifications.create(`semana:${toca.viaje.id}`, {
+      type: "basic",
+      iconUrl: "icons/icon128.png",
+      title: titulo,
+      message: cuerpo,
+      priority: 1,
+    });
+  } catch (error) {
+    console.warn("No se pudo hacer el resumen de la semana", error);
+  }
+}
+
 // No hay evento para cuando el sistema cambia de zona: lo miro al abrir Chrome y
 // cada hora. Al pulsar el aviso, el clic de abajo pone el par por el id.
 async function avisarCambioDePais() {
@@ -1691,6 +1719,7 @@ chrome.notifications.onClicked.addListener(async (id) => {
   if (id.startsWith("recordatorio:")) await irAGastos(id.slice(13));
   if (id.startsWith("taxfree:")) await irAGastos(id.slice(8));
   if (id.startsWith("pendiente:")) await irAGastos(id.slice(10));
+  if (id.startsWith("semana:")) await irAGastos(id.slice(7));
   if (id.startsWith("gasto:")) await irAGastos(id.split(":")[1]);
   const [, from, to] = id.split(":");
   if (isValidCode(from) && isValidCode(to)) await chrome.storage.local.set({ lastPair: { from, to } });

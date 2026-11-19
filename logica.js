@@ -9060,6 +9060,64 @@ function tocaRecordar(viajes, avisadoEl, ahora = new Date(), hora = RECORDATORIO
   return viajesSinApuntar(viajes, hoyIso)[0] ?? null;
 }
 
+// Cada siete días de viaje, la semana en un aviso. El último día no, que para
+// eso está el resumen del viaje entero. Sin fechas no sé qué día del viaje es.
+const SEMANA = 7;
+
+function semanaDelViaje(viaje, hoyIso = hoy()) {
+  const d = diaDelViaje(viaje?.presupuesto, viaje?.gastos ?? [], hoyIso);
+  if (!d || d.dia % SEMANA !== 0 || d.dia >= d.total) return null;
+  const { to } = viaje.presupuesto;
+  const [y, m, dd] = hoyIso.split("-").map(Number);
+  const desde = (n) => isoLocal(new Date(y, m - 1, dd - n));
+  const entre = (a, b) => delDiaADia(viaje.gastos).filter((g) => {
+    const dia = isoLocal(new Date(g.cuando));
+    return g.to === to && dia >= a && dia <= b;
+  });
+  const estas = entre(desde(SEMANA - 1), hoyIso);
+  const total = estas.reduce((s, g) => s + g.valor, 0);
+  if (!(total > 0)) return null;
+  const [mas] = desglose(estas);
+  const semana = d.dia / SEMANA;
+  const antes = semana > 1 ? entre(desde(2 * SEMANA - 1), desde(SEMANA)).reduce((s, g) => s + g.valor, 0) : 0;
+  return {
+    semana, total, to, porDia: total / SEMANA,
+    categoria: mas.categoria, fraccion: mas.fraccion,
+    ...(antes > 0 ? { cambio: total / antes - 1 } : {}),
+  };
+}
+
+// Una vez por viaje y semana, a la hora del recordatorio, que es cuando ya has cenado.
+function tocaSemana(viajes, avisadas = [], ahora = new Date(), hora = RECORDATORIO_HORA) {
+  if (ahora.getHours() < leerHoraRecordatorio(hora)) return null;
+  const hoyIso = isoLocal(ahora);
+  for (const viaje of viajes?.lista ?? []) {
+    const resumen = semanaDelViaje(viaje, hoyIso);
+    if (resumen && !avisadas.includes(`${viaje.id}:${resumen.semana}`)) return { viaje, resumen };
+  }
+  return null;
+}
+
+// Por debajo de un 5 % arriba o abajo es ir igual: un café más o menos.
+const SEMANA_IGUAL = 0.05;
+
+function mensajeSemana(viaje, r) {
+  const dinero = numeros({ minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  const pct = (f) => tr("pct", { n: Math.round(Math.abs(f) * 100) });
+  const lineas = [
+    tr("semanaViaje.total", { total: `${dinero.format(r.total)} ${r.to}`, dia: dinero.format(r.porDia) }),
+    tr("semanaViaje.mas", { categoria: `${emojiCategoria(r.categoria)} ${nombreCategoria(r.categoria)}`, pct: pct(r.fraccion) }),
+  ];
+  if (r.cambio !== undefined) {
+    lineas.push(Math.abs(r.cambio) < SEMANA_IGUAL ? tr("semanaViaje.igual")
+      : tr(r.cambio > 0 ? "semanaViaje.subes" : "semanaViaje.bajas", { pct: pct(r.cambio) }));
+  }
+  return {
+    titulo: tr("semanaViaje.titulo", { viaje: viaje.nombre || tr("semanaViaje.viaje"), n: r.semana }),
+    cuerpo: lineas.join("\n"),
+  };
+}
+
 function mensajeRecordatorio(viaje) {
   return {
     titulo: tr("recordatorio.titulo"),
@@ -10188,7 +10246,7 @@ if (typeof module !== "undefined") {
     urlImpresion, leerImpresion, chuletaParaImprimir,
     COMISION_MAX, COMISIONES_RAPIDAS, leerComision, leerPorcentaje, conComision,
     IMPUESTO_MAX, IMPUESTOS_RAPIDOS, leerImpuesto, leerImpuestoEscrito, loQuePagas,
-    COMPARAR_IGUAL, compararPrecios, inclinacion, leerTamano, compararTamanos, efectivoParaTraer, traerEfectivo, quitarRetiradaDeViajes, deCadaDia, ZONAS, desfase, esNoche, momentoDelDia, cieloAlli, horaAlli, SIGLAS_ZONA, leerHoraZona, convertirHoraZona, textoHoraZona, textoDiferencia, relojDe, tituloHoraAlli, leerCafe, enCafes, textoCafes, HORAS_JORNADA, enHoras, textoHoras,
+    COMPARAR_IGUAL, compararPrecios, inclinacion, leerTamano, compararTamanos, efectivoParaTraer, traerEfectivo, quitarRetiradaDeViajes, deCadaDia, semanaDelViaje, tocaSemana, mensajeSemana, ZONAS, desfase, esNoche, momentoDelDia, cieloAlli, horaAlli, SIGLAS_ZONA, leerHoraZona, convertirHoraZona, textoHoraZona, textoDiferencia, relojDe, tituloHoraAlli, leerCafe, enCafes, textoCafes, HORAS_JORNADA, enHoras, textoHoras,
     PROPINAS_RAPIDAS, PROPINA_HABITUAL, propinaHabitual, leerPropina, textoPropina, ENCHUFES, leerEnchufe, enchufeDe, textoEnchufe, EMERGENCIAS, leerEmergencias, textoEmergencias, AGUA, leerAgua, textoAgua, POR_LA_IZQUIERDA, CARNE_EUROPEO, leerConducir, textoConducir, IDIOMA_DE_DIVISA, paraDecir, FRASE_REGATEO, paraEnsenar, VOCES_DE_BROMA, elegirVoz, PREFIJOS, leerPrefijo, textoPrefijo, FRASES, leerGracias, textoGracias, IVA, leerIva, textoIva, PAGO_ALLI, CAJERO_NOTA, leerCajero, textoCajero, leerLlegar, textoLlegar, VISADOS, leerVisado, textoVisado, ROAMING, leerRoaming, textoRoaming, CON_TSE, leerSanitaria, textoSanitaria, APPS_TAXI, leerTaxi, textoTaxi, REGATEO, leerRegatear, textoRegatear, FESTIVOS, FESTIVOS_LUNA, pascuaOrtodoxa, fechaFestivo, festivosProximos, leerFestivos, textoFestivos, HORARIOS, leerHorario, textoHorario, PROPINA_MAX, PERSONAS_MAX, CUENTA_POR_DEFECTO, leerCuenta, redondoHaciaArriba, repartirCuenta, cuentaParaCompartir, gastoDeLaCuenta, BILLETES, leerBilletes, textoBilletes, PAGOS_MAX, pagosPosibles, vuelta, vueltaEnBilletes, pagoJusto,
     MARGENES, tasaOfrecida, analizarCambio,
     domingoDePascua, hayTasaEl, tasaVieja, textoTasaVieja, horaBce, textoActualizado, proximaTasa, textoProximaTasa,

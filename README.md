@@ -340,6 +340,11 @@ que necesitaba una conversión rápida. Ahora es un clic en la barra del navegad
   recuerda con una notificación, una vez al día. Pulsándola se abren los gastos
   de ese viaje. Con clic derecho en el icono lo pasas a las ocho o a las diez,
   o lo quitas
+- Tu semana de viaje: en los viajes con fechas, cada siete días (y no el último,
+  que tiene su resumen) a esa misma hora te llega lo de la semana: "300,00 EUR
+  en 7 días, 42,86 al día", dónde se fue más ("🍽️ Comida, un 67 %") y, desde la
+  segunda, si vas por encima o por debajo de la anterior. Se quita con el
+  recordatorio
 - Las conversiones y los gastos se bajan en CSV con el botón **CSV** de cada
   panel, listos para abrir en Excel o en Google Sheets: en español van con
   punto y coma y "12,50", en inglés con coma y "12.50", y las tildes no se rompen.
