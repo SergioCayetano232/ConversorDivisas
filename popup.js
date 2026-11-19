@@ -154,6 +154,12 @@ const el = {
   pendientesVence: document.getElementById("pendientes-vence"),
   presupuestoPendiente: document.getElementById("presupuesto-pendiente"),
   curvaAbrir: document.getElementById("curva-abrir"),
+  maleta: document.getElementById("maleta"),
+  maletaAbrir: document.getElementById("maleta-abrir"),
+  maletaCuenta: document.getElementById("maleta-cuenta"),
+  maletaTitulo: document.getElementById("maleta-titulo"),
+  maletaLista: document.getElementById("maleta-lista"),
+  maletaPie: document.getElementById("maleta-pie"),
   horas: document.getElementById("horas"),
   horasFrase: document.getElementById("horas-frase"),
   horasBarras: document.getElementById("horas-barras"),
@@ -3639,6 +3645,7 @@ function abrirHoras() {
   cerrarPendientes();
   cerrarEmpresa();
   cerrarCurva();
+  cerrarMaleta();
   cerrarGente();
   cerrarCategorias();
   dejarDeEditarPresupuesto();
@@ -4642,6 +4649,7 @@ function abrirEmpresa() {
   cerrarTramos();
   cerrarPendientes();
   cerrarCurva();
+  cerrarMaleta();
   cerrarHoras();
   cerrarGente();
   cerrarCategorias();
@@ -4790,6 +4798,7 @@ function abrirPendientes() {
   cerrarCajero();
   cerrarTramos();
   cerrarCurva();
+  cerrarMaleta();
   cerrarHoras();
   cerrarGente();
   cerrarCategorias();
@@ -4914,7 +4923,107 @@ function pintarCurvaBoton() {
   else if (!el.curva.hidden) pintarCurva();
 }
 
+// Antes de salir, lo que queda por hacer. Solo con el día de salida puesto y
+// mientras no hayas salido, que luego ya no hay nada que preparar.
+function cosasMaleta() {
+  if (cuentaAtras(presupuesto) === null) return null;
+  const aqui = presupuesto.to;
+  const destino = destinoDelViaje(viajeActivo(viajes), { aqui, from: el.from.value });
+  const cosas = antesDeSalir(destino, aqui);
+  return cosas.length ? { destino, cosas } : null;
+}
+
+function pintarMaletaBoton() {
+  const maleta = cosasMaleta();
+  el.maletaAbrir.hidden = !maleta;
+  if (!maleta) {
+    cerrarMaleta();
+    return;
+  }
+  const { hechas, total } = progresoMaleta(maleta.cosas, viajeActivo(viajes).listo);
+  const texto = hechas === total ? "✓" : `${hechas}/${total}`;
+  el.maletaAbrir.classList.toggle("is-listo", hechas === total);
+  if (el.maletaCuenta.textContent && el.maletaCuenta.textContent !== texto) restartAnimation(el.maletaCuenta, "is-tic");
+  el.maletaCuenta.textContent = texto;
+  el.maletaAbrir.setAttribute("aria-label", `${tr("maleta.abrir")}: ${tr("maleta.cuenta", { hechas, total })}`);
+}
+
+function pintarMaleta({ destino, cosas }) {
+  const listo = new Set(leerListo(viajeActivo(viajes).listo));
+  const pais = nombreDeDestino(destino) || `${banderaDivisa(destino)} ${nombreDe(destino)}`;
+  el.maletaTitulo.textContent = tr("maleta.titulo", { destino: pais });
+  el.maletaLista.replaceChildren(...cosas.map(({ clave, texto }) => {
+    const li = document.createElement("li");
+    li.className = "maleta__cosa";
+    li.classList.toggle("is-hecha", listo.has(clave));
+    const label = document.createElement("label");
+    const caja = document.createElement("input");
+    caja.type = "checkbox";
+    caja.checked = listo.has(clave);
+    caja.dataset.clave = clave;
+    const frase = document.createElement("span");
+    frase.textContent = texto;
+    label.append(caja, frase);
+    li.append(label);
+    return li;
+  }));
+  pintarPieMaleta(cosas);
+}
+
+function pintarPieMaleta(cosas) {
+  const { hechas, total } = progresoMaleta(cosas, viajeActivo(viajes).listo);
+  el.maletaPie.textContent = hechas === total ? tr("maleta.listo") : tr("maleta.cuenta", { hechas, total });
+  el.maletaPie.classList.toggle("is-listo", hechas === total);
+  return hechas === total;
+}
+
+// No repinto la lista: la casilla que acabas de pulsar se quedaría sin foco.
+function onMarcarMaleta(event) {
+  const caja = event.target;
+  const clave = caja.dataset?.clave;
+  const maleta = cosasMaleta();
+  if (!clave || !maleta) return;
+  const antes = progresoMaleta(maleta.cosas, viajeActivo(viajes).listo);
+  viajes = cambiarViaje(viajes, viajes.activo, { listo: marcarListo(viajeActivo(viajes).listo, clave) });
+  guardarViajes();
+  const li = caja.closest(".maleta__cosa");
+  li.classList.toggle("is-hecha", caja.checked);
+  if (caja.checked) restartAnimation(li, "is-marcada");
+  else li.classList.remove("is-marcada");
+  pintarMaletaBoton();
+  if (pintarPieMaleta(maleta.cosas) && antes.hechas < antes.total) restartAnimation(el.maletaPie, "is-fiesta");
+}
+
+function abrirMaleta() {
+  const maleta = cosasMaleta();
+  if (!maleta) return;
+  cerrarViajes();
+  cerrarCajero();
+  cerrarTramos();
+  cerrarPendientes();
+  cerrarEmpresa();
+  cerrarHoras();
+  cerrarCurva();
+  cerrarGente();
+  cerrarCategorias();
+  dejarDeEditarPresupuesto();
+  const arriba = el.gastosSuma.getBoundingClientRect().bottom - el.gastos.getBoundingClientRect().top;
+  el.maleta.style.setProperty("--cajero-arriba", `${Math.round(arriba) + 4}px`);
+  el.maleta.hidden = false;
+  el.maletaAbrir.setAttribute("aria-expanded", "true");
+  pintarMaleta(maleta);
+  el.maletaLista.querySelector("input")?.focus();
+}
+
+function cerrarMaleta() {
+  if (el.maleta.hidden) return false;
+  el.maleta.hidden = true;
+  el.maletaAbrir.setAttribute("aria-expanded", "false");
+  return true;
+}
+
 function abrirCurva() {
+  cerrarMaleta();
   cerrarViajes();
   cerrarCajero();
   cerrarTramos();
@@ -5053,6 +5162,7 @@ function abrirTramos() {
   cerrarPendientes();
   cerrarEmpresa();
   cerrarCurva();
+  cerrarMaleta();
   cerrarHoras();
   cerrarGente();
   cerrarCategorias();
@@ -5144,6 +5254,7 @@ function abrirCajero() {
   cerrarPendientes();
   cerrarEmpresa();
   cerrarCurva();
+  cerrarMaleta();
   cerrarHoras();
   cerrarGente();
   cerrarCategorias();
@@ -5357,6 +5468,7 @@ function pintarPresupuesto() {
   el.presupuestoAnadir.hidden = Boolean(estado);
   el.presupuestoVer.hidden = !estado;
   pintarCurvaBoton();
+  pintarMaletaBoton();
   if (!estado) {
     delete el.presupuestoVer.dataset.tono;
     el.presupuestoHucha.hidden = true;
@@ -6376,6 +6488,7 @@ function abrirViajes() {
   cerrarPendientes();
   cerrarEmpresa();
   cerrarCurva();
+  cerrarMaleta();
   cerrarHoras();
   cerrarGente();
   cerrarCategorias();
@@ -6416,6 +6529,7 @@ function ponerViaje(nuevos) {
   cerrarPendientes();
   cerrarEmpresa();
   cerrarCurva();
+  cerrarMaleta();
   cerrarHoras();
   cerrarGente();
   dejarDeEditarPresupuesto();
@@ -6712,6 +6826,7 @@ function cerrarGastos() {
   cerrarPendientes();
   cerrarEmpresa();
   cerrarCurva();
+  cerrarMaleta();
   cerrarHoras();
   cerrarGente();
   dejarDeEditarPresupuesto();
@@ -9206,6 +9321,8 @@ function bindEvents() {
   el.gastosTramo.addEventListener("click", () => (el.tramos.hidden ? abrirTramos() : cerrarTramos()));
   el.tramosForm.addEventListener("submit", onPonerTramo);
   el.curvaAbrir.addEventListener("click", () => (el.curva.hidden ? abrirCurva() : cerrarCurva()));
+  el.maletaAbrir.addEventListener("click", () => (el.maleta.hidden ? abrirMaleta() : cerrarMaleta()));
+  el.maletaLista.addEventListener("change", onMarcarMaleta);
   el.curvaSvg.addEventListener("pointermove", (event) => {
     const caja = el.curvaSvg.getBoundingClientRect();
     mirarCurva((event.clientX - caja.left) / caja.width);
@@ -9396,6 +9513,7 @@ function bindEvents() {
       else if (cerrarPendientes()) el.gastosPendiente.focus();
       else if (cerrarEmpresa()) el.gastosEmpresa.focus();
       else if (cerrarCurva()) el.curvaAbrir.focus();
+      else if (cerrarMaleta()) el.maletaAbrir.focus();
       else if (cerrarHoras()) document.getElementById("horas-abrir")?.focus();
       else if (cerrarGente()) el.personasCabeza.focus();
       else if (cerrarCategorias()) el.gastosCategoria.focus();
@@ -9437,6 +9555,9 @@ function bindEvents() {
     }
     if (!el.curva.hidden && !el.curva.contains(event.target) && !el.curvaAbrir.contains(event.target)) {
       cerrarCurva();
+    }
+    if (!el.maleta.hidden && !el.maleta.contains(event.target) && !el.maletaAbrir.contains(event.target)) {
+      cerrarMaleta();
     }
     if (!el.empresa.hidden && !el.empresa.contains(event.target) && !el.gastosEmpresa.contains(event.target)) {
       cerrarEmpresa();

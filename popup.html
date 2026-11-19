@@ -1006,6 +1006,9 @@
         <button class="presupuesto__curva-abrir" type="button" id="curva-abrir" aria-expanded="false" aria-controls="curva" title="Ver cómo va el gasto día a día" aria-label="Ver cómo va el gasto día a día" data-t-title="curva.abrir" data-t-aria-label="curva.abrir" hidden>
           <svg viewBox="0 0 12 12" aria-hidden="true"><path d="M1.5 10.5h9"/><path class="curva__icono-ideal" d="M1.5 9L10.5 3"/><path d="M1.5 9.5l3-2 2 .5 4-5"/></svg>
         </button>
+        <button class="presupuesto__curva-abrir presupuesto__maleta-abrir" type="button" id="maleta-abrir" aria-expanded="false" aria-controls="maleta" title="Lo que hay que hacer antes de salir" data-t-title="maleta.abrir" hidden>
+          <span aria-hidden="true">🧳</span><span class="maleta__cuenta" id="maleta-cuenta"></span>
+        </button>
       </div>
       <div class="cajero horas" id="horas" role="group" aria-labelledby="horas-titulo" hidden>
         <p class="cajero__titulo" id="horas-titulo" data-t="horas.titulo">A qué hora gastas</p>
@@ -1026,6 +1029,11 @@
           <li class="curva__clave curva__clave--prevision" id="curva-clave-prevision" data-t="curva.prevision">A este ritmo</li>
         </ul>
         <p class="curva__texto" id="curva-texto" aria-live="polite"></p>
+      </div>
+      <div class="cajero maleta" id="maleta" role="group" aria-labelledby="maleta-titulo" hidden>
+        <p class="cajero__titulo" id="maleta-titulo"></p>
+        <ul class="maleta__lista" id="maleta-lista"></ul>
+        <p class="maleta__pie" id="maleta-pie" aria-live="polite"></p>
       </div>
       <div class="buscar" id="buscar" hidden>
         <svg class="buscar__icono" viewBox="0 0 12 12" aria-hidden="true"><circle cx="5.2" cy="5.2" r="3.3"/><path d="M7.7 7.7L10.3 10.3"/></svg>

@@ -3790,6 +3790,7 @@ const leerViaje = (v) => ({
   ...(leerTramos(v.tramos).length ? { tramos: leerTramos(v.tramos) } : {}),
   ...(leerPendientes(v.pendientes).length ? { pendientes: leerPendientes(v.pendientes) } : {}),
   ...(leerGastos(v.empresa).length ? { empresa: leerGastos(v.empresa) } : {}),
+  ...(leerListo(v.listo).length ? { listo: leerListo(v.listo) } : {}),
 });
 
 // Sin archivados no lo guardo: así lo de antes sale igual que siempre.
@@ -5068,6 +5069,64 @@ function cuentaAtras(presupuesto, hoyIso = hoy()) {
 function textoCuentaAtras(n) {
   if (n === null) return "";
   return n === 1 ? tr("presupuesto.manana") : tr("presupuesto.faltan", { n });
+}
+
+// Adónde vas, que el viaje no lo guarda: la divisa del primer tramo, la que más
+// sale en los gastos o, si aún no hay nada, la que tienes arriba.
+function destinoDelViaje(viaje, { aqui, from = null } = {}) {
+  const tramo = leerTramos(viaje?.tramos).find((t) => t.divisa && t.divisa !== aqui);
+  if (tramo) return tramo.divisa;
+  const cuantos = new Map();
+  for (const g of viaje?.gastos ?? []) {
+    if (g.from !== aqui && isValidCode(g.from)) cuantos.set(g.from, (cuantos.get(g.from) ?? 0) + 1);
+  }
+  const masVisto = [...cuantos].sort((a, b) => b[1] - a[1])[0]?.[0];
+  if (masVisto) return masVisto;
+  return isValidCode(from) && from !== aqui ? from : null;
+}
+
+// Lo que hay que hacer antes de salir, sacado de los cd de visado, sanitaria,
+// roaming, enchufe, conducir, cajero y emergencias. Solo lo que pide hacer algo:
+// si allí vale tu enchufe, no te digo que no compres adaptador.
+function antesDeSalir(alli, aqui) {
+  if (!isValidCode(alli)) return [];
+  const cosas = [];
+  const pon = (clave, texto) => cosas.push({ clave, texto });
+  const visado = VISADOS[alli];
+  if (visado) {
+    const [tipo, dias, permiso] = visado;
+    pon("visado", tr(`maleta.visado.${tipo}`, { dias, permiso }));
+  }
+  pon("sanitaria", tr(CON_TSE.has(alli) ? "maleta.tse" : alli === "USD" ? "maleta.seguroCaro" : "maleta.seguro"));
+  if (!ROAMING.ue.includes(alli)) pon("roaming", tr(ROAMING.cerca.includes(alli) ? "maleta.roamingCerca" : "maleta.esim"));
+  const enchufe = enchufeDe(alli, aqui);
+  if (enchufe?.entra === false) pon("adaptador", tr("maleta.adaptador", { tipos: enchufe.tipos.join("/") }));
+  if (enchufe?.otroVoltaje) pon("voltaje", tr("maleta.voltaje", { voltios: enchufe.voltios.join("/") }));
+  if (!CARNE_EUROPEO.has(alli)) pon("permiso", tr("maleta.permiso"));
+  const pago = pagoAlli(alli);
+  // Sin salir de tu divisa ya sabes cómo se paga, y el 112 te lo sabes.
+  const fuera = alli !== aqui;
+  if (fuera && pago && pago !== "tarjeta") pon("efectivo", tr(`maleta.${pago}`));
+  if (fuera && EMERGENCIAS[alli]) {
+    pon("emergencias", tr("maleta.emergencias", { numeros: EMERGENCIAS[alli].map(([n]) => n).join(", ") }));
+  }
+  return cosas;
+}
+
+// Lo que ya has marcado, por su clave. Lo que ya no sale (cambiaste de destino)
+// se queda guardado pero no cuenta.
+const leerListo = (guardado) => (Array.isArray(guardado)
+  ? [...new Set(guardado.filter((c) => typeof c === "string" && /^[a-z]{1,20}$/.test(c)))]
+  : []);
+
+function marcarListo(listo, clave) {
+  const lista = leerListo(listo);
+  return lista.includes(clave) ? lista.filter((c) => c !== clave) : [...lista, clave];
+}
+
+function progresoMaleta(cosas, listo) {
+  const hechas = new Set(leerListo(listo));
+  return { hechas: cosas.filter((c) => hechas.has(c.clave)).length, total: cosas.length };
 }
 
 // Cuánto apartar cada semana hasta salir para llegar con el presupuesto. Lo ya
@@ -9740,7 +9799,7 @@ if (typeof module !== "undefined") {
     AVISO_MEJOR_DIAS, techoDeSerie, crearAvisoMejor, ponerTechos,
     presupuestoSugerido, PARTES_VALIDAS, leerPartes, partesDe, repartirPorPartes, textoParte,
     VIAJES_MAX, NOMBRE_VIAJE_MAX, leerViajes, leerPersonas, porPersona, consumoGente, leerPagador, leerGente, ponerNombre, nombrePersona, inicialPersona, cuentasViaje, frasePago, COBRO_GASTOS_MAX, mensajeCobro, leerEntre, entreDe, fraseEntre, cambiarEntre, leerSaldados, saldarPago, quitarSaldado, fraseSaldado, hayOtrosPagadores, NOMBRE_PERSONA_MAX, compararViajes, viajeConTasasDeHoy, VIAJE_HOY_IGUAL, textoViajeHoy, COLORES_VIAJE, leerColorViaje, colorLibre, siguienteColor, viajeActivo, ARCHIVADOS_MAX, archivarViaje, desarchivarViaje, borrarArchivado, todosLosViajes, crearViaje, nombreCopia, nombreDeDestino, duplicarViaje, renombrarViaje, elegirViaje, borrarViaje, moverGasto, cambiarViaje, TRAMOS_MAX, NOMBRE_TRAMO_MAX, leerTramos, ponerTramo, quitarTramo, tramoDelDia, divisaDelTramo, resumenTramos, curvaPresupuesto, FRANJAS, HORAS_MINIMO, horaFiable, porFranja, PENDIENTES_MAX, leerPendientes, crearPendiente, cambiarVence, pendientesPorFecha, tocaPagar, tonoVence, textoVence, PENDIENTE_HORA, tocaPendientes, avisadosPendientes, mensajePendientes, apuntarPendiente, quitarPendiente, totalPendiente, exposicionPendientes, textoExposicion, pagarPendiente, resumenViaje, archivoGastos, plegarIcs, eventosDelViaje, calendarioViaje, archivoCalendario,
-    diasHasta, leerPresupuesto, leerTopes, PRESUPUESTO_JUSTO, estadoPresupuesto, estadoTopes, alDiaAlli, inicioDelViaje, diaDelViaje, cuentaAtras, textoCuentaAtras, huchaViaje, loDeHoy, CELEBRADOS_MAX, leerCelebrados, anadirCelebrado, viajeParaCelebrar, textoCelebrar, RACHA_MINIMA, rachaPresupuesto, hastaCuandoLlega, previsionViaje, PREVISION_JUSTA, textoPrevision, loQueSeLleva, presupuestoEnTarjeta, textoPresupuestoTarjeta, redondearDias,
+    diasHasta, leerPresupuesto, leerTopes, PRESUPUESTO_JUSTO, estadoPresupuesto, estadoTopes, alDiaAlli, inicioDelViaje, diaDelViaje, cuentaAtras, textoCuentaAtras, destinoDelViaje, antesDeSalir, leerListo, marcarListo, progresoMaleta, huchaViaje, loDeHoy, CELEBRADOS_MAX, leerCelebrados, anadirCelebrado, viajeParaCelebrar, textoCelebrar, RACHA_MINIMA, rachaPresupuesto, hastaCuandoLlega, previsionViaje, PREVISION_JUSTA, textoPrevision, loQueSeLleva, presupuestoEnTarjeta, textoPresupuestoTarjeta, redondearDias,
     EXTRAS_MAX, EXTRAS_POR_DEFECTO, leerExtras, anadirExtra, quitarExtra,
     extrasVisibles, disponiblesParaAnadir, convertirExtras, semanaDe, trazoMini, CHULETA, escalaChuleta, chuleta, TRUCO_TOLERANCIA, trucoDeCabeza, textoTruco, tituloTruco, chuletaParaCompartir, extrasParaCompartir,
     urlImpresion, leerImpresion, chuletaParaImprimir,
