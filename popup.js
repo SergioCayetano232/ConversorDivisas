@@ -4918,7 +4918,15 @@ function pintarEmpresa() {
     volver.title = tr("empresa.volverTitulo");
     volver.setAttribute("aria-label", tr("empresa.volver", { concepto }));
     volver.addEventListener("click", () => onSacarDeEmpresa(g.id));
-    fila.append(que, cuanto, volver);
+    // Aquí es donde más falta hace: la empresa lo pide para pagarlo.
+    const tique = document.createElement("button");
+    tique.type = "button";
+    tique.className = "gastos__quitar historial__quitar empresa__tique";
+    tique.textContent = conTique.has(g.id) ? "🧾" : "📎";
+    tique.title = tr(conTique.has(g.id) ? "tique.ver" : "tique.anadir");
+    tique.setAttribute("aria-label", `${tique.title}: ${concepto}`);
+    tique.addEventListener("click", () => (conTique.has(g.id) ? abrirTique(g) : elegirTique(g)));
+    fila.append(que, cuanto, tique, volver);
     return fila;
   }));
 }

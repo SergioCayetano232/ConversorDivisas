@@ -5412,16 +5412,22 @@ function sacarDeEmpresa(gastos, empresa, id) {
   return { gastos: [...gastos, gasto].sort(delMasNuevo), empresa: lista.filter((g) => g.id !== id) };
 }
 
-// Del primero al último, que es como se entrega una nota de gastos.
-function notaDeGastos(viaje) {
+// Del primero al último, que es como se entrega una nota de gastos. Los que
+// tienen foto llevan su número de tique, el mismo que sale debajo de la foto.
+function notaDeGastos(viaje, conTique = new Set()) {
   const lista = [...(viaje?.empresa ?? [])].sort((a, b) => a.cuando - b.cuando);
   if (!lista.length) return null;
   const dia = (g) => isoLocal(new Date(g.cuando));
+  let n = 0;
+  const numeros = new Map(lista.filter((g) => conTique.has(g.id)).map((g) => [g.id, (n += 1)]));
   return {
+    tiques: numeros.size,
     nombre: viaje.nombre || tr("viajes.sinNombre"),
     desde: dia(lista[0]),
     hasta: dia(lista.at(-1)),
     filas: lista.map((g) => ({
+      id: g.id,
+      ...(numeros.has(g.id) ? { tique: numeros.get(g.id) } : {}),
       dia: dia(g),
       concepto: g.concepto || nombreCategoria(g.categoria),
       categoria: nombreCategoria(g.categoria),

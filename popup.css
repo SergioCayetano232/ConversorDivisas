@@ -6688,6 +6688,11 @@ body::after {
   grid-area: quitar;
 }
 
+/* En los de empresa no hay "Pagado": el tique va en su hueco, al lado del ↩. */
+.pendientes__fila .empresa__tique {
+  grid-area: pagar;
+}
+
 .pendientes__nuevo .pendientes__concepto {
   font-family: inherit;
 }

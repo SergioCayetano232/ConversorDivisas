@@ -299,7 +299,10 @@ que necesitaba una conversión rápida. Ahora es un clic en la barra del navegad
 - Los gastos de empresa: al pulsar el concepto, con el 💼 de al lado de la nota
   dices que te lo paga el trabajo. Sale de tus cuentas (el total, el presupuesto,
   el resumen) y va a su propia lista, con **CSV** e **Imprimir** para sacar la
-  nota de gastos. Si fue en efectivo, sí sigue saliendo de tu cartera
+  nota de gastos. Si fue en efectivo, sí sigue saliendo de tu cartera. En esa
+  lista cada uno lleva su 📎 para ponerle la foto del tique, y la nota sale con
+  una columna **Tique** ("#1", "#2") y debajo las fotos con su número, fecha,
+  concepto e importe, de dos en dos y sin partirse entre páginas
 - Mover un gasto a otro viaje, si lo apuntaste con el que no era abierto: al
   pulsar el concepto, con las flechas ⇄ que hay al lado de **↩ Devuelto**,
   eliges a cuál. Se va con su tasa, su fecha y su nota, y con **Deshacer**

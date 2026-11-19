@@ -32,6 +32,7 @@
               <th data-t="csv.pago">Pago</th>
               <th class="nota__cifra" data-t="csv.cantidad">Cantidad</th>
               <th class="nota__cifra" data-t="csv.importe">Importe</th>
+              <th class="nota__n" id="nota-col-tique" data-t="nota.tique" hidden>Tique</th>
             </tr>
           </thead>
           <tbody id="nota-filas"></tbody>
@@ -39,6 +40,10 @@
         </table>
       </div>
       <p class="nota__pie" data-t="nota.pie">Importes al cambio del día de cada gasto, comisión incluida.</p>
+      <section class="nota__tiques" id="nota-tiques" aria-labelledby="nota-tiques-titulo" hidden>
+        <h3 class="nota__tiques-titulo"><span id="nota-tiques-titulo" data-t="nota.tiques">Tiques</span> <span class="nota__cuenta" id="nota-tiques-cuenta"></span></h3>
+        <div class="nota__fotos" id="nota-fotos"></div>
+      </section>
       <button class="boton boton--dorado" type="button" id="imprimir">
         <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4.5 6V2.5h7V6"/><rect x="2" y="6" width="12" height="5.5" rx="1"/><path d="M4.5 9.5h7v4h-7z"/></svg>
         <span data-t="empresa.imprimir">Imprimir</span>
@@ -49,6 +54,7 @@
 
   <script src="textos.js"></script>
   <script src="logica.js"></script>
+  <script src="fotos.js"></script>
   <script src="nota.js"></script>
 </body>
 </html>
