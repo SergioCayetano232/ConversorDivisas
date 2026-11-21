@@ -133,3 +133,29 @@ test("cómo te pagan va en la copia", () => {
   assert.equal(limpiarCopia({ comoMePagan: " paypal.me/sergio " }).comoMePagan, "paypal.me/sergio");
   assert.equal("comoMePagan" in limpiarCopia({ comoMePagan: "" }), false);
 });
+
+const { enlaceDePago, codigoQR } = require("../logica.js");
+
+test("el QR lleva el enlace con lo que te debe ya puesto", () => {
+  assert.equal(enlaceDePago("paypal.me/sergio", 40, "EUR"), "https://paypal.me/sergio/40EUR");
+  assert.equal(enlaceDePago("https://paypal.me/sergio/20EUR", 40, "EUR"), "https://paypal.me/sergio/20EUR");
+});
+
+test("un enlace escrito sin el https lo lleva puesto, que si no el móvil no lo abre", () => {
+  assert.equal(enlaceDePago("revolut.me/sergio", 40, "EUR"), "https://revolut.me/sergio");
+  assert.equal(enlaceDePago("wise.com/pay/me/sergio", 40, "EUR"), "https://wise.com/pay/me/sergio");
+});
+
+test("lo que no es un enlace no tiene QR", () => {
+  assert.equal(enlaceDePago("Bizum 600 123 123", 40, "EUR"), null);
+  assert.equal(enlaceDePago("ES12 3456 7890 1234", 40, "EUR"), null);
+  assert.equal(enlaceDePago("sergio@correo.com", 40, "EUR"), null);
+  assert.equal(enlaceDePago("mi paypal.me/sergio", 40, "EUR"), null, "con texto alrededor ya no es solo un enlace");
+  assert.equal(enlaceDePago("", 40, "EUR"), null);
+  assert.equal(enlaceDePago(undefined, 40, "EUR"), null);
+});
+
+test("el enlace cabe de sobra en un QR pequeño", () => {
+  const qr = codigoQR(enlaceDePago("paypal.me/sergio", 1234.56, "EUR"));
+  assert.ok(qr.lado <= 33, `lado ${qr.lado}`);
+});

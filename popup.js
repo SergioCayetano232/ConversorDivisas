@@ -4787,6 +4787,17 @@ function pintarCuentasGente() {
         cobrar.setAttribute("aria-label", tr("gente.cobrar", { nombre }));
         cobrar.addEventListener("click", () => onCobrar(pago.de, cobrar));
         li.append(cobrar);
+        // Solo con un enlace: un Bizum escrito no se abre escaneándolo.
+        if (enlaceDePago(comoPagar, pago.importe, cuentas.to)) {
+          const qr = document.createElement("button");
+          qr.type = "button";
+          qr.className = "gente__cobrar gente__qr";
+          qr.innerHTML = '<svg viewBox="0 0 12 12" aria-hidden="true"><path d="M1.8 1.8h3v3h-3zM7.2 1.8h3v3h-3zM1.8 7.2h3v3h-3z"/><path d="M7.2 7.2h1.2v1.2M10.2 7.2v.01M8.4 10.2h1.8V9"/></svg>';
+          qr.title = tr("cobro.qr", { nombre });
+          qr.setAttribute("aria-label", qr.title);
+          qr.addEventListener("click", () => abrirQrCobro(pago, cuentas.to, qr));
+          li.append(qr);
+        }
       }
       li.append(boton);
       return li;
@@ -4826,7 +4837,11 @@ function onSaldar(pago, to) {
 let comoPagar = "";
 
 function onComoPagar() {
+  const habiaEnlace = Boolean(enlaceDePago(comoPagar, 1, "EUR"));
   comoPagar = leerComoPagar(el.comoPagar.value);
+  // El botón del QR sale o se va según lo que escribes. Solo repinto en ese
+  // momento: en cada letra, las deudas volverían a entrar con su animación.
+  if (habiaEnlace !== Boolean(enlaceDePago(comoPagar, 1, "EUR"))) pintarCuentasGente();
   chrome.storage.local.set({ comoMePagan: comoPagar }).catch((error) => console.warn("No se pudo guardar cómo te pagan", error));
 }
 
@@ -7297,10 +7312,30 @@ function abrirQr() {
   el.qr.focus();
 }
 
+// El mismo cuadro que el del resumen, con tu enlace de pago y lo que te debe ya
+// puesto: para cobrar en la mesa, sin pasar por el chat.
+let focoAntesDeQr = null;
+
+function abrirQrCobro(pago, to, boton) {
+  const enlace = enlaceDePago(comoPagar, pago.importe, to);
+  if (!enlace) return;
+  const codigo = codigoQR(enlace);
+  focoAntesDeQr = boton;
+  el.qrTitulo.textContent = frasePago(pago, viajeActivo(viajes).gente, to);
+  el.qrCodigo.innerHTML = codigo ? svgQR(codigo) : "";
+  el.qrCodigo.hidden = !codigo;
+  el.qrCodigo.setAttribute("aria-label", tr("cobro.qrAria"));
+  el.qrPista.textContent = codigo ? tr("cobro.qrPista", { enlace: enlace.replace(/^https?:\/\//, "") }) : tr("cobro.qrNoCabe");
+  el.qr.hidden = false;
+  el.qr.focus();
+}
+
 function cerrarQr() {
   if (el.qr.hidden) return;
   el.qr.hidden = true;
-  el.gastosQr.focus();
+  // Al repintar las cuentas el botón puede ser otro: si ya no está, al del resumen.
+  (focoAntesDeQr?.isConnected ? focoAntesDeQr : el.gastosQr).focus();
+  focoAntesDeQr = null;
 }
 
 function abrirGastos() {

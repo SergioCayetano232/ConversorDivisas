@@ -238,7 +238,7 @@ function parDeBienvenida(casa, par) {
 // Lo nuevo de cada versión, la última arriba. Al sacar una, se añade aquí y se
 // sube el número del manifest; los textos van en textos.js.
 const NOVEDADES = [
-  { version: "1.1.0", claves: ["novedades.bienvenida", "novedades.tema", "novedades.cobro", "novedades.jetlag", "novedades.precioProducto", "novedades.tarjeta", "novedades.medidas"] },
+  { version: "1.1.0", claves: ["novedades.bienvenida", "novedades.tema", "novedades.cobro", "novedades.qrCobro", "novedades.jetlag", "novedades.precioProducto", "novedades.tarjeta", "novedades.medidas"] },
 ];
 
 const esVersion = (v) => typeof v === "string" && /^\d+(\.\d+){0,3}$/.test(v);

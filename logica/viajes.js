@@ -222,6 +222,14 @@ function lineaDePago(como, importe, divisa) {
   return `${enlace}/${cifra}${divisa}`;
 }
 
+// Para el QR solo sirve lo que el móvil abre al escanearlo: un enlace. Un Bizum
+// o un IBAN escritos se quedarían en un texto en la pantalla del otro.
+function enlaceDePago(como, importe, divisa) {
+  const linea = lineaDePago(como, importe, divisa);
+  if (/^https?:\/\/\S+$/i.test(linea)) return linea;
+  return /^[\w-]+(\.[\w-]+)+\/\S+$/.test(linea) ? `https://${linea}` : null;
+}
+
 function mensajeCobro({ nombre, gastos, personas, gente, saldados, comoPagar }, quien) {
   const n = leerPersonas(personas);
   const cuentas = cuentasViaje(gastos, n, saldados);

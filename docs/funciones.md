@@ -150,7 +150,9 @@ La lista entera, con sus ejemplos. El resumen está en el [README](../README.md)
   solo para esa persona: lo que le toca, lo que puso ella, los gastos de solo
   algunos en los que entraba y lo que ya te dio ("💸 *Me debes 30,00 EUR*").
   Debajo, en **Cómo te pagan**, pones tu enlace o tu Bizum y va al final del
-  mensaje; si es un `paypal.me`, con el importe ya puesto (`paypal.me/tu/30EUR`)
+  mensaje; si es un `paypal.me`, con el importe ya puesto (`paypal.me/tu/30EUR`).
+  Y si lo que has puesto es un enlace, al lado del 💬 sale un botón con su QR:
+  lo enseñas, lo escanean con el móvil y te pagan en la mesa
 - Si un gasto es cinco veces lo normal de su categoría, te avisa antes de
   apuntarlo ("11 veces lo normal en comida"), que un cero de más se cuela
   fácil. Para apuntarlo igual, le das otra vez. Lo mismo si apuntas otra vez
