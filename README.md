@@ -1,5 +1,7 @@
 # ConversorDivisas
 
+[![Tests](https://github.com/SergioCayetano232/ConversorDivisas/actions/workflows/tests.yml/badge.svg)](https://github.com/SergioCayetano232/ConversorDivisas/actions/workflows/tests.yml)
+
 Extensión de Chrome para convertir divisas sin salir de lo que estés haciendo.
 
 La hice porque me cansé de abrir una pestaña y buscar "euro a dólar" cada vez
@@ -725,6 +727,9 @@ con lo que ya trae Node, así que no hay `node_modules` que instalar:
 ```
 npm test
 ```
+
+En cada push a `main` los corre también GitHub (`.github/workflows/tests.yml`);
+la insignia de arriba dice si pasan.
 
 Para lo demás, editas un archivo, le das a recargar en `chrome://extensions` y
 ya está.
