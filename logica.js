@@ -3988,7 +3988,28 @@ function frasePago({ de, a, importe }, gente, to) {
 // cuentas que la pantalla, así que lo que pone que te debe es lo mismo al céntimo.
 const COBRO_GASTOS_MAX = 6;
 
-function mensajeCobro({ nombre, gastos, personas, gente, saldados }, quien) {
+// Cómo te pagan: un enlace de PayPal o Revolut, tu Bizum, lo que uses. Va al
+// mensaje tal cual lo escribes, en una sola línea.
+const COMO_PAGAR_MAX = 80;
+const leerComoPagar = (valor) => (typeof valor === "string" ? valor.replace(/\s+/g, " ").trim().slice(0, COMO_PAGAR_MAX) : "");
+
+// Las que deja cobrar PayPal. Con otra el enlace va sin importe, que si no da error.
+const DIVISAS_PAYPAL = ["AUD", "BRL", "CAD", "CHF", "CNY", "CZK", "DKK", "EUR", "GBP", "HKD", "HUF", "ILS", "JPY", "MXN", "MYR", "NOK", "NZD", "PHP", "PLN", "SEK", "SGD", "THB", "USD"];
+const PAYPAL_SIN_DECIMALES = ["JPY", "HUF"];
+
+// A un paypal.me se le puede poner el importe detrás, y al abrirlo ya sale
+// escrito. Si ya le pusiste tú uno, o es otra cosa, no lo toco.
+function lineaDePago(como, importe, divisa) {
+  const texto = leerComoPagar(como);
+  const paypal = texto.match(/^(?:https?:\/\/)?(?:www\.)?paypal\.me\/([\w.-]+)\/?$/i);
+  if (!paypal) return texto;
+  const enlace = `https://paypal.me/${paypal[1]}`;
+  if (!(importe > 0) || !DIVISAS_PAYPAL.includes(divisa)) return enlace;
+  const cifra = PAYPAL_SIN_DECIMALES.includes(divisa) ? Math.round(importe) : Number(importe.toFixed(2));
+  return `${enlace}/${cifra}${divisa}`;
+}
+
+function mensajeCobro({ nombre, gastos, personas, gente, saldados, comoPagar }, quien) {
   const n = leerPersonas(personas);
   const cuentas = cuentasViaje(gastos, n, saldados);
   const pago = cuentas?.pagos.find((p) => p.de === quien && p.a === 0);
@@ -4033,6 +4054,8 @@ function mensajeCobro({ nombre, gastos, personas, gente, saldados }, quien) {
     else if (s.a === quien) lineas.push(`✓ ${tr("cobro.teDio", { valor: dinero(s.importe), de: nombrePersona(gente, s.de) })}`);
   }
   lineas.push(`💸 *${tr("cobro.meDebes", { valor: dinero(pago.importe) })}*`);
+  const como = lineaDePago(comoPagar, pago.importe, to);
+  if (como) lineas.push(`👉 ${como}`);
   for (const otro of cuentas.pagos) {
     if (otro.de === quien && otro.a !== 0) lineas.push(tr("cobro.yA", { a: nombrePersona(gente, otro.a), valor: dinero(otro.importe) }));
   }
@@ -9130,7 +9153,7 @@ function parDeBienvenida(casa, par) {
 // Lo nuevo de cada versión, la última arriba. Al sacar una, se añade aquí y se
 // sube el número del manifest; los textos van en textos.js.
 const NOVEDADES = [
-  { version: "1.1.0", claves: ["novedades.bienvenida", "novedades.tema", "novedades.precioProducto", "novedades.tarjeta", "novedades.medidas"] },
+  { version: "1.1.0", claves: ["novedades.bienvenida", "novedades.tema", "novedades.cobro", "novedades.precioProducto", "novedades.tarjeta", "novedades.medidas"] },
 ];
 
 const esVersion = (v) => typeof v === "string" && /^\d+(\.\d+){0,3}$/.test(v);
@@ -10364,6 +10387,7 @@ function limpiarCopia(crudo) {
   if (d.idioma === "auto" || TEXTOS[d.idioma]) datos.idioma = d.idioma;
   if (leerDivisaCasa(d.divisaCasa)) datos.divisaCasa = d.divisaCasa;
   if (TEMAS.includes(d.tema)) datos.tema = d.tema;
+  if (leerComoPagar(d.comoMePagan)) datos.comoMePagan = leerComoPagar(d.comoMePagan);
   if (leerCategoriasPropias(d.categoriasPropias).length) datos.categoriasPropias = leerCategoriasPropias(d.categoriasPropias);
   return datos;
 }
@@ -10373,7 +10397,7 @@ function limpiarCopia(crudo) {
 const CLAVES_COPIA = [
   "viajes", "gastosViaje", "presupuestoViaje", "lastPair", "paresRecientes", "divisasExtra", "avisos",
   "historialConversiones", "rangoGrafico", "comisionBanco", "tarjetasBanco", "impuestoVenta", "pagoGasto", "cuentaReparto", "insigniaActiva", "tasaAlReves", "idioma",
-  "recordatorioActivo", "recordatorioHora", "precioCafe", "sueldoHora", "categoriasPropias", "suscripciones", "cajeroGratis", "divisaCasa", "tema",
+  "recordatorioActivo", "recordatorioHora", "precioCafe", "sueldoHora", "categoriasPropias", "suscripciones", "cajeroGratis", "divisaCasa", "tema", "comoMePagan",
 ];
 
 // Lo que se lleva tu cuenta de Chrome a tus otros ordenadores: cómo lo tienes
@@ -10382,7 +10406,7 @@ const CLAVES_COPIA = [
 // tampoco: saltarían en cada ordenador que tengas abierto.
 const CLAVES_SYNC = [
   "comisionBanco", "tarjetasBanco", "impuestoVenta", "precioCafe", "sueldoHora", "pagoGasto", "cuentaReparto", "divisasExtra",
-  "paresRecientes", "rangoGrafico", "insigniaActiva", "tasaAlReves", "idioma", "recordatorioActivo", "recordatorioHora", "cajeroGratis", "divisaCasa", "tema",
+  "paresRecientes", "rangoGrafico", "insigniaActiva", "tasaAlReves", "idioma", "recordatorioActivo", "recordatorioHora", "cajeroGratis", "divisaCasa", "tema", "comoMePagan",
 ];
 
 // Lo que llega de otro ordenador pasa por los mismos lectores que la copia: si
@@ -10903,7 +10927,7 @@ if (typeof module !== "undefined") {
     puedeSerDeEmpresa, pasarAEmpresa, sacarDeEmpresa, notaDeGastos,
     AVISO_MEJOR_DIAS, techoDeSerie, crearAvisoMejor, ponerTechos,
     presupuestoSugerido, PARTES_VALIDAS, leerPartes, partesDe, repartirPorPartes, textoParte,
-    VIAJES_MAX, NOMBRE_VIAJE_MAX, leerViajes, leerPersonas, porPersona, consumoGente, leerPagador, leerGente, ponerNombre, nombrePersona, inicialPersona, cuentasViaje, frasePago, COBRO_GASTOS_MAX, mensajeCobro, leerEntre, entreDe, fraseEntre, cambiarEntre, leerSaldados, saldarPago, quitarSaldado, fraseSaldado, hayOtrosPagadores, NOMBRE_PERSONA_MAX, compararViajes, viajeConTasasDeHoy, DIAS_ANTES_DE_CAMBIAR, cambioAntes, AHORRO_MINIMO, ahorroCambiandoAntes, textoCambioAntes, VIAJE_HOY_IGUAL, textoViajeHoy, COLORES_VIAJE, leerColorViaje, colorLibre, siguienteColor, viajeActivo, ARCHIVADOS_MAX, archivarViaje, desarchivarViaje, borrarArchivado, todosLosViajes, crearViaje, nombreCopia, nombreDeDestino, duplicarViaje, renombrarViaje, elegirViaje, borrarViaje, moverGasto, cambiarViaje, TRAMOS_MAX, NOMBRE_TRAMO_MAX, leerTramos, ponerTramo, quitarTramo, tramoDelDia, divisaDelTramo, resumenTramos, curvaPresupuesto, FRANJAS, HORAS_MINIMO, horaFiable, porFranja, PENDIENTES_MAX, leerPendientes, crearPendiente, cambiarVence, pendientesPorFecha, tocaPagar, tonoVence, textoVence, PENDIENTE_HORA, tocaPendientes, avisadosPendientes, mensajePendientes, apuntarPendiente, quitarPendiente, totalPendiente, exposicionPendientes, textoExposicion, pagarPendiente, resumenViaje, archivoGastos, plegarIcs, eventosDelViaje, calendarioViaje, archivoCalendario,
+    VIAJES_MAX, NOMBRE_VIAJE_MAX, leerViajes, leerPersonas, porPersona, consumoGente, leerPagador, leerGente, ponerNombre, nombrePersona, inicialPersona, cuentasViaje, frasePago, COBRO_GASTOS_MAX, mensajeCobro, COMO_PAGAR_MAX, leerComoPagar, lineaDePago, leerEntre, entreDe, fraseEntre, cambiarEntre, leerSaldados, saldarPago, quitarSaldado, fraseSaldado, hayOtrosPagadores, NOMBRE_PERSONA_MAX, compararViajes, viajeConTasasDeHoy, DIAS_ANTES_DE_CAMBIAR, cambioAntes, AHORRO_MINIMO, ahorroCambiandoAntes, textoCambioAntes, VIAJE_HOY_IGUAL, textoViajeHoy, COLORES_VIAJE, leerColorViaje, colorLibre, siguienteColor, viajeActivo, ARCHIVADOS_MAX, archivarViaje, desarchivarViaje, borrarArchivado, todosLosViajes, crearViaje, nombreCopia, nombreDeDestino, duplicarViaje, renombrarViaje, elegirViaje, borrarViaje, moverGasto, cambiarViaje, TRAMOS_MAX, NOMBRE_TRAMO_MAX, leerTramos, ponerTramo, quitarTramo, tramoDelDia, divisaDelTramo, resumenTramos, curvaPresupuesto, FRANJAS, HORAS_MINIMO, horaFiable, porFranja, PENDIENTES_MAX, leerPendientes, crearPendiente, cambiarVence, pendientesPorFecha, tocaPagar, tonoVence, textoVence, PENDIENTE_HORA, tocaPendientes, avisadosPendientes, mensajePendientes, apuntarPendiente, quitarPendiente, totalPendiente, exposicionPendientes, textoExposicion, pagarPendiente, resumenViaje, archivoGastos, plegarIcs, eventosDelViaje, calendarioViaje, archivoCalendario,
     diasHasta, leerPresupuesto, leerTopes, PRESUPUESTO_JUSTO, estadoPresupuesto, estadoTopes, alDiaAlli, inicioDelViaje, diaDelViaje, cuentaAtras, textoCuentaAtras, destinoDelViaje, antesDeSalir, leerListo, marcarListo, progresoMaleta, huchaViaje, loDeHoy, CELEBRADOS_MAX, leerCelebrados, anadirCelebrado, viajeParaCelebrar, textoCelebrar, RACHA_MINIMA, rachaPresupuesto, hastaCuandoLlega, previsionViaje, PREVISION_JUSTA, textoPrevision, loQueSeLleva, presupuestoEnTarjeta, textoPresupuestoTarjeta, redondearDias,
     EXTRAS_MAX, EXTRAS_POR_DEFECTO, leerExtras, anadirExtra, quitarExtra,
     extrasVisibles, disponiblesParaAnadir, convertirExtras, semanaDe, trazoMini, CHULETA, escalaChuleta, chuleta, TRUCO_TOLERANCIA, trucoDeCabeza, textoTruco, tituloTruco, chuletaParaCompartir, extrasParaCompartir,

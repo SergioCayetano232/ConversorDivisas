@@ -5400,6 +5400,20 @@ body::after {
   display: none;
 }
 
+.gente__como {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 7px;
+  font-size: 9.5px;
+  color: var(--muted);
+  white-space: nowrap;
+}
+
+.gente__como input {
+  flex: 1;
+}
+
 /* Sin nada sacado ni pagado, es una invitación: más discreta. */
 .gastos__efectivo.is-vacio {
   color: var(--muted);

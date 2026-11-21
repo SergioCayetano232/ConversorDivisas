@@ -82,3 +82,54 @@ test("los gastos en otra divisa se quedan fuera, como en las cuentas", () => {
   assert.doesNotMatch(texto, /Taxi|Pusiste/);
   assert.match(texto, /Me debes 30,00 EUR/);
 });
+
+const { leerComoPagar, lineaDePago, COMO_PAGAR_MAX, limpiarCopia } = require("../logica.js");
+
+test("con tu paypal.me, el enlace lleva lo que te debe ya puesto", () => {
+  ponerIdioma("es");
+  const texto = mensajeCobro(viaje([gasto("a", 90)], { comoPagar: "paypal.me/sergio" }), 1);
+  assert.match(texto, /💸 \*Me debes 30,00 EUR\*\n👉 https:\/\/paypal\.me\/sergio\/30EUR$/);
+});
+
+test("el enlace va detrás de lo que debe y antes de lo de los demás", () => {
+  ponerIdioma("es");
+  const texto = mensajeCobro(viaje([gasto("a", 90), gasto("b", 90, { pagador: 2 })], { comoPagar: "Bizum 600 123 123" }), 1);
+  assert.match(texto, /Me debes 30,00 EUR\*\n👉 Bizum 600 123 123\nY a Luis, 30,00 EUR$/);
+});
+
+test("sin nada puesto, el mensaje es el de siempre", () => {
+  ponerIdioma("es");
+  const sin = mensajeCobro(viaje([gasto("a", 90)]), 1);
+  assert.equal(mensajeCobro(viaje([gasto("a", 90)], { comoPagar: "   " }), 1), sin);
+  assert.doesNotMatch(sin, /👉/);
+});
+
+test("el importe de PayPal va con punto, y sin decimales donde no los hay", () => {
+  assert.equal(lineaDePago("https://www.paypal.me/Sergio/", 12.5, "EUR"), "https://paypal.me/Sergio/12.5EUR");
+  assert.equal(lineaDePago("PayPal.me/sergio", 33.333, "GBP"), "https://paypal.me/sergio/33.33GBP");
+  assert.equal(lineaDePago("paypal.me/sergio", 4520.4, "JPY"), "https://paypal.me/sergio/4520JPY");
+});
+
+test("con una divisa que PayPal no cobra, el enlace va sin importe", () => {
+  assert.equal(lineaDePago("paypal.me/sergio", 300000, "VND"), "https://paypal.me/sergio");
+  assert.equal(lineaDePago("paypal.me/sergio", 0, "EUR"), "https://paypal.me/sergio");
+});
+
+test("lo que no es un paypal.me limpio va tal cual", () => {
+  assert.equal(lineaDePago("revolut.me/sergio", 30, "EUR"), "revolut.me/sergio");
+  assert.equal(lineaDePago("paypal.me/sergio/20EUR", 30, "EUR"), "paypal.me/sergio/20EUR", "si ya le pusiste importe, es el tuyo");
+  assert.equal(lineaDePago("ES12 3456 7890 1234", 30, "EUR"), "ES12 3456 7890 1234");
+  assert.equal(lineaDePago("", 30, "EUR"), "");
+});
+
+test("lo que escribes queda en una línea y con tope", () => {
+  assert.equal(leerComoPagar("  Bizum\n600  123 "), "Bizum 600 123");
+  assert.equal(leerComoPagar("x".repeat(200)).length, COMO_PAGAR_MAX);
+  assert.equal(leerComoPagar(undefined), "");
+  assert.equal(leerComoPagar(42), "");
+});
+
+test("cómo te pagan va en la copia", () => {
+  assert.equal(limpiarCopia({ comoMePagan: " paypal.me/sergio " }).comoMePagan, "paypal.me/sergio");
+  assert.equal("comoMePagan" in limpiarCopia({ comoMePagan: "" }), false);
+});

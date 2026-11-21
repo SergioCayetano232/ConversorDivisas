@@ -200,6 +200,7 @@ const el = {
   tramosDesde: document.getElementById("tramos-desde"),
   tramosDivisa: document.getElementById("tramos-divisa"),
   genteDevuelto: document.getElementById("gente-devuelto"),
+  comoPagar: document.getElementById("como-pagar"),
   cajeroLista: document.getElementById("cajero-lista"),
   viajesLista: document.getElementById("viajes-lista"),
   viajesNuevo: document.getElementById("viajes-nuevo"),
@@ -4821,9 +4822,17 @@ function onSaldar(pago, to) {
   (el.gentePagos.querySelector(".gente__saldar") ?? el.gentePagos.querySelector(".gastos__quitar"))?.focus();
 }
 
+// No es de un viaje, es tuyo: el mismo enlace vale para cobrar en todos.
+let comoPagar = "";
+
+function onComoPagar() {
+  comoPagar = leerComoPagar(el.comoPagar.value);
+  chrome.storage.local.set({ comoMePagan: comoPagar }).catch((error) => console.warn("No se pudo guardar cómo te pagan", error));
+}
+
 async function onCobrar(quien, boton) {
   const viaje = viajeActivo(viajes);
-  const texto = mensajeCobro({ ...viaje, nombre: viaje.nombre || tr("gastos"), gastos }, quien);
+  const texto = mensajeCobro({ ...viaje, nombre: viaje.nombre || tr("gastos"), gastos, comoPagar }, quien);
   if (!texto) return;
   const bien = await copiar(texto);
   boton.classList.toggle("is-fallo", !bien);
@@ -10494,6 +10503,15 @@ async function init() {
   cargarSonido().then((guardado) => {
     sonido = guardado;
     pintarSonido();
+  });
+  chrome.storage.local.get("comoMePagan").then(({ comoMePagan }) => {
+    comoPagar = leerComoPagar(comoMePagan);
+    el.comoPagar.value = comoPagar;
+  }).catch((error) => console.warn("No se pudo leer cómo te pagan", error));
+  el.comoPagar.maxLength = COMO_PAGAR_MAX;
+  el.comoPagar.addEventListener("input", onComoPagar);
+  el.comoPagar.addEventListener("keydown", (event) => {
+    if (event.key === "Enter") el.comoPagar.blur();
   });
   cargarCasa().then((guardado) => {
     casa = guardado;
