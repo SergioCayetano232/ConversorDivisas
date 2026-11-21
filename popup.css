@@ -12271,6 +12271,49 @@ body::after {
   stroke-linecap: round;
 }
 
+/* La estrella de las novedades: dorada y latiendo, que es lo único del pie que
+   pide que lo mires. */
+.footer__novedades {
+  color: var(--brass);
+}
+
+.footer__novedades svg {
+  width: 11px;
+  height: 11px;
+  fill: currentColor;
+  filter: drop-shadow(0 0 3px var(--brass-glow));
+  animation: novedad 2.4s var(--ease) infinite;
+}
+
+@keyframes novedad {
+  50% {
+    transform: scale(1.25) rotate(20deg);
+  }
+}
+
+/* Con las dos clases: las de la ayuda van más abajo y si no ganarían ellas. */
+.ayuda__lista.novedades__lista {
+  gap: 10px;
+}
+
+.ayuda__fila.novedades__fila {
+  align-items: flex-start;
+  gap: var(--s-2);
+  line-height: 1.45;
+}
+
+.novedades__fila::before {
+  content: "";
+  flex-shrink: 0;
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--brass);
+  box-shadow: 0 0 6px var(--brass-glow);
+  /* A la altura de la primera línea, no en medio del párrafo. */
+  margin-top: 6px;
+}
+
 /* El altavoz: con ondas si está puesto y con una cruz si no. */
 .footer__sonido svg {
   width: 13px;

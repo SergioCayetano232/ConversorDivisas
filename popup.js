@@ -356,6 +356,11 @@ const el = {
   abrirCopia: document.getElementById("abrir-copia"),
   abrirPanel: document.getElementById("abrir-panel"),
   nivel: document.getElementById("nivel"),
+  abrirNovedades: document.getElementById("abrir-novedades"),
+  novedades: document.getElementById("novedades"),
+  novedadesCerrar: document.getElementById("novedades-cerrar"),
+  novedadesLista: document.getElementById("novedades-lista"),
+  novedadesTitulo: document.getElementById("novedades-titulo"),
   ayuda: document.getElementById("ayuda"),
   ayudaCerrar: document.getElementById("ayuda-cerrar"),
   ayudaLista: document.getElementById("ayuda-lista"),
@@ -8856,6 +8861,13 @@ function onAtajo(event) {
     }
     return;
   }
+  if (!el.novedades.hidden) {
+    if (event.key === "Escape") {
+      event.preventDefault();
+      cerrarNovedades();
+    }
+    return;
+  }
   if (!el.ayuda.hidden) {
     if (event.key === "Escape" || event.key === "?") {
       event.preventDefault();
@@ -8908,6 +8920,51 @@ function onAtajo(event) {
 }
 
 let focoAntesDeAyuda = null;
+
+// Lo que trae la versión nueva. El botón solo sale si vienes de una anterior, y
+// se va en cuanto lo has leído.
+let novedades = [];
+
+async function cargarNovedades() {
+  try {
+    const actual = chrome.runtime.getManifest().version;
+    const { versionVista } = await chrome.storage.local.get("versionVista");
+    novedades = novedadesDesde(versionVista, actual);
+    // Sin nada que contar me pongo al día ya, para no arrastrar una versión vieja.
+    if (!novedades.length && versionVista !== actual) chrome.storage.local.set({ versionVista: actual });
+  } catch (error) {
+    console.warn("No se pudieron leer las novedades", error);
+  }
+  el.abrirNovedades.hidden = !novedades.length;
+  if (!novedades.length) return;
+  el.abrirNovedades.title = tr("novedades.boton", { version: novedades[0].version });
+  el.abrirNovedades.setAttribute("aria-label", el.abrirNovedades.title);
+}
+
+function abrirNovedades() {
+  if (!novedades.length) return;
+  focoAntesDeAyuda = document.activeElement;
+  el.novedadesTitulo.textContent = tr("novedades.titulo", { version: novedades[0].version });
+  el.novedadesLista.replaceChildren(...novedades.flatMap((n) => n.claves).map((clave, i) => {
+    const fila = document.createElement("li");
+    fila.className = "ayuda__fila novedades__fila";
+    fila.style.setProperty("--i", i);
+    fila.textContent = tr(clave);
+    return fila;
+  }));
+  el.novedades.hidden = false;
+  el.novedadesCerrar.focus();
+}
+
+// Cerrarlas es haberlas leído: el botón no vuelve hasta la siguiente versión.
+function cerrarNovedades() {
+  if (el.novedades.hidden) return;
+  el.novedades.hidden = true;
+  novedades = [];
+  el.abrirNovedades.hidden = true;
+  chrome.storage.local.set({ versionVista: chrome.runtime.getManifest().version });
+  (focoAntesDeAyuda === el.abrirNovedades ? el.abrirAyuda : focoAntesDeAyuda)?.focus?.();
+}
 
 function pintarAyuda() {
   const alt = esMac ? "⌥" : "Alt+";
@@ -9965,6 +10022,19 @@ function bindEvents() {
   el.funciones.addEventListener("mousedown", (event) => {
     if (event.target === el.funciones) cerrarFunciones();
   });
+  el.abrirNovedades.addEventListener("click", abrirNovedades);
+  el.novedadesCerrar.addEventListener("click", cerrarNovedades);
+  el.novedades.addEventListener("mousedown", (event) => {
+    if (event.target !== el.novedades) return;
+    event.preventDefault();
+    cerrarNovedades();
+  });
+  el.novedades.addEventListener("keydown", (event) => {
+    if (event.key === "Tab") {
+      event.preventDefault();
+      el.novedadesCerrar.focus();
+    }
+  });
   el.ayudaCerrar.addEventListener("click", cerrarAyuda);
   el.ayuda.addEventListener("mousedown", (event) => {
     if (event.target !== el.ayuda) return;
@@ -10408,6 +10478,7 @@ async function init() {
   const idiomaCambiado = await cargarIdioma();
   traducirPagina();
   if (idiomaCambiado) saludarIdioma();
+  cargarNovedades();
   try {
     divisaCasa = leerDivisaCasa((await chrome.storage.local.get("divisaCasa")).divisaCasa);
   } catch (error) {

@@ -9124,6 +9124,40 @@ function parDeBienvenida(casa, par) {
   return { from: casa === "USD" || CERCA_DEL_EURO.includes(casa) ? "EUR" : "USD", to: casa };
 }
 
+// Lo nuevo de cada versión, la última arriba. Al sacar una, se añade aquí y se
+// sube el número del manifest; los textos van en textos.js.
+const NOVEDADES = [
+  { version: "1.1.0", claves: ["novedades.bienvenida", "novedades.precioProducto", "novedades.tarjeta", "novedades.medidas"] },
+];
+
+const esVersion = (v) => typeof v === "string" && /^\d+(\.\d+){0,3}$/.test(v);
+
+// Número a número: como texto, la "1.10.0" quedaría por detrás de la "1.9.0".
+function compararVersiones(a, b) {
+  const [x, y] = [a, b].map((v) => v.split(".").map(Number));
+  for (let i = 0; i < Math.max(x.length, y.length); i++) {
+    const resta = (x[i] ?? 0) - (y[i] ?? 0);
+    if (resta) return Math.sign(resta);
+  }
+  return 0;
+}
+
+function novedadesDesde(vista, actual) {
+  if (!esVersion(vista) || !esVersion(actual)) return [];
+  return NOVEDADES
+    .filter((n) => compararVersiones(n.version, vista) > 0 && compararVersiones(n.version, actual) <= 0)
+    .sort((a, b) => compararVersiones(b.version, a.version));
+}
+
+// Qué versión doy por vista al instalar o actualizar. Recién instalada, la de
+// ahora: todo es nuevo y para eso está la bienvenida. Devuelve null si ya lo sé.
+function versionVistaAlInstalar({ reason, previousVersion } = {}, guardada, actual) {
+  if (esVersion(guardada)) return null;
+  if (reason === "install") return actual;
+  if (reason === "update") return esVersion(previousVersion) ? previousVersion : actual;
+  return null;
+}
+
 // Chrome deja la tecla vacía si otra extensión ya la tenía cogida.
 function atajosDeBienvenida(comandos) {
   const tecla = (nombre) => (Array.isArray(comandos) ? comandos : []).find((c) => c?.name === nombre)?.shortcut || "";
@@ -10887,6 +10921,7 @@ if (typeof module !== "undefined") {
     numeroDePrecio, precioDeLaPagina, precioComoTexto,
     AVISO_TARJETA_BAJA, maximoSugerido, avisoDesdeTarjeta,
     leerDivisaCasa, tocaBienvenida, parDeBienvenida, atajosDeBienvenida,
+    NOVEDADES, compararVersiones, novedadesDesde, versionVistaAlInstalar,
     GUARDADO_DIAS, webDe, crearGuardado, leerGuardado, esElGuardado, compararConGuardado, textoGuardado,
     PPA_ANIO, PPA, PPA_EURO, NIVEL_IGUAL, paisDePrecios, PAIS_DE_ZONA, paisDeZona, cambioDePais, mensajeCambioDePais, IVA_UE, UMBRAL_ARANCEL, paisIva, compraDeFuera, textoCompraDeFuera, nivelDePrecios, nombrePais, textoNivel,
   };

@@ -88,8 +88,12 @@ async function hacerMenus() {
   }
 }
 
-chrome.runtime.onInstalled.addListener(async ({ reason }) => {
-  if (tocaBienvenida(reason)) chrome.tabs.create({ url: chrome.runtime.getURL("bienvenida.html") });
+chrome.runtime.onInstalled.addListener(async (detalles) => {
+  if (tocaBienvenida(detalles.reason)) chrome.tabs.create({ url: chrome.runtime.getURL("bienvenida.html") });
+  // Me apunto de qué versión vienes, para que el popup sepa qué enseñarte de nuevo.
+  const { versionVista } = await chrome.storage.local.get("versionVista");
+  const vista = versionVistaAlInstalar(detalles, versionVista, chrome.runtime.getManifest().version);
+  if (vista) await chrome.storage.local.set({ versionVista: vista });
   await crearMenus();
   // Antes se llamaba "insignia"; si vienes de esa versión, fuera la vieja para
   // no tener dos sonando a la vez.

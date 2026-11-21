@@ -678,6 +678,10 @@ Nada más cargarla se abre una pestaña de bienvenida: eliges tu divisa y el
 idioma (se guardan al cambiarlos) y te enseña los tres atajos con las teclas que
 Chrome ha puesto de verdad. Solo sale al instalar, no en las actualizaciones.
 
+En las actualizaciones lo que sale es una estrella dorada en el pie del popup:
+al pulsarla ves lo que trae la versión nueva, y al cerrarlo se va hasta la
+siguiente. La lista está en `NOVEDADES`, en `logica.js`.
+
 ¿El atajo no funciona? Chrome no lo asigna si ya lo está usando otra extensión.
 Se cambia en `chrome://extensions/shortcuts`.
 

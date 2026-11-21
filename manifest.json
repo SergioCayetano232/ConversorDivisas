@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "ConversorDivisas",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "__MSG_descripcion__",
   "default_locale": "en",
   "action": {
