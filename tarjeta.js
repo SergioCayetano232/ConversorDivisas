@@ -327,6 +327,24 @@
       font-variant-numeric: tabular-nums;
       animation: latido 420ms var(--muelle) 80ms both;
     }
+    .guardado[hidden] { display: none; }
+    .guardado {
+      --tono: var(--jade);
+      --tono-fondo: var(--jade-ghost);
+      margin: 8px 0 0;
+      padding: 6px 8px;
+      font-size: 11px;
+      line-height: 1.4;
+      color: var(--tono);
+      background: var(--tono-fondo);
+      border-left: 2px solid var(--tono);
+      border-radius: 4px 8px 8px 4px;
+      font-variant-numeric: tabular-nums;
+      overflow-wrap: anywhere;
+      animation: latido 420ms var(--muelle) 160ms both;
+    }
+    .guardado[data-tono="normal"] { --tono: var(--dorado); --tono-fondo: var(--dorado-ghost); }
+    .guardado[data-tono="caro"] { --tono: var(--cinabrio); --tono-fondo: var(--cinabrio-ghost); }
     .dcc[data-tono="normal"] { --tono: var(--dorado); --tono-fondo: var(--dorado-ghost); }
     .dcc[data-tono="caro"],
     .dcc[data-tono="timo"] { --tono: var(--cinabrio); --tono-fondo: var(--cinabrio-ghost); }
@@ -424,6 +442,35 @@
     .concepto:focus { border-color: var(--dorado-dim); }
     .concepto:disabled { opacity: 0.6; }
 
+    /* Arriba, al lado de la ✕: en el pie le quitaba el sitio al concepto. */
+    .guardar {
+      display: none;
+      place-items: center;
+      width: 22px;
+      height: 22px;
+      margin-left: auto;
+      padding: 0;
+      background: transparent;
+      border: none;
+      border-radius: 50%;
+      font-size: 11px;
+      line-height: 1;
+      filter: grayscale(1);
+      opacity: 0.55;
+      transition: filter 180ms ease, opacity 180ms ease, background-color 180ms ease, transform 180ms var(--muelle);
+    }
+    .is-ok .guardar { display: grid; }
+    .is-medida .guardar { display: none; }
+    .guardar:hover { opacity: 1; background: var(--dorado-ghost); }
+    .guardar:active { transform: scale(0.85); }
+    .guardar[aria-pressed="true"] {
+      filter: none;
+      opacity: 1;
+      background: var(--dorado-ghost);
+      transform: rotate(-20deg);
+    }
+    .guardar:focus-visible { outline: 2px solid var(--dorado); outline-offset: 2px; }
+
     .copiar,
     .gasto {
       flex: none;
@@ -498,6 +545,7 @@
       <span class="flecha"></span>
       <div class="cabeza">
         <span class="marca"><span class="punto"></span>ConversorDivisas</span>
+        <button class="guardar" type="button" aria-pressed="false">📌</button>
         <button class="cerrar" type="button" aria-label="Cerrar">✕</button>
       </div>
       <p class="original"></p>
@@ -506,6 +554,7 @@
       <p class="meta"></p>
       <p class="nota"></p>
       <p class="dcc" hidden></p>
+      <p class="guardado" hidden></p>
       <div class="presupuesto" hidden>
         <div class="pista"><span class="gastado"></span><span class="esto"></span></div>
         <p class="frase"></p>
@@ -547,6 +596,7 @@
     $(".copiar").addEventListener("click", copiar);
     $(".cifra").addEventListener("dblclick", copiar);
     $(".gasto").addEventListener("click", apuntar);
+    $(".guardar").addEventListener("click", guardar);
     $(".abrir-fuera").addEventListener("click", (event) => {
       const boton = event.currentTarget;
       boton.setAttribute("aria-expanded", String(boton.getAttribute("aria-expanded") !== "true"));
@@ -640,6 +690,8 @@
     if (!copiar.classList.contains("is-hecho")) copiar.textContent = d.textos.copiar;
     const gasto = $(".gasto");
     if (!gasto.classList.contains("is-hecho")) gasto.textContent = d.textos.gasto;
+    $(".guardar").title = d.textos.guardar;
+    $(".guardar").setAttribute("aria-label", d.textos.guardar);
     $(".concepto").placeholder = d.textos.concepto;
     $(".concepto").setAttribute("aria-label", d.textos.concepto);
   }
@@ -680,6 +732,7 @@
       $(".meta").textContent = d.fecha ? `${d.tasa} · ${d.fecha}` : d.tasa;
       $(".nota").textContent = d.nota ?? "";
       pintarDcc(d.dcc);
+      pintarGuardado(d.guardado);
       pintarFuera(d.fuera);
       pintarPresupuesto(d.presupuesto);
       contar(d.resultado);
@@ -692,11 +745,13 @@
       $(".codigo").textContent = "";
       $(".nota").textContent = "";
       pintarDcc(null);
+      pintarGuardado(null);
       pintarFuera(null);
       pintarPresupuesto(null);
     } else if (d.estado === "cargando") {
       $(".original").textContent = citar(d.original);
       pintarDcc(null);
+      pintarGuardado(null);
       pintarFuera(null);
       pintarPresupuesto(null);
     } else {
@@ -704,6 +759,7 @@
       $(".original").textContent = d.original ? citar(d.original) : "";
       $(".aviso").textContent = d.mensaje;
       pintarDcc(null);
+      pintarGuardado(null);
       pintarFuera(null);
       pintarPresupuesto(null);
     }
@@ -721,6 +777,15 @@
     $(".abrir-fuera").textContent = f.boton;
     $(".fuera-total").textContent = f.total;
     $(".fuera-detalle").textContent = f.detalle;
+  }
+
+  function pintarGuardado(g) {
+    const caja = $(".guardado");
+    caja.hidden = !g;
+    $(".guardar").setAttribute("aria-pressed", String(Boolean(g?.esEste)));
+    if (!g) return;
+    caja.dataset.tono = g.tono;
+    caja.textContent = g.texto;
   }
 
   function pintarDcc(d) {
@@ -842,6 +907,27 @@
       boton.disabled = false;
     }
     $(".nota").textContent = respuesta?.mensaje ?? enviados.textos.noApuntado;
+    colocar();
+  }
+
+  async function guardar() {
+    if (!datos || datos.estado !== "ok") return;
+    const enviados = datos;
+    let respuesta;
+    try {
+      respuesta = await chrome.runtime.sendMessage({
+        tipo: "guardarTarjeta",
+        cantidad: enviados.cantidad,
+        from: enviados.from,
+        web: location.hostname,
+      });
+    } catch (error) {
+      respuesta = null;
+    }
+    if (!raiz || datos !== enviados) return;
+    // Al guardar este, lo que decía del otro ya no vale: el otro ya no está.
+    if (respuesta?.ok) pintarGuardado(respuesta.guardado ? { esEste: true, tono: "normal", texto: respuesta.mensaje } : null);
+    if (!respuesta?.guardado) $(".nota").textContent = respuesta?.mensaje ?? "";
     colocar();
   }
 

@@ -314,6 +314,7 @@ function paraLaTarjeta(datos) {
       copiado: tr("copiado"),
       fallo: tr("copiar.fallo"),
       cita: tr("tarjeta.cita"),
+      guardar: tr("guardado.boton"),
       gasto: tr("tarjeta.gasto"),
       concepto: tr("tarjeta.concepto"),
       apuntado: tr("tarjeta.apuntado"),
@@ -345,6 +346,7 @@ async function calcular(texto, url = null) {
       ...(await enElPresupuesto({ cantidad: leido.cantidad, from, to }, rate)),
       ...(dcc ? { dcc } : {}),
       ...siTeLoEnvian({ cantidad: leido.cantidad, from, to }, rate),
+      ...(await conLoGuardado({ cantidad: leido.cantidad, from, web: url }, resultado, to)),
       estado: "ok",
       original: `${nf.format(leido.cantidad)} ${from}`,
       nota: notaDeLaTarjeta({ suma, leido, from, url }),
@@ -380,6 +382,37 @@ async function enElPresupuesto(precio, rate) {
     console.warn("No se pudo mirar el presupuesto", error);
     return {};
   }
+}
+
+const GUARDADO_KEY = "precioGuardado";
+
+async function conLoGuardado(precio, valor, to) {
+  try {
+    const { [GUARDADO_KEY]: crudo } = await chrome.storage.local.get(GUARDADO_KEY);
+    const guardado = leerGuardado(crudo);
+    if (!guardado) return {};
+    if (esElGuardado(guardado, precio)) return { guardado: { esEste: true, tono: "normal", texto: tr("guardado.esEste") } };
+    const { rate } = await tasa(guardado.from, to);
+    const r = compararConGuardado(guardado, precio, valor, guardado.cantidad * rate);
+    return r ? { guardado: { tono: r.donde === "aqui" ? "bien" : r.donde === "alli" ? "caro" : "normal", texto: textoGuardado(r, to) } } : {};
+  } catch (error) {
+    console.warn("No se pudo mirar el precio guardado", error);
+    return {};
+  }
+}
+
+// La chincheta guarda, y pulsada otra vez sobre el mismo, lo suelta.
+async function guardarDesdeTarjeta(precio) {
+  await idiomaListo;
+  const { [GUARDADO_KEY]: crudo } = await chrome.storage.local.get(GUARDADO_KEY);
+  if (esElGuardado(leerGuardado(crudo), precio)) {
+    await chrome.storage.local.remove(GUARDADO_KEY);
+    return { ok: true, guardado: false, mensaje: tr("guardado.quitado") };
+  }
+  const nuevo = crearGuardado(precio);
+  if (!nuevo) return { ok: false, mensaje: tr("guardado.noSePudo") };
+  await chrome.storage.local.set({ [GUARDADO_KEY]: nuevo });
+  return { ok: true, guardado: true, mensaje: tr("guardado.hecho") };
 }
 
 // El país para el IVA sale del idioma del navegador, como el nivel de precios.
@@ -1474,9 +1507,10 @@ chrome.commands.onCommand.addListener((comando, tab) => {
 });
 
 chrome.runtime.onMessage.addListener((mensaje, quien, responder) => {
-  if (mensaje?.tipo !== "apuntarTarjeta") return false;
-  apuntarDesdeTarjeta(mensaje).then(responder, (error) => {
-    console.warn("No se pudo apuntar el gasto", error);
+  const hacer = { apuntarTarjeta: apuntarDesdeTarjeta, guardarTarjeta: guardarDesdeTarjeta }[mensaje?.tipo];
+  if (!hacer) return false;
+  hacer(mensaje).then(responder, (error) => {
+    console.warn("No se pudo hacer desde la tarjeta", error);
     responder({ ok: false, mensaje: errorMessageFor(error) });
   });
   // Sin el true, Chrome cierra el canal antes de que llegue la respuesta.

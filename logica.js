@@ -10617,6 +10617,54 @@ const esPanel = (busqueda) => new URLSearchParams(busqueda ?? "").has("panel");
 // recargo, el siguiente gasto que apunte se los come. Lo que guardé yo no cuenta.
 const cambioDeFuera = (nuevo, mio) => JSON.stringify(nuevo) !== JSON.stringify(mio);
 
+// El precio que guardas con la chincheta de la tarjeta, para compararlo con el
+// de otra tienda. Solo uno: el siguiente que guardes lo sustituye.
+const GUARDADO_DIAS = 30;
+const WEB_MAX = 60;
+
+function webDe(url) {
+  if (typeof url !== "string" || !url) return "";
+  let host = url;
+  try {
+    host = new URL(url).hostname;
+  } catch {
+    // Ya venía solo el nombre, como lo manda la tarjeta.
+  }
+  return host.toLowerCase().replace(/^www\./, "").slice(0, WEB_MAX);
+}
+
+function crearGuardado(precio, ahora = Date.now()) {
+  if (!precio || !(precio.cantidad > 0) || !Number.isFinite(precio.cantidad) || !isValidCode(precio.from)) return null;
+  return { cantidad: precio.cantidad, from: precio.from, web: webDe(precio.web), cuando: ahora };
+}
+
+// Pasado un mes ya no es el precio de esa tienda, así que no lo comparo.
+function leerGuardado(crudo, ahora = Date.now()) {
+  const g = crearGuardado(crudo, crudo?.cuando ?? NaN);
+  if (!g || !Number.isFinite(g.cuando) || ahora - g.cuando > GUARDADO_DIAS * 86400000) return null;
+  return g;
+}
+
+const esElGuardado = (guardado, precio) =>
+  Boolean(guardado && precio) && guardado.cantidad === precio.cantidad && guardado.from === precio.from && guardado.web === webDe(precio.web);
+
+// Los dos en tu divisa y a la tasa de hoy: lo guardado no se queda con la del
+// día que lo guardaste, que lo vas a pagar hoy.
+function compararConGuardado(guardado, precio, valorAqui, valorGuardado) {
+  if (!guardado || esElGuardado(guardado, precio)) return null;
+  const r = compararPrecios(valorGuardado, valorAqui);
+  return r && { ...r, web: guardado.web, mismaWeb: guardado.web === webDe(precio.web) };
+}
+
+function textoGuardado(r, to) {
+  if (!r) return "";
+  const lugar = r.mismaWeb || !r.web ? tr("guardado.elOtro") : tr("guardado.en", { web: r.web });
+  if (r.donde === "igual") return tr("guardado.igual", { lugar });
+  const ahorro = `${numeros({ minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(r.ahorro)} ${to}`;
+  const pct = tr("pct", { n: numeros({ maximumFractionDigits: r.fraccion < 0.1 ? 1 : 0 }).format(r.fraccion * 100) });
+  return tr(r.donde === "aqui" ? "guardado.aqui" : "guardado.alli", { lugar, ahorro, pct });
+}
+
 // Lo que seleccionas en una web: "65 mph", "350 °F", "2 cups". Las mismas
 // medidas que la barra y en el mismo orden, que algunas se pisan si lo cambio.
 const MEDIDAS = [
@@ -10719,6 +10767,7 @@ if (typeof module !== "undefined") {
     RECORDATORIO_HORA, RECORDATORIO_HORAS, leerHoraRecordatorio, viajesSinApuntar, tocaRecordar, mensajeRecordatorio, TAX_FREE_HORA, tocaTaxFree, mensajeTaxFree,
     ATAJOS, atajoPara, textoAtajo, FUNCIONES, FUNCIONES_MAX, buscarFunciones,
     esPanel, cambioDeFuera, MEDIDAS, medidaDeSeleccion,
+    GUARDADO_DIAS, webDe, crearGuardado, leerGuardado, esElGuardado, compararConGuardado, textoGuardado,
     PPA_ANIO, PPA, PPA_EURO, NIVEL_IGUAL, paisDePrecios, PAIS_DE_ZONA, paisDeZona, cambioDePais, mensajeCambioDePais, IVA_UE, UMBRAL_ARANCEL, paisIva, compraDeFuera, textoCompraDeFuera, nivelDePrecios, nombrePais, textoNivel,
   };
 }

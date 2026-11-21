@@ -433,6 +433,11 @@ que necesitaba una conversión rápida. Ahora es un clic en la barra del navegad
   km/h, los grados o los mililitros. Son las mismas que entiende `cd`. Con la
   divisa escrita ("$20") sigue siendo un precio. **Copiar** se lleva el
   resultado, y con Shift, la frase entera ("65 mph = 104,6 km/h")
+- Comparar el mismo producto en dos tiendas: en la tarjeta, con la chincheta 📌
+  de arriba guardas ese precio, y cuando conviertas el de otra web te dice cuál
+  sale mejor, los dos en tu divisa y al cambio de hoy ("📌 Este sale 21,74 EUR
+  más barato que en amazon.co.uk, un 12 %"). Solo guarda uno: el siguiente lo
+  sustituye, y pulsándola otra vez sobre el mismo lo suelta. Al mes se olvida
 - La trampa del "¿quiere pagar en euros?": si en la pantalla de pago seleccionas
   el precio de allí y lo que te cobrarían en tu divisa ("USD 249.99 · EUR
   240.50"), la tarjeta te dice cuánto pagas de más sobre el cambio real ("13,52
