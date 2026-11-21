@@ -852,6 +852,9 @@
       pintarPresupuesto(null);
     }
 
+    // Con el atajo y nada seleccionado llega sin pasar por "cargando", y sin
+    // esto se quedaba en la esquina de la página.
+    if (!ancla) ancla = medirSeleccion();
     colocar();
     if (d.estado === "ok" || d.estado === "medida") $(".copiar").focus({ preventScroll: true });
   }
@@ -974,6 +977,7 @@
       host?.remove();
       host = null;
       raiz = null;
+      ancla = null;
     };
     if (sinMovimiento.matches) return quitar();
     tarjeta.classList.add("is-saliendo");

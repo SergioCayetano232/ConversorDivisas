@@ -10665,6 +10665,74 @@ function textoGuardado(r, to) {
   return tr(r.donde === "aqui" ? "guardado.aqui" : "guardado.alli", { lugar, ahorro, pct });
 }
 
+// El precio del producto sin seleccionar nada: las tiendas lo dejan escrito para
+// Google en un JSON-LD o en las metas, con su divisa. En el JSON va con punto
+// ("1299.00"), pero hay quien lo pone como en la etiqueta ("1.299,00").
+function numeroDePrecio(v) {
+  const n = typeof v === "number" ? v
+    : typeof v !== "string" ? null
+      : /^\s*\d+(\.\d+)?\s*$/.test(v) ? Number(v) : leerNumero(v.match(NUMERO)?.[0] ?? "");
+  return Number.isFinite(n) && n > 0 ? n : null;
+}
+
+const esDeTipo = (nodo, tipo) => [].concat(nodo?.["@type"] ?? []).some((t) => typeof t === "string" && t.toLowerCase() === tipo);
+
+function ofertaDe(ofertas) {
+  for (const o of [].concat(ofertas ?? [])) {
+    if (!o || typeof o !== "object") continue;
+    const spec = [].concat(o.priceSpecification ?? [])[0];
+    // En un AggregateOffer el que ves en la página es el "desde".
+    const cantidad = numeroDePrecio(o.price ?? o.lowPrice ?? spec?.price);
+    const divisa = String(o.priceCurrency ?? spec?.priceCurrency ?? "").toUpperCase();
+    if (cantidad) return { cantidad, divisa: isValidCode(divisa) ? divisa : null };
+  }
+  return null;
+}
+
+function productosDeJsonLd(nodo, hallados = [], fondo = 0) {
+  if (!nodo || typeof nodo !== "object" || fondo > 6 || hallados.length >= 20) return hallados;
+  if (Array.isArray(nodo)) {
+    for (const n of nodo) productosDeJsonLd(n, hallados, fondo + 1);
+    return hallados;
+  }
+  const oferta = nodo.offers && !esDeTipo(nodo, "offer") ? ofertaDe(nodo.offers) : null;
+  if (oferta) hallados.push({ ...oferta, nombre: typeof nodo.name === "string" ? nodo.name.trim() : "" });
+  for (const clave of ["@graph", "mainEntity", "itemListElement", "item", "hasVariant"]) productosDeJsonLd(nodo[clave], hallados, fondo + 1);
+  return hallados;
+}
+
+const METAS_PRECIO = [["product:price:amount", "product:price:currency"], ["og:price:amount", "og:price:currency"], ["price", "pricecurrency"]];
+const NOMBRE_PRODUCTO_MAX = 40;
+
+// Con varios precios distintos es un listado y no sé cuál miras: ahí no adivino.
+function precioDeLaPagina(pagina, web = null) {
+  if (!pagina || typeof pagina !== "object") return null;
+  const productos = [];
+  for (const texto of [].concat(pagina.jsonld ?? []).slice(0, 20)) {
+    try {
+      productosDeJsonLd(JSON.parse(texto), productos);
+    } catch {
+      // Hay tiendas con el JSON-LD roto; me quedan las metas.
+    }
+  }
+  const unico = productos.length > 0 && productos.every((p) => p.cantidad === productos[0].cantidad && p.divisa === productos[0].divisa);
+  let hallado = unico ? productos[0] : null;
+  const metas = pagina.metas && typeof pagina.metas === "object" ? pagina.metas : {};
+  for (const [precio, moneda] of hallado ? [] : METAS_PRECIO) {
+    const cantidad = numeroDePrecio(metas[precio]);
+    const divisa = String(metas[moneda] ?? "").toUpperCase();
+    if (cantidad) hallado = { cantidad, divisa: isValidCode(divisa) ? divisa : null, nombre: "" };
+    if (hallado) break;
+  }
+  const divisa = hallado?.divisa ?? (isValidCode(web) ? web : null);
+  if (!hallado || !divisa) return null;
+  const nombre = (hallado.nombre || String(pagina.titulo ?? "")).replace(/\s+/g, " ").trim();
+  return { cantidad: hallado.cantidad, divisa, nombre: nombre.length > NOMBRE_PRODUCTO_MAX ? `${nombre.slice(0, NOMBRE_PRODUCTO_MAX - 1)}…` : nombre };
+}
+
+// Con dos decimales y el código, para que no haya duda al leerlo: "1299.50 USD".
+const precioComoTexto = (precio) => `${precio.cantidad.toFixed(2)} ${precio.divisa}`;
+
 // El aviso que propone la tarjeta: un 5 % menos, en redondo, que nadie quiere
 // que le avisen a 204,21. De ahí lo cambias tú.
 const AVISO_TARJETA_BAJA = 0.05;
@@ -10794,6 +10862,7 @@ if (typeof module !== "undefined") {
     RECORDATORIO_HORA, RECORDATORIO_HORAS, leerHoraRecordatorio, viajesSinApuntar, tocaRecordar, mensajeRecordatorio, TAX_FREE_HORA, tocaTaxFree, mensajeTaxFree,
     ATAJOS, atajoPara, textoAtajo, FUNCIONES, FUNCIONES_MAX, buscarFunciones,
     esPanel, cambioDeFuera, MEDIDAS, medidaDeSeleccion,
+    numeroDePrecio, precioDeLaPagina, precioComoTexto,
     AVISO_TARJETA_BAJA, maximoSugerido, avisoDesdeTarjeta,
     GUARDADO_DIAS, webDe, crearGuardado, leerGuardado, esElGuardado, compararConGuardado, textoGuardado,
     PPA_ANIO, PPA, PPA_EURO, NIVEL_IGUAL, paisDePrecios, PAIS_DE_ZONA, paisDeZona, cambioDePais, mensajeCambioDePais, IVA_UE, UMBRAL_ARANCEL, paisIva, compraDeFuera, textoCompraDeFuera, nivelDePrecios, nombrePais, textoNivel,

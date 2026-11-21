@@ -443,6 +443,10 @@ que necesitaba una conversión rápida. Ahora es un clic en la barra del navegad
   queda como un aviso de precio de los del popup: "180,00 GBP ya son 198,00
   EUR". Cuenta en los cuatro avisos, y si el precio ya está en tu divisa la
   campana no sale, que ahí no hay cambio que esperar
+- Y sin seleccionar nada: en la página de un producto, el atajo a secas coge
+  el precio que la tienda deja escrito para los buscadores, con su divisa, y
+  lo convierte ("El precio de esta página: Sony WH-1000XM5"). En un listado
+  con varios precios no adivina, y ahí te pide que selecciones uno
 - La trampa del "¿quiere pagar en euros?": si en la pantalla de pago seleccionas
   el precio de allí y lo que te cobrarían en tu divisa ("USD 249.99 · EUR
   240.50"), la tarjeta te dice cuánto pagas de más sobre el cambio real ("13,52

@@ -1506,6 +1506,39 @@ function leerSeleccionDePagina() {
   return String(getSelection());
 }
 
+// Lo que las tiendas dejan escrito para Google. Va a la página tal cual, así
+// que solo recoge: leerlo es cosa de precioDeLaPagina.
+function leerPrecioDePagina() {
+  const jsonld = [...document.querySelectorAll('script[type="application/ld+json"]')].slice(0, 20).map((s) => s.textContent.slice(0, 200000));
+  const metas = {};
+  for (const m of document.querySelectorAll('meta[property], meta[name], meta[itemprop], [itemprop="price"], [itemprop="priceCurrency"]')) {
+    const clave = (m.getAttribute("property") ?? m.getAttribute("name") ?? m.getAttribute("itemprop") ?? "").toLowerCase();
+    if (!clave.includes("price") || clave in metas) continue;
+    metas[clave] = (m.getAttribute("content") ?? m.textContent ?? "").trim().slice(0, 40);
+  }
+  return { jsonld, metas, titulo: document.title, url: location.href };
+}
+
+// Sin nada seleccionado, el precio del producto de la página, si lo dice.
+async function convertirProducto(tab) {
+  let pagina;
+  try {
+    [{ result: pagina }] = await chrome.scripting.executeScript({ target: { tabId: tab.id }, func: leerPrecioDePagina });
+  } catch (error) {
+    console.warn("No se pudo mirar la página", error);
+    return false;
+  }
+  const precio = precioDeLaPagina(pagina, divisaDeLaWeb(pagina?.url));
+  if (!precio) return false;
+  const texto = precioComoTexto(precio);
+  await chrome.scripting.executeScript({ target: { tabId: tab.id }, files: ["tarjeta.js"] });
+  await enPagina(tab.id, paraLaTarjeta({ estado: "cargando", original: precio.nombre || texto }));
+  const datos = await calcular(texto, pagina.url);
+  const nota = precio.nombre ? tr("tarjeta.delProducto", { nombre: precio.nombre }) : tr("tarjeta.delProductoSinNombre");
+  await enPagina(tab.id, paraLaTarjeta(datos.estado === "ok" ? { ...datos, nota } : datos));
+  return true;
+}
+
 // El atajo hace lo mismo que el clic derecho, pero primero tengo que ir a
 // buscar qué hay seleccionado.
 async function convertirConAtajo(tab) {
@@ -1527,6 +1560,7 @@ async function convertirConAtajo(tab) {
     await convertirSeleccion({ selectionText: texto }, tab);
     return;
   }
+  if (await convertirProducto(tab)) return;
   await chrome.scripting.executeScript({ target: { tabId: tab.id }, files: ["tarjeta.js"] });
   await enPagina(tab.id, paraLaTarjeta({ estado: "nada", original: "", mensaje: tr("tarjeta.sinSeleccion") }));
 }
