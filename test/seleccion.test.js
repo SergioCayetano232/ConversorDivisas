@@ -155,3 +155,23 @@ test("los códigos nuevos en mayúsculas", () => {
   assert.equal(divisaDe("1500 INR"), "INR");
   assert.equal(divisaDe("ZAR 99"), "ZAR");
 });
+
+test("con tu divisa elegida, lo de fuera va a la tuya aunque el par diga otra cosa", () => {
+  const par = { from: "EUR", to: "USD" };
+  assert.deepEqual(destinoPara("GBP", par, "EUR"), { from: "GBP", to: "EUR" });
+  assert.deepEqual(destinoPara("USD", par, "EUR"), { from: "USD", to: "EUR" });
+  assert.deepEqual(destinoPara("JPY", { from: "USD", to: "GBP" }, "EUR"), { from: "JPY", to: "EUR" });
+});
+
+test("un precio que ya está en tu divisa sale en la otra del par", () => {
+  assert.deepEqual(destinoPara("EUR", { from: "EUR", to: "USD" }, "EUR"), { from: "EUR", to: "USD" });
+  assert.deepEqual(destinoPara("EUR", { from: "USD", to: "EUR" }, "EUR"), { from: "EUR", to: "USD" });
+  assert.deepEqual(destinoPara("EUR", { from: "JPY", to: "GBP" }, "EUR"), { from: "EUR", to: "GBP" });
+});
+
+test("sin tu divisa, o con algo que no lo es, el par manda como antes", () => {
+  const par = { from: "EUR", to: "USD" };
+  assert.deepEqual(destinoPara("GBP", par, null), { from: "GBP", to: "USD" });
+  assert.deepEqual(destinoPara("GBP", par, "libras"), { from: "GBP", to: "USD" });
+  assert.deepEqual(destinoPara(null, par, "GBP"), { from: "EUR", to: "USD" }, "un número a secas es del par");
+});

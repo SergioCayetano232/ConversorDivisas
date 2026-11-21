@@ -156,8 +156,11 @@ function conversionParaCopiar({ cantidad, from, resultado, to }, { entera = fals
   return conSimbolo ? textoConSimbolo(resultado, to) : textoParaCopiar(resultado);
 }
 
-function destinoPara(divisa, par) {
+// Con tu divisa elegida, un precio de fuera va a la tuya aunque el par diga otra
+// cosa. Si ya está en la tuya, o no la has elegido, manda el par como siempre.
+function destinoPara(divisa, par, casa = null) {
   if (!divisa) return { from: par.from, to: par.to };
+  if (isValidCode(casa) && divisa !== casa) return { from: divisa, to: casa };
   return { from: divisa, to: divisa === par.to ? par.from : par.to };
 }
 

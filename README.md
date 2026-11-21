@@ -49,7 +49,10 @@ la pieza de puzzle.
 
 Nada más cargarla se abre una pestaña de bienvenida: eliges tu divisa y el
 idioma (se guardan al cambiarlos) y te enseña los tres atajos con las teclas que
-Chrome ha puesto de verdad. Solo sale al instalar, no en las actualizaciones.
+Chrome ha puesto de verdad. Sola solo sale al instalar; para volver a ella,
+`Ctrl+K` en el popup y escribes "mi divisa". Con tu divisa elegida, lo que
+selecciones en una web o escribas en la barra (`cd 20 gbp`) se convierte a ella,
+tengas el par que tengas puesto.
 
 En las actualizaciones lo que sale es una estrella dorada en el pie del popup:
 al pulsarla ves lo que trae la versión nueva, y al cerrarlo se va hasta la

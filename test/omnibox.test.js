@@ -53,3 +53,10 @@ test("en la barra también vale 2k", () => {
   assert.deepEqual(leer("2k"), { cantidad: 2000, from: "EUR", to: "USD" });
   assert.deepEqual(leer("1,5m jpy"), { cantidad: 1500000, from: "JPY", to: "USD" });
 });
+
+test("con tu divisa elegida, «cd 20 gbp» va a la tuya", () => {
+  assert.deepEqual(leerOmnibox("20 gbp", PAR, "EUR"), { cantidad: 20, from: "GBP", to: "EUR" });
+  assert.deepEqual(leerOmnibox("20 eur", PAR, "EUR"), { cantidad: 20, from: "EUR", to: "USD" }, "la tuya, a la otra del par");
+  assert.deepEqual(leerOmnibox("20", PAR, "GBP"), { cantidad: 20, from: "EUR", to: "USD" }, "sin divisa, el par");
+  assert.deepEqual(leerOmnibox("50 gbp jpy", PAR, "EUR"), { cantidad: 50, from: "GBP", to: "JPY" }, "con las dos escritas mandas tú");
+});

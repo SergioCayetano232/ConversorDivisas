@@ -829,6 +829,7 @@ const FUNCIONES = [
   { accion: "vista:timo", claves: "casa de cambio timo comision exchange office fair" },
   { accion: "vista:suscripciones", claves: "netflix spotify icloud suscripcion mensual subscription monthly" },
   { accion: "copiaSeguridad", claves: "copia backup restaurar exportar restore" },
+  { accion: "bienvenida", claves: "mi divisa casa moneda idioma atajos bienvenida home currency language welcome" },
   { accion: "panel", claves: "lateral fijo abierto al lado side panel dock pin" },
   { accion: "ayuda", claves: "teclado atajos ayuda keyboard shortcuts help" },
 ];

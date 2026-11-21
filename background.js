@@ -297,6 +297,13 @@ async function leerPar() {
   return { from, to };
 }
 
+// Tu divisa, si la has elegido en la bienvenida. Sin ella no adivino nada: lo
+// seleccionado va al par, como ha ido siempre.
+async function leerCasa() {
+  const { divisaCasa } = await chrome.storage.local.get("divisaCasa");
+  return leerDivisaCasa(divisaCasa);
+}
+
 // Si el popup ya pidió hoy esta tasa la aprovecho. No escribo en la caché: eso
 // es cosa del popup, y dos sitios escribiendo acabarían pisándose.
 async function tasa(from, to) {
@@ -360,7 +367,7 @@ async function calcular(texto, url = null) {
   const leido = cobro ? { cantidad: cobro.cantidad, divisa: cobro.from } : suma ?? leerSeleccion(texto, web);
   if (!leido) return { estado: "nada", original: texto, mensaje: tr("tarjeta.nada") };
 
-  const { from, to } = destinoPara(leido.divisa, parGuardado);
+  const { from, to } = destinoPara(leido.divisa, parGuardado, await leerCasa());
   try {
     const { rate, date } = await tasa(from, to);
     const resultado = leido.cantidad * rate;
@@ -502,7 +509,7 @@ async function convertirSeleccion(info, tab) {
     const web = divisaDeLaWeb(paginaDe(info, tab));
     const leido = sumarSeleccion(info.selectionText, web) ?? leerSeleccion(info.selectionText, web);
     if (leido) {
-      const par = destinoPara(leido.divisa, await leerPar());
+      const par = destinoPara(leido.divisa, await leerPar(), await leerCasa());
       await chrome.storage.session.set({ pendiente: { cantidad: leido.cantidad, ...par } });
     }
     try {
@@ -542,10 +549,11 @@ async function convertirPagina(tab) {
   if (!hallado) return;
 
   const par = await leerPar();
+  const casa = await leerCasa();
   const tasas = {};
   let fallo = null;
   for (const divisa of hallado.divisas) {
-    const { to } = destinoPara(divisa, par);
+    const { to } = destinoPara(divisa, par, casa);
     try {
       const { rate } = await tasa(divisa, to);
       tasas[divisa] = { to, rate };
@@ -1438,7 +1446,7 @@ async function sugerirEnBarra(texto, sugerir) {
     }
     return;
   }
-  const leido = leerOmnibox(texto, await leerPar());
+  const leido = leerOmnibox(texto, await leerPar(), await leerCasa());
   if (actual !== barraId) return;
   if (!leido) {
     pistaBarra(tr(texto.trim() ? "barra.no" : "barra.pista"));
@@ -1499,7 +1507,7 @@ async function abrirDesdeBarra(texto) {
   const par = await leerPar();
   // Con varias divisas no hay un par que poner: el total ya está en la sugerencia.
   if (leerMezcla(texto, par)) return;
-  const leido = leerOmnibox(texto, par);
+  const leido = leerOmnibox(texto, par, await leerCasa());
   if (leido) await chrome.storage.session.set({ pendiente: leido });
   try {
     await chrome.action.openPopup();

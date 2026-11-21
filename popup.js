@@ -8795,6 +8795,7 @@ function hacerFuncion(accion, funcion = null) {
   else if (accion === "ensenar") abrirEnsenar();
   else if (accion === "comision") abrirBurbuja();
   else if (accion === "copiaSeguridad") chrome.runtime.openOptionsPage();
+  else if (accion === "bienvenida") abrirPestana("bienvenida.html");
   else if (accion === "panel") abrirPanel();
   else if (accion === "calendario") descargarCalendario();
   else hacerAtajo(accion);

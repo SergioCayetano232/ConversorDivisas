@@ -84,6 +84,9 @@ async function init() {
   });
   el.divisa.add(new Option(casa, casa));
   el.divisa.value = casa;
+  // La que ves es la que vale: la dejo guardada aunque no toques nada, que es la
+  // que usa la tarjeta de las webs.
+  if (!leerDivisaCasa(guardado.divisaCasa)) await chrome.storage.local.set({ divisaCasa: casa });
   teclas = atajosDeBienvenida(await chrome.commands.getAll());
   pintarTextos();
 

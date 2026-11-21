@@ -247,7 +247,7 @@ function precioEntero(texto, web = null) {
 // sí vale. Las palabras de enlace ("50 eur a gbp", "to", "en") sobran.
 const ENLACES = new Set(["a", "to", "en", "in", "->", "→", "=", "de"]);
 
-function leerOmnibox(texto, par) {
+function leerOmnibox(texto, par, casa = null) {
   if (typeof texto !== "string") return null;
   // "3,50 usd/gal": la unidad, fuera antes de trocear, que "usd/gal" no es ninguna
   // divisa. Solo con la barra o el "per": "20 libras" a secas son esterlinas.
@@ -269,7 +269,7 @@ function leerOmnibox(texto, par) {
   const cantidad = leerImporte(resto.join(" "));
   if (cantidad === null || cantidad <= 0) return null;
   const [de, a] = divisas;
-  const { from, to } = a ? { from: de, to: a } : destinoPara(de ?? null, par);
+  const { from, to } = a ? { from: de, to: a } : destinoPara(de ?? null, par, casa);
   if (from === to) return null;
   const leido = { cantidad, from, to };
   if (fuera.unidad ?? unidad) leido.unidad = fuera.unidad ?? unidad;
