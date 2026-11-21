@@ -315,6 +315,9 @@ function paraLaTarjeta(datos) {
       fallo: tr("copiar.fallo"),
       cita: tr("tarjeta.cita"),
       guardar: tr("guardado.boton"),
+      avisar: tr("tarjeta.aviso.boton"),
+      avisoEtiqueta: tr("tarjeta.aviso.etiqueta"),
+      avisoOk: tr("tarjeta.aviso.ok"),
       gasto: tr("tarjeta.gasto"),
       concepto: tr("tarjeta.concepto"),
       apuntado: tr("tarjeta.apuntado"),
@@ -347,6 +350,7 @@ async function calcular(texto, url = null) {
       ...(dcc ? { dcc } : {}),
       ...siTeLoEnvian({ cantidad: leido.cantidad, from, to }, rate),
       ...(await conLoGuardado({ cantidad: leido.cantidad, from, web: url }, resultado, to)),
+      ...paraAvisar(resultado, from, to),
       estado: "ok",
       original: `${nf.format(leido.cantidad)} ${from}`,
       nota: notaDeLaTarjeta({ suma, leido, from, url }),
@@ -382,6 +386,31 @@ async function enElPresupuesto(precio, rate) {
     console.warn("No se pudo mirar el presupuesto", error);
     return {};
   }
+}
+
+// Si el precio ya está en tu divisa no hay cambio que esperar, y la campana no sale.
+function paraAvisar(valor, from, to) {
+  const sugerido = from === to ? null : maximoSugerido(valor);
+  return sugerido ? { aviso: { sugerido: Number.isInteger(sugerido) ? String(sugerido) : textoParaCopiar(sugerido), campo: tr("tarjeta.aviso.campo", { to }) } } : {};
+}
+
+async function avisarDesdeTarjeta({ cantidad, from, to, maximo }) {
+  await idiomaListo;
+  const { rate } = await tasa(from, to);
+  const { avisos: guardados } = await chrome.storage.local.get("avisos");
+  const id = `${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`;
+  const r = avisoDesdeTarjeta(guardados, { cantidad, from, to }, leerNumero(String(maximo ?? "")), rate, id);
+  if (r.problema) {
+    const porQue = {
+      escribe: tr("tarjeta.aviso.escribe", { to }),
+      yaCuesta: tr("avisos.yaCuesta", { cuesta: cifraGasto(cantidad * rate, to) }),
+      repetido: tr("tarjeta.aviso.repetido"),
+      lleno: tr("avisos.lleno", { max: AVISOS_MAX }),
+    };
+    return { ok: false, mensaje: porQue[r.problema] ?? tr("avisos.noSe") };
+  }
+  await chrome.storage.local.set({ avisos: r.avisos });
+  return { ok: true, mensaje: tr("tarjeta.aviso.hecho", { maximo: cifraGasto(r.aviso.maximo, to) }) };
 }
 
 const GUARDADO_KEY = "precioGuardado";
@@ -1507,7 +1536,7 @@ chrome.commands.onCommand.addListener((comando, tab) => {
 });
 
 chrome.runtime.onMessage.addListener((mensaje, quien, responder) => {
-  const hacer = { apuntarTarjeta: apuntarDesdeTarjeta, guardarTarjeta: guardarDesdeTarjeta }[mensaje?.tipo];
+  const hacer = { apuntarTarjeta: apuntarDesdeTarjeta, guardarTarjeta: guardarDesdeTarjeta, avisarTarjeta: avisarDesdeTarjeta }[mensaje?.tipo];
   if (!hacer) return false;
   hacer(mensaje).then(responder, (error) => {
     console.warn("No se pudo hacer desde la tarjeta", error);

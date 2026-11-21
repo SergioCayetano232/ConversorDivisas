@@ -461,8 +461,72 @@
     }
     .is-ok .guardar { display: grid; }
     .is-medida .guardar { display: none; }
-    .guardar:hover { opacity: 1; background: var(--dorado-ghost); }
-    .guardar:active { transform: scale(0.85); }
+    .guardar:hover,
+    .avisar:hover { opacity: 1; background: var(--dorado-ghost); }
+    .guardar:active,
+    .avisar:active { transform: scale(0.85); }
+
+    .avisar {
+      display: grid;
+      place-items: center;
+      width: 22px;
+      height: 22px;
+      margin-left: auto;
+      padding: 0;
+      background: transparent;
+      border: none;
+      border-radius: 50%;
+      font-size: 11px;
+      line-height: 1;
+      filter: grayscale(1);
+      opacity: 0.55;
+      transition: filter 180ms ease, opacity 180ms ease, background-color 180ms ease, transform 180ms var(--muelle);
+    }
+    .avisar[hidden] { display: none; }
+    .avisar + .guardar { margin-left: 0; }
+    .avisar[hidden] + .guardar { margin-left: auto; }
+    .avisar[aria-expanded="true"],
+    .avisar.is-hecho { filter: none; opacity: 1; background: var(--dorado-ghost); }
+    .avisar.is-hecho { animation: sonar 620ms ease; }
+    .avisar:focus-visible { outline: 2px solid var(--dorado); outline-offset: 2px; }
+
+    @keyframes sonar {
+      20% { rotate: -18deg; }
+      40% { rotate: 14deg; }
+      60% { rotate: -9deg; }
+      80% { rotate: 5deg; }
+    }
+
+    .alerta[hidden] { display: none; }
+    .alerta {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      margin-top: 8px;
+      font-size: 11px;
+      color: var(--tenue);
+      animation: latido 320ms var(--muelle) both;
+    }
+    .alerta label { flex: 1; min-width: 0; }
+    .alerta-max {
+      flex: none;
+      box-sizing: border-box;
+      width: 62px;
+      height: 24px;
+      padding: 0 6px;
+      font: 11px var(--mono);
+      font-variant-numeric: tabular-nums;
+      text-align: right;
+      color: var(--dorado);
+      background: var(--dorado-ghost);
+      border: 1px solid var(--borde);
+      border-radius: 8px;
+      outline: none;
+      transition: border-color 180ms ease;
+    }
+    .alerta-max:focus { border-color: var(--dorado-dim); }
+    .alerta.is-mal { animation: temblar 420ms ease; }
+    .alerta.is-mal .alerta-max { border-color: var(--cinabrio); }
     .guardar[aria-pressed="true"] {
       filter: none;
       opacity: 1;
@@ -472,6 +536,7 @@
     .guardar:focus-visible { outline: 2px solid var(--dorado); outline-offset: 2px; }
 
     .copiar,
+    .alerta-ok,
     .gasto {
       flex: none;
       height: 24px;
@@ -489,6 +554,7 @@
     }
 
     .copiar:hover,
+    .alerta-ok:hover,
     .gasto:hover:not(:disabled) {
       color: var(--dorado);
       border-color: var(--dorado-dim);
@@ -509,6 +575,7 @@
     }
 
     .cerrar:focus-visible,
+    .alerta-ok:focus-visible,
     .gasto:focus-visible,
     .copiar:focus-visible {
       outline: 2px solid var(--dorado);
@@ -545,6 +612,7 @@
       <span class="flecha"></span>
       <div class="cabeza">
         <span class="marca"><span class="punto"></span>ConversorDivisas</span>
+        <button class="avisar" type="button" aria-expanded="false" hidden>🔔</button>
         <button class="guardar" type="button" aria-pressed="false">📌</button>
         <button class="cerrar" type="button" aria-label="Cerrar">✕</button>
       </div>
@@ -555,6 +623,11 @@
       <p class="nota"></p>
       <p class="dcc" hidden></p>
       <p class="guardado" hidden></p>
+      <div class="alerta" hidden>
+        <label for="alerta-max"></label>
+        <input class="alerta-max" id="alerta-max" type="text" inputmode="decimal" maxlength="12" autocomplete="off">
+        <button class="alerta-ok" type="button"></button>
+      </div>
       <div class="presupuesto" hidden>
         <div class="pista"><span class="gastado"></span><span class="esto"></span></div>
         <p class="frase"></p>
@@ -597,6 +670,8 @@
     $(".cifra").addEventListener("dblclick", copiar);
     $(".gasto").addEventListener("click", apuntar);
     $(".guardar").addEventListener("click", guardar);
+    $(".avisar").addEventListener("click", abrirAlerta);
+    $(".alerta-ok").addEventListener("click", avisar);
     $(".abrir-fuera").addEventListener("click", (event) => {
       const boton = event.currentTarget;
       boton.setAttribute("aria-expanded", String(boton.getAttribute("aria-expanded") !== "true"));
@@ -608,8 +683,13 @@
       // En japonés o chino el Enter acepta el carácter, no es que hayas acabado.
       if (event.key === "Enter" && !event.isComposing) apuntar();
     });
+    $(".alerta-max").addEventListener("keydown", (event) => {
+      if (event.key === "Enter") avisar();
+    });
     // Si no, al escribir aquí saltan los atajos de la web (YouTube, Gmail…).
-    for (const tipo of ["keydown", "keypress", "keyup"]) campo.addEventListener(tipo, (event) => event.stopPropagation());
+    for (const c of [campo, $(".alerta-max")]) {
+      for (const tipo of ["keydown", "keypress", "keyup"]) c.addEventListener(tipo, (event) => event.stopPropagation());
+    }
     document.documentElement.appendChild(host);
     document.addEventListener("mousedown", fuera, true);
     document.addEventListener("keydown", tecla, true);
@@ -690,6 +770,10 @@
     if (!copiar.classList.contains("is-hecho")) copiar.textContent = d.textos.copiar;
     const gasto = $(".gasto");
     if (!gasto.classList.contains("is-hecho")) gasto.textContent = d.textos.gasto;
+    $(".avisar").title = d.textos.avisar;
+    $(".avisar").setAttribute("aria-label", d.textos.avisar);
+    $(".alerta label").textContent = d.textos.avisoEtiqueta;
+    $(".alerta-ok").textContent = d.textos.avisoOk;
     $(".guardar").title = d.textos.guardar;
     $(".guardar").setAttribute("aria-label", d.textos.guardar);
     $(".concepto").placeholder = d.textos.concepto;
@@ -733,6 +817,7 @@
       $(".nota").textContent = d.nota ?? "";
       pintarDcc(d.dcc);
       pintarGuardado(d.guardado);
+      pintarAlerta(d.aviso);
       pintarFuera(d.fuera);
       pintarPresupuesto(d.presupuesto);
       contar(d.resultado);
@@ -746,12 +831,14 @@
       $(".nota").textContent = "";
       pintarDcc(null);
       pintarGuardado(null);
+      pintarAlerta(null);
       pintarFuera(null);
       pintarPresupuesto(null);
     } else if (d.estado === "cargando") {
       $(".original").textContent = citar(d.original);
       pintarDcc(null);
       pintarGuardado(null);
+      pintarAlerta(null);
       pintarFuera(null);
       pintarPresupuesto(null);
     } else {
@@ -760,6 +847,7 @@
       $(".aviso").textContent = d.mensaje;
       pintarDcc(null);
       pintarGuardado(null);
+      pintarAlerta(null);
       pintarFuera(null);
       pintarPresupuesto(null);
     }
@@ -777,6 +865,64 @@
     $(".abrir-fuera").textContent = f.boton;
     $(".fuera-total").textContent = f.total;
     $(".fuera-detalle").textContent = f.detalle;
+  }
+
+  // Plegada cada vez, con lo propuesto: la de otro precio no vale para este.
+  function pintarAlerta(a) {
+    const boton = $(".avisar");
+    boton.hidden = !a;
+    boton.setAttribute("aria-expanded", "false");
+    boton.classList.remove("is-hecho");
+    $(".alerta").hidden = true;
+    $(".alerta").classList.remove("is-mal");
+    if (!a) return;
+    $(".alerta-max").value = a.sugerido;
+    $(".alerta-max").setAttribute("aria-label", a.campo);
+  }
+
+  function abrirAlerta() {
+    const boton = $(".avisar");
+    const abrir = boton.getAttribute("aria-expanded") !== "true";
+    boton.setAttribute("aria-expanded", String(abrir));
+    $(".alerta").hidden = !abrir;
+    colocar();
+    if (abrir) {
+      $(".alerta-max").focus({ preventScroll: true });
+      $(".alerta-max").select();
+    } else {
+      boton.focus({ preventScroll: true });
+    }
+  }
+
+  async function avisar() {
+    if (!datos || datos.estado !== "ok") return;
+    const enviados = datos;
+    let respuesta;
+    try {
+      respuesta = await chrome.runtime.sendMessage({
+        tipo: "avisarTarjeta",
+        cantidad: enviados.cantidad,
+        from: enviados.from,
+        to: enviados.to,
+        maximo: $(".alerta-max").value,
+      });
+    } catch (error) {
+      respuesta = null;
+    }
+    if (!raiz || datos !== enviados) return;
+    const caja = $(".alerta");
+    if (respuesta?.ok) {
+      caja.hidden = true;
+      $(".avisar").setAttribute("aria-expanded", "false");
+      $(".avisar").classList.add("is-hecho");
+      $(".copiar").focus({ preventScroll: true });
+    } else {
+      caja.classList.remove("is-mal");
+      void caja.offsetWidth;
+      caja.classList.add("is-mal");
+    }
+    $(".nota").textContent = respuesta?.mensaje ?? "";
+    colocar();
   }
 
   function pintarGuardado(g) {
@@ -839,7 +985,10 @@
   }
 
   function tecla(event) {
-    if (event.key === "Escape") cerrar();
+    if (event.key !== "Escape") return;
+    // Con la fila del aviso abierta, el primer Esc cierra solo la fila.
+    if ($(".alerta").hidden) cerrar();
+    else abrirAlerta();
   }
 
   // Igual que el botón del popup: el número a secas, que es lo que quieres al

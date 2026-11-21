@@ -10665,6 +10665,33 @@ function textoGuardado(r, to) {
   return tr(r.donde === "aqui" ? "guardado.aqui" : "guardado.alli", { lugar, ahorro, pct });
 }
 
+// El aviso que propone la tarjeta: un 5 % menos, en redondo, que nadie quiere
+// que le avisen a 204,21. De ahí lo cambias tú.
+const AVISO_TARJETA_BAJA = 0.05;
+
+function maximoSugerido(valor) {
+  if (!(valor > 0) || !Number.isFinite(valor)) return null;
+  const objetivo = valor * (1 - AVISO_TARJETA_BAJA);
+  const paso = 10 ** (Math.floor(Math.log10(objetivo)) - 1);
+  const redondo = Math.round(Math.floor(objetivo / paso + 1e-9) * paso * 100) / 100;
+  // Con cuatro céntimos no hay redondo por debajo: ahí no propongo nada.
+  return redondo > 0 && redondo < valor ? redondo : null;
+}
+
+// Lo mismo que el formulario del popup, pero diciendo por qué no, para que la
+// tarjeta lo enseñe. Dos avisos iguales no: saltarían los dos a la vez.
+function avisoDesdeTarjeta(avisos, precio, maximo, rate, id) {
+  const lista = leerAvisos(avisos);
+  if (!precio || !isValidCode(precio.from) || !isValidCode(precio.to) || precio.from === precio.to) return { problema: "noSe" };
+  if (!(precio.cantidad > 0) || !(rate > 0)) return { problema: "noSe" };
+  if (!(maximo > 0)) return { problema: "escribe" };
+  if (maximo >= Math.round(precio.cantidad * rate * 100) / 100) return { problema: "yaCuesta" };
+  if (lista.some((a) => a.precio === precio.cantidad && a.maximo === maximo && a.from === precio.from && a.to === precio.to)) return { problema: "repetido" };
+  if (lista.length >= AVISOS_MAX) return { problema: "lleno" };
+  const aviso = crearCompra(precio.from, precio.to, precio.cantidad, maximo, rate, id);
+  return aviso ? { aviso, avisos: [...lista, aviso] } : { problema: "noSe" };
+}
+
 // Lo que seleccionas en una web: "65 mph", "350 °F", "2 cups". Las mismas
 // medidas que la barra y en el mismo orden, que algunas se pisan si lo cambio.
 const MEDIDAS = [
@@ -10767,6 +10794,7 @@ if (typeof module !== "undefined") {
     RECORDATORIO_HORA, RECORDATORIO_HORAS, leerHoraRecordatorio, viajesSinApuntar, tocaRecordar, mensajeRecordatorio, TAX_FREE_HORA, tocaTaxFree, mensajeTaxFree,
     ATAJOS, atajoPara, textoAtajo, FUNCIONES, FUNCIONES_MAX, buscarFunciones,
     esPanel, cambioDeFuera, MEDIDAS, medidaDeSeleccion,
+    AVISO_TARJETA_BAJA, maximoSugerido, avisoDesdeTarjeta,
     GUARDADO_DIAS, webDe, crearGuardado, leerGuardado, esElGuardado, compararConGuardado, textoGuardado,
     PPA_ANIO, PPA, PPA_EURO, NIVEL_IGUAL, paisDePrecios, PAIS_DE_ZONA, paisDeZona, cambioDePais, mensajeCambioDePais, IVA_UE, UMBRAL_ARANCEL, paisIva, compraDeFuera, textoCompraDeFuera, nivelDePrecios, nombrePais, textoNivel,
   };

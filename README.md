@@ -438,6 +438,11 @@ que necesitaba una conversión rápida. Ahora es un clic en la barra del navegad
   sale mejor, los dos en tu divisa y al cambio de hoy ("📌 Este sale 21,74 EUR
   más barato que en amazon.co.uk, un 12 %"). Solo guarda uno: el siguiente lo
   sustituye, y pulsándola otra vez sobre el mismo lo suelta. Al mes se olvida
+- Y que te avise cuando el cambio lo abarate: con la campana 🔔 de al lado
+  pones lo máximo que quieres pagar (te propone un 5 % menos, en redondo) y se
+  queda como un aviso de precio de los del popup: "180,00 GBP ya son 198,00
+  EUR". Cuenta en los cuatro avisos, y si el precio ya está en tu divisa la
+  campana no sale, que ahí no hay cambio que esperar
 - La trampa del "¿quiere pagar en euros?": si en la pantalla de pago seleccionas
   el precio de allí y lo que te cobrarían en tu divisa ("USD 249.99 · EUR
   240.50"), la tarjeta te dice cuánto pagas de más sobre el cambio real ("13,52
