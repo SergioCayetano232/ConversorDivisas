@@ -331,6 +331,9 @@ async function calcular(texto, url = null) {
   const dcc = cobro ? await analizarDcc(cobro) : null;
   if (!dcc) cobro = null;
   const suma = cobro ? null : sumarSeleccion(texto, web);
+  // Con la divisa escrita es un precio. Sin ella, "65 mph" en amazon.co.jp no son yenes.
+  const medida = cobro || suma || divisaDe(texto) ? null : medidaDeSeleccion(texto);
+  if (medida) return { estado: "medida", original: medida.de, texto: medida.a, copia: medida.a, frase: medida.frase };
   const leido = cobro ? { cantidad: cobro.cantidad, divisa: cobro.from } : suma ?? leerSeleccion(texto, web);
   if (!leido) return { estado: "nada", original: texto, mensaje: tr("tarjeta.nada") };
 

@@ -219,6 +219,15 @@
 
     .is-ok .cifra { animation: latido 420ms var(--muelle); cursor: copy; }
 
+    /* Una medida puede ser larga ("🇺🇸 9 hombre · 10,5 mujer · 🇬🇧 8"): que parta. */
+    .is-medida .cifra { flex-wrap: wrap; }
+    .is-medida .valor { font-size: 22px; line-height: 1.25; overflow-wrap: anywhere; }
+    .is-medida .valor.is-larga { font-size: 15px; letter-spacing: 0; }
+    .is-medida .meta,
+    .is-medida .concepto,
+    .is-medida .gasto { display: none; }
+    .is-medida .pie { justify-content: flex-end; }
+
     @keyframes latido {
       from { opacity: 0; transform: translateY(6px) scale(0.96); }
       60% { opacity: 1; transform: translateY(0) scale(1.03); }
@@ -661,7 +670,8 @@
     }
 
     tarjeta.classList.toggle("is-cargando", d.estado === "cargando");
-    tarjeta.classList.toggle("is-ok", d.estado === "ok");
+    tarjeta.classList.toggle("is-ok", d.estado === "ok" || d.estado === "medida");
+    tarjeta.classList.toggle("is-medida", d.estado === "medida");
     tarjeta.classList.toggle("is-error", d.estado === "error" || d.estado === "nada");
 
     if (d.estado === "ok") {
@@ -673,6 +683,17 @@
       pintarFuera(d.fuera);
       pintarPresupuesto(d.presupuesto);
       contar(d.resultado);
+    } else if (d.estado === "medida") {
+      // Aquí no hay cifra que contar: es un texto, y a veces con dos resultados.
+      cuenta++;
+      $(".original").textContent = d.original;
+      $(".valor").textContent = d.texto;
+      $(".valor").classList.toggle("is-larga", d.texto.length > 16);
+      $(".codigo").textContent = "";
+      $(".nota").textContent = "";
+      pintarDcc(null);
+      pintarFuera(null);
+      pintarPresupuesto(null);
     } else if (d.estado === "cargando") {
       $(".original").textContent = citar(d.original);
       pintarDcc(null);
@@ -688,7 +709,7 @@
     }
 
     colocar();
-    if (d.estado === "ok") $(".copiar").focus({ preventScroll: true });
+    if (d.estado === "ok" || d.estado === "medida") $(".copiar").focus({ preventScroll: true });
   }
 
   // Cerrado cada vez: lo que abriste para otro precio no tiene por qué seguir abierto.
@@ -760,7 +781,7 @@
   // pegarlo en una hoja de cálculo. Me llega hecho, con el decimal del idioma.
   // Con Shift, la frase entera, como en el popup.
   async function copiar(event) {
-    if (!datos || datos.estado !== "ok") return;
+    if (!datos || (datos.estado !== "ok" && datos.estado !== "medida")) return;
     const numero = datos.copia ?? datos.resultado.toFixed(2).replace(".", ",");
     const texto = event?.shiftKey && datos.frase ? datos.frase : numero;
     let hecho = false;

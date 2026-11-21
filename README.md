@@ -428,6 +428,11 @@ que necesitaba una conversión rápida. Ahora es un clic en la barra del navegad
   entra ese importe tal cual, sin comisión. Si el viaje abierto tiene presupuesto,
   antes de apuntarlo ya ves lo que se come de lo que te queda ("Se lleva el 19 %
   de lo que te queda · ≈ 1,1 días"), con una barrita a rayas, o en cuánto te pasas
+- Y las medidas, igual: seleccionas "65 mph", "350 °F", "2 cups" o "talla 42"
+  en una receta o en una tienda de allí, **Convertir**, y la tarjeta te da los
+  km/h, los grados o los mililitros. Son las mismas que entiende `cd`. Con la
+  divisa escrita ("$20") sigue siendo un precio. **Copiar** se lleva el
+  resultado, y con Shift, la frase entera ("65 mph = 104,6 km/h")
 - La trampa del "¿quiere pagar en euros?": si en la pantalla de pago seleccionas
   el precio de allí y lo que te cobrarían en tu divisa ("USD 249.99 · EUR
   240.50"), la tarjeta te dice cuánto pagas de más sobre el cambio real ("13,52

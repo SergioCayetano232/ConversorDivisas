@@ -10617,6 +10617,58 @@ const esPanel = (busqueda) => new URLSearchParams(busqueda ?? "").has("panel");
 // recargo, el siguiente gasto que apunte se los come. Lo que guardé yo no cuenta.
 const cambioDeFuera = (nuevo, mio) => JSON.stringify(nuevo) !== JSON.stringify(mio);
 
+// Lo que seleccionas en una web: "65 mph", "350 °F", "2 cups". Las mismas
+// medidas que la barra y en el mismo orden, que algunas se pisan si lo cambio.
+const MEDIDAS = [
+  [leerHoraZona, textoHoraZona], [leerGrados, textoGrados], [leerGas, textoGas], [leerDistancia, textoDistancia],
+  [leerRitmo, textoRitmo], [leerPeso, textoPeso], [leerOnzas, textoOnzas], [leerOnzasTroy, textoOnzasTroy],
+  [leerAltura, textoAltura], [leerVelocidad, textoVelocidad], [leerVolumen, textoVolumen], [leerLongitud, textoLongitud],
+  [leerSuperficie, textoSuperficie], [leerMillasCuadradas, textoMillasCuadradas], [leerPulgadasCuadradas, textoPulgadasCuadradas],
+  [leerYardasCuadradas, textoYardasCuadradas], [leerConsumo, textoConsumo], [leerElectrico, textoElectrico],
+  [leerPresion, textoPresion], [leerTazaDe, textoTazaDe], [leerTazas, textoTazas], [leerCucharadas, textoCucharadas],
+  [leerSticks, textoSticks], [leerYardas, textoYardas], [leerStone, textoStone], [leerLibrasYOnzas, textoLibrasYOnzas],
+  [leerOnzasLiquidas, textoOnzasLiquidas], [leerPintas, textoPintas], [leerCuartos, textoCuartos], [leerNudos, textoNudos],
+  [leerMetrosPorSegundo, textoMetrosPorSegundo], [leerMillasNauticas, textoMillasNauticas], [leerLeguas, textoLeguas],
+  [leerManos, textoManos], [leerFurlongs, textoFurlongs], [leerChains, textoChains], [leerGills, textoGills],
+  [leerRods, textoRods], [leerJin, textoJin], [leerTsubo, textoTsubo], [leerJo, textoJo], [leerLakh, textoLakh],
+  [leerTola, textoTola], [leerTael, textoTael], [leerMach, textoMach], [leerThou, textoThou], [leerGramaje, textoGramaje],
+  [leerMomme, textoMomme], [leerPood, textoPood], [leerVersta, textoVersta], [leerAnioLuz, textoAnioLuz],
+  [leerManzana, textoManzana], [leerArpent, textoArpent], [leerAcrePie, textoAcrePie], [leerBigha, textoBigha],
+  [leerMu, textoMu], [leerMaund, textoMaund], [leerPicul, textoPicul], [leerShaku, textoShaku], [leerRopa, textoRopa],
+  [leerCamisa, textoCamisa], [leerAnillo, textoAnillo], [leerTalla, textoTalla], [leerMah, textoMah], [leerMbps, textoMbps],
+  [leerGlucosa, textoGlucosa], [leerGo, textoGo], [leerVara, textoVara], [leerRi, textoRi], [leerDram, textoDram],
+  [leerFanega, textoFanega], [leerCodo, textoCodo], [leerBrazas, textoBrazas], [leerAcres, textoAcres],
+  [leerCalorias, textoCalorias], [leerPotencia, textoPotencia], [leerBtu, textoBtu], [leerTherms, textoTherms],
+  [leerInHg, textoInHg], [leerPiesCubicos, textoPiesCubicos], [leerPulgadasCubicas, textoPulgadasCubicas],
+  [leerBarriles, textoBarriles], [leerParMotor, textoParMotor], [leerPennyweight, textoPennyweight], [leerCwt, textoCwt],
+  [leerCuerdas, textoCuerdas], [leerBushels, textoBushels], [leerPecks, textoPecks], [leerGrains, textoGrains],
+  [leerQuilates, textoQuilates], [leerYardasCubicas, textoYardasCubicas], [leerToneladasCortas, textoToneladasCortas],
+];
+
+function medidaTalCual(texto) {
+  for (const [leer, decir] of MEDIDAS) {
+    const leido = leer(texto);
+    if (!leido) continue;
+    const frase = decir(leido);
+    const corte = frase.indexOf(" = ");
+    return corte < 0 ? null : { de: frase.slice(0, corte), a: frase.slice(corte + 3), frase };
+  }
+  return null;
+}
+
+// Al seleccionar con el ratón se cuela el punto del final, un paréntesis o la
+// palabra de delante ("up to 65 mph"). Primero entero, que "talla 42" y
+// "Mach 2" llevan la palabra delante a propósito.
+function medidaDeSeleccion(texto) {
+  if (typeof texto !== "string") return null;
+  // En las webs el espacio entre el número y la unidad suele ser de los que no parten.
+  const limpio = texto.replace(/[\u00a0\u202f\u2009]/g, " ").replace(/\s+/g, " ").trim()
+    .replace(/^[(\[«"“]+\s*/, "").replace(/\s*[.,;:!?)\]»”]+$/, "");
+  if (!limpio || limpio.length > 40) return null;
+  const desdeElNumero = limpio.slice(limpio.search(/\d/));
+  return medidaTalCual(limpio) ?? (desdeElNumero !== limpio && /^\d/.test(desdeElNumero) ? medidaTalCual(desdeElNumero) : null);
+}
+
 // El popup lo carga como script normal y lo lee del ámbito global; Node necesita
 // el export. Sin esto habría que montar un build, y aquí no hay ninguno.
 if (typeof module !== "undefined") {
@@ -10666,7 +10718,7 @@ if (typeof module !== "undefined") {
     nivelPresupuesto, avisosPresupuesto, mensajePresupuesto,
     RECORDATORIO_HORA, RECORDATORIO_HORAS, leerHoraRecordatorio, viajesSinApuntar, tocaRecordar, mensajeRecordatorio, TAX_FREE_HORA, tocaTaxFree, mensajeTaxFree,
     ATAJOS, atajoPara, textoAtajo, FUNCIONES, FUNCIONES_MAX, buscarFunciones,
-    esPanel, cambioDeFuera,
+    esPanel, cambioDeFuera, MEDIDAS, medidaDeSeleccion,
     PPA_ANIO, PPA, PPA_EURO, NIVEL_IGUAL, paisDePrecios, PAIS_DE_ZONA, paisDeZona, cambioDePais, mensajeCambioDePais, IVA_UE, UMBRAL_ARANCEL, paisIva, compraDeFuera, textoCompraDeFuera, nivelDePrecios, nombrePais, textoNivel,
   };
 }
