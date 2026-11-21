@@ -5865,10 +5865,33 @@ function destinoDelViaje(viaje, { aqui, from = null } = {}) {
   return isValidCode(from) && from !== aqui ? from : null;
 }
 
+// Por debajo de tres horas el cuerpo ni se entera.
+const JETLAG_MINIMO = 180;
+const JETLAG_NOCHES = 3;
+
+// Una hora al día es lo que se puede mover el sueño sin pasarlo mal, y con tres
+// noches ya llegas con medio camino hecho. La diferencia, en minutos y con su
+// signo: positiva si allí van por delante.
+function planJetLag(diferencia) {
+  if (!Number.isFinite(diferencia)) return null;
+  // Más de doce horas por un lado son menos por el otro: +14 se lleva como −10.
+  const min = diferencia > 720 ? diferencia - 1440 : diferencia < -720 ? diferencia + 1440 : diferencia;
+  if (Math.abs(min) < JETLAG_MINIMO) return null;
+  const horas = Math.round(Math.abs(min) / 60);
+  const este = min > 0;
+  // Hacia el este cuesta más: un día por hora. Hacia el oeste, dos de cada tres.
+  return { diferencia, este, noches: Math.min(JETLAG_NOCHES, horas), dias: este ? horas : Math.ceil(horas * 2 / 3) };
+}
+
+function textoJetLag(plan) {
+  if (!plan) return "";
+  return tr(plan.este ? "maleta.jetlagEste" : "maleta.jetlagOeste", { dif: textoDiferencia(plan.diferencia), noches: plan.noches, dias: plan.dias });
+}
+
 // Lo que hay que hacer antes de salir, sacado de los cd de visado, sanitaria,
 // roaming, enchufe, conducir, cajero y emergencias. Solo lo que pide hacer algo:
 // si allí vale tu enchufe, no te digo que no compres adaptador.
-function antesDeSalir(alli, aqui) {
+function antesDeSalir(alli, aqui, diferencia = null) {
   if (!isValidCode(alli)) return [];
   const cosas = [];
   const pon = (clave, texto) => cosas.push({ clave, texto });
@@ -5890,6 +5913,9 @@ function antesDeSalir(alli, aqui) {
   if (fuera && EMERGENCIAS[alli]) {
     pon("emergencias", tr("maleta.emergencias", { numeros: EMERGENCIAS[alli].map(([n]) => n).join(", ") }));
   }
+  // Al final, que es lo último que se hace: las noches de antes de salir.
+  const jetlag = planJetLag(diferencia);
+  if (jetlag) pon("jetlag", textoJetLag(jetlag));
   return cosas;
 }
 
@@ -9153,7 +9179,7 @@ function parDeBienvenida(casa, par) {
 // Lo nuevo de cada versión, la última arriba. Al sacar una, se añade aquí y se
 // sube el número del manifest; los textos van en textos.js.
 const NOVEDADES = [
-  { version: "1.1.0", claves: ["novedades.bienvenida", "novedades.tema", "novedades.cobro", "novedades.precioProducto", "novedades.tarjeta", "novedades.medidas"] },
+  { version: "1.1.0", claves: ["novedades.bienvenida", "novedades.tema", "novedades.cobro", "novedades.jetlag", "novedades.precioProducto", "novedades.tarjeta", "novedades.medidas"] },
 ];
 
 const esVersion = (v) => typeof v === "string" && /^\d+(\.\d+){0,3}$/.test(v);
@@ -10928,7 +10954,7 @@ if (typeof module !== "undefined") {
     AVISO_MEJOR_DIAS, techoDeSerie, crearAvisoMejor, ponerTechos,
     presupuestoSugerido, PARTES_VALIDAS, leerPartes, partesDe, repartirPorPartes, textoParte,
     VIAJES_MAX, NOMBRE_VIAJE_MAX, leerViajes, leerPersonas, porPersona, consumoGente, leerPagador, leerGente, ponerNombre, nombrePersona, inicialPersona, cuentasViaje, frasePago, COBRO_GASTOS_MAX, mensajeCobro, COMO_PAGAR_MAX, leerComoPagar, lineaDePago, leerEntre, entreDe, fraseEntre, cambiarEntre, leerSaldados, saldarPago, quitarSaldado, fraseSaldado, hayOtrosPagadores, NOMBRE_PERSONA_MAX, compararViajes, viajeConTasasDeHoy, DIAS_ANTES_DE_CAMBIAR, cambioAntes, AHORRO_MINIMO, ahorroCambiandoAntes, textoCambioAntes, VIAJE_HOY_IGUAL, textoViajeHoy, COLORES_VIAJE, leerColorViaje, colorLibre, siguienteColor, viajeActivo, ARCHIVADOS_MAX, archivarViaje, desarchivarViaje, borrarArchivado, todosLosViajes, crearViaje, nombreCopia, nombreDeDestino, duplicarViaje, renombrarViaje, elegirViaje, borrarViaje, moverGasto, cambiarViaje, TRAMOS_MAX, NOMBRE_TRAMO_MAX, leerTramos, ponerTramo, quitarTramo, tramoDelDia, divisaDelTramo, resumenTramos, curvaPresupuesto, FRANJAS, HORAS_MINIMO, horaFiable, porFranja, PENDIENTES_MAX, leerPendientes, crearPendiente, cambiarVence, pendientesPorFecha, tocaPagar, tonoVence, textoVence, PENDIENTE_HORA, tocaPendientes, avisadosPendientes, mensajePendientes, apuntarPendiente, quitarPendiente, totalPendiente, exposicionPendientes, textoExposicion, pagarPendiente, resumenViaje, archivoGastos, plegarIcs, eventosDelViaje, calendarioViaje, archivoCalendario,
-    diasHasta, leerPresupuesto, leerTopes, PRESUPUESTO_JUSTO, estadoPresupuesto, estadoTopes, alDiaAlli, inicioDelViaje, diaDelViaje, cuentaAtras, textoCuentaAtras, destinoDelViaje, antesDeSalir, leerListo, marcarListo, progresoMaleta, huchaViaje, loDeHoy, CELEBRADOS_MAX, leerCelebrados, anadirCelebrado, viajeParaCelebrar, textoCelebrar, RACHA_MINIMA, rachaPresupuesto, hastaCuandoLlega, previsionViaje, PREVISION_JUSTA, textoPrevision, loQueSeLleva, presupuestoEnTarjeta, textoPresupuestoTarjeta, redondearDias,
+    diasHasta, leerPresupuesto, leerTopes, PRESUPUESTO_JUSTO, estadoPresupuesto, estadoTopes, alDiaAlli, inicioDelViaje, diaDelViaje, cuentaAtras, textoCuentaAtras, destinoDelViaje, antesDeSalir, JETLAG_MINIMO, planJetLag, textoJetLag, leerListo, marcarListo, progresoMaleta, huchaViaje, loDeHoy, CELEBRADOS_MAX, leerCelebrados, anadirCelebrado, viajeParaCelebrar, textoCelebrar, RACHA_MINIMA, rachaPresupuesto, hastaCuandoLlega, previsionViaje, PREVISION_JUSTA, textoPrevision, loQueSeLleva, presupuestoEnTarjeta, textoPresupuestoTarjeta, redondearDias,
     EXTRAS_MAX, EXTRAS_POR_DEFECTO, leerExtras, anadirExtra, quitarExtra,
     extrasVisibles, disponiblesParaAnadir, convertirExtras, semanaDe, trazoMini, CHULETA, escalaChuleta, chuleta, TRUCO_TOLERANCIA, trucoDeCabeza, textoTruco, tituloTruco, chuletaParaCompartir, extrasParaCompartir,
     urlImpresion, leerImpresion, chuletaParaImprimir,

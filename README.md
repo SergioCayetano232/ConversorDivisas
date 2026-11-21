@@ -261,7 +261,9 @@ que necesitaba una conversión rápida. Ahora es un clic en la barra del navegad
   la curva sale una maleta con lo que llevas hecho ("🧳 2/8"). Dentro, lo de
   allí sacado de los `cd`: el visado o el ESTA, la tarjeta sanitaria o el
   seguro, la eSIM, el adaptador si tu enchufe no entra, el voltaje, el permiso
-  de conducir, el efectivo y los teléfonos de emergencia. Solo lo que pide
+  de conducir, el efectivo y los teléfonos de emergencia. Y si allí hay tres
+  horas o más de diferencia, el jet lag: hacia dónde mover el sueño las tres
+  noches de antes y cuántos días tardarás en hacerte ("Jet lag de +8 h…"). Solo lo que pide
   hacer algo, y lo vas marcando. El destino lo saca del primer tramo, de los
   gastos o, si aún no hay nada, de la divisa de arriba
 - Cómo va el gasto día a día: con la curva que hay al lado de la barra del

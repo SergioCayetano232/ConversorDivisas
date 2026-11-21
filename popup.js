@@ -5325,7 +5325,7 @@ function cosasMaleta() {
   if (cuentaAtras(presupuesto) === null) return null;
   const aqui = presupuesto.to;
   const destino = destinoDelViaje(viajeActivo(viajes), { aqui, from: el.from.value });
-  const cosas = antesDeSalir(destino, aqui);
+  const cosas = antesDeSalir(destino, aqui, horaAlli(destino)?.diferencia);
   return cosas.length ? { destino, cosas } : null;
 }
 
