@@ -1,4 +1,4 @@
-// Se inyecta al usar «Convertir los precios de la página», detrás de logica.js.
+// Se inyecta al usar «Convertir los precios de la página», detrás de los trozos de logica/.
 // No toco el texto de la web: cada precio lleva al lado su pastilla, y quitarlas
 // deja la página como estaba. Partir los nodos de texto rompía las webs en React.
 (() => {

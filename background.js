@@ -1,6 +1,8 @@
-// El service worker no carga logica.js solo; importScripts sí vale porque no es
-// un módulo, igual que en el popup.
-importScripts("textos.js", "tema.js", "logica.js");
+// El service worker no carga la lógica solo; importScripts sí vale porque no es
+// un módulo, igual que en el popup. Los trozos, en el mismo orden que allí.
+const LOGICA = ["divisas", "conversor", "alli", "leer", "gastos", "viajes", "presupuesto", "copiar", "medidas", "avisos", "datos", "web"]
+  .map((trozo) => `logica/${trozo}.js`);
+importScripts("textos.js", "tema.js", ...LOGICA);
 
 const IDIOMA_KEY = "idioma";
 
@@ -527,9 +529,9 @@ async function convertirPagina(tab) {
   };
   let hallado;
   try {
-    // logica.js lleva const de primer nivel: inyectarlo dos veces da error.
+    // La lógica lleva const de primer nivel: inyectarla dos veces da error.
     if (!(await enLaPestana(() => Boolean(window.__conversorPrecios)))) {
-      await chrome.scripting.executeScript({ target: { tabId: tab.id }, files: ["logica.js", "precios.js"] });
+      await chrome.scripting.executeScript({ target: { tabId: tab.id }, files: [...LOGICA, "precios.js"] });
     }
     hallado = await enLaPestana(() => window.__conversorPrecios.alternar());
   } catch (error) {

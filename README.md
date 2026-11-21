@@ -53,7 +53,7 @@ Chrome ha puesto de verdad. Solo sale al instalar, no en las actualizaciones.
 
 En las actualizaciones lo que sale es una estrella dorada en el pie del popup:
 al pulsarla ves lo que trae la versión nueva, y al cerrarlo se va hasta la
-siguiente. La lista está en `NOVEDADES`, en `logica.js`.
+siguiente. La lista está en `NOVEDADES`, en `logica/avisos.js`.
 
 El tema sigue al sistema, pero se puede fijar en claro o en oscuro con el clic
 derecho en el icono, en **Tema**. Vale para el popup, el panel lateral y las
@@ -72,7 +72,8 @@ popup.html       estructura del popup
 popup.css        estilos
 textos.js        todos los textos, en español y en inglés
 tema.js          el tema a mano: va en el <head> de cada página
-logica.js        las cuentas y los formatos, sin tocar la pantalla
+logica/          las cuentas y los formatos, sin tocar la pantalla, por temas
+logica.js        la puerta de los tests: junta los trozos de logica/
 popup.js         lo que reacciona a los clics
 copia.*          la página de la copia de seguridad (las opciones)
 imprimir.*       la chuleta en tamaño tarjeta, para imprimir
@@ -83,13 +84,13 @@ fotos.js         las fotos de los tiques, en IndexedDB
 background.js    el menú del clic derecho y la tasa para la tarjeta
 tarjeta.js       la tarjeta que sale en la web, en un shadow DOM
 precios.js       las pastillas con los precios de toda la página
-test/            tests de logica.js
+test/            tests de la lógica
 icons/           16, 48 y 128 px
 docs/            la lista entera de funciones y el GIF de arriba
 _locales/        el nombre y la descripción que enseña Chrome, en los dos idiomas
 ```
 
-Lo que se puede probar solo está en `logica.js`, aparte del resto. Los tests van
+Lo que se puede probar solo está en `logica/`, aparte del resto. Los tests van
 con lo que ya trae Node, así que no hay `node_modules` que instalar:
 
 ```
@@ -126,7 +127,7 @@ KHR, JOD, QAR, SAR, GEL, RSD, BOB, GTQ y PYG. La de Cuba no está a propósito: 
 tasa oficial no se parece a la de la calle.
 
 Si el BCE añade alguna, basta con meter una línea en el array `DIVISAS_BCE` de
-`logica.js`, con el nombre en español y en inglés (hay un test que comprueba
+`logica/divisas.js`, con el nombre en español y en inglés (hay un test que comprueba
 que la lista es justo la del BCE, así que habrá que tocarlo también). Las demás van en
 `DIVISAS_MERCADO`. Para que
 la tarjeta del clic derecho la reconozca por su símbolo o su nombre, va en

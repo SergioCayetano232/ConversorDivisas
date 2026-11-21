@@ -1,5 +1,5 @@
 // Todos los textos que se ven, en los dos idiomas. Lo carga todo el mundo antes
-// que logica.js: el popup, el service worker y los tests.
+// que la lógica: el popup, el service worker y los tests.
 
 const TEXTOS = {
   es: {
