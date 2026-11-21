@@ -644,12 +644,13 @@ function onCancelarGrupo() {
 let leidoApp = null;
 let importadoApp = null;
 const NUEVO_VIAJE = "__nuevo";
+let divisaCasa = null;
 
 const dineroApp = (n, divisa) => `${numeros({ minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(n)} ${divisa}`;
 
 function divisaPrincipal(viaje, viajes) {
   return sumarPorDivisa(viaje?.gastos ?? [])[0]?.to
-    ?? tuDivisa({ viajes: todosLosViajes(viajes), idiomas: navigator.languages });
+    ?? tuDivisa({ viajes: todosLosViajes(viajes), idiomas: navigator.languages, elegida: divisaCasa });
 }
 
 // La de allí: la más repetida del archivo que no es la tuya.
@@ -876,6 +877,7 @@ function bindEvents() {
 
 async function init() {
   await ponerIdiomaGuardado();
+  divisaCasa = leerDivisaCasa((await chrome.storage.local.get("divisaCasa")).divisaCasa);
   bindEvents();
   await pintarAhora();
 }

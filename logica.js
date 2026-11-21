@@ -9100,13 +9100,34 @@ const quitarSuscripcion = (lista, id) => leerSuscripciones(lista).filter((s) => 
 
 // Tu divisa, la de casa: la de tus gastos de viaje, que es en la que cuentas. Sin
 // viajes, la de tu idioma ("es-ES" → EUR), y si no, la de abajo del par.
-function tuDivisa({ viajes = [], idiomas = [], par = null } = {}) {
+function tuDivisa({ viajes = [], idiomas = [], par = null, elegida = null } = {}) {
+  // La que dijiste en la bienvenida manda: lo demás es adivinar.
+  if (isValidCode(elegida)) return elegida;
   const veces = new Map();
   for (const g of viajes.flatMap((v) => v.gastos ?? [])) veces.set(g.to, (veces.get(g.to) ?? 0) + 1);
   const deGastos = [...veces].sort((a, b) => b[1] - a[1])[0]?.[0];
   if (isValidCode(deGastos)) return deGastos;
   const deIdioma = idiomas.map(divisaDeIdioma).find(Boolean);
   return deIdioma ?? (isValidCode(par?.to) ? par.to : "EUR");
+}
+
+const leerDivisaCasa = (valor) => (isValidCode(valor) ? valor : null);
+
+// La bienvenida solo al instalar. Al actualizar no, que sería salirte una
+// pestaña cada vez que saco una versión.
+const tocaBienvenida = (motivo) => motivo === "install";
+
+// Si tu divisa ya está en el par de siempre no lo toco. Si no, la pongo abajo,
+// que es a lo que conviertes, y arriba la que más se cruza con ella.
+function parDeBienvenida(casa, par) {
+  if (!isValidCode(casa) || par?.from === casa || par?.to === casa) return null;
+  return { from: casa === "USD" || CERCA_DEL_EURO.includes(casa) ? "EUR" : "USD", to: casa };
+}
+
+// Chrome deja la tecla vacía si otra extensión ya la tenía cogida.
+function atajosDeBienvenida(comandos) {
+  const tecla = (nombre) => (Array.isArray(comandos) ? comandos : []).find((c) => c?.name === nombre)?.shortcut || "";
+  return { abrir: tecla("_execute_action"), seleccion: tecla("convertir-seleccion") };
 }
 
 // Las zonas horarias que pone el sistema al aterrizar, con su país. Las de
@@ -10304,6 +10325,7 @@ function limpiarCopia(crudo) {
   if (RECORDATORIO_HORAS.includes(d.recordatorioHora)) datos.recordatorioHora = d.recordatorioHora;
   if (typeof d.tasaAlReves === "boolean") datos.tasaAlReves = d.tasaAlReves;
   if (d.idioma === "auto" || TEXTOS[d.idioma]) datos.idioma = d.idioma;
+  if (leerDivisaCasa(d.divisaCasa)) datos.divisaCasa = d.divisaCasa;
   if (leerCategoriasPropias(d.categoriasPropias).length) datos.categoriasPropias = leerCategoriasPropias(d.categoriasPropias);
   return datos;
 }
@@ -10313,7 +10335,7 @@ function limpiarCopia(crudo) {
 const CLAVES_COPIA = [
   "viajes", "gastosViaje", "presupuestoViaje", "lastPair", "paresRecientes", "divisasExtra", "avisos",
   "historialConversiones", "rangoGrafico", "comisionBanco", "tarjetasBanco", "impuestoVenta", "pagoGasto", "cuentaReparto", "insigniaActiva", "tasaAlReves", "idioma",
-  "recordatorioActivo", "recordatorioHora", "precioCafe", "sueldoHora", "categoriasPropias", "suscripciones", "cajeroGratis",
+  "recordatorioActivo", "recordatorioHora", "precioCafe", "sueldoHora", "categoriasPropias", "suscripciones", "cajeroGratis", "divisaCasa",
 ];
 
 // Lo que se lleva tu cuenta de Chrome a tus otros ordenadores: cómo lo tienes
@@ -10322,7 +10344,7 @@ const CLAVES_COPIA = [
 // tampoco: saltarían en cada ordenador que tengas abierto.
 const CLAVES_SYNC = [
   "comisionBanco", "tarjetasBanco", "impuestoVenta", "precioCafe", "sueldoHora", "pagoGasto", "cuentaReparto", "divisasExtra",
-  "paresRecientes", "rangoGrafico", "insigniaActiva", "tasaAlReves", "idioma", "recordatorioActivo", "recordatorioHora", "cajeroGratis",
+  "paresRecientes", "rangoGrafico", "insigniaActiva", "tasaAlReves", "idioma", "recordatorioActivo", "recordatorioHora", "cajeroGratis", "divisaCasa",
 ];
 
 // Lo que llega de otro ordenador pasa por los mismos lectores que la copia: si
@@ -10864,6 +10886,7 @@ if (typeof module !== "undefined") {
     esPanel, cambioDeFuera, MEDIDAS, medidaDeSeleccion,
     numeroDePrecio, precioDeLaPagina, precioComoTexto,
     AVISO_TARJETA_BAJA, maximoSugerido, avisoDesdeTarjeta,
+    leerDivisaCasa, tocaBienvenida, parDeBienvenida, atajosDeBienvenida,
     GUARDADO_DIAS, webDe, crearGuardado, leerGuardado, esElGuardado, compararConGuardado, textoGuardado,
     PPA_ANIO, PPA, PPA_EURO, NIVEL_IGUAL, paisDePrecios, PAIS_DE_ZONA, paisDeZona, cambioDePais, mensajeCambioDePais, IVA_UE, UMBRAL_ARANCEL, paisIva, compraDeFuera, textoCompraDeFuera, nivelDePrecios, nombrePais, textoNivel,
   };

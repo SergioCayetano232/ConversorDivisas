@@ -1,0 +1,91 @@
+.tuyo__cabeza {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-height: 20px;
+}
+
+.tuyo__guardado {
+  font-size: 12px;
+}
+
+.tuyo__guardado svg {
+  width: 14px;
+  height: 14px;
+}
+
+.tuyo__campos {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px 12px;
+}
+
+.atajos {
+  display: flex;
+  flex-direction: column;
+  list-style: none;
+}
+
+.atajo {
+  display: grid;
+  grid-template-columns: 96px 1fr;
+  align-items: start;
+  gap: 14px;
+  padding: 12px 0;
+  border-top: 1px solid var(--borde);
+}
+
+.atajo:first-child {
+  padding-top: 0;
+  border-top: 0;
+}
+
+.atajo:last-child {
+  padding-bottom: 0;
+}
+
+/* Una tecla de verdad: más oscura por abajo, como si tuviera canto. */
+.atajo__tecla {
+  justify-self: start;
+  padding: 5px 9px;
+  background: var(--dorado-fantasma);
+  border: 1px solid var(--dorado-tenue);
+  border-bottom-width: 2px;
+  border-radius: 7px;
+  color: var(--dorado);
+  font-family: var(--mono);
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  white-space: nowrap;
+}
+
+.atajo__tecla.is-vacia {
+  background: var(--losa);
+  border-color: var(--borde-fuerte);
+  color: var(--tenue);
+  font-family: inherit;
+  font-weight: 500;
+}
+
+.atajo__que {
+  font-weight: 600;
+}
+
+.atajo__nota {
+  margin-top: 2px;
+  font-size: 13px;
+  color: var(--tenue);
+}
+
+@media (max-width: 480px) {
+  .tuyo__campos {
+    grid-template-columns: 1fr;
+  }
+
+  .atajo {
+    grid-template-columns: 1fr;
+    gap: 8px;
+  }
+}

@@ -674,6 +674,10 @@ No está en la Chrome Web Store, así que se carga a mano:
 El icono aparecerá en la barra. Si no lo ves, está escondido detrás del icono de
 la pieza de puzzle.
 
+Nada más cargarla se abre una pestaña de bienvenida: eliges tu divisa y el
+idioma (se guardan al cambiarlos) y te enseña los tres atajos con las teclas que
+Chrome ha puesto de verdad. Solo sale al instalar, no en las actualizaciones.
+
 ¿El atajo no funciona? Chrome no lo asigna si ya lo está usando otra extensión.
 Se cambia en `chrome://extensions/shortcuts`.
 
@@ -690,6 +694,7 @@ logica.js        las cuentas y los formatos, sin tocar la pantalla
 popup.js         lo que reacciona a los clics
 copia.*          la página de la copia de seguridad (las opciones)
 imprimir.*       la chuleta en tamaño tarjeta, para imprimir
+bienvenida.*     la pestaña que sale al instalar: tu divisa, el idioma y los atajos
 permiso.*        la pestaña que pide el micrófono para dictar
 tique.*          la pestaña para elegir la foto del tique
 fotos.js         las fotos de los tiques, en IndexedDB

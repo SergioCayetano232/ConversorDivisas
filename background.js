@@ -88,7 +88,8 @@ async function hacerMenus() {
   }
 }
 
-chrome.runtime.onInstalled.addListener(async () => {
+chrome.runtime.onInstalled.addListener(async ({ reason }) => {
+  if (tocaBienvenida(reason)) chrome.tabs.create({ url: chrome.runtime.getURL("bienvenida.html") });
   await crearMenus();
   // Antes se llamaba "insignia"; si vienes de esa versión, fuera la vieja para
   // no tener dos sonando a la vez.
@@ -1727,9 +1728,9 @@ async function resumirSemana() {
 async function avisarCambioDePais() {
   try {
     await idiomaListo;
-    const { zonaVista, viajes, lastPair } = await chrome.storage.local.get(["zonaVista", "viajes", "lastPair"]);
+    const { zonaVista, viajes, lastPair, divisaCasa } = await chrome.storage.local.get(["zonaVista", "viajes", "lastPair", "divisaCasa"]);
     const par = await leerPar();
-    const casa = tuDivisa({ viajes: viajes ? todosLosViajes(leerViajes(viajes)) : [], idiomas: navigator.languages, par: lastPair ?? par });
+    const casa = tuDivisa({ viajes: viajes ? todosLosViajes(leerViajes(viajes)) : [], idiomas: navigator.languages, par: lastPair ?? par, elegida: divisaCasa });
     const zona = Intl.DateTimeFormat().resolvedOptions().timeZone;
     const r = cambioDePais({ zona, antes: zonaVista, par, casa });
     if (!r) return;

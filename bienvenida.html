@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>ConversorDivisas · Bienvenido</title>
+  <link rel="icon" href="icons/icon48.png">
+  <link rel="stylesheet" href="copia.css">
+  <link rel="stylesheet" href="bienvenida.css">
+</head>
+<body>
+  <main class="pagina">
+    <header class="cabeza">
+      <img class="cabeza__logo" src="icons/icon128.png" alt="" width="44" height="44">
+      <div>
+        <p class="cabeza__app">ConversorDivisas</p>
+        <h1 class="cabeza__titulo" data-t="bienvenida.titulo">Bienvenido</h1>
+      </div>
+    </header>
+    <p class="intro" data-t="bienvenida.intro">Ya está instalada. Dos cosas que conviene dejar puestas y tres maneras de convertir sin abrir una pestaña.</p>
+
+    <section class="tarjeta" aria-labelledby="tuyo-titulo">
+      <div class="tuyo__cabeza">
+        <h2 class="tarjeta__titulo" id="tuyo-titulo" data-t="bienvenida.tuyo">Lo tuyo</h2>
+        <p class="hecho tuyo__guardado" id="guardado" role="status" hidden>
+          <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3.5 8.3l3 3 6-6.5"/></svg>
+          <span data-t="bienvenida.guardado">Guardado</span>
+        </p>
+      </div>
+      <div class="tuyo__campos">
+        <label class="campo">
+          <span class="campo__nombre" data-t="bienvenida.divisa">Tu divisa</span>
+          <select class="campo__control" id="divisa"></select>
+        </label>
+        <label class="campo">
+          <span class="campo__nombre" data-t="bienvenida.idioma">Idioma</span>
+          <select class="campo__control" id="idioma"></select>
+        </label>
+      </div>
+      <p class="tarjeta__nota" data-t="bienvenida.divisaNota">La de casa: en la que se cuentan tus gastos de viaje y tus suscripciones.</p>
+    </section>
+
+    <section class="tarjeta" aria-labelledby="atajos-titulo">
+      <h2 class="tarjeta__titulo" id="atajos-titulo" data-t="bienvenida.atajos">Tres atajos</h2>
+      <ul class="atajos">
+        <li class="atajo">
+          <kbd class="atajo__tecla" id="tecla-abrir"></kbd>
+          <div>
+            <p class="atajo__que" data-t="bienvenida.abrir">Abrir el conversor</p>
+            <p class="atajo__nota" data-t="bienvenida.abrirNota">Desde cualquier pestaña, o con el icono de la barra.</p>
+          </div>
+        </li>
+        <li class="atajo">
+          <kbd class="atajo__tecla" id="tecla-seleccion"></kbd>
+          <div>
+            <p class="atajo__que" data-t="bienvenida.seleccion">Convertir lo seleccionado</p>
+            <p class="atajo__nota" data-t="bienvenida.seleccionNota">Seleccionas un precio en una web y sale convertido al lado.</p>
+          </div>
+        </li>
+        <li class="atajo">
+          <kbd class="atajo__tecla">cd</kbd>
+          <div>
+            <p class="atajo__que" data-t="bienvenida.barra">Desde la barra de direcciones</p>
+            <p class="atajo__nota" id="nota-barra"></p>
+          </div>
+        </li>
+      </ul>
+      <button class="boton boton--pequeno" type="button" id="teclas" data-t="bienvenida.teclas">Cambiar las teclas</button>
+    </section>
+
+    <footer class="pie">
+      <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 1.8l5 2v4c0 3-2.2 5.3-5 6.4-2.8-1.1-5-3.4-5-6.4v-4z"/></svg>
+      <span data-t="bienvenida.pie">Fija el icono desde la pieza de puzle de la barra para tenerlo a un clic. Esta pestaña ya la puedes cerrar.</span>
+    </footer>
+  </main>
+
+  <script src="textos.js"></script>
+  <script src="logica.js"></script>
+  <script src="bienvenida.js"></script>
+</body>
+</html>

@@ -1742,7 +1742,9 @@ let suscripcionNueva = null;
 // Con el formulario abierto la lista se aparta: no caben los dos en la pestaña.
 let anadiendoSuscripcion = false;
 
-const miDivisa = () => tuDivisa({ viajes: todosLosViajes(viajes), idiomas: navigator.languages, par: { from: el.from.value, to: el.to.value } });
+// La que eliges en la bienvenida. Sin ella, tuDivisa la adivina como siempre.
+let divisaCasa = null;
+const miDivisa = () => tuDivisa({ viajes: todosLosViajes(viajes), idiomas: navigator.languages, par: { from: el.from.value, to: el.to.value }, elegida: divisaCasa });
 
 async function abrirSuscripciones() {
   try {
@@ -10267,6 +10269,7 @@ function bindEvents() {
   // abierto, que la pastilla desaparezca también.
   chrome.storage.onChanged.addListener((cambios, zona) => {
     if (zona !== "local") return;
+    if (cambios.divisaCasa) divisaCasa = leerDivisaCasa(cambios.divisaCasa.newValue);
     if (cambios[AVISOS_KEY]) {
       avisos = leerAvisos(cambios[AVISOS_KEY].newValue);
       pintarAvisos();
@@ -10405,6 +10408,11 @@ async function init() {
   const idiomaCambiado = await cargarIdioma();
   traducirPagina();
   if (idiomaCambiado) saludarIdioma();
+  try {
+    divisaCasa = leerDivisaCasa((await chrome.storage.local.get("divisaCasa")).divisaCasa);
+  } catch (error) {
+    console.warn("No se pudo leer tu divisa", error);
+  }
   const [pair, rango, guardados, pendiente, guardadas, vistaGuardada, avisosGuardados, comisionGuardada, fechaGuardada, historialGuardado, viajesGuardados, repartoGuardado, alRevesGuardado, pagoGuardado, cantidadGuardada, impuestoGuardado, cafeGuardado, sueldoGuardado, discretoGuardado, tarjetasGuardadas] = await Promise.all([
     loadPair(), cargarRango(), cargarRecientes(), tomarPendiente(), cargarExtras(), cargarVista(), cargarAvisos(),
     cargarComision(), cargarFecha(), cargarHistorial(), cargarViajes(), cargarReparto(), cargarTasaAlReves(), cargarPago(),
