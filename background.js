@@ -1,6 +1,6 @@
 // El service worker no carga logica.js solo; importScripts sí vale porque no es
 // un módulo, igual que en el popup.
-importScripts("textos.js", "logica.js");
+importScripts("textos.js", "tema.js", "logica.js");
 
 const IDIOMA_KEY = "idioma";
 
@@ -71,6 +71,18 @@ async function hacerMenus() {
       title: titulo,
       type: "radio",
       checked: valor === horaElegida,
+      contexts: ["action"],
+    });
+  }
+  const { tema } = await chrome.storage.local.get("tema");
+  chrome.contextMenus.create({ id: "tema", title: tr("menu.tema"), contexts: ["action"] });
+  for (const valor of TEMAS) {
+    chrome.contextMenus.create({
+      id: `tema:${valor}`,
+      parentId: "tema",
+      title: tr(`menu.tema.${valor}`),
+      type: "radio",
+      checked: valor === leerTema(tema),
       contexts: ["action"],
     });
   }
@@ -182,7 +194,7 @@ chrome.storage.onChanged.addListener((cambios, zona) => {
   subirSync(cambios);
   if (cambios.categoriasPropias) ponerCategoriasPropias(cambios.categoriasPropias.newValue);
   // Si llegan del otro ordenador, el menú del icono tiene que enseñarlas.
-  if (cambios.insigniaActiva || cambios.recordatorioActivo || cambios.recordatorioHora) crearMenus();
+  if (cambios.insigniaActiva || cambios.recordatorioActivo || cambios.recordatorioHora || cambios.tema) crearMenus();
   if (cambios.viajes) {
     revisarPresupuesto(cambios.viajes.oldValue, cambios.viajes.newValue);
     ponerTitulo();
@@ -1844,6 +1856,7 @@ chrome.contextMenus.onClicked.addListener((info, tab) => {
     const valor = info.menuItemId.slice(13);
     chrome.storage.local.set(valor === "no" ? { recordatorioActivo: false } : { recordatorioActivo: true, recordatorioHora: Number(valor) });
   }
+  if (String(info.menuItemId).startsWith("tema:")) chrome.storage.local.set({ tema: info.menuItemId.slice(5) });
   // El aviso es para el popup: la próxima vez que lo abras te dice en qué idioma está.
   if (String(info.menuItemId).startsWith("idioma:")) {
     chrome.storage.local.set({ [IDIOMA_KEY]: info.menuItemId.slice(7), avisarIdioma: true });

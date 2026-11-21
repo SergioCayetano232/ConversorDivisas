@@ -5,6 +5,9 @@
 if (typeof module !== "undefined" && typeof tr === "undefined") {
   Object.assign(globalThis, require("./textos.js"));
 }
+if (typeof module !== "undefined" && typeof leerTema === "undefined") {
+  Object.assign(globalThis, require("./tema.js"));
+}
 
 const DIVISAS_BCE = [
   { code: "EUR", name: "Euro", en: "Euro" },
@@ -9127,7 +9130,7 @@ function parDeBienvenida(casa, par) {
 // Lo nuevo de cada versión, la última arriba. Al sacar una, se añade aquí y se
 // sube el número del manifest; los textos van en textos.js.
 const NOVEDADES = [
-  { version: "1.1.0", claves: ["novedades.bienvenida", "novedades.precioProducto", "novedades.tarjeta", "novedades.medidas"] },
+  { version: "1.1.0", claves: ["novedades.bienvenida", "novedades.tema", "novedades.precioProducto", "novedades.tarjeta", "novedades.medidas"] },
 ];
 
 const esVersion = (v) => typeof v === "string" && /^\d+(\.\d+){0,3}$/.test(v);
@@ -10360,6 +10363,7 @@ function limpiarCopia(crudo) {
   if (typeof d.tasaAlReves === "boolean") datos.tasaAlReves = d.tasaAlReves;
   if (d.idioma === "auto" || TEXTOS[d.idioma]) datos.idioma = d.idioma;
   if (leerDivisaCasa(d.divisaCasa)) datos.divisaCasa = d.divisaCasa;
+  if (TEMAS.includes(d.tema)) datos.tema = d.tema;
   if (leerCategoriasPropias(d.categoriasPropias).length) datos.categoriasPropias = leerCategoriasPropias(d.categoriasPropias);
   return datos;
 }
@@ -10369,7 +10373,7 @@ function limpiarCopia(crudo) {
 const CLAVES_COPIA = [
   "viajes", "gastosViaje", "presupuestoViaje", "lastPair", "paresRecientes", "divisasExtra", "avisos",
   "historialConversiones", "rangoGrafico", "comisionBanco", "tarjetasBanco", "impuestoVenta", "pagoGasto", "cuentaReparto", "insigniaActiva", "tasaAlReves", "idioma",
-  "recordatorioActivo", "recordatorioHora", "precioCafe", "sueldoHora", "categoriasPropias", "suscripciones", "cajeroGratis", "divisaCasa",
+  "recordatorioActivo", "recordatorioHora", "precioCafe", "sueldoHora", "categoriasPropias", "suscripciones", "cajeroGratis", "divisaCasa", "tema",
 ];
 
 // Lo que se lleva tu cuenta de Chrome a tus otros ordenadores: cómo lo tienes
@@ -10378,7 +10382,7 @@ const CLAVES_COPIA = [
 // tampoco: saltarían en cada ordenador que tengas abierto.
 const CLAVES_SYNC = [
   "comisionBanco", "tarjetasBanco", "impuestoVenta", "precioCafe", "sueldoHora", "pagoGasto", "cuentaReparto", "divisasExtra",
-  "paresRecientes", "rangoGrafico", "insigniaActiva", "tasaAlReves", "idioma", "recordatorioActivo", "recordatorioHora", "cajeroGratis", "divisaCasa",
+  "paresRecientes", "rangoGrafico", "insigniaActiva", "tasaAlReves", "idioma", "recordatorioActivo", "recordatorioHora", "cajeroGratis", "divisaCasa", "tema",
 ];
 
 // Lo que llega de otro ordenador pasa por los mismos lectores que la copia: si

@@ -682,6 +682,10 @@ En las actualizaciones lo que sale es una estrella dorada en el pie del popup:
 al pulsarla ves lo que trae la versión nueva, y al cerrarlo se va hasta la
 siguiente. La lista está en `NOVEDADES`, en `logica.js`.
 
+El tema sigue al sistema, pero se puede fijar en claro o en oscuro con el clic
+derecho en el icono, en **Tema**. Vale para el popup, el panel lateral y las
+demás páginas de la extensión; la tarjeta que sale en las webs sigue al sistema.
+
 ¿El atajo no funciona? Chrome no lo asigna si ya lo está usando otra extensión.
 Se cambia en `chrome://extensions/shortcuts`.
 
@@ -694,6 +698,7 @@ manifest.json    configuración de la extensión (Manifest V3)
 popup.html       estructura del popup
 popup.css        estilos
 textos.js        todos los textos, en español y en inglés
+tema.js          el tema a mano: va en el <head> de cada página
 logica.js        las cuentas y los formatos, sin tocar la pantalla
 popup.js         lo que reacciona a los clics
 copia.*          la página de la copia de seguridad (las opciones)
