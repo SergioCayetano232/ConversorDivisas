@@ -75,6 +75,7 @@ popup.html       estructura del popup
 popup.css        estilos
 textos.js        todos los textos, en español y en inglés
 tema.js          el tema a mano: va en el <head> de cada página
+luz.js           la luz que sigue al ratón por las tarjetas de las páginas
 logica/          las cuentas y los formatos, sin tocar la pantalla, por temas
 logica.js        la puerta de los tests: junta los trozos de logica/
 popup.js         lo que reacciona a los clics
