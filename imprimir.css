@@ -140,7 +140,10 @@
     color: #000;
   }
 
+  html::before,
+  html::after,
   body::before,
+  body::after,
   .cabeza,
   .intro,
   .tarjeta__titulo,

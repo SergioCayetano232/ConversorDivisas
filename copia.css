@@ -197,6 +197,27 @@ body::before {
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='g'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23g)'/%3E%3C/svg%3E");
 }
 
+/* Una línea arriba que se va llenando según bajas. La mueve el propio scroll,
+   sin JS; en las páginas que caben enteras no hay scroll y se queda en nada. */
+body::after {
+  content: "";
+  position: fixed;
+  inset: 0 0 auto;
+  z-index: 2;
+  height: 2px;
+  pointer-events: none;
+  background: linear-gradient(90deg, var(--dorado-tenue), var(--dorado));
+  box-shadow: 0 0 10px var(--dorado-halo);
+  transform: scaleX(0);
+  transform-origin: left;
+  animation: progreso linear both;
+  animation-timeline: scroll(root);
+}
+
+@keyframes progreso {
+  to { transform: scaleX(1); }
+}
+
 .pagina {
   position: relative;
   z-index: 1;

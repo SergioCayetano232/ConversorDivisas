@@ -114,6 +114,7 @@
   html::before,
   html::after,
   body::before,
+  body::after,
   .cabeza::before,
   .cabeza__logo,
   .cabeza__app,
