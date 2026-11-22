@@ -125,6 +125,27 @@
 
 html {
   background: var(--fondo);
+  /* Sin esto la barra de scroll de la página salía clara también en oscuro. */
+  color-scheme: var(--esquema);
+  scrollbar-color: var(--dorado-tenue) transparent;
+}
+
+::selection {
+  background: var(--dorado-halo);
+}
+
+/* Que ni un título ni un párrafo dejen una palabra sola en el último renglón. */
+h1,
+h2,
+h3 {
+  text-wrap: balance;
+}
+
+/* El pie no va igualado como los títulos: se encogía y el escudo se le quedaba lejos. */
+p,
+li,
+.pie {
+  text-wrap: pretty;
 }
 
 /* Las manchas van en dos capas fijas que giran despacio cada una para un lado,
