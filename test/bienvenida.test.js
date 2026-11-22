@@ -50,3 +50,27 @@ test("tu divisa va en la copia y a tus otros ordenadores", () => {
   assert.equal("divisaCasa" in limpiarCopia({}), false);
   assert.deepEqual(limpiarSync({ divisaCasa: "JPY" }), { divisaCasa: "JPY" });
 });
+
+test("la demo convierte veinte de la otra divisa a la tuya", () => {
+  const { demoDeBienvenida, divisaDeEjemplo } = require("../logica.js");
+  const { ponerIdioma } = require("../textos.js");
+  ponerIdioma("es");
+  assert.equal(divisaDeEjemplo("EUR"), "USD");
+  assert.equal(divisaDeEjemplo("USD"), "EUR");
+  const demo = demoDeBienvenida("EUR", 0.9215);
+  assert.equal(demo.from, "USD");
+  assert.match(demo.precio, /20,00/);
+  assert.match(demo.precio, /\$/);
+  assert.match(demo.convertido, /18,43/);
+  assert.match(demo.convertido, /€/);
+  assert.equal(demoDeBienvenida("USD", 1.08).from, "EUR");
+});
+
+test("sin tasa buena no hay demo", () => {
+  const { demoDeBienvenida } = require("../logica.js");
+  assert.equal(demoDeBienvenida("EUR", undefined), null);
+  assert.equal(demoDeBienvenida("EUR", 0), null);
+  assert.equal(demoDeBienvenida("EUR", NaN), null);
+  assert.equal(demoDeBienvenida("EUR", Infinity), null);
+  assert.equal(demoDeBienvenida("XXX", 1.1), null);
+});

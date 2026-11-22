@@ -21,6 +21,7 @@
   --mancha-3: rgba(229, 83, 75, 0.08);
   --grano: 0.05;
   --luz: rgba(232, 183, 92, 0.2);
+  --seleccion: rgba(90, 169, 230, 0.4);
   --esquema: dark;
 
   --sombra: 0 12px 40px rgba(0, 0, 0, 0.55);
@@ -60,6 +61,7 @@
     --mancha-3: rgba(229, 83, 75, 0.1);
     --grano: 0.035;
     --luz: rgba(226, 164, 44, 0.22);
+    --seleccion: rgba(31, 111, 178, 0.25);
     --esquema: light;
 
     --sombra: 0 12px 40px rgba(60, 50, 30, 0.12);

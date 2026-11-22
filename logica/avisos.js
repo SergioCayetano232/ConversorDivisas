@@ -235,6 +235,18 @@ function parDeBienvenida(casa, par) {
   return { from: casa === "USD" || CERCA_DEL_EURO.includes(casa) ? "EUR" : "USD", to: casa };
 }
 
+// El ejemplo de la bienvenida: veinte de la divisa que más te vas a cruzar.
+const DEMO_CANTIDAD = 20;
+const divisaDeEjemplo = (casa) => (casa === "USD" ? "EUR" : "USD");
+
+// Lo que enseña la demo del atajo. Sin tasa no hay demo: antes nada que una
+// cifra inventada en un conversor.
+function demoDeBienvenida(casa, rate) {
+  if (!isValidCode(casa) || !(rate > 0) || !Number.isFinite(rate)) return null;
+  const from = divisaDeEjemplo(casa);
+  return { from, precio: textoConSimbolo(DEMO_CANTIDAD, from), convertido: textoConSimbolo(DEMO_CANTIDAD * rate, casa) };
+}
+
 // Lo nuevo de cada versión, la última arriba. Al sacar una, se añade aquí y se
 // sube el número del manifest; los textos van en textos.js.
 const NOVEDADES = [

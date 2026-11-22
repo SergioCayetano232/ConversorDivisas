@@ -105,6 +105,86 @@
   color: var(--tenue);
 }
 
+/* El atajo en pequeño: se selecciona un precio y le sale la pastilla al lado.
+   Lo de fuera de la animación es el final, que es lo que se ve si no hay movimiento. */
+.demo {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 10px;
+  padding: 10px 12px;
+  background: var(--losa);
+  border: 1px solid var(--borde);
+  border-radius: var(--radio-sm);
+  font-family: var(--mono);
+  font-size: 13px;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  overflow: hidden;
+}
+
+.demo[hidden] {
+  display: none;
+}
+
+/* Un renglón de texto cualquiera, para que el precio parezca estar en una web. */
+.demo__renglon {
+  flex: 0 1 72px;
+  min-width: 24px;
+  height: 7px;
+  border-radius: 4px;
+  background: var(--borde-fuerte);
+}
+
+.demo__precio {
+  padding: 1px 3px;
+  border-radius: 3px;
+  background: linear-gradient(var(--seleccion), var(--seleccion)) no-repeat left / 100% 100%;
+  animation: demo-seleccion 6s var(--suave) infinite;
+}
+
+.demo__pastilla {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-left: 4px;
+  padding: 3px 10px 3px 8px;
+  background: var(--dorado-fantasma);
+  border: 1px solid var(--dorado-tenue);
+  border-radius: 999px;
+  color: var(--dorado);
+  font-weight: 600;
+  box-shadow: 0 4px 14px var(--dorado-halo);
+  transform-origin: left center;
+  animation: demo-pastilla 6s var(--muelle) infinite;
+}
+
+.demo__punto {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: currentColor;
+}
+
+@keyframes demo-seleccion {
+  0%, 14% { background-size: 0% 100%; }
+  30%, 88% { background-size: 100% 100%; }
+  96%, 100% { background-size: 0% 100%; }
+}
+
+@keyframes demo-pastilla {
+  0%, 32% { opacity: 0; transform: translateX(-10px) scale(0.6); }
+  42%, 88% { opacity: 1; transform: none; }
+  96%, 100% { opacity: 0; transform: scale(0.9); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .demo__precio,
+  .demo__pastilla {
+    animation: none !important;
+  }
+}
+
 @media (max-width: 480px) {
   .tuyo__campos {
     grid-template-columns: 1fr;

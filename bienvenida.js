@@ -8,6 +8,9 @@ const el = {
   teclaAbrir: document.getElementById("tecla-abrir"),
   teclaSeleccion: document.getElementById("tecla-seleccion"),
   notaBarra: document.getElementById("nota-barra"),
+  demo: document.getElementById("demo"),
+  demoPrecio: document.getElementById("demo-precio"),
+  demoConvertido: document.getElementById("demo-convertido"),
   teclas: document.getElementById("teclas"),
 };
 
@@ -31,6 +34,7 @@ function pintarTextos() {
   );
   el.idioma.value = idiomaGuardado;
   pintarAtajos();
+  pintarDemo();
 }
 
 function pintarTecla(nodo, tecla) {
@@ -42,7 +46,41 @@ function pintarAtajos() {
   pintarTecla(el.teclaAbrir, teclas.abrir);
   pintarTecla(el.teclaSeleccion, teclas.seleccion);
   const casa = el.divisa.value;
-  el.notaBarra.textContent = tr("bienvenida.barraNota", { ejemplo: `cd 20 ${casa === "USD" ? "eur" : "usd"}` });
+  el.notaBarra.textContent = tr("bienvenida.barraNota", { ejemplo: `cd ${DEMO_CANTIDAD} ${divisaDeEjemplo(casa).toLowerCase()}` });
+}
+
+async function tasaDeLaDemo(from, to) {
+  const { rateCache } = await chrome.storage.local.get("rateCache");
+  const guardada = rateCache?.[`${from}${to}`];
+  if (isFresh(guardada)) return guardada.rate;
+  const respuesta = await fetch(urlTasa(from, to), { signal: AbortSignal.timeout(8000) });
+  if (!respuesta.ok) throw new Error(`HTTP ${respuesta.status}`);
+  return aFormatoV1(await respuesta.json()).rates?.[to];
+}
+
+// La tasa de verdad, para que el ejemplo no mienta. Si no llega, la demo no sale.
+let tasaDemo = null;
+
+function pintarDemo() {
+  const demo = tasaDemo?.casa === el.divisa.value ? demoDeBienvenida(tasaDemo.casa, tasaDemo.rate) : null;
+  el.demo.hidden = !demo;
+  if (!demo) return;
+  el.demoPrecio.textContent = demo.precio;
+  el.demoConvertido.textContent = demo.convertido;
+}
+
+async function cargarDemo() {
+  const casa = el.divisa.value;
+  pintarDemo();
+  try {
+    const rate = await tasaDeLaDemo(divisaDeEjemplo(casa), casa);
+    // Si mientras tanto has elegido otra, esta ya no vale.
+    if (casa !== el.divisa.value) return;
+    tasaDemo = { casa, rate };
+  } catch (error) {
+    console.warn("No se pudo pedir la tasa de la demo", error);
+  }
+  pintarDemo();
 }
 
 function avisarGuardado() {
@@ -62,6 +100,7 @@ async function guardarDivisa() {
   }
   await chrome.storage.local.set(cambios);
   pintarAtajos();
+  cargarDemo();
   avisarGuardado();
 }
 
@@ -89,6 +128,7 @@ async function init() {
   if (!leerDivisaCasa(guardado.divisaCasa)) await chrome.storage.local.set({ divisaCasa: casa });
   teclas = atajosDeBienvenida(await chrome.commands.getAll());
   pintarTextos();
+  cargarDemo();
 
   el.divisa.addEventListener("change", guardarDivisa);
   el.idioma.addEventListener("change", guardarIdioma);
