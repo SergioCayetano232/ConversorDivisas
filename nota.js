@@ -27,8 +27,9 @@ function pintar(nota) {
   el.viaje.textContent = nota.nombre;
   el.periodo.textContent = nota.desde === nota.hasta ? fechaLarga(nota.desde)
     : tr("nota.periodo", { desde: fechaLarga(nota.desde), hasta: fechaLarga(nota.hasta) });
-  el.filas.replaceChildren(...nota.filas.map((f) => {
+  el.filas.replaceChildren(...nota.filas.map((f, i) => {
     const tr_ = document.createElement("tr");
+    tr_.style.setProperty("--i", i);
     tr_.append(
       celda(fechaCorta(f.dia)),
       celda(f.concepto),

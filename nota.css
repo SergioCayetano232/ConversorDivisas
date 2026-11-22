@@ -54,6 +54,56 @@
   font-weight: 700;
 }
 
+.nota__tabla tfoot tr:first-child td {
+  padding-top: 10px;
+  border-top: 1px solid var(--borde-fuerte);
+}
+
+/* Las filas entran una detrás de otra. A partir de la once van todas a la
+   vez: la página se imprime sola a los 700 ms y tienen que estar ya puestas. */
+.nota__tabla tbody tr {
+  animation: fila-entra var(--medio) var(--suave) backwards;
+  animation-delay: calc(min(var(--i, 0), 10) * 28ms + 120ms);
+}
+
+@keyframes fila-entra {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+}
+
+.nota__tabla tbody td {
+  transition: background-color var(--rapido) var(--suave);
+}
+
+.nota__tabla tbody tr:hover td {
+  background: var(--dorado-fantasma);
+}
+
+.nota__tabla tbody tr:hover td:first-child {
+  border-radius: 6px 0 0 6px;
+}
+
+.nota__tabla tbody tr:hover td:last-child {
+  border-radius: 0 6px 6px 0;
+}
+
+/* El total llega el último, con un latido, que es lo que se viene a mirar. */
+.nota__tabla tfoot .nota__cifra {
+  font-size: 14px;
+  color: var(--dorado);
+  transform-origin: right center;
+  animation: total-late var(--lento) var(--muelle) 600ms backwards;
+}
+
+@keyframes total-late {
+  from {
+    opacity: 0;
+    transform: scale(0.8);
+  }
+}
+
 @media print {
   html,
   body {
@@ -76,8 +126,18 @@
     padding: 0;
   }
 
-  .pagina > * {
+  .pagina > *,
+  .nota__tabla tr,
+  .nota__tabla tfoot .nota__cifra {
     animation: none !important;
+  }
+
+  .nota__tabla tfoot .nota__cifra {
+    color: #000;
+  }
+
+  .nota__tabla tbody tr:hover td {
+    background: none;
   }
 
   .tarjeta {
@@ -97,6 +157,10 @@
   .nota__tabla th,
   .nota__tabla td {
     border-bottom-color: #ccc;
+  }
+
+  .nota__tabla tfoot tr:first-child td {
+    border-top-color: #ccc;
   }
 }
 
