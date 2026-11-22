@@ -637,6 +637,28 @@ body::after {
   stroke-linejoin: round;
 }
 
+/* El check se traza como con un boli y el texto llega justo detrás. El 14 es
+   lo que mide el trazo (13,1): con más, se pasaba medio tiempo sin verse nada. */
+.hecho.is-nueva svg path {
+  stroke-dasharray: 14;
+  animation: check-traza 420ms var(--suave) 80ms backwards;
+}
+
+.hecho.is-nueva > :not(svg) {
+  animation: check-texto var(--medio) var(--suave) 260ms backwards;
+}
+
+@keyframes check-traza {
+  from { stroke-dashoffset: 14; }
+}
+
+@keyframes check-texto {
+  from {
+    opacity: 0;
+    transform: translateX(-4px);
+  }
+}
+
 /* Debajo de las cifras, que con una quinta casilla no cabrían en el móvil. */
 .copia__tiques {
   margin-top: -8px;
