@@ -59,6 +59,25 @@
   font-weight: 600;
   letter-spacing: 0.08em;
   white-space: nowrap;
+  transition: transform var(--rapido) var(--muelle), box-shadow var(--rapido) var(--suave);
+  animation: pulsar 420ms var(--suave) backwards;
+}
+
+/* Se pulsan solas una detrás de otra, cuando la tarjeta ya ha terminado de entrar. */
+.atajo:nth-child(1) .atajo__tecla { animation-delay: 900ms; }
+.atajo:nth-child(2) .atajo__tecla { animation-delay: 1120ms; }
+.atajo:nth-child(3) .atajo__tecla { animation-delay: 1340ms; }
+
+.atajo:hover .atajo__tecla {
+  transform: translateY(2px);
+  box-shadow: 0 0 0 4px var(--dorado-fantasma);
+}
+
+@keyframes pulsar {
+  45% {
+    transform: translateY(2px);
+    box-shadow: 0 0 0 5px var(--dorado-fantasma), 0 0 18px var(--dorado-halo);
+  }
 }
 
 .atajo__tecla.is-vacia {
@@ -67,6 +86,13 @@
   color: var(--tenue);
   font-family: inherit;
   font-weight: 500;
+  animation: none;
+}
+
+/* Sin tecla puesta no hay nada que pulsar. */
+.atajo:hover .atajo__tecla.is-vacia {
+  transform: none;
+  box-shadow: none;
 }
 
 .atajo__que {
