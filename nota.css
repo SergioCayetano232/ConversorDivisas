@@ -61,7 +61,10 @@
     color: #000;
   }
 
+  html::before,
+  html::after,
   body::before,
+  .cabeza::before,
   .cabeza__logo,
   .cabeza__app,
   .intro,

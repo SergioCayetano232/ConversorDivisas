@@ -22,6 +22,7 @@
   --grano: 0.05;
   --luz: rgba(232, 183, 92, 0.2);
   --seleccion: rgba(90, 169, 230, 0.4);
+  --brillo-moneda: rgba(255, 244, 214, 0.55);
   --esquema: dark;
 
   --sombra: 0 12px 40px rgba(0, 0, 0, 0.55);
@@ -159,14 +160,62 @@ body::before {
 }
 
 .cabeza {
+  position: relative;
   display: flex;
   align-items: center;
   gap: 14px;
 }
 
+/* Entra girando como una moneda que cae de canto, y con el ratón da otra vuelta. */
 .cabeza__logo {
   border-radius: 12px;
   box-shadow: 0 6px 20px var(--dorado-halo);
+  transition: transform 900ms var(--suave);
+  animation: moneda 1100ms var(--suave) backwards;
+}
+
+/* El ratón se mira en toda la cabecera: de canto la moneda no mide nada, y
+   mirándolo en ella se le escapaba y volvía a medio giro. */
+.cabeza:hover .cabeza__logo {
+  transform: perspective(400px) rotateY(360deg);
+}
+
+@keyframes moneda {
+  from {
+    opacity: 0;
+    transform: perspective(400px) rotateY(-540deg) scale(0.5);
+  }
+  30% {
+    opacity: 1;
+  }
+}
+
+/* El brillo que la cruza cuando ya está quieta. Una imagen no tiene ::before,
+   así que va en la cabecera, encima del logo y recortado en redondo como él. */
+.cabeza::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 50%;
+  width: 44px;
+  height: 44px;
+  margin-top: -22px;
+  border-radius: 50%;
+  pointer-events: none;
+  background: linear-gradient(115deg, transparent 35%, var(--brillo-moneda) 50%, transparent 65%) no-repeat 0 0 / 300% 100%;
+  opacity: 0;
+  animation: moneda-brillo 800ms var(--suave) 1000ms;
+}
+
+@keyframes moneda-brillo {
+  from {
+    opacity: 1;
+    background-position: 100% 0;
+  }
+  to {
+    opacity: 1;
+    background-position: 0 0;
+  }
 }
 
 .cabeza__app {
