@@ -70,6 +70,51 @@
   }
 }
 
+/* Los colores que cambian con el tema, registrados para que se puedan animar:
+   al pasar de claro a oscuro se funden en vez de saltar, igual que en el popup.
+   Las manchas también, que van con ellos. */
+@property --fondo { syntax: "<color>"; inherits: true; initial-value: #0B0E13; }
+@property --texto { syntax: "<color>"; inherits: true; initial-value: #E6EDF3; }
+@property --tenue { syntax: "<color>"; inherits: true; initial-value: #8B949E; }
+@property --dorado { syntax: "<color>"; inherits: true; initial-value: #E8B75C; }
+@property --jade { syntax: "<color>"; inherits: true; initial-value: #4EA96B; }
+@property --cinabrio { syntax: "<color>"; inherits: true; initial-value: #E5534B; }
+@property --cristal { syntax: "<color>"; inherits: true; initial-value: rgba(22, 27, 34, 0.55); }
+@property --losa { syntax: "<color>"; inherits: true; initial-value: rgba(255, 255, 255, 0.04); }
+@property --borde { syntax: "<color>"; inherits: true; initial-value: rgba(255, 255, 255, 0.08); }
+@property --borde-fuerte { syntax: "<color>"; inherits: true; initial-value: rgba(255, 255, 255, 0.14); }
+@property --brillo { syntax: "<color>"; inherits: true; initial-value: rgba(255, 255, 255, 0.14); }
+@property --dorado-fantasma { syntax: "<color>"; inherits: true; initial-value: rgba(232, 183, 92, 0.12); }
+@property --dorado-tenue { syntax: "<color>"; inherits: true; initial-value: rgba(232, 183, 92, 0.45); }
+@property --dorado-halo { syntax: "<color>"; inherits: true; initial-value: rgba(232, 183, 92, 0.3); }
+@property --mancha-1 { syntax: "<color>"; inherits: true; initial-value: rgba(232, 183, 92, 0.16); }
+@property --mancha-2 { syntax: "<color>"; inherits: true; initial-value: rgba(78, 169, 107, 0.12); }
+@property --mancha-3 { syntax: "<color>"; inherits: true; initial-value: rgba(229, 83, 75, 0.08); }
+@property --luz { syntax: "<color>"; inherits: true; initial-value: rgba(232, 183, 92, 0.2); }
+@property --seleccion { syntax: "<color>"; inherits: true; initial-value: rgba(90, 169, 230, 0.4); }
+
+:root {
+  transition: --fondo 600ms var(--suave),
+    --texto 600ms var(--suave),
+    --tenue 600ms var(--suave),
+    --dorado 600ms var(--suave),
+    --jade 600ms var(--suave),
+    --cinabrio 600ms var(--suave),
+    --cristal 600ms var(--suave),
+    --losa 600ms var(--suave),
+    --borde 600ms var(--suave),
+    --borde-fuerte 600ms var(--suave),
+    --brillo 600ms var(--suave),
+    --dorado-fantasma 600ms var(--suave),
+    --dorado-tenue 600ms var(--suave),
+    --dorado-halo 600ms var(--suave),
+    --mancha-1 600ms var(--suave),
+    --mancha-2 600ms var(--suave),
+    --mancha-3 600ms var(--suave),
+    --luz 600ms var(--suave),
+    --seleccion 600ms var(--suave);
+}
+
 *,
 *::before,
 *::after {
