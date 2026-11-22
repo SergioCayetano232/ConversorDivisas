@@ -130,6 +130,21 @@ html {
   scrollbar-color: var(--dorado-tenue) transparent;
 }
 
+/* El foco del teclado, el mismo en todo: un anillo dorado que llega de fuera y
+   se cierra sobre lo que toca. Con el ratón no sale. */
+:focus-visible {
+  outline: 2px solid var(--dorado);
+  outline-offset: 2px;
+  animation: foco var(--medio) var(--suave);
+}
+
+@keyframes foco {
+  from {
+    outline-offset: 9px;
+    outline-color: transparent;
+  }
+}
+
 ::selection {
   background: var(--dorado-halo);
 }
@@ -452,11 +467,6 @@ body::after {
   transform: scale(0.96);
 }
 
-.boton:focus-visible {
-  outline: 2px solid var(--dorado);
-  outline-offset: 2px;
-}
-
 .boton svg {
   width: 16px;
   height: 16px;
@@ -511,9 +521,11 @@ body::after {
   border-color: var(--dorado-tenue);
 }
 
+/* El campo de verdad mide un píxel y no se ve: el anillo lo lleva la caja. */
 .soltar:focus-within {
   outline: 2px solid var(--dorado);
   outline-offset: 2px;
+  animation: foco var(--medio) var(--suave);
 }
 
 .soltar.is-encima {
