@@ -3,6 +3,7 @@
 
 const el = {
   divisa: document.getElementById("divisa"),
+  bandera: document.getElementById("bandera"),
   idioma: document.getElementById("idioma"),
   guardado: document.getElementById("guardado"),
   teclaAbrir: document.getElementById("tecla-abrir"),
@@ -83,6 +84,16 @@ async function cargarDemo() {
   pintarDemo();
 }
 
+// Solo salta cuando cambia: al cambiar el idioma se repinta todo y no toca.
+function pintarBandera() {
+  const bandera = banderaDivisa(el.divisa.value);
+  if (el.bandera.textContent === bandera) return;
+  el.bandera.textContent = bandera;
+  el.bandera.classList.remove("is-nueva");
+  void el.bandera.offsetWidth;
+  el.bandera.classList.add("is-nueva");
+}
+
 function avisarGuardado() {
   el.guardado.hidden = false;
   el.guardado.classList.remove("is-nueva");
@@ -100,6 +111,7 @@ async function guardarDivisa() {
   }
   await chrome.storage.local.set(cambios);
   pintarAtajos();
+  pintarBandera();
   cargarDemo();
   avisarGuardado();
 }
@@ -128,6 +140,7 @@ async function init() {
   if (!leerDivisaCasa(guardado.divisaCasa)) await chrome.storage.local.set({ divisaCasa: casa });
   teclas = atajosDeBienvenida(await chrome.commands.getAll());
   pintarTextos();
+  pintarBandera();
   cargarDemo();
 
   el.divisa.addEventListener("change", guardarDivisa);
