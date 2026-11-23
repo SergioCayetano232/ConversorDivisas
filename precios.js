@@ -84,6 +84,64 @@
 
     .casi { opacity: 0.6; font-weight: 500; }
 
+    /* El globo va en la capa de arriba (popover): dentro de la tienda, cualquier
+       caja con overflow: hidden lo cortaba. Lo coloca el JS. */
+    .globo {
+      --fondo: rgba(11, 14, 19, 0.9);
+      --texto: #E6EDF3;
+      --tenue: #8B949E;
+      --dorado: #E8B75C;
+      --borde: rgba(232, 183, 92, 0.35);
+      --sheen: rgba(255, 255, 255, 0.12);
+
+      position: fixed;
+      inset: auto;
+      margin: 0;
+      padding: 7px 10px 8px;
+      display: none;
+      gap: 6px;
+      font: 500 12px/1.35 ui-monospace, "SF Mono", "JetBrains Mono", "Cascadia Code", Menlo, monospace;
+      font-variant-numeric: tabular-nums;
+      white-space: nowrap;
+      color: var(--texto);
+      background: var(--fondo);
+      backdrop-filter: blur(16px) saturate(180%);
+      -webkit-backdrop-filter: blur(16px) saturate(180%);
+      border: 1px solid var(--borde);
+      border-radius: 12px;
+      box-shadow: inset 0 1px 0 var(--sheen), 0 10px 30px rgba(0, 0, 0, 0.35);
+      pointer-events: none;
+      transform-origin: 50% 100%;
+    }
+
+    .globo.is-abajo { transform-origin: 50% 0; }
+
+    .globo:popover-open {
+      display: grid;
+      animation: globo-entra 260ms cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+
+    @media (prefers-color-scheme: light) {
+      .globo {
+        --fondo: rgba(255, 252, 245, 0.94);
+        --texto: #1A1D23;
+        --tenue: #6B7280;
+        --dorado: #8A5F10;
+        --borde: rgba(154, 107, 20, 0.3);
+        --sheen: rgba(255, 255, 255, 0.9);
+        box-shadow: inset 0 1px 0 var(--sheen), 0 10px 30px rgba(60, 50, 30, 0.18);
+      }
+    }
+
+    .globo__de { color: var(--tenue); }
+    .globo__flecha { margin: 0 0.4em; color: var(--dorado); opacity: 0.7; }
+    .globo__a { font-weight: 700; color: var(--dorado); }
+    .globo__tasa { display: block; margin-top: 1px; font-size: 10px; color: var(--tenue); }
+
+    @keyframes globo-entra {
+      from { opacity: 0; transform: translateY(4px) scale(0.9); filter: blur(3px); }
+    }
+
     .pastilla.is-saliendo { animation: salir 200ms ease-in forwards; }
 
     @keyframes entrar {
@@ -385,6 +443,53 @@
     return { total: hallados.length, divisas: [...divisas] };
   }
 
+  function crearGlobo(convertidos, formato, formatoTasa) {
+    const globo = document.createElement("div");
+    globo.className = "globo";
+    globo.id = "globo";
+    globo.popover = "manual";
+    globo.setAttribute("role", "tooltip");
+    for (const p of convertidos) {
+      const linea = document.createElement("div");
+      const de = document.createElement("span");
+      de.className = "globo__de";
+      de.textContent = `${formato.format(p.cantidad)} ${p.divisa}`;
+      const flecha = document.createElement("span");
+      flecha.className = "globo__flecha";
+      flecha.textContent = "→";
+      const a = document.createElement("span");
+      a.className = "globo__a";
+      a.textContent = `${formato.format(p.cantidad * p.rate)} ${p.to}`;
+      const tasa = document.createElement("span");
+      tasa.className = "globo__tasa";
+      tasa.textContent = `1 ${p.divisa} = ${formatoTasa.format(p.rate)} ${p.to}`;
+      linea.append(de, flecha, a, tasa);
+      globo.append(linea);
+    }
+    return globo;
+  }
+
+  // Encima de la pastilla y centrado; si no cabe arriba, debajo. Sin salirse
+  // por los lados.
+  let globoAbierto = null;
+  // Va fijo en la pantalla: con el scroll se quedaría flotando lejos de su precio.
+  addEventListener("scroll", () => globoAbierto?.hidePopover(), { passive: true, capture: true });
+
+  function abrirGlobo(pastilla, globo) {
+    globoAbierto = globo;
+    globo.showPopover();
+    const r = pastilla.getBoundingClientRect();
+    // offsetWidth y no getBoundingClientRect: recién abierto entra encogido y
+    // con eso medía de menos y se salía por la derecha.
+    const width = globo.offsetWidth;
+    const height = globo.offsetHeight;
+    const abajo = r.top - height - 8 < 4;
+    const left = Math.min(Math.max(r.left + r.width / 2 - width / 2, 6), document.documentElement.clientWidth - width - 6);
+    globo.classList.toggle("is-abajo", abajo);
+    globo.style.left = `${left}px`;
+    globo.style.top = `${abajo ? r.bottom + 8 : r.top - height - 8}px`;
+  }
+
   function ponerPastillas(lista, { tasas, locale }) {
     // Siempre con los miles: en español Intl deja "1467,61" sin punto.
     const formato = new Intl.NumberFormat(locale, { minimumFractionDigits: 2, maximumFractionDigits: 2, useGrouping: "always" });
@@ -422,12 +527,13 @@
       // pastilla se quedaría con su ancho.
       cruz.addEventListener("animationend", () => cara.remove(), { once: true });
       pastilla.append(cara, cruz);
-      pastilla.title = convertidos
-        .map((p) => `${formato.format(p.cantidad)} ${p.divisa} → ${formato.format(p.cantidad * p.rate)} ${p.to}  (1 ${p.divisa} = ${formatoTasa.format(p.rate)} ${p.to})`)
-        .join("\n");
+      const globo = crearGlobo(convertidos, formato, formatoTasa);
+      pastilla.setAttribute("aria-describedby", "globo");
+      pastilla.addEventListener("pointerenter", () => abrirGlobo(pastilla, globo));
+      pastilla.addEventListener("pointerleave", () => globo.hidePopover());
       const estilo = document.createElement("style");
       estilo.textContent = CSS_PASTILLA;
-      raiz.append(estilo, pastilla);
+      raiz.append(estilo, pastilla, globo);
       despues.after(host);
       pastillas.push(host);
       hechos.add(despues);
