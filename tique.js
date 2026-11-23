@@ -7,6 +7,7 @@ const el = {
   archivo: document.getElementById("archivo"),
   error: document.getElementById("error"),
   foto: document.getElementById("foto"),
+  impresora: document.getElementById("impresora"),
   hecho: document.getElementById("hecho"),
 };
 
@@ -46,7 +47,11 @@ async function guardar(archivo) {
     await fotos.guardar(id, blob);
     if (el.foto.src) URL.revokeObjectURL(el.foto.src);
     el.foto.src = URL.createObjectURL(blob);
-    el.foto.hidden = false;
+    // Cada foto nueva vuelve a salir por la ranura, también si cambias la que había.
+    el.impresora.classList.remove("is-imprimiendo");
+    el.impresora.hidden = false;
+    void el.impresora.offsetWidth;
+    el.impresora.classList.add("is-imprimiendo");
     el.hecho.hidden = false;
   } catch (error) {
     console.warn("No se pudo guardar el tique", error);
@@ -67,7 +72,7 @@ async function init() {
   const yaHabia = await fotos.leer(id).catch(() => null);
   if (yaHabia) {
     el.foto.src = URL.createObjectURL(yaHabia);
-    el.foto.hidden = false;
+    el.impresora.hidden = false;
   }
   el.archivo.addEventListener("change", () => guardar(el.archivo.files[0]));
   el.soltar.addEventListener("dragover", (event) => {

@@ -1,9 +1,65 @@
+/* La foto sale por una ranura, como el tique de una caja registradora. La que
+   ya estaba guardada aparece sin más: esa no la acabas de imprimir. */
+.impresora {
+  width: fit-content;
+  max-width: 100%;
+  margin: 0 auto;
+  animation: aparecer var(--medio) var(--muelle);
+}
+
+.impresora[hidden] {
+  display: none;
+}
+
+.impresora__ranura {
+  position: relative;
+  z-index: 1;
+  display: block;
+  height: 10px;
+  margin: 0 -14px;
+  border-radius: 999px;
+  background: linear-gradient(var(--fondo), color-mix(in srgb, var(--fondo) 70%, #000));
+  border: 1px solid var(--borde-fuerte);
+  box-shadow: inset 0 3px 6px rgba(0, 0, 0, 0.55), 0 1px 0 var(--brillo);
+}
+
+/* El papel sale de dentro de la ranura: lo de encima de ella no se ve. */
+.impresora__papel {
+  margin-top: -5px;
+  overflow: hidden;
+  padding: 0 0 18px;
+}
+
 .tique-foto {
   display: block;
   max-width: 100%;
   max-height: 60vh;
   margin: 0 auto;
-  border-radius: var(--radio-sm);
+  border-radius: 0;
   box-shadow: var(--sombra-boton);
-  animation: aparecer var(--medio) var(--muelle);
+  /* El borde de abajo dentado, como el papel arrancado. */
+  --diente: 7px;
+  mask:
+    conic-gradient(from -45deg at bottom, #0000, #000 1deg 89deg, #0000 90deg) bottom / calc(var(--diente) * 2) var(--diente) repeat-x,
+    linear-gradient(#000 0 0) top / 100% calc(100% - var(--diente) + 1px) no-repeat;
+}
+
+/* A tirones, como el rodillo de la impresora. */
+.is-imprimiendo .tique-foto {
+  animation: imprimir 1.6s cubic-bezier(0.4, 0, 0.6, 1) both;
+}
+
+@keyframes imprimir {
+  0% { transform: translateY(-100%); }
+  22% { transform: translateY(-70%); }
+  30% { transform: translateY(-69%); }
+  52% { transform: translateY(-38%); }
+  60% { transform: translateY(-37%); }
+  84% { transform: translateY(-6%); }
+  92% { transform: translateY(1.5%); }
+  100% { transform: translateY(0); }
+}
+
+.is-imprimiendo ~ .hecho {
+  animation: aparecer var(--medio) var(--muelle) 1.5s backwards;
 }
