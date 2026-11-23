@@ -8936,6 +8936,57 @@ body::after {
   place-items: center;
   flex-shrink: 0;
   color: var(--brass-dim);
+  transition: color var(--fast) var(--ease);
+}
+
+/* Al pasar por un gasto su icono se enciende con el color de la categoría y
+   hace lo suyo: el tenedor pincha, el coche arranca, la cama se hunde... */
+.gastos__fila:hover .gastos__icono:not(.is-rey) {
+  color: var(--cat, var(--brass));
+}
+
+.gastos__fila:hover .gastos__icono > :is(svg, .cat__letra) {
+  animation: icono-salta 520ms var(--ease-spring);
+}
+
+.gastos__fila:hover .gastos__icono[data-categoria="comida"] > svg { animation-name: icono-pincha; }
+.gastos__fila:hover .gastos__icono[data-categoria="transporte"] > svg { animation-name: icono-arranca; }
+.gastos__fila:hover .gastos__icono[data-categoria="alojamiento"] > svg { animation-name: icono-duerme; }
+.gastos__fila:hover .gastos__icono[data-categoria="ocio"] > svg { animation-name: icono-entrada; }
+.gastos__fila:hover .gastos__icono[data-categoria="compras"] > svg { animation-name: icono-bolsa; }
+
+@keyframes icono-salta {
+  40% { transform: translateY(-3px) scale(1.12); }
+}
+
+@keyframes icono-pincha {
+  30% { transform: translateY(-2px) rotate(-14deg); }
+  60% { transform: translateY(1px) rotate(4deg); }
+}
+
+@keyframes icono-arranca {
+  25% { transform: translateX(-1px) rotate(-4deg); }
+  60% { transform: translateX(3px); }
+}
+
+@keyframes icono-duerme {
+  40% { transform: scale(1.12, 0.82) translateY(1.5px); }
+  70% { transform: scale(0.96, 1.06); }
+}
+
+@keyframes icono-entrada {
+  35% { transform: rotate(-12deg) scale(1.1); }
+  65% { transform: rotate(6deg); }
+}
+
+@keyframes icono-bolsa {
+  30% { transform: rotate(14deg); }
+  60% { transform: rotate(-8deg); }
+  80% { transform: rotate(3deg); }
+}
+
+.gastos__fila:hover .gastos__icono[data-categoria="compras"] > svg {
+  transform-origin: 50% 20%;
 }
 
 /* El desglose: cada pastilla se rellena por detrás en proporción a lo que
@@ -9216,11 +9267,11 @@ body::after {
     transform var(--fast) var(--ease-spring);
 }
 
-.desglose__trozo[data-categoria="comida"] { --cat: var(--viaje-coral); }
-.desglose__trozo[data-categoria="transporte"] { --cat: var(--viaje-azul); }
-.desglose__trozo[data-categoria="alojamiento"] { --cat: var(--viaje-lila); }
-.desglose__trozo[data-categoria="ocio"] { --cat: var(--viaje-rosa); }
-.desglose__trozo[data-categoria="compras"] { --cat: var(--viaje-jade); }
+:is(.desglose__trozo, .gastos__icono)[data-categoria="comida"] { --cat: var(--viaje-coral); }
+:is(.desglose__trozo, .gastos__icono)[data-categoria="transporte"] { --cat: var(--viaje-azul); }
+:is(.desglose__trozo, .gastos__icono)[data-categoria="alojamiento"] { --cat: var(--viaje-lila); }
+:is(.desglose__trozo, .gastos__icono)[data-categoria="ocio"] { --cat: var(--viaje-rosa); }
+:is(.desglose__trozo, .gastos__icono)[data-categoria="compras"] { --cat: var(--viaje-jade); }
 
 .desglose__trozo svg {
   color: var(--cat);
