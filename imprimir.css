@@ -128,6 +128,61 @@
   }
 }
 
+/* Al pasar el ratón se dobla como quedará en la cartera: la cara de la derecha
+   gira por el doblez y se va detrás. Solo con las dos en fila y con ratón. */
+@media screen and (hover: hover) and (min-width: 721px) {
+  .cartera {
+    perspective: 1400px;
+    transition: border-color var(--medio) var(--suave);
+  }
+
+  .cara:last-child {
+    position: relative;
+    transform-origin: left center;
+    backface-visibility: hidden;
+    /* Sin muelle: frena por los dos lados para que se vea doblar. Con el
+       muelle se pasaba de 90 grados de golpe y desaparecía sin verse. */
+    transition: transform 1000ms cubic-bezier(0.65, 0, 0.35, 1);
+  }
+
+  /* La sombra del doblez: se oscurece al girar, como el papel que deja de
+     darle la luz. */
+  .cara:last-child::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    background: linear-gradient(90deg, rgba(0, 0, 0, 0.35), transparent 70%);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 500ms cubic-bezier(0.65, 0, 0.35, 1);
+  }
+
+  .cara:first-child {
+    transition: transform 900ms var(--muelle), box-shadow 600ms var(--suave), border-radius 300ms var(--suave);
+  }
+
+  .cartera:hover {
+    border-color: transparent;
+  }
+
+  .cartera:hover .cara:last-child {
+    transform: rotateY(180deg);
+  }
+
+  .cartera:hover .cara:last-child::after {
+    opacity: 1;
+  }
+
+  /* Ya doblada es una tarjeta suelta: con sus cuatro esquinas y algo de peso. */
+  .cartera:hover .cara:first-child {
+    border-radius: 4mm;
+    transform: translateY(-3px) rotate(-1.5deg);
+    box-shadow: inset 0 1px 0 var(--brillo), 0 18px 40px rgba(0, 0, 0, 0.28);
+    transition-delay: 450ms;
+  }
+}
+
 /* En papel solo la tarjeta, en tinta negra y a tamaño real. */
 @page {
   margin: 15mm;
