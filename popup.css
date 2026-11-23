@@ -2950,6 +2950,75 @@ body::after {
   color: var(--muted);
 }
 
+/* Encima del texto de las listas vacías, un dibujo del trazo de los iconos que
+   se pinta solo. Va fuera del <p> porque el texto se cambia con textContent. */
+.vacio {
+  display: block;
+  width: 44px;
+  height: 44px;
+  margin: var(--s-4) auto calc(-1 * var(--s-1));
+  overflow: visible;
+  fill: none;
+  stroke: var(--brass-dim);
+  stroke-width: 1.6;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+/* Sin buscar no hay nada; buscando, solo es que no ha salido nada. */
+.vacio:has(+ [hidden]),
+.vacio:has(+ .is-busqueda) {
+  display: none;
+}
+
+.vacio__trazo {
+  stroke-dasharray: 1;
+  stroke-dashoffset: 1;
+  animation: vacio-traza 900ms var(--ease-out) forwards;
+  animation-delay: calc(120ms + var(--i, 0) * 520ms);
+}
+
+@keyframes vacio-traza {
+  to { stroke-dashoffset: 0; }
+}
+
+/* El historial va hacia atrás: las agujas dan la vuelta al revés. */
+.vacio__aguja {
+  stroke: var(--brass);
+  transform-box: view-box;
+  transform-origin: 24px 24px;
+  animation: vacio-aguja 1.1s var(--ease-spring) 500ms backwards;
+}
+
+@keyframes vacio-aguja {
+  from {
+    opacity: 0;
+    transform: rotate(320deg);
+  }
+}
+
+.vacio__moneda {
+  fill: var(--brass);
+  stroke: none;
+  animation: vacio-moneda 900ms var(--ease-out) 1.1s both;
+}
+
+/* La moneda cae dentro y la cartera da un saltito al recibirla. */
+@keyframes vacio-moneda {
+  0% { opacity: 0; transform: translateY(-12px); }
+  30% { opacity: 1; }
+  70% { opacity: 1; transform: translateY(8px); }
+  100% { opacity: 0; transform: translateY(12px); }
+}
+
+.vacio--cartera {
+  animation: vacio-recibe 420ms var(--ease-spring) 1.75s;
+}
+
+@keyframes vacio-recibe {
+  40% { transform: translateY(2px) scale(1.06, 0.94); }
+}
+
 /* Cuelga de .app y no de .result, que recorta lo que se sale: va desde arriba
    de la caja del resultado hasta el pie, y así caben unas cuantas filas más.
    Más tapado que el historial, que detrás se transparentaba la cifra grande. */
@@ -12882,6 +12951,10 @@ kbd {
      invisibles un rato. */
   .reciente.is-nueva,
   .extra.is-nueva,
+  .vacio,
+  .vacio__trazo,
+  .vacio__aguja,
+  .vacio__moneda,
   .trend__hoy,
   .trend__hoy::after,
   .chuleta__fila.is-nueva,
