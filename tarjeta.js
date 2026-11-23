@@ -605,6 +605,49 @@
     }
   `;
 
+  // La raya va en su propio shadow DOM, fuera de la tarjeta: tiene que quedarse
+  // pegada al texto aunque la tarjeta se coloque encima o a un lado.
+  const CSS_RAYA = `
+    :host { all: initial; }
+
+    .raya {
+      position: absolute;
+      height: 2px;
+      border-radius: 2px;
+      background: #E8B75C;
+      box-shadow: 0 0 6px rgba(232, 183, 92, 0.7);
+      transform-origin: left;
+      animation: trazar 460ms cubic-bezier(0.16, 1, 0.3, 1) both;
+      animation-delay: calc(140ms + var(--i, 0) * 90ms);
+    }
+
+    @media (prefers-color-scheme: light) {
+      .raya {
+        background: #9A6B14;
+        box-shadow: 0 0 5px rgba(154, 107, 20, 0.45);
+      }
+    }
+
+    .is-quieta .raya { animation: none; }
+
+    .is-saliendo .raya {
+      transform-origin: right;
+      animation: borrar 180ms ease-in forwards;
+    }
+
+    @keyframes trazar {
+      from { transform: scaleX(0); }
+    }
+
+    @keyframes borrar {
+      to { transform: scaleX(0); }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .raya { animation: none !important; }
+    }
+  `;
+
   const HTML = `
     <style>${CSS}</style>
     <div class="tarjeta is-cargando" role="dialog" aria-label="Conversión de divisa">
@@ -657,6 +700,8 @@
   let datos = null;
   let cuenta = 0;
   let avisoCopiado = null;
+  let subrayado = null;
+  let rango = null;
 
   const $ = (sel) => raiz.querySelector(sel);
 
@@ -695,6 +740,62 @@
     document.addEventListener("keydown", tecla, true);
     // Si estrechas la ventana con la tarjeta abierta, se quedaba cortada.
     addEventListener("resize", colocar);
+    addEventListener("resize", recolocarRayas);
+  }
+
+  // Al estrechar la ventana el texto cambia de sitio, y la raya con él; sin
+  // volver a trazarla, que no es una conversión nueva.
+  function recolocarRayas() {
+    pintarRayas(false);
+  }
+
+  // Una raya dorada debajo de lo que has convertido, que se traza al abrir la
+  // tarjeta: así se sabe de qué precio habla aunque luego se pierda la selección.
+  function subrayar() {
+    quitarSubrayado();
+    const sel = getSelection();
+    rango = sel && sel.rangeCount && !sel.isCollapsed ? sel.getRangeAt(0).cloneRange() : null;
+    pintarRayas(true);
+  }
+
+  function pintarRayas(animar) {
+    subrayado?.remove();
+    subrayado = null;
+    if (!rango) return;
+    // getClientRects da un trozo por cada nodo de texto: "£" en un <span> y
+    // "12.99" en otro salían como dos rayas. Las junto por renglón.
+    const renglones = new Map();
+    for (const r of rango.getClientRects()) {
+      if (r.width < 2) continue;
+      const clave = Math.round(r.bottom);
+      const hay = renglones.get(clave);
+      renglones.set(clave, hay
+        ? { left: Math.min(hay.left, r.left), right: Math.max(hay.right, r.right), bottom: clave }
+        : { left: r.left, right: r.right, bottom: clave });
+    }
+    if (renglones.size === 0) return;
+
+    subrayado = document.createElement("conversor-subrayado");
+    subrayado.style.cssText = "all: initial; position: absolute; top: 0; left: 0; z-index: 2147483646; pointer-events: none;";
+    const sombra = subrayado.attachShadow({ mode: "open" });
+    const capa = document.createElement("div");
+    capa.classList.toggle("is-quieta", !animar);
+    [...renglones.values()].slice(0, 6).forEach((r, i) => {
+      const raya = document.createElement("span");
+      raya.className = "raya";
+      raya.style.cssText = `left: ${r.left + scrollX}px; top: ${r.bottom + scrollY + 1}px; width: ${r.right - r.left}px; --i: ${i};`;
+      capa.append(raya);
+    });
+    const estilo = document.createElement("style");
+    estilo.textContent = CSS_RAYA;
+    sombra.append(estilo, capa);
+    document.documentElement.appendChild(subrayado);
+  }
+
+  function quitarSubrayado() {
+    subrayado?.remove();
+    subrayado = null;
+    rango = null;
   }
 
   // Dónde está lo seleccionado, en coordenadas de la página para que la tarjeta
@@ -799,6 +900,7 @@
 
     if (d.estado === "cargando") {
       ancla = medirSeleccion();
+      subrayar();
       // Si ya había una abierta, que vuelva a entrar en su sitio nuevo.
       tarjeta.style.animation = "none";
       void tarjeta.offsetWidth;
@@ -854,7 +956,10 @@
 
     // Con el atajo y nada seleccionado llega sin pasar por "cargando", y sin
     // esto se quedaba en la esquina de la página.
-    if (!ancla) ancla = medirSeleccion();
+    if (!ancla) {
+      ancla = medirSeleccion();
+      subrayar();
+    }
     colocar();
     if (d.estado === "ok" || d.estado === "medida") $(".copiar").focus({ preventScroll: true });
   }
@@ -973,14 +1078,17 @@
     document.removeEventListener("mousedown", fuera, true);
     document.removeEventListener("keydown", tecla, true);
     removeEventListener("resize", colocar);
+    removeEventListener("resize", recolocarRayas);
     const quitar = () => {
       host?.remove();
       host = null;
       raiz = null;
       ancla = null;
+      quitarSubrayado();
     };
     if (sinMovimiento.matches) return quitar();
     tarjeta.classList.add("is-saliendo");
+    subrayado?.shadowRoot.querySelector("div").classList.add("is-saliendo");
     tarjeta.addEventListener("animationend", quitar, { once: true });
   }
 
