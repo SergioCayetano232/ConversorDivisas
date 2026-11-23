@@ -12127,6 +12127,13 @@ body::after {
   to { stroke-dashoffset: 0; }
 }
 
+/* Sin el guion mientras se transforma: lleva el largo de la curva vieja y a la
+   nueva, si es más larga, le cortaría el final. */
+.trend__line.is-transformando {
+  stroke-dasharray: none;
+  animation: none;
+}
+
 .trend__area {
   fill: url(#trend-fill);
   stroke: none;

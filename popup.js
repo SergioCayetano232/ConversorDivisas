@@ -1252,6 +1252,7 @@ function restartAnimation(node, className) {
 
 function hideTrend() {
   dejarDeMirar();
+  pararTransformar();
   serie = [];
   coords = [];
   hayGrafico = false;
@@ -1409,6 +1410,11 @@ function renderTrend(puntos) {
   }
 
   dejarDeMirar();
+  pararTransformar();
+  // Mismo par y otro periodo: la curva se transforma en la nueva en vez de
+  // borrarse y dibujarse otra vez desde la izquierda.
+  const vieja = coords.length > 1 && !el.trend.hidden && !sinMovimiento.matches
+    && parDeLaSerie === `${el.from.value}-${el.to.value}` ? coords : null;
   serie = puntos;
   const values = puntos.map((p) => p.valor);
   coords = coordenadas(values);
@@ -1434,7 +1440,41 @@ function renderTrend(puntos) {
   pintarAbanico(puntos);
   pintarCambioDia(true);
   mirarUltimaVez();
-  if (!el.trend.hidden) dibujarLinea();
+  if (el.trend.hidden) return;
+  if (vieja) transformarCurva(vieja, coords, { line, area });
+  dibujarLinea(Boolean(vieja));
+}
+
+let transformando = null;
+
+function pararTransformar() {
+  if (!transformando) return;
+  cancelAnimationFrame(transformando.raf);
+  el.trendLine.setAttribute("d", transformando.final.line);
+  el.trendArea.setAttribute("d", transformando.final.area);
+  transformando = null;
+}
+
+function transformarCurva(desde, hasta, final) {
+  const a = remuestrear(desde);
+  const b = remuestrear(hasta);
+  const yo = { final };
+  transformando = yo;
+  const pintar = ({ line, area }) => {
+    el.trendLine.setAttribute("d", line);
+    el.trendArea.setAttribute("d", area);
+  };
+  el.trendLine.classList.add("is-transformando");
+  pintar(curvaEnMedio(a, b, 0));
+  const paso = (ahora) => {
+    if (transformando !== yo) return;
+    yo.empieza ??= ahora;
+    const t = (ahora - yo.empieza) / 650;
+    if (t >= 1) return pararTransformar();
+    pintar(curvaEnMedio(a, b, t));
+    yo.raf = requestAnimationFrame(paso);
+  };
+  yo.raf = requestAnimationFrame(paso);
 }
 
 // El veredicto de arriba sale del mismo periodo que el gráfico: si cambias a
@@ -1595,10 +1635,14 @@ function onDecir() {
 // Se mide ya visible: con el gráfico oculto el SVG tiene ancho cero. El +1 es
 // para que el redondeo no deje una rendija al final. Por eso también se llama
 // al volver a la pestaña del gráfico, y de paso la línea se vuelve a dibujar.
-function dibujarLinea() {
-  const { width, height } = el.trendLine.ownerSVGElement.getBoundingClientRect();
-  el.trendLine.style.setProperty("--len", Math.ceil(largoEnPantalla(coords, width, height)) + 1);
-  restartAnimation(el.trendLine);
+function dibujarLinea(seTransforma = false) {
+  if (!seTransforma) {
+    pararTransformar();
+    el.trendLine.classList.remove("is-transformando");
+    const { width, height } = el.trendLine.ownerSVGElement.getBoundingClientRect();
+    el.trendLine.style.setProperty("--len", Math.ceil(largoEnPantalla(coords, width, height)) + 1);
+    restartAnimation(el.trendLine);
+  }
   colocar(el.trendHoy, coords[coords.length - 1]);
   restartAnimation(el.trendHoy);
   pintarExtremos(serie.map((p) => p.valor));

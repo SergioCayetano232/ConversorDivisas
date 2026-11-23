@@ -32,7 +32,7 @@ module.exports = {
   tasaLegible, DIVISAS_BCE, DIVISAS_MERCADO, esDeMercado, parDeMercado, urlTasa, urlTasaDia, urlSerie, urlsTodas, aFormatoV1, juntarTasas, pedirTodas,
   CURRENCIES, isValidCode, nombreDe, parseAmount, isoLocal, hoy, isFresh,
   evaluar, completar, leerImporte, UNIDADES, quitarUnidad, nombreUnidad, porUnidadMetrica, esOperacion, pasoCantidad, pasoPorDiez, RUEDA_PASO, pasosRueda, cifraCompleta, leerCantidad,
-  normalizar, filtrarDivisas, buildPaths, startDateFor, errorMessageFor,
+  normalizar, filtrarDivisas, buildPaths, PUNTOS_TRANSFORMAR, remuestrear, curvaEnMedio, startDateFor, errorMessageFor,
   RECIENTES_MAX, FIJOS_MAX, apuntarReciente, fijarReciente, leerRecientes, recientesVisibles,
   RANGOS, RANGO_POR_DEFECTO, leerRango, siguienteRango, coordenadas, alturaEn, MOMENTO_UMBRAL, momento, textoMomento,
   SEMANAS_MINIMAS, mejorDiaSemana, ABANICO_MINIMO, abanicoTasa, textoAbanico, nombreDiaSemana, textoDiaSemana, indiceCercano, extremos, fechaCorta, largoEnPantalla,

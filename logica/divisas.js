@@ -469,11 +469,38 @@ function coordenadas(values) {
 
 // La línea y el área sombreada que queda por debajo.
 function buildPaths(values) {
-  const points = coordenadas(values).map(({ x, y }) => `${x.toFixed(2)},${y.toFixed(2)}`);
+  return trazos(coordenadas(values));
+}
 
-  const line = `M${points.join("L")}`;
+function trazos(puntos) {
+  const line = `M${puntos.map(({ x, y }) => `${x.toFixed(2)},${y.toFixed(2)}`).join("L")}`;
   const area = `${line}L${(100 - PAD_X).toFixed(2)},28L${PAD_X.toFixed(2)},28Z`;
   return { line, area };
+}
+
+// Al cambiar de periodo una curva se convierte en la otra, y para mezclarlas
+// tienen que tener los mismos puntos: 7 días contra 365 no casan uno a uno.
+const PUNTOS_TRANSFORMAR = 120;
+
+function remuestrear(puntos, n = PUNTOS_TRANSFORMAR) {
+  const ultimo = puntos.length - 1;
+  return Array.from({ length: n }, (_, i) => {
+    const donde = (i / (n - 1)) * ultimo;
+    const a = Math.floor(donde);
+    const b = Math.min(a + 1, ultimo);
+    const t = donde - a;
+    return {
+      x: puntos[a].x + (puntos[b].x - puntos[a].x) * t,
+      y: puntos[a].y + (puntos[b].y - puntos[a].y) * t,
+    };
+  });
+}
+
+// A mitad de camino entre dos curvas ya remuestreadas. Frena al final, como
+// los números que corren.
+function curvaEnMedio(desde, hasta, t) {
+  const avance = 1 - (1 - Math.min(Math.max(t, 0), 1)) ** 3;
+  return trazos(desde.map((p, i) => ({ x: p.x + (hasta[i].x - p.x) * avance, y: p.y + (hasta[i].y - p.y) * avance })));
 }
 
 // Lo que mide la línea ya estirada en pantalla. Con non-scaling-stroke el guion
