@@ -1005,6 +1005,14 @@ function crearBuscador(lado) {
   let marcado = 0;
   let visibles = CURRENCIES;
 
+  const conMarcas = (trozos) => trozos.map(({ texto, marca }) => {
+    if (!marca) return texto;
+    const m = document.createElement("mark");
+    m.className = "buscador__marca";
+    m.textContent = texto;
+    return m;
+  });
+
   function pintar() {
     visibles = filtrarDivisas(filtro.value);
     if (marcado >= visibles.length) marcado = Math.max(visibles.length - 1, 0);
@@ -1030,10 +1038,10 @@ function crearBuscador(lado) {
 
       const cod = document.createElement("span");
       cod.className = "buscador__codigo";
-      cod.textContent = divisa.code;
+      cod.append(...conMarcas(trozosCoincidencia(divisa.code, filtro.value, true)));
       const nom = document.createElement("span");
       nom.className = "buscador__nombre";
-      nom.textContent = nombreDe(divisa.code);
+      nom.append(...conMarcas(trozosCoincidencia(nombreDe(divisa.code), filtro.value)));
 
       fila.append(crearBandera(divisa.code), cod, nom);
       fila.addEventListener("mousedown", (e) => {

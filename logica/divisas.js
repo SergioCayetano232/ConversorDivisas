@@ -426,6 +426,31 @@ function normalizar(texto) {
     .replace(/[\u0300-\u036f]/g, "");
 }
 
+// Para marcar en la lista lo que has escrito. Comparo igual que filtrarDivisas,
+// sin tildes ni mayúsculas, pero corto el texto de verdad: "dolar" marca "Dólar".
+function trozosCoincidencia(texto, consulta, alPrincipio = false) {
+  const q = normalizar(consulta.trim());
+  const entero = [{ texto, marca: false }];
+  if (!q) return entero;
+  let plano = "";
+  const origen = [];
+  for (let i = 0; i < texto.length; i++) {
+    for (const letra of normalizar(texto[i])) {
+      plano += letra;
+      origen.push(i);
+    }
+  }
+  const desde = alPrincipio ? (plano.startsWith(q) ? 0 : -1) : plano.indexOf(q);
+  if (desde < 0) return entero;
+  const a = origen[desde];
+  const b = origen[desde + q.length - 1] + 1;
+  return [
+    { texto: texto.slice(0, a), marca: false },
+    { texto: texto.slice(a, b), marca: true },
+    { texto: texto.slice(b), marca: false },
+  ].filter((t) => t.texto);
+}
+
 function filtrarDivisas(consulta) {
   const q = normalizar(consulta.trim());
   if (q === "") return CURRENCIES;

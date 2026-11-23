@@ -1789,6 +1789,14 @@ body::after {
   text-overflow: ellipsis;
 }
 
+/* Lo que has escrito, en dorado y con un trazo de rotulador por debajo. */
+.buscador__marca {
+  color: var(--brass);
+  font-weight: 700;
+  background: linear-gradient(transparent 62%, var(--brass-ghost) 62%, var(--brass-ghost) 92%, transparent 92%);
+  border-radius: 2px;
+}
+
 .buscador__bandera {
   display: inline-block;
   flex-shrink: 0;
