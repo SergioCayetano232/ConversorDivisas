@@ -1289,6 +1289,7 @@ function mirar(i) {
   const punto = serie[i];
   colocar(el.punto, coords[i]);
   el.guia.style.left = `${coords[i].x}%`;
+  el.lienzo.style.setProperty("--mirando-x", `${coords[i].x}%`);
   el.tipFecha.textContent = fechaCorta(punto.fecha);
   el.tipValor.textContent = nfRate.format(punto.valor);
 

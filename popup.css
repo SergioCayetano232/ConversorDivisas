@@ -11810,6 +11810,18 @@ body::after {
   width: 100%;
   height: 40px;
   overflow: visible;
+  /* Al recorrer el gráfico lo de después del punto se apaga: queda encendido
+     el camino hasta el día que miras. Sin no-clip, la máscara cortaba el
+     brillo de la línea por arriba. */
+  mask-image: linear-gradient(90deg, #000 var(--mirando-x, 100%), rgb(0 0 0 / var(--apagado)) calc(var(--mirando-x, 100%) + 1.5%));
+  mask-clip: no-clip;
+  transition: --apagado var(--mid) var(--ease);
+}
+
+@property --apagado { syntax: "<number>"; inherits: true; initial-value: 1; }
+
+.is-mirando .trend__chart {
+  --apagado: 0.3;
 }
 
 .trend__lienzo {
