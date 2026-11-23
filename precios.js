@@ -20,9 +20,7 @@
       --borde: rgba(232, 183, 92, 0.4);
       --sheen: rgba(255, 255, 255, 0.12);
 
-      display: inline-flex;
-      align-items: baseline;
-      gap: 0.3em;
+      display: inline-grid;
       padding: 0.18em 0.55em 0.2em;
       font: 600 1em/1.15 ui-monospace, "SF Mono", "JetBrains Mono", "Cascadia Code", Menlo, monospace;
       font-variant-numeric: tabular-nums;
@@ -38,6 +36,39 @@
       animation: entrar 420ms cubic-bezier(0.34, 1.56, 0.64, 1) backwards;
       animation-delay: calc(var(--i, 0) * 14ms);
       transition: transform 180ms cubic-bezier(0.34, 1.56, 0.64, 1);
+      perspective: 240px;
+    }
+
+    /* Sale con el precio de la web y se da la vuelta hasta el convertido, como
+       los carteles de los aeropuertos. Las dos caras van en la misma celda. */
+    .cara, .cruz {
+      grid-area: 1 / 1;
+      display: inline-flex;
+      align-items: baseline;
+      justify-content: center;
+      gap: 0.3em;
+      backface-visibility: hidden;
+      animation: 480ms cubic-bezier(0.34, 1.3, 0.64, 1) forwards;
+      animation-delay: calc(320ms + var(--i, 0) * 14ms);
+    }
+
+    .cara {
+      font-weight: 500;
+      opacity: 0.65;
+      animation-name: cara-gira;
+    }
+
+    .cruz {
+      transform: rotateX(180deg);
+      animation-name: cruz-gira;
+    }
+
+    @keyframes cara-gira {
+      to { transform: rotateX(-180deg); }
+    }
+
+    @keyframes cruz-gira {
+      to { transform: rotateX(0deg); }
     }
 
     @media (prefers-color-scheme: light) {
@@ -375,12 +406,22 @@
       const pastilla = document.createElement("span");
       pastilla.className = "pastilla";
       pastilla.style.setProperty("--i", Math.min(i, 40));
+      const cara = document.createElement("span");
+      cara.className = "cara";
+      cara.setAttribute("aria-hidden", "true");
+      cara.textContent = convertidos.map((p) => `${formato.format(p.cantidad)} ${p.divisa}`).join(" · ");
+      const cruz = document.createElement("span");
+      cruz.className = "cruz";
       const casi = document.createElement("span");
       casi.className = "casi";
       casi.textContent = "≈";
       const cifras = document.createElement("span");
       cifras.textContent = convertidos.map((p) => `${formato.format(p.cantidad * p.rate)} ${p.to}`).join(" · ");
-      pastilla.append(casi, cifras);
+      cruz.append(casi, cifras);
+      // Ya vuelta, la cara sobra: si el precio de la web era más largo, la
+      // pastilla se quedaría con su ancho.
+      cruz.addEventListener("animationend", () => cara.remove(), { once: true });
+      pastilla.append(cara, cruz);
       pastilla.title = convertidos
         .map((p) => `${formato.format(p.cantidad)} ${p.divisa} → ${formato.format(p.cantidad * p.rate)} ${p.to}  (1 ${p.divisa} = ${formatoTasa.format(p.rate)} ${p.to})`)
         .join("\n");
