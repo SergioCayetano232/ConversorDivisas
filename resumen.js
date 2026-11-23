@@ -356,7 +356,45 @@ async function onDescargar() {
   enlace.click();
   enlace.remove();
   setTimeout(() => URL.revokeObjectURL(url), 1000);
+  // El botón se pone en verde cuando le llega la postal, no antes.
+  await volarAlBoton(el.descargar);
   avisar(el.descargar, el.descargarTexto, "resumen.descargada", "resumen.descargar");
+}
+
+// Al descargar, una copia de la postal se encoge y se mete en el botón, como si
+// se guardara. La de verdad no se mueve: es la que sigues viendo.
+async function volarAlBoton(boton) {
+  if (sinMovimiento.matches) return;
+  const origen = el.postal.getBoundingClientRect();
+  const destino = boton.getBoundingClientRect();
+  const copia = el.postal.cloneNode(true);
+  copia.removeAttribute("id");
+  copia.removeAttribute("aria-live");
+  copia.setAttribute("aria-hidden", "true");
+  copia.classList.remove("is-ladeada");
+  copia.classList.add("postal--vuela");
+  Object.assign(copia.style, {
+    left: `${origen.left}px`,
+    top: `${origen.top}px`,
+    width: `${origen.width}px`,
+    // El 9 % de padding va sobre el padre; fija, lo sacaba de la ventana y la
+    // copia salía con el contenido corrido.
+    padding: getComputedStyle(el.postal).padding,
+  });
+  document.body.append(copia);
+  const dx = destino.left + destino.width / 2 - (origen.left + origen.width / 2);
+  const dy = destino.top + destino.height / 2 - (origen.top + origen.height / 2);
+  // Primero se levanta un poco y luego cae en curva hacia el botón.
+  const vuelo = copia.animate([
+    { transform: "none", opacity: 0.95 },
+    { transform: `translate(${dx * 0.3}px, ${dy * 0.15 - 24}px) scale(0.6) rotate(-5deg)`, opacity: 0.95, offset: 0.4 },
+    { transform: `translate(${dx}px, ${dy}px) scale(0.05) rotate(8deg)`, opacity: 0.3 },
+  ], { duration: 720, easing: "cubic-bezier(0.55, 0, 0.45, 1)" });
+  try {
+    await vuelo.finished;
+  } finally {
+    copia.remove();
+  }
 }
 
 async function onCopiar() {

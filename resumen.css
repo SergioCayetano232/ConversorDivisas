@@ -289,6 +289,21 @@
   }
 }
 
+/* La copia que vuela al botón al descargar. Ya entró una vez: sus trozos no
+   tienen que volver a llegar. */
+.postal--vuela {
+  position: fixed;
+  z-index: 10;
+  margin: 0;
+  pointer-events: none;
+  box-shadow: 0 18px 50px rgba(0, 0, 0, 0.45);
+}
+
+.postal--vuela > *,
+.postal--vuela .postal__trozo {
+  animation: none !important;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .postal > *,
   .postal__trozo {
