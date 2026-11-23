@@ -36,6 +36,7 @@ module.exports = {
   RECIENTES_MAX, FIJOS_MAX, apuntarReciente, fijarReciente, leerRecientes, recientesVisibles,
   RANGOS, RANGO_POR_DEFECTO, leerRango, siguienteRango, coordenadas, alturaEn, MOMENTO_UMBRAL, momento, textoMomento,
   SEMANAS_MINIMAS, mejorDiaSemana, ABANICO_MINIMO, abanicoTasa, textoAbanico, nombreDiaSemana, textoDiaSemana, indiceCercano, extremos, fechaCorta, largoEnPantalla,
+  FOTOGRAMAS_MONEDA, vueltaMoneda,
   leerNumero, divisaDe, DOMINIOS, divisaDeLaWeb, leerSeleccion, sumarSeleccion, notaDeSuma, leerCobro, COBRO_RARO, analizarCobro, textoCobro, destinoPara, leerPegado, leerPegadoSuelto, leerColumna, leerFechaReserva, leerReserva, cuentaDeColumna, buscarPrecios, precioEntero, leerOmnibox, leerMezcla, textoMezcla, precioUnidadBarra, leerGastoBarra, leerDictado, leerConversionDicha, gastoDeBarra, gastoDeTarjeta, escaparXml,
   divisaDeIdioma, parPorIdioma, banderaDe, banderaDivisa,
   HISTORIAL_MAX, leerHistorial, apuntarConversion, quitarConversion, haceCuanto, ultimoDeHoy, textoParaCopiar, fraseParaCopiar, conversionParaCopiar, gastoParaCopiar, ultimoGasto, gastoMasCaro, totalParaCopiar, hoyParaCopiar, simboloDe, textoConSimbolo, fraseConSimbolo,

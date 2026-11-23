@@ -499,6 +499,49 @@ function enPagina(tabId, datos) {
 // Dentro de un iframe manda la tienda del iframe, no la de la pestaña.
 const paginaDe = (info, tab) => info.frameUrl ?? info.pageUrl ?? tab?.url ?? null;
 
+// Al convertir desde la web el icono de la barra da una vuelta, como una moneda
+// que lanzas. Solo en esa pestaña, y al acabar vuelve el de siempre.
+const ICONO_BARRA = { 16: "icons/icon16.png", 32: "icons/icon48.png" };
+let iconoBitmaps = null;
+const girandoEn = new Set();
+
+async function girarIcono(tabId) {
+  if (girandoEn.has(tabId)) return;
+  girandoEn.add(tabId);
+  try {
+    iconoBitmaps ??= Object.fromEntries(await Promise.all(Object.entries(ICONO_BARRA).map(async ([tam, ruta]) => {
+      const blob = await (await fetch(chrome.runtime.getURL(ruta))).blob();
+      return [tam, await createImageBitmap(blob)];
+    })));
+    for (const fotograma of vueltaMoneda()) {
+      const imageData = {};
+      for (const [tam, bitmap] of Object.entries(iconoBitmaps)) imageData[tam] = caraDeMoneda(bitmap, Number(tam), fotograma);
+      await chrome.action.setIcon({ tabId, imageData });
+      await new Promise((ok) => setTimeout(ok, 40));
+    }
+  } catch (error) {
+    // Si la pestaña se cierra a media vuelta, setIcon falla: no pasa nada.
+    console.warn("No se pudo girar el icono", error);
+  } finally {
+    await chrome.action.setIcon({ tabId, path: ICONO_BARRA }).catch(() => {});
+    girandoEn.delete(tabId);
+  }
+}
+
+function caraDeMoneda(bitmap, tam, { ancho, dorso }) {
+  const lienzo = new OffscreenCanvas(tam, tam);
+  const ctx = lienzo.getContext("2d");
+  ctx.translate(tam / 2, 0);
+  ctx.scale(ancho, 1);
+  ctx.drawImage(bitmap, -tam / 2, 0, tam, tam);
+  if (dorso) {
+    ctx.globalCompositeOperation = "source-atop";
+    ctx.fillStyle = "rgba(0, 0, 0, 0.4)";
+    ctx.fillRect(-tam / 2, 0, tam, tam);
+  }
+  return ctx.getImageData(0, 0, tam, tam);
+}
+
 async function convertirSeleccion(info, tab) {
   await idiomaListo;
   try {
@@ -520,6 +563,7 @@ async function convertirSeleccion(info, tab) {
     return;
   }
 
+  girarIcono(tab.id);
   // La tarjeta sale ya, cargando; la cifra llega cuando responda la API.
   await enPagina(tab.id, paraLaTarjeta({ estado: "cargando", original: info.selectionText }));
   await enPagina(tab.id, paraLaTarjeta(await calcular(info.selectionText, paginaDe(info, tab))));

@@ -327,3 +327,17 @@ function medidaDeSeleccion(texto) {
   const desdeElNumero = limpio.slice(limpio.search(/\d/));
   return medidaTalCual(limpio) ?? (desdeElNumero !== limpio && /^\d/.test(desdeElNumero) ? medidaTalCual(desdeElNumero) : null);
 }
+
+// El icono de la barra da una vuelta de moneda al convertir desde la web. Por
+// fotograma, lo que se estrecha (el coseno del giro) y si se ve el dorso, que
+// pinto más oscuro. Frena al final, como el resto de animaciones.
+const FOTOGRAMAS_MONEDA = 14;
+
+function vueltaMoneda(n = FOTOGRAMAS_MONEDA) {
+  return Array.from({ length: n + 1 }, (_, i) => {
+    const avance = 1 - (1 - i / n) ** 2;
+    const giro = Math.cos(avance * 2 * Math.PI);
+    // De canto del todo no se vería nada: dejo una rendija.
+    return { ancho: Math.max(Math.abs(giro), 0.08), dorso: giro < 0 };
+  });
+}
