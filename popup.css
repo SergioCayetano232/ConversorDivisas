@@ -280,6 +280,17 @@ textarea {
   caret-color: var(--brass);
 }
 
+/* Como en las páginas, sin palabras sueltas en el último renglón. Con
+   text-wrap-style y no text-wrap: este también pondría wrap y deshacería los
+   nowrap del popup. */
+:where(h1, h2, h3) {
+  text-wrap-style: balance;
+}
+
+:where(p, li, label, .burbuja__nota) {
+  text-wrap-style: pretty;
+}
+
 /* Un apretón para los botones que no traen el suyo. Con :where no pesa nada,
    así que los que ya tienen transform o transition propios se quedan como
    estaban. Los que parecen texto o campo, sin él. */
@@ -12078,8 +12089,10 @@ body::after {
   color: var(--mist);
 }
 
+/* Igualado: con pretty el "(±2,2 %)" seguía cayéndose solo al segundo renglón. */
 .abanico__rango {
   font-family: var(--font-mono);
+  text-wrap-style: balance;
 }
 
 .abanico__barra {
