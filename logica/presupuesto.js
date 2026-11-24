@@ -18,7 +18,8 @@ function leerPresupuesto(guardado) {
   // Los de antes no traen el día de salida: entonces cuenta desde el primer gasto.
   const { desde } = guardado;
   const topes = leerTopes(guardado.categorias);
-  const extra = topes ? { categorias: topes } : {};
+  const marca = leerMarca(guardado.marca, to);
+  const extra = { ...(topes ? { categorias: topes } : {}), ...(marca ? { marca } : {}) };
   if (desde === undefined || desde === null) return { importe, to, hasta, ...extra };
   if (!esIso(desde) || desde > hasta) return null;
   return { importe, to, hasta, desde, ...extra };
@@ -35,6 +36,51 @@ function leerTopes(guardado) {
 }
 
 const esIso = (texto) => typeof texto === "string" && /^\d{4}-\d{2}-\d{2}$/.test(texto);
+
+// El día que pusiste el presupuesto y a cuánto estaba allí, para decirte luego
+// si el cambio te ha dado o te ha quitado. Los de antes no la traen.
+function leerMarca(marca, to) {
+  if (!marca || typeof marca !== "object") return null;
+  const { dia, divisa, tasa } = marca;
+  if (!esIso(dia) || !isValidCode(divisa) || divisa === to || !Number.isFinite(tasa) || tasa <= 0) return null;
+  return { dia, divisa, tasa };
+}
+
+// Al cambiar el importe o las fechas la marca se queda: lo que cuenta es desde
+// cuándo lo planeas. Solo se rehace si ahora vas a otro sitio.
+function marcarPresupuesto(nuevo, anterior, destino, tasa, hoyIso = hoy()) {
+  if (!nuevo) return nuevo;
+  const { marca: _vieja, ...sin } = nuevo;
+  const vieja = leerMarca(anterior?.marca, nuevo.to);
+  if (vieja && vieja.divisa === destino) return { ...sin, marca: vieja };
+  const marca = leerMarca({ dia: hoyIso, divisa: destino, tasa }, nuevo.to);
+  return marca ? { ...sin, marca } : sin;
+}
+
+// Por debajo de medio punto es lo que se mueve en una semana cualquiera.
+const CAMBIO_MARCA_MINIMO = 0.005;
+
+// Solo antes de salir: luego ya lo vas gastando a la tasa de cada día. tasaHoy
+// es lo que vale 1 de allí en lo tuyo, como la de la marca.
+function cambioDesdeMarca(presupuesto, tasaHoy, hoyIso = hoy()) {
+  const marca = presupuesto?.marca;
+  if (!marca || !(tasaHoy > 0) || marca.dia >= hoyIso || cuentaAtras(presupuesto, hoyIso) === null) return null;
+  const pct = marca.tasa / tasaHoy - 1;
+  if (Math.abs(pct) < CAMBIO_MARCA_MINIMO) return null;
+  const diferencia = presupuesto.importe / tasaHoy - presupuesto.importe / marca.tasa;
+  return { pct, diferencia, divisa: marca.divisa, dia: marca.dia, importe: presupuesto.importe, to: presupuesto.to };
+}
+
+// Corto para la línea, que comparte fila con los botones; entero en el título.
+function textoCambioMarca(r, { largo = false } = {}) {
+  if (!r) return "";
+  return tr(`marca.${r.pct > 0 ? "gana" : "pierde"}${largo ? "Titulo" : ""}`, {
+    fecha: fechaCorta(r.dia),
+    importe: `${numeros({ maximumFractionDigits: 0 }).format(r.importe)} ${r.to}`,
+    cuanto: `${numeros({ maximumFractionDigits: 0 }).format(Math.abs(r.diferencia))} ${r.divisa}`,
+    pct: numeros({ maximumFractionDigits: 1 }).format(Math.abs(r.pct * 100)),
+  });
+}
 
 // Hasta el 80 % vas bien; de ahí al 100 %, justo; pasado, pasado.
 const PRESUPUESTO_JUSTO = 0.8;

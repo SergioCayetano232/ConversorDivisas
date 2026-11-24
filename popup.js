@@ -288,6 +288,7 @@ const el = {
   hoyLleno: document.getElementById("hoy-lleno"),
   presupuestoTexto: document.getElementById("presupuesto-texto"),
   presupuestoHucha: document.getElementById("presupuesto-hucha"),
+  presupuestoCambio: document.getElementById("presupuesto-cambio"),
   presupuestoAlli: document.getElementById("presupuesto-alli"),
   presupuestoForm: document.getElementById("presupuesto-form"),
   presupuestoImporte: document.getElementById("presupuesto-importe"),
@@ -2153,6 +2154,7 @@ function pintarExtras() {
   if (antes !== ahora) el.rejilla.replaceChildren(...celdas);
   el.extrasCompartir.hidden = !textoExtras();
   pintarRinde();
+  if (presupuesto) pintarCambioMarca();
 }
 
 // Va con las tasas de la rejilla de al lado, sean desde la divisa que sean.
@@ -5438,6 +5440,22 @@ function pintarHucha() {
   })}`;
 }
 
+// Si el cambio se ha movido desde que pusiste el presupuesto. Va con las tasas
+// de la rejilla, así que se pinta también cuando llegan.
+function pintarCambioMarca() {
+  const marca = presupuesto?.marca;
+  const tasa = marca && tasasBase ? (marca.divisa === tasasBase.de ? 1 : tasasBase.rates[marca.divisa]) : null;
+  const tasaHoy = tasa ? (presupuesto.to === tasasBase.de ? 1 : tasasBase.rates[presupuesto.to]) / tasa : null;
+  const cambio = cambioDesdeMarca(presupuesto, tasaHoy);
+  el.presupuestoCambio.hidden = !cambio;
+  el.presupuestoCambio.classList.toggle("is-gana", cambio?.pct > 0);
+  if (!cambio) return;
+  const texto = textoCambioMarca(cambio);
+  if (el.presupuestoCambio.textContent && el.presupuestoCambio.textContent !== texto) restartAnimation(el.presupuestoCambio, "is-tic");
+  el.presupuestoCambio.textContent = texto;
+  el.presupuestoCambio.title = textoCambioMarca(cambio, { largo: true });
+}
+
 function pintarCurvaBoton() {
   const curva = curvaPresupuesto(presupuesto, gastos, hoy(), viajeActivo(viajes).pendientes);
   el.curvaAbrir.hidden = !curva;
@@ -6033,6 +6051,7 @@ function pintarPresupuesto() {
   if (llega) el.presupuestoVer.title += `\n${tr("presupuesto.llegaTitulo", { fecha: fechaLarga(llega), porDia: dinero(estado.porDia) })}`;
   if (falta !== null) el.presupuestoVer.title += `\n${tr(falta === 1 ? "presupuesto.saleManana" : "presupuesto.saleEl", { fecha: fechaLarga(presupuesto.desde), n: falta })}`;
   pintarHucha();
+  pintarCambioMarca();
   if (estado.pendiente > 0) {
     el.presupuestoVer.title += `\n${tr("pendientes.presupuesto", { pendiente: dinero(estado.pendiente), libre: dinero(estado.libre) })}`;
   }
@@ -6172,7 +6191,7 @@ function pintarSugerido() {
 // divisas, que ya están pedidas. Si aún no han llegado, la sugerencia va sin ajustar.
 function adondeVas(to) {
   const destino = destinoDelViaje(viajeActivo(viajes), { aqui: to, from: el.from.value });
-  if (!destino || !tasasBase) return {};
+  if (!destino || !tasasBase) return destino ? { destino } : {};
   const de = (code) => (code === tasasBase.de ? 1 : tasasBase.rates[code]);
   const tasa = de(to) / de(destino);
   return Number.isFinite(tasa) ? { destino, tasa, idiomas: navigator.languages } : {};
@@ -6263,7 +6282,8 @@ function onGuardarPresupuesto(event) {
     mal.focus();
     return;
   }
-  ponerPresupuesto(nuevo);
+  const { destino = null, tasa = null } = adondeVas(nuevo.to);
+  ponerPresupuesto(marcarPresupuesto(nuevo, presupuesto, destino, tasa));
 }
 
 // Con más de diez muñecos ya no se cuentan de un vistazo: el resto va en número.

@@ -252,7 +252,10 @@ La lista entera, con sus ejemplos. El resumen está en el [README](../README.md)
   viaje, cuántos faltan ("✈ 12 días"), y debajo de la barra cuánto apartar cada semana
   hasta salir para llegar con el presupuesto ("🐷 Aparta 150 EUR a la semana"),
   sin contar lo que ya has pagado, como el vuelo. Con menos de una semana, lo
-  que falta de una vez. Si no sabes cuánto poner, mira tus otros viajes y te lo
+  que falta de una vez. Y debajo, si el cambio se ha movido desde el día que
+  pusiste el presupuesto, lo que eso te da o te quita allí ("💱 +13.258 JPY
+  desde el 24 oct", en verde, o en rojo si es menos). Por debajo de medio punto
+  no sale, y al cambiar el importe o las fechas cuenta desde el primer día. Si no sabes cuánto poner, mira tus otros viajes y te lo
   propone ("💡 Sueles gastar 100 al día: 7 días, 700 EUR"), y pulsándolo se pone.
   Si sabe adónde vas, lo ajusta a lo que cuestan las cosas allí y en cada viaje
   que hiciste: con 60 al día en Tailandia, para Suiza te propone unos 234 ("💡 En

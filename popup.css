@@ -8168,6 +8168,32 @@ body::after {
   animation: beat var(--mid) var(--ease-spring);
 }
 
+/* Rojo si el cambio te ha quitado y verde si te ha dado: es lo que se nota al
+   llegar allí con el mismo dinero. */
+.presupuesto__cambio {
+  display: block;
+  margin-top: 2px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 10px;
+  font-variant-numeric: tabular-nums;
+  text-align: left;
+  color: color-mix(in srgb, var(--cinnabar) 75%, var(--muted));
+}
+
+.presupuesto__cambio.is-gana {
+  color: color-mix(in srgb, var(--jade) 80%, var(--muted));
+}
+
+.presupuesto__cambio[hidden] {
+  display: none;
+}
+
+.presupuesto__cambio.is-tic {
+  animation: beat var(--mid) var(--ease-spring);
+}
+
 /* La cuenta atrás va en dorado, con el avión despegando cuando cambia. */
 .presupuesto__dia.is-cuenta {
   color: var(--brass);
@@ -13107,6 +13133,7 @@ kbd {
   .trend__hoy::after,
   .chuleta__fila.is-nueva,
   .rinde__fila.is-nueva,
+  .presupuesto__cambio.is-tic,
   .rinde__barra,
   .historial__fila,
   .gastos__fila.is-nueva,
