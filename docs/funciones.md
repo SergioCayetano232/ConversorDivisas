@@ -434,6 +434,10 @@ La lista entera, con sus ejemplos. El resumen está en el [README](../README.md)
   km/h, los grados o los mililitros. Son las mismas que entiende `cd`. Con la
   divisa escrita ("$20") sigue siendo un precio. **Copiar** se lleva el
   resultado, y con Shift, la frase entera ("65 mph = 104,6 km/h")
+- Escribirlo convertido: si lo que seleccionas está en algo donde se escribe (un
+  correo, un chat, un formulario), la tarjeta trae **Escribir** en vez del
+  concepto, ya con el foco. Con un Enter, "50 USD" se queda en "50 USD (≈ 45,71
+  EUR)" en el propio texto, y con las medidas igual. Se deshace con `Cmd+Z`
 - Comparar el mismo producto en dos tiendas: en la tarjeta, con la chincheta 📌
   de arriba guardas ese precio, y cuando conviertas el de otra web te dice cuál
   sale mejor, los dos en tu divisa y al cambio de hoy ("📌 Este sale 21,74 EUR

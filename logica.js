@@ -24,7 +24,7 @@ for (const trozo of TROZOS) {
 // Lo que usan los tests. En el navegador no hace falta exportar nada: todo está
 // en el ámbito global, y así no hay que montar un build.
 module.exports = {
-  datosTarjeta,
+  datosTarjeta, anadidoConvertido,
   NOTA_MAX, limpiarNota, cambiarNota,
   esFijo, delDiaADia, marcarFijo,
   numeroBanco, fechaBanco, leerCsvBanco, conceptoBanco, tasaDeEseDia, gastosDelBanco, cargoEnDivisa, comisionReal, textoComisionReal,

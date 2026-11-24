@@ -537,6 +537,7 @@
 
     .copiar,
     .alerta-ok,
+    .escribir,
     .gasto {
       flex: none;
       height: 24px;
@@ -555,6 +556,7 @@
 
     .copiar:hover,
     .alerta-ok:hover,
+    .escribir:hover,
     .gasto:hover:not(:disabled) {
       color: var(--dorado);
       border-color: var(--dorado-dim);
@@ -562,11 +564,23 @@
     }
 
     .copiar:active,
+    .escribir:active,
     .gasto:active:not(:disabled) { transform: scale(0.92); }
+
+    /* En un campo de texto lo normal es querer escribirlo, así que va en dorado
+       y en el sitio del concepto, que escribiendo un correo no se apunta nada. */
+    .escribir {
+      margin-right: auto;
+      color: var(--dorado);
+      border-color: var(--dorado-dim);
+    }
+    .escribir[hidden] { display: none; }
+    .is-escribible .concepto { display: none; }
 
     .gasto:disabled { cursor: default; }
 
     .copiar.is-hecho,
+    .escribir.is-hecho,
     .gasto.is-hecho {
       color: var(--jade);
       border-color: var(--jade);
@@ -577,6 +591,7 @@
     .cerrar:focus-visible,
     .alerta-ok:focus-visible,
     .gasto:focus-visible,
+    .escribir:focus-visible,
     .copiar:focus-visible {
       outline: 2px solid var(--dorado);
       outline-offset: 2px;
@@ -682,6 +697,7 @@
       <p class="aviso" role="alert"></p>
       <div class="pie">
         <input class="concepto" type="text" maxlength="40" autocomplete="off" placeholder="Concepto" aria-label="Concepto">
+        <button class="escribir" type="button" hidden>Escribir</button>
         <button class="gasto" type="button">+ Gasto</button>
         <button class="copiar" type="button">Copiar</button>
       </div>
@@ -702,6 +718,7 @@
   let avisoCopiado = null;
   let subrayado = null;
   let rango = null;
+  let campo = null;
 
   const $ = (sel) => raiz.querySelector(sel);
 
@@ -714,6 +731,7 @@
     $(".copiar").addEventListener("click", copiar);
     $(".cifra").addEventListener("dblclick", copiar);
     $(".gasto").addEventListener("click", apuntar);
+    $(".escribir").addEventListener("click", escribir);
     $(".guardar").addEventListener("click", guardar);
     $(".avisar").addEventListener("click", abrirAlerta);
     $(".alerta-ok").addEventListener("click", avisar);
@@ -871,6 +889,7 @@
     if (!copiar.classList.contains("is-hecho")) copiar.textContent = d.textos.copiar;
     const gasto = $(".gasto");
     if (!gasto.classList.contains("is-hecho")) gasto.textContent = d.textos.gasto;
+    $(".escribir").textContent = d.textos.escribir ?? "Escribir";
     $(".avisar").title = d.textos.avisar;
     $(".avisar").setAttribute("aria-label", d.textos.avisar);
     $(".alerta label").textContent = d.textos.avisoEtiqueta;
@@ -900,6 +919,7 @@
 
     if (d.estado === "cargando") {
       ancla = medirSeleccion();
+      campo = campoEditable();
       subrayar();
       // Si ya había una abierta, que vuelva a entrar en su sitio nuevo.
       tarjeta.style.animation = "none";
@@ -911,6 +931,11 @@
     tarjeta.classList.toggle("is-ok", d.estado === "ok" || d.estado === "medida");
     tarjeta.classList.toggle("is-medida", d.estado === "medida");
     tarjeta.classList.toggle("is-error", d.estado === "error" || d.estado === "nada");
+    const escribible = Boolean(campo && d.escribir && (d.estado === "ok" || d.estado === "medida"));
+    tarjeta.classList.toggle("is-escribible", escribible);
+    $(".escribir").hidden = !escribible;
+    $(".escribir").classList.remove("is-hecho");
+    if (escribible) $(".escribir").title = (d.textos?.escribirTitulo ?? "{texto}").replace("{texto}", d.escribir);
 
     if (d.estado === "ok") {
       $(".original").textContent = d.original;
@@ -961,7 +986,66 @@
       subrayar();
     }
     colocar();
-    if (d.estado === "ok" || d.estado === "medida") $(".copiar").focus({ preventScroll: true });
+    if (escribible) $(".escribir").focus({ preventScroll: true });
+    else if (d.estado === "ok" || d.estado === "medida") $(".copiar").focus({ preventScroll: true });
+  }
+
+  // Si lo seleccionado está en algo donde se escribe, me apunto dónde: al pulsar
+  // la tarjeta el campo pierde el foco y la selección se va con él.
+  function campoEditable() {
+    const activo = document.activeElement;
+    if (activo instanceof HTMLTextAreaElement || activo instanceof HTMLInputElement) {
+      if (activo.readOnly || activo.disabled) return null;
+      // Los type="number" o "email" lanzan al pedirles la selección.
+      try {
+        if (activo.selectionStart === activo.selectionEnd) return null;
+        return { el: activo, inicio: activo.selectionStart, fin: activo.selectionEnd };
+      } catch (error) {
+        return null;
+      }
+    }
+    const sel = getSelection();
+    if (!sel || !sel.rangeCount || sel.isCollapsed) return null;
+    const nodo = sel.anchorNode;
+    const el = nodo?.nodeType === Node.ELEMENT_NODE ? nodo : nodo?.parentElement;
+    if (!el?.isContentEditable) return null;
+    return { el, rango: sel.getRangeAt(0).cloneRange() };
+  }
+
+  // Detrás de lo seleccionado, sin contar los espacios del final. Con insertText
+  // entra en el Cmd+Z del campo y la web se entera como si lo hubieras tecleado.
+  function escribir() {
+    if (!campo || !datos?.escribir || !campo.el.isConnected) return;
+    const { el } = campo;
+    const texto = ` ${datos.escribir}`;
+    el.focus({ preventScroll: true });
+    let pos = null;
+    if (campo.rango) {
+      const r = campo.rango.cloneRange();
+      r.collapse(false);
+      const sel = getSelection();
+      sel.removeAllRanges();
+      sel.addRange(r);
+    } else {
+      pos = campo.inicio + el.value.slice(campo.inicio, campo.fin).trimEnd().length;
+      el.setSelectionRange(pos, pos);
+    }
+    let hecho = false;
+    try {
+      hecho = document.execCommand("insertText", false, texto);
+    } catch (error) {
+      hecho = false;
+    }
+    if (!hecho && pos !== null) {
+      el.setRangeText(texto, pos, pos, "end");
+      el.dispatchEvent(new Event("input", { bubbles: true }));
+      hecho = true;
+    }
+    if (!hecho) return;
+    campo = null;
+    const boton = $(".escribir");
+    boton.classList.add("is-hecho");
+    setTimeout(cerrar, sinMovimiento.matches ? 0 : 450);
   }
 
   // Cerrado cada vez: lo que abriste para otro precio no tiene por qué seguir abierto.
@@ -1084,6 +1168,7 @@
       host = null;
       raiz = null;
       ancla = null;
+      campo = null;
       quitarSubrayado();
     };
     if (sinMovimiento.matches) return quitar();

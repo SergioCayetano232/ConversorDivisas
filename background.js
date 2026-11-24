@@ -345,6 +345,8 @@ function paraLaTarjeta(datos) {
       avisoEtiqueta: tr("tarjeta.aviso.etiqueta"),
       avisoOk: tr("tarjeta.aviso.ok"),
       gasto: tr("tarjeta.gasto"),
+      escribir: tr("tarjeta.escribir"),
+      escribirTitulo: tr("tarjeta.escribir.titulo"),
       concepto: tr("tarjeta.concepto"),
       apuntado: tr("tarjeta.apuntado"),
       noApuntado: tr("tarjeta.noApuntado"),
@@ -363,7 +365,7 @@ async function calcular(texto, url = null) {
   const suma = cobro ? null : sumarSeleccion(texto, web);
   // Con la divisa escrita es un precio. Sin ella, "65 mph" en amazon.co.jp no son yenes.
   const medida = cobro || suma || divisaDe(texto) ? null : medidaDeSeleccion(texto);
-  if (medida) return { estado: "medida", original: medida.de, texto: medida.a, copia: medida.a, frase: medida.frase };
+  if (medida) return { estado: "medida", original: medida.de, texto: medida.a, copia: medida.a, frase: medida.frase, escribir: anadidoConvertido({ texto: medida.a }) };
   const leido = cobro ? { cantidad: cobro.cantidad, divisa: cobro.from } : suma ?? leerSeleccion(texto, web);
   if (!leido) return { estado: "nada", original: texto, mensaje: tr("tarjeta.nada") };
 
@@ -383,6 +385,7 @@ async function calcular(texto, url = null) {
       resultado,
       copia: textoParaCopiar(resultado),
       frase: fraseParaCopiar({ cantidad: leido.cantidad, from, valor: resultado, to }),
+      escribir: anadidoConvertido({ valor: resultado, to }),
       texto: nf.format(resultado),
       from,
       to,

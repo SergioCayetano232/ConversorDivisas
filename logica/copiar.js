@@ -110,6 +110,16 @@ function hoyParaCopiar(viaje, hoyIso = hoy()) {
   });
 }
 
+// Lo que se escribe detrás del precio cuando lo seleccionas en un campo de
+// texto: "50 USD" se queda en "50 USD (≈ 43,10 EUR)". Con una medida, igual.
+function anadidoConvertido({ valor, to, texto } = {}) {
+  if (Number.isFinite(valor) && isValidCode(to)) {
+    return `(≈ ${numeros({ minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(valor)} ${to})`;
+  }
+  const limpio = String(texto ?? "").trim();
+  return limpio ? `(≈ ${limpio})` : "";
+}
+
 function textoParaCopiar(valor) {
   return valor.toFixed(2).replace(".", separadorDecimal());
 }
