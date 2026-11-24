@@ -590,8 +590,17 @@
 
           <div class="chuleta" id="chuleta" role="tabpanel" aria-labelledby="vista-chuleta" hidden>
             <ul class="chuleta__tabla" id="chuleta-tabla"></ul>
+            <form class="ojo" id="ojo" novalidate hidden>
+              <p class="ojo__pregunta"><span id="ojo-pregunta"></span><span class="ojo__racha" id="ojo-racha" hidden></span></p>
+              <div class="ojo__fila">
+                <input class="ojo__campo" type="text" id="ojo-campo" inputmode="decimal" autocomplete="off" spellcheck="false" placeholder="?">
+                <span class="ojo__codigo" id="ojo-codigo"></span>
+                <button class="ojo__ver" type="submit" id="ojo-ver"></button>
+              </div>
+              <p class="ojo__nota" id="ojo-nota" aria-live="polite"></p>
+            </form>
             <div class="chuleta__pie">
-              <p class="chuleta__truco" id="chuleta-truco"></p>
+              <button class="chuleta__truco" type="button" id="chuleta-truco" aria-pressed="false"></button>
               <button class="csv compartir chuleta__compartir" type="button" id="chuleta-compartir" title="Copiar la chuleta, lista para pegar en WhatsApp" aria-label="Copiar la chuleta, lista para pegar en WhatsApp" data-t-title="chuleta.compartir" data-t-aria-label="chuleta.compartir">
                 <svg class="compartir__icono" viewBox="0 0 12 12" aria-hidden="true"><path d="M2 9.5V3a1.2 1.2 0 0 1 1.2-1.2h5.6A1.2 1.2 0 0 1 10 3v3.6a1.2 1.2 0 0 1-1.2 1.2H4.2z"/><path class="compartir__puntos" d="M4.4 4.8h.01M6 4.8h.01M7.6 4.8h.01"/></svg>
                 <svg class="compartir__ok" viewBox="0 0 12 12" aria-hidden="true"><path d="M2.5 6.3l2.3 2.2 4.7-5"/></svg>

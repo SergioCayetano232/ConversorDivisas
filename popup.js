@@ -343,6 +343,13 @@ const el = {
   chuletaTruco: document.getElementById("chuleta-truco"),
   extrasCompartir: document.getElementById("extras-compartir"),
   chuletaImprimir: document.getElementById("chuleta-imprimir"),
+  ojo: document.getElementById("ojo"),
+  ojoPregunta: document.getElementById("ojo-pregunta"),
+  ojoRacha: document.getElementById("ojo-racha"),
+  ojoCampo: document.getElementById("ojo-campo"),
+  ojoCodigo: document.getElementById("ojo-codigo"),
+  ojoVer: document.getElementById("ojo-ver"),
+  ojoNota: document.getElementById("ojo-nota"),
   semana: document.getElementById("trend-semana"),
   semanaBarras: document.getElementById("semana-barras"),
   semanaTexto: document.getElementById("semana-texto"),
@@ -2416,7 +2423,11 @@ function pintarChuleta() {
   // Con la comisión dentro, que si no el truco y la tabla no dirían lo mismo.
   const truco = trucoDeCabeza(conComision(rate, comision));
   el.chuletaTruco.textContent = textoTruco(truco);
-  el.chuletaTruco.title = tituloTruco(truco);
+  // Pulsando el truco se practica con él: es lo que entrena el ojo.
+  el.chuletaTruco.title = truco ? `${tituloTruco(truco)}\n${tr("ojo.boton")}` : "";
+  el.chuletaTruco.disabled = !truco;
+  // Con otro par la pregunta de antes ya no vale.
+  if (!el.ojo.hidden && (ojo.par !== `${from}-${to}` || (ojo.cantidad === null && rate !== null))) preguntarOjo({ foco: false });
   const tuya = cantidadOrigen();
   if (el.chuletaTabla.children.length !== filas.length) {
     el.chuletaTabla.replaceChildren(...filas.map(crearFilaChuleta));
@@ -2462,6 +2473,83 @@ async function onCompartirChuleta() {
     setTimeout(() => el.chuletaTabla.classList.remove("is-copiada"), 1000);
   }
   mostrarFlash([tr(bien ? "chuleta.copiada" : "compartir.fallo")], 2200);
+}
+
+// Entrena el ojo. La racha es de esta vez; la mejor se guarda.
+const OJO_KEY = "ojoMejor";
+const ojo = { cantidad: null, par: "", respondida: false, racha: 0, mejor: 0 };
+
+async function entrenarOjo(abrir) {
+  el.ojo.hidden = !abrir;
+  el.chuletaTabla.hidden = abrir;
+  el.chuletaTruco.setAttribute("aria-pressed", String(abrir));
+  if (!abrir) {
+    for (const fila of el.chuletaTabla.children) restartAnimation(fila, "is-nueva");
+    return;
+  }
+  try {
+    ojo.mejor = Math.max(ojo.mejor, Number((await chrome.storage.local.get(OJO_KEY))[OJO_KEY]) || 0);
+  } catch (error) {
+    console.warn("No se pudo leer la mejor racha", error);
+  }
+  preguntarOjo();
+  restartAnimation(el.ojo, "is-nueva");
+}
+
+function preguntarOjo({ foco = true } = {}) {
+  ojo.cantidad = preguntaOjo(rate);
+  ojo.par = `${el.from.value}-${el.to.value}`;
+  ojo.respondida = false;
+  el.ojoPregunta.textContent = ojo.cantidad === null ? "—"
+    : tr("ojo.pregunta", { cantidad: `${nfEntero.format(ojo.cantidad)} ${el.from.value}` });
+  el.ojoCodigo.textContent = el.to.value;
+  el.ojoCampo.setAttribute("aria-label", tr("ojo.campo", { to: el.to.value }));
+  el.ojoCampo.value = "";
+  el.ojoCampo.disabled = false;
+  el.ojoNota.textContent = "";
+  delete el.ojoNota.dataset.tono;
+  el.ojoVer.textContent = tr("ojo.ver");
+  pintarRachaOjo();
+  restartAnimation(el.ojoPregunta, "is-nueva");
+  if (foco) el.ojoCampo.focus();
+}
+
+function pintarRachaOjo() {
+  el.ojoRacha.hidden = ojo.racha === 0;
+  el.ojoRacha.textContent = `🔥 ${ojo.racha}`;
+  el.ojoRacha.title = tr("ojo.racha", { n: ojo.racha, mejor: ojo.mejor });
+}
+
+function onOjo(event) {
+  event.preventDefault();
+  if (ojo.respondida || ojo.cantidad === null) {
+    preguntarOjo();
+    return;
+  }
+  const correcta = conComision(ojo.cantidad * rate, comision);
+  const nota = notaOjo(leerImporte(el.ojoCampo.value), correcta);
+  if (!nota) {
+    restartAnimation(el.ojoCampo, "is-mal");
+    el.ojoCampo.focus();
+    return;
+  }
+  ojo.respondida = true;
+  ojo.racha = rachaOjo(ojo.racha, nota);
+  if (ojo.racha > ojo.mejor) {
+    ojo.mejor = ojo.racha;
+    chrome.storage.local.set({ [OJO_KEY]: ojo.mejor }).catch((error) => console.warn("No se pudo guardar la racha", error));
+  }
+  el.ojoNota.textContent = tr(`ojo.${nota.tono}`, {
+    correcta: `${nf.format(correcta)} ${el.to.value}`,
+    pct: tr("pct", { n: Math.round(Math.abs(nota.error) * 100) }),
+  });
+  el.ojoNota.dataset.tono = nota.tono;
+  restartAnimation(el.ojoNota, "is-nueva");
+  el.ojoCampo.disabled = true;
+  el.ojoVer.textContent = tr("ojo.otra");
+  pintarRachaOjo();
+  if (ojo.racha > 0) restartAnimation(el.ojoRacha, "is-tic");
+  el.ojoVer.focus();
 }
 
 function onImprimirChuleta() {
@@ -10258,6 +10346,15 @@ function bindEvents() {
   el.chuletaCompartir.addEventListener("click", onCompartirChuleta);
   el.extrasCompartir.addEventListener("click", onCompartirExtras);
   el.chuletaImprimir.addEventListener("click", onImprimirChuleta);
+  el.chuletaTruco.addEventListener("click", () => entrenarOjo(el.ojo.hidden));
+  el.ojo.addEventListener("submit", onOjo);
+  el.ojoCampo.addEventListener("keydown", (event) => {
+    if (event.key !== "Escape") return;
+    // Si no, el Esc cerraría el popup entero.
+    event.preventDefault();
+    entrenarOjo(false);
+    el.chuletaTruco.focus();
+  });
   el.gastosCsv.addEventListener("click", () => descargarCsv(csvGastos(gastos), archivoGastos(viajeActivo(viajes).nombre), el.gastosCsv));
   el.viajesCsv.addEventListener("click", () => descargarCsv(csvViajes(todosLosViajes(viajes)), tr("csv.archivoViajes"), el.viajesCsv));
   el.viajesCalendario.addEventListener("click", descargarCalendario);

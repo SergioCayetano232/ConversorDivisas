@@ -193,6 +193,32 @@ function tituloTruco(truco) {
   return tr(truco.desvio > 0 ? "truco.deMas" : "truco.deMenos", { pct: tr("pct", { n: pct }) });
 }
 
+// Entrena el ojo: un precio de allí para adivinar cuánto es. De la escala de la
+// chuleta a cien veces más, repartido en logaritmo para que salgan tanto cafés
+// como cenas, y a dos cifras, que en una tienda nadie pone 3.718 yenes.
+function preguntaOjo(rate, azar = Math.random) {
+  if (!Number.isFinite(rate) || rate <= 0) return null;
+  const bruto = escalaChuleta(rate) * 10 ** (azar() * 2);
+  const paso = 10 ** Math.max(Math.floor(Math.log10(bruto)) - 1, 0);
+  return Math.max(Math.round(bruto / paso) * paso, 1);
+}
+
+// Clavado hasta un 5 %, que es lo que se aparta el truco de cabeza; cerca hasta
+// un 15 %, que aún te dice si algo es caro o barato.
+const OJO_CLAVADO = 0.05;
+const OJO_CERCA = 0.15;
+
+function notaOjo(respuesta, correcta) {
+  if (!(respuesta > 0) || !(correcta > 0)) return null;
+  const error = respuesta / correcta - 1;
+  // Redondeado: 21 por 20 da un 5,0000000000004 % y no contaba como clavado.
+  const cuanto = Math.round(Math.abs(error) * 1e6) / 1e6;
+  const tono = cuanto <= OJO_CLAVADO ? "clavado" : cuanto <= OJO_CERCA ? "cerca" : "lejos";
+  return { error, tono };
+}
+
+const rachaOjo = (racha, nota) => (nota && nota.tono !== "lejos" ? racha + 1 : 0);
+
 // Para el grupo del viaje. Las filas van entre ``` para que WhatsApp las ponga
 // en letra de máquina y los números queden en columna.
 function chuletaParaCompartir(filas, from, to, comision = 0) {

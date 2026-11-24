@@ -25,6 +25,7 @@ for (const trozo of TROZOS) {
 // en el ámbito global, y así no hay que montar un build.
 module.exports = {
   datosTarjeta, anadidoConvertido,
+  preguntaOjo, OJO_CLAVADO, OJO_CERCA, notaOjo, rachaOjo,
   NOTA_MAX, limpiarNota, cambiarNota,
   esFijo, delDiaADia, marcarFijo,
   numeroBanco, fechaBanco, leerCsvBanco, conceptoBanco, tasaDeEseDia, gastosDelBanco, cargoEnDivisa, comisionReal, textoComisionReal,

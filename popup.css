@@ -10929,6 +10929,160 @@ body::after {
   min-width: 0;
 }
 
+/* Entrena el ojo: en el hueco de la tabla, con el mismo alto, para que el
+   popup no salte al cambiar de una a otra. */
+.chuleta__tabla[hidden],
+.ojo[hidden] {
+  display: none;
+}
+
+.ojo {
+  display: grid;
+  grid-template-rows: 19px 24px 14px;
+  gap: 3px;
+  font-variant-numeric: tabular-nums;
+}
+
+.ojo.is-nueva {
+  animation: enter var(--mid) var(--ease-out);
+}
+
+.ojo__pregunta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+  min-width: 0;
+  color: var(--mist);
+  font-size: 12px;
+  white-space: nowrap;
+}
+
+.ojo__pregunta > span:first-child {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.ojo__pregunta > span.is-nueva {
+  animation: pop var(--mid) var(--ease-spring);
+}
+
+.ojo__racha {
+  flex-shrink: 0;
+  padding: 0 6px;
+  border: 1px solid var(--brass-dim);
+  border-radius: 999px;
+  color: var(--brass);
+  background: var(--brass-ghost);
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 700;
+  cursor: help;
+}
+
+.ojo__racha.is-tic {
+  animation: beat var(--mid) var(--ease-spring);
+}
+
+.ojo__fila {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.ojo__campo {
+  flex: 1;
+  min-width: 0;
+  height: 24px;
+  padding: 0 var(--s-2);
+  background: var(--slate);
+  border: 1px solid var(--hairline-strong);
+  border-radius: 6px;
+  color: var(--mist);
+  font-family: var(--font-mono);
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+  outline: none;
+  transition: border-color var(--fast) var(--ease), opacity var(--fast) var(--ease);
+}
+
+.ojo__campo:focus {
+  border-color: var(--brass-dim);
+}
+
+.ojo__campo:disabled {
+  opacity: 0.6;
+}
+
+.ojo__campo.is-mal {
+  border-color: var(--cinnabar);
+  animation: shake 400ms var(--ease);
+}
+
+.ojo__codigo {
+  flex-shrink: 0;
+  color: var(--muted);
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+}
+
+.ojo__ver {
+  flex-shrink: 0;
+  height: 24px;
+  padding: 0 10px;
+  background: var(--brass-ghost);
+  border: 1px solid var(--brass-dim);
+  border-radius: 6px;
+  color: var(--brass);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: background-color var(--fast) var(--ease), transform var(--fast) var(--ease-spring);
+}
+
+.ojo__ver:hover {
+  background: var(--brass-glow);
+}
+
+.ojo__ver:active {
+  transform: scale(0.94);
+}
+
+.ojo__ver:focus-visible,
+.ojo__campo:focus-visible {
+  outline: 2px solid var(--brass);
+  outline-offset: 1px;
+}
+
+.ojo__nota {
+  overflow: hidden;
+  font-size: 10px;
+  line-height: 14px;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.ojo__nota[data-tono="clavado"] { color: var(--jade); }
+.ojo__nota[data-tono="cerca"] { color: var(--brass); }
+.ojo__nota[data-tono="lejos"] { color: var(--cinnabar); }
+
+.ojo__nota.is-nueva[data-tono="clavado"] {
+  animation: pop var(--mid) var(--ease-spring);
+}
+
+.ojo__nota.is-nueva[data-tono="cerca"] {
+  animation: enter var(--mid) var(--ease-out);
+}
+
+.ojo__nota.is-nueva[data-tono="lejos"] {
+  animation: shake 400ms var(--ease);
+}
+
+
 .chuleta__pie {
   display: flex;
   justify-content: flex-end;
@@ -10942,11 +11096,32 @@ body::after {
   flex: 1;
   min-width: 0;
   overflow: hidden;
+  padding: 0;
+  background: none;
+  border: none;
   color: var(--muted);
+  font: inherit;
   font-size: 10px;
+  text-align: left;
   white-space: nowrap;
   text-overflow: ellipsis;
-  cursor: help;
+  cursor: pointer;
+  transition: color var(--fast) var(--ease);
+}
+
+.chuleta__truco:hover:not(:disabled),
+.chuleta__truco[aria-pressed="true"] {
+  color: var(--brass);
+}
+
+.chuleta__truco:disabled {
+  cursor: default;
+}
+
+.chuleta__truco:focus-visible {
+  outline: 2px solid var(--brass);
+  outline-offset: 1px;
+  border-radius: 3px;
 }
 
 /* El emoji algo más pequeño: con "Quita 3 ceros, ÷ 7,5" va justo. */

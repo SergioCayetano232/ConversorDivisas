@@ -516,7 +516,11 @@ La lista entera, con sus ejemplos. El resumen está en el [README](../README.md)
   rupias…) empieza en 100 o en 10.000, que si no la tabla no sirve. Pulsando una
   fila la pones como cantidad. Abajo, el truco para hacerlo de cabeza en la
   tienda ("Quítale un 10 %", "Quita 3 ceros, × 6"), el más fácil que no se
-  aparte más de un 4 %; pasando el ratón, cuánto se aparta. Con el botón de **WhatsApp** la copias en
+  aparte más de un 4 %; pasando el ratón, cuánto se aparta. Pulsando el truco
+  lo practicas: en el sitio de la tabla te pregunta un precio de allí ("¿Cuánto
+  son 1.200 JPY?"), escribes tu cuenta y te dice si lo has clavado (hasta un 5 %),
+  si te has acercado (hasta un 15 %) o cuánto te has ido, con una racha 🔥 de
+  aciertos seguidos y la mejor guardada. Con Enter, otra; con Esc, la tabla. Con el botón de **WhatsApp** la copias en
   columna, lista para pegar en el grupo del viaje, y con **Imprimir** te la
   llevas en papel: sale del tamaño de una tarjeta de crédito, por un lado los
   precios de allí y por el otro lo que te dan por lo tuyo, para recortarla,
