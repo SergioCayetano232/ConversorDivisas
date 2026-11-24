@@ -101,6 +101,31 @@ function nivelDePrecios(from, to, rate, idiomas = [], tuya = to) {
   return { pct, ratio, alli: alli.region, casa: casa.region };
 }
 
+// Los sitios donde lo de cada día te sale más barato, con las tasas de hoy
+// desde cualquier base. Lo comparo con la PPA y no con la tasa de hace un año:
+// el peso argentino cae porque allí suben los precios, no porque sea más barato.
+// Seis, que es lo que cabe en la rejilla de tres filas.
+const RINDE_MAX = 6;
+
+function dondeRindeMas(tasas, base, tuya, idiomas = [], max = RINDE_MAX) {
+  if (!tasas || !isValidCode(tuya)) return [];
+  const de = (code) => (code === base ? 1 : tasas[code]);
+  const casa = paisDePrecios(tuya, idiomas);
+  if (!casa || !(de(tuya) > 0)) return [];
+  return CURRENCIES.map(({ code }) => code)
+    .filter((code) => code !== tuya && de(code) > 0)
+    .map((code) => {
+      // Al euro como destino no le pongo tu país: sería tu casa, no allí.
+      const alli = paisDePrecios(code, []);
+      if (!alli) return null;
+      const ratio = (de(tuya) / de(code)) * alli.ppa / casa.ppa;
+      return { code, region: alli.region, ratio, pct: Math.round((ratio - 1) * 100) };
+    })
+    .filter((r) => r && r.pct <= -NIVEL_IGUAL)
+    .sort((a, b) => a.ratio - b.ratio)
+    .slice(0, max);
+}
+
 // "In United States" suena mal: algunos países llevan artículo.
 const ARTICULO_PAIS = { es: { GB: "el " }, en: { US: "the ", GB: "the ", NL: "the ", PH: "the ", AE: "the ", DO: "the " } };
 

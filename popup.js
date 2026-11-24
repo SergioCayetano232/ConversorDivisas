@@ -34,6 +34,9 @@ const el = {
   vistas: document.getElementById("vistas"),
   botonesVista: document.querySelectorAll(".vista"),
   suscripciones: document.getElementById("suscripciones"),
+  rinde: document.getElementById("rinde"),
+  rindeLista: document.getElementById("rinde-lista"),
+  rindePie: document.getElementById("rinde-pie"),
   suscripcionesTotal: document.getElementById("suscripciones-total"),
   suscripcionesLista: document.getElementById("suscripciones-lista"),
   suscripcionesForm: document.getElementById("suscripciones-form"),
@@ -1708,6 +1711,7 @@ function pintarVista() {
   el.fecha.hidden = vista !== "fecha";
   el.timo.hidden = vista !== "timo";
   el.suscripciones.hidden = vista !== "suscripciones";
+  el.rinde.hidden = vista !== "rinde";
   pintarAvisoComision();
   el.vistas.dataset.vista = vista;
   for (const boton of el.botonesVista) {
@@ -1739,6 +1743,9 @@ function cambiarVista(nueva) {
   if (vista === "chuleta") {
     for (const fila of el.chuletaTabla.children) fila.classList.add("is-nueva");
   }
+  if (vista === "rinde") {
+    for (const fila of el.rindeLista.children) fila.classList.add("is-nueva");
+  }
   if (vista === "fecha") refreshFecha();
   if (vista === "suscripciones") abrirSuscripciones();
   try {
@@ -1759,6 +1766,7 @@ function deslizarVista(lado) {
     fecha: [el.fecha],
     timo: [el.timo],
     suscripciones: [el.suscripciones],
+    rinde: [el.rinde],
   };
   // Al ocultarse a medias no llega ningún evento, así que limpio aquí los de
   // las pestañas por las que pasaste deprisa.
@@ -1781,7 +1789,7 @@ function deslizarVista(lado) {
 
 // El patrón de pestañas de siempre: con las flechas cambias, y el foco va con
 // la pestaña elegida.
-const VISTAS = ["evolucion", "extras", "avisos", "chuleta", "fecha", "timo", "suscripciones"];
+const VISTAS = ["evolucion", "extras", "avisos", "chuleta", "fecha", "timo", "suscripciones", "rinde"];
 
 function onTeclaVistas(event) {
   if (event.key !== "ArrowLeft" && event.key !== "ArrowRight") return;
@@ -2144,6 +2152,56 @@ function pintarExtras() {
   const ahora = celdas.map((c) => c.dataset.code).join();
   if (antes !== ahora) el.rejilla.replaceChildren(...celdas);
   el.extrasCompartir.hidden = !textoExtras();
+  pintarRinde();
+}
+
+// Va con las tasas de la rejilla de al lado, sean desde la divisa que sean.
+function pintarRinde() {
+  const tuya = miDivisa();
+  const lista = tasasBase ? dondeRindeMas(tasasBase.rates, tasasBase.de, tuya, navigator.languages) : [];
+  const casa = paisDePrecios(tuya, navigator.languages);
+  const filas = lista.map((sitio, i) => {
+    const fila = el.rindeLista.querySelector(`[data-code="${sitio.code}"]`) ?? crearFilaRinde(sitio.code);
+    fila.style.setProperty("--i", i);
+    fila.style.setProperty("--ahorro", `${Math.min(100, Math.max(0, (1 - sitio.ratio) * 100))}%`);
+    const pais = nombrePais(sitio.region);
+    fila.querySelector(".rinde__pais").textContent = pais.charAt(0).toLocaleUpperCase() + pais.slice(1);
+    fila.querySelector(".rinde__pct").textContent = textoNivel(sitio, { corto: true }).replace(/^\S+\s/, "");
+    const frase = textoNivel({ ...sitio, alli: sitio.region, casa: casa?.region ?? null });
+    const boton = fila.querySelector(".rinde__elegir");
+    boton.title = tr("rinde.elegir", { frase });
+    boton.setAttribute("aria-label", boton.title);
+    return fila;
+  });
+  const antes = [...el.rindeLista.children].map((f) => f.dataset.code).join();
+  if (antes !== filas.map((f) => f.dataset.code).join()) el.rindeLista.replaceChildren(...filas);
+  el.rindePie.textContent = !tasasBase ? "" : lista.length ? tr("rinde.pie", { casa: nombrePais(casa?.region ?? null) }) : tr("rinde.vacio");
+  el.rindePie.title = tr("precios.fuente", { anio: PPA_ANIO });
+}
+
+function crearFilaRinde(code) {
+  const fila = document.createElement("li");
+  fila.className = "rinde__fila is-nueva";
+  fila.dataset.code = code;
+  const boton = document.createElement("button");
+  boton.type = "button";
+  boton.className = "rinde__elegir";
+  const barra = document.createElement("span");
+  barra.className = "rinde__barra";
+  barra.setAttribute("aria-hidden", "true");
+  const bandera = crearBandera(code);
+  bandera.className = "rinde__bandera";
+  const pais = document.createElement("span");
+  pais.className = "rinde__pais";
+  const pct = document.createElement("span");
+  pct.className = "rinde__pct";
+  boton.append(barra, bandera, pais, pct);
+  boton.addEventListener("click", () => onElegirExtra(code));
+  fila.append(boton);
+  fila.addEventListener("animationend", (event) => {
+    if (event.target === fila) fila.classList.remove("is-nueva");
+  });
+  return fila;
 }
 
 // La de arriba primero, con la comisión como las otras, y luego las de la rejilla.

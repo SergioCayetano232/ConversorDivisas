@@ -743,6 +743,7 @@ const ATAJOS = {
   Digit5: "vista:fecha",
   Digit6: "vista:timo",
   Digit7: "vista:suscripciones",
+  Digit8: "vista:rinde",
   // El 0 no tenía pestaña: la cantidad a 1, que es como se mira la tasa.
   Digit0: "cantidadUno",
   KeyG: "gastos",
@@ -840,6 +841,7 @@ const FUNCIONES = [
   { accion: "vista:fecha", claves: "historico dia fecha pasado date past" },
   { accion: "vista:timo", claves: "casa de cambio timo comision exchange office fair" },
   { accion: "vista:suscripciones", claves: "netflix spotify icloud suscripcion mensual subscription monthly" },
+  { accion: "vista:rinde", claves: "barato destino viajar pais rinde dinero cheap destination country travel" },
   { accion: "copiaSeguridad", claves: "copia backup restaurar exportar restore" },
   { accion: "bienvenida", claves: "mi divisa casa moneda idioma atajos bienvenida home currency language welcome" },
   { accion: "panel", claves: "lateral fijo abierto al lado side panel dock pin" },

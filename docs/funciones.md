@@ -532,6 +532,11 @@ La lista entera, con sus ejemplos. El resumen está en el [README](../README.md)
   hunde, allí se abarata. Con el euro, compara con el país de tu navegador
   (España con `es-ES`) o con la media de la zona euro. Por debajo de un 10 % de
   diferencia no sale, y tampoco si ninguna de las dos divisas es la tuya
+- Dónde rinde más tu dinero, en la pestaña del globo (o `Alt+8`): los seis
+  sitios donde lo de cada día te sale más barato que en casa ("🇪🇬 Egipto
+  −77 %"), con una barra verde de lo que te ahorras. Pulsando uno lo pones como
+  destino. Sale de la misma paridad del FMI y la tasa de hoy, no de cuánto ha
+  caído su moneda: si cae porque allí suben los precios, no es más barato
 - La primera vez elige el par según el idioma del navegador: con `es-MX` empieza
   en MXN → USD, con `en-GB` en GBP → EUR. Si no lo tiene claro, EUR → USD
 - Recuerda la última pareja de divisas, la cantidad, el periodo del gráfico,

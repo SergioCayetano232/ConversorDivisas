@@ -10114,7 +10114,8 @@ body::after {
 .extras,
 .chuleta,
 .fecha,
-.timo {
+.timo,
+.rinde {
   animation: enter var(--mid) var(--ease-out);
 }
 
@@ -10167,14 +10168,14 @@ body::after {
   border-radius: var(--r-sm);
 }
 
-/* Las siete se reparten el ancho, así que la píldora mide un séptimo (menos
+/* Las ocho se reparten el ancho, así que la píldora mide un octavo (menos
    los huecos) y salta lo que mide ella más el hueco de 2 px. */
 .vistas__pildora {
   position: absolute;
   top: 2px;
   bottom: 2px;
   left: 2px;
-  width: calc((100% - 16px) / 7);
+  width: calc((100% - 18px) / 8);
   border-radius: 6px;
   background: var(--brass);
   box-shadow: 0 0 10px -2px var(--brass-glow);
@@ -10188,6 +10189,7 @@ body::after {
 .vistas[data-vista="fecha"] { --i: 4; }
 .vistas[data-vista="timo"] { --i: 5; }
 .vistas[data-vista="suscripciones"] { --i: 6; }
+.vistas[data-vista="rinde"] { --i: 7; }
 
 /* El punto de la campana cuando hay avisos puestos. */
 .vista.tiene-avisos::after {
@@ -10760,6 +10762,132 @@ body::after {
 
 .chuleta {
   margin-top: var(--s-2);
+}
+
+/* Donde rinde más: el mismo alto que la chuleta, por columnas para que el
+   ranking se lea de arriba abajo. La barra verde es lo que te ahorras. */
+.rinde {
+  margin-top: var(--s-2);
+}
+
+.rinde__lista {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  grid-template-rows: repeat(3, 19px);
+  grid-auto-flow: column;
+  gap: 3px 6px;
+  list-style: none;
+}
+
+.rinde__fila {
+  min-width: 0;
+}
+
+.rinde__fila.is-nueva {
+  animation: pop var(--mid) var(--ease-spring) backwards;
+  animation-delay: calc(var(--i, 0) * 45ms);
+}
+
+.rinde__elegir {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  width: 100%;
+  height: 100%;
+  padding: 0 var(--s-2) 0 5px;
+  overflow: hidden;
+  background: var(--slate);
+  border: 1px solid var(--hairline);
+  border-radius: 6px;
+  color: var(--mist);
+  font-family: var(--font-ui);
+  font-size: 11px;
+  cursor: pointer;
+  transition: border-color var(--fast) var(--ease), background-color var(--fast) var(--ease),
+    transform var(--fast) var(--ease-spring);
+}
+
+.rinde__barra {
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: var(--ahorro, 0%);
+  background: linear-gradient(90deg, transparent, color-mix(in srgb, var(--jade) 16%, transparent));
+  box-shadow: inset 0 -2px 0 color-mix(in srgb, var(--jade) 75%, transparent);
+  pointer-events: none;
+  transform-origin: left;
+  animation: rinde-crece 700ms var(--ease-out) backwards;
+  animation-delay: calc(var(--i, 0) * 45ms + 120ms);
+  transition: width var(--slow) var(--ease-out);
+}
+
+@keyframes rinde-crece {
+  from {
+    transform: scaleX(0);
+  }
+}
+
+.rinde__bandera,
+.rinde__pais,
+.rinde__pct {
+  position: relative;
+}
+
+.rinde__bandera {
+  flex-shrink: 0;
+  font-size: 11px;
+  line-height: 1;
+}
+
+.rinde__pais {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  text-align: left;
+}
+
+.rinde__pct {
+  flex-shrink: 0;
+  color: var(--jade);
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.rinde__elegir:hover {
+  border-color: var(--brass-dim);
+  background: var(--brass-ghost);
+  transform: translateY(-1px);
+}
+
+.rinde__elegir:hover .rinde__pais {
+  color: var(--brass);
+}
+
+.rinde__elegir:active {
+  transform: scale(0.96);
+}
+
+.rinde__elegir:focus-visible {
+  outline: 2px solid var(--brass);
+  outline-offset: 1px;
+}
+
+.rinde__pie {
+  margin-top: 5px;
+  overflow: hidden;
+  color: var(--muted);
+  font-size: 10px;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  cursor: help;
+}
+
+.rinde__pie:not(:empty)::before {
+  content: "🌍 ";
 }
 
 .chuleta__tabla {
@@ -12978,6 +13106,8 @@ kbd {
   .trend__hoy,
   .trend__hoy::after,
   .chuleta__fila.is-nueva,
+  .rinde__fila.is-nueva,
+  .rinde__barra,
   .historial__fila,
   .gastos__fila.is-nueva,
   .frecuentes__chip,
