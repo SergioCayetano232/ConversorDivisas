@@ -253,7 +253,11 @@ La lista entera, con sus ejemplos. El resumen está en el [README](../README.md)
   hasta salir para llegar con el presupuesto ("🐷 Aparta 150 EUR a la semana"),
   sin contar lo que ya has pagado, como el vuelo. Con menos de una semana, lo
   que falta de una vez. Si no sabes cuánto poner, mira tus otros viajes y te lo
-  propone ("💡 Sueles gastar 100 al día: 7 días, 700 EUR"), y pulsándolo se pone
+  propone ("💡 Sueles gastar 100 al día: 7 días, 700 EUR"), y pulsándolo se pone.
+  Si sabe adónde vas, lo ajusta a lo que cuestan las cosas allí y en cada viaje
+  que hiciste: con 60 al día en Tailandia, para Suiza te propone unos 234 ("💡 En
+  🇨🇭 Suiza, unos 234 al día: 7 días, 1.600 EUR"). Sale de la paridad del FMI y
+  de la tasa a la que te salió cada viaje
 - Lo que hay que hacer antes de salir: con el día de salida puesto, al lado de
   la curva sale una maleta con lo que llevas hecho ("🧳 2/8"). Dentro, lo de
   allí sacado de los `cd`: el visado o el ESTA, la tarjeta sanitaria o el

@@ -1697,18 +1697,45 @@ function redondoPresupuesto(n) {
   return Math.round(n / paso) * paso;
 }
 
-// Con la mediana, para que un viaje de lujo no te infle todos los demás.
-function presupuestoSugerido(viajes, to, dias) {
+// A cuánto te salió de media la divisa de allí en ese viaje, con lo que apuntaste.
+function tasaDelViaje(gastos, from, to) {
+  let cantidad = 0;
+  let valor = 0;
+  for (const g of delDiaADia(gastos)) {
+    if (g.from !== from || g.to !== to || !(g.cantidad > 0) || !(g.valor > 0)) continue;
+    cantidad += g.cantidad;
+    valor += g.valor;
+  }
+  return cantidad > 0 ? valor / cantidad : null;
+}
+
+// Con la mediana, para que un viaje de lujo no te infle todos los demás. Si sé
+// adónde vas, cada viaje cuenta según lo caro que era su sitio: 60 al día en
+// Tailandia no son 60 al día en Suiza. Sin eso, como antes, tal cual.
+function presupuestoSugerido(viajes, to, dias, { destino = null, tasa = null, idiomas = [] } = {}) {
   if (!(dias > 0)) return null;
-  const medias = todosLosViajes(viajes)
+  const otros = todosLosViajes(viajes)
     .filter((v) => v.id !== viajes.activo && delDiaADia(v.gastos).length >= GASTOS_PARA_SUGERIR)
-    .map((v) => mediaPorDia(v.gastos))
-    .filter((m) => m?.to === to)
-    .map((m) => m.media);
-  if (!medias.length) return null;
-  const porDia = mediana(medias);
+    .map((v) => ({ viaje: v, media: mediaPorDia(v.gastos) }))
+    .filter(({ media }) => media?.to === to);
+  if (!otros.length) return null;
+
+  const alli = destino && destino !== to ? nivelFrente(destino, to, tasa, idiomas) : null;
+  const ajustados = !alli ? [] : otros.map(({ viaje, media }) => {
+    const suyo = destinoDelViaje(viaje, { aqui: to });
+    // Sin divisa de fuera fue un viaje por casa: lo de cada día cuesta lo mismo.
+    const nivel = suyo ? nivelFrente(suyo, to, tasaDelViaje(viaje.gastos, suyo, to), idiomas)?.nivel : 1;
+    return nivel > 0 ? media.media / nivel : null;
+  }).filter((n) => n !== null);
+
+  if (ajustados.length) {
+    const porDia = mediana(ajustados) * alli.nivel;
+    const importe = redondoPresupuesto(porDia * dias);
+    return importe > 0 ? { porDia, dias, importe, to, viajes: ajustados.length, alli: alli.region, destino } : null;
+  }
+  const porDia = mediana(otros.map(({ media }) => media.media));
   const importe = redondoPresupuesto(porDia * dias);
-  return importe > 0 ? { porDia, dias, importe, to, viajes: medias.length } : null;
+  return importe > 0 ? { porDia, dias, importe, to, viajes: otros.length } : null;
 }
 
 // Lo que te paga el trabajo. En su propia lista, como los pendientes: así no

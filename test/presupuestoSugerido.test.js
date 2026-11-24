@@ -63,3 +63,37 @@ test("sin días o con las fechas al revés, nada", () => {
 test("sin otros viajes, nada", () => {
   assert.equal(presupuestoSugerido(conLista(), "EUR", 5), null);
 });
+
+// Con la divisa de allí apuntada, a la tasa que le digas.
+const viajeA = (id, total, from, tasa) => ({
+  id,
+  gastos: [5, 4, 3, 2, 1].map((d) => gasto(`2026-06-0${d}`, total / 5, "EUR", { from, cantidad: total / 5 / tasa })),
+});
+
+test("ajustado a lo caro que es adónde vas", () => {
+  const { nivelFrente } = require("../logica.js");
+  const tailandia = viajeA("a", 300, "THB", 0.026);
+  const r = presupuestoSugerido(conLista(tailandia), "EUR", 7, { destino: "CHF", tasa: 1.07, idiomas: ["es-ES"] });
+  const esperado = (60 / nivelFrente("THB", "EUR", 0.026, ["es-ES"]).nivel) * nivelFrente("CHF", "EUR", 1.07, ["es-ES"]).nivel;
+  assert.ok(Math.abs(r.porDia - esperado) < 1e-9);
+  assert.ok(r.porDia > 60 * 2.5, "Suiza sale mucho más cara que Tailandia");
+  assert.equal(r.alli, "CH");
+  assert.equal(r.destino, "CHF");
+  assert.equal(r.viajes, 1);
+});
+
+test("volver al mismo sitio a la misma tasa da lo mismo que gastaste", () => {
+  const r = presupuestoSugerido(conLista(viajeA("a", 500, "JPY", 0.0056)), "EUR", 5, { destino: "JPY", tasa: 0.0056, idiomas: ["es-ES"] });
+  assert.ok(Math.abs(r.porDia - 100) < 1e-9);
+});
+
+test("un viaje sin divisa de fuera cuenta como en casa", () => {
+  const { nivelFrente } = require("../logica.js");
+  const r = presupuestoSugerido(conLista(viaje("a", 500)), "EUR", 1, { destino: "USD", tasa: 0.86, idiomas: ["es-ES"] });
+  assert.ok(Math.abs(r.porDia - 100 * nivelFrente("USD", "EUR", 0.86, ["es-ES"]).nivel) < 1e-9);
+});
+
+test("sin tasa del destino, como antes", () => {
+  const r = presupuestoSugerido(conLista(viajeA("a", 500, "THB", 0.026)), "EUR", 5, { destino: "CHF", tasa: null });
+  assert.deepEqual(r, { porDia: 100, dias: 5, importe: 500, to: "EUR", viajes: 1 });
+});

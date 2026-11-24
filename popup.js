@@ -6152,17 +6152,30 @@ function editarPresupuesto() {
 // Solo al crearlo: si ya tienes uno, esa cifra la decidiste tú.
 function pintarSugerido() {
   const hasta = el.presupuestoHasta.value;
+  const to = el.presupuestoCodigo.textContent;
   const sugerido = presupuesto || !hasta ? null
-    : presupuestoSugerido(viajes, el.presupuestoCodigo.textContent, diasHasta(hasta, el.presupuestoDesde.value || hoy()));
+    : presupuestoSugerido(viajes, to, diasHasta(hasta, el.presupuestoDesde.value || hoy()), adondeVas(to));
   el.presupuestoSugerido.hidden = !sugerido;
   if (!sugerido) return;
   el.presupuestoSugerido.dataset.importe = sugerido.importe;
-  el.presupuestoSugerido.textContent = tr(sugerido.dias === 1 ? "presupuesto.sugeridoUno" : "presupuesto.sugerido", {
+  const alli = sugerido.destino ? "Alli" : "";
+  el.presupuestoSugerido.textContent = tr(`presupuesto.sugerido${alli}${sugerido.dias === 1 ? "Uno" : ""}`, {
     porDia: nfEntero.format(sugerido.porDia),
     dias: sugerido.dias,
     importe: `${nfEntero.format(sugerido.importe)} ${sugerido.to}`,
+    pais: `${banderaDivisa(sugerido.destino ?? "")} ${nombrePais(sugerido.alli ?? null)}`.trim(),
   });
-  el.presupuestoSugerido.title = tr(sugerido.viajes === 1 ? "presupuesto.sugeridoTituloUno" : "presupuesto.sugeridoTitulo", { n: sugerido.viajes });
+  el.presupuestoSugerido.title = tr(`presupuesto.sugerido${alli}Titulo${sugerido.viajes === 1 ? "Uno" : ""}`, { n: sugerido.viajes, anio: PPA_ANIO });
+}
+
+// Adónde va el viaje y a cuánto está hoy, con las tasas de la rejilla de otras
+// divisas, que ya están pedidas. Si aún no han llegado, la sugerencia va sin ajustar.
+function adondeVas(to) {
+  const destino = destinoDelViaje(viajeActivo(viajes), { aqui: to, from: el.from.value });
+  if (!destino || !tasasBase) return {};
+  const de = (code) => (code === tasasBase.de ? 1 : tasasBase.rates[code]);
+  const tasa = de(to) / de(destino);
+  return Number.isFinite(tasa) ? { destino, tasa, idiomas: navigator.languages } : {};
 }
 
 function onSugerido() {

@@ -126,6 +126,16 @@ function dondeRindeMas(tasas, base, tuya, idiomas = [], max = RINDE_MAX) {
     .slice(0, max);
 }
 
+// Lo caro que es un sitio frente a tu casa, sin el umbral de la pastilla: aquí
+// cuenta hasta el 3 %. tasa es lo que vale 1 de allí en lo tuyo. El euro de
+// destino va con la media, que tu país es tu casa.
+function nivelFrente(code, casa, tasa, idiomas = []) {
+  const alli = paisDePrecios(code, []);
+  const aqui = paisDePrecios(casa, idiomas);
+  if (!alli || !aqui || !(tasa > 0)) return null;
+  return { nivel: (tasa * alli.ppa) / aqui.ppa, region: alli.region };
+}
+
 // "In United States" suena mal: algunos países llevan artículo.
 const ARTICULO_PAIS = { es: { GB: "el " }, en: { US: "the ", GB: "the ", NL: "the ", PH: "the ", AE: "the ", DO: "the " } };
 
