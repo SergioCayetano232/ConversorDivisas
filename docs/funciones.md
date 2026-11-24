@@ -457,7 +457,10 @@ La lista entera, con sus ejemplos. El resumen está en el [README](../README.md)
   la tienda"). Solo con el precio del producto, el que la tienda deja escrito
   para los buscadores, que en un listado cada precio es de una cosa. Se acuerda
   de 200 páginas durante un mes, y en Amazon la página es la del producto
-  aunque llegues por otro enlace
+  aunque llegues por otro enlace. Con el permiso de la tecla `⌥` del pie, no
+  hace falta convertirlo: al abrir la página sale sola una pastilla abajo a la
+  derecha, si lo que te cuesta ha cambiado. Si está igual no dice nada, y las
+  webs que no tiene en la memoria ni las mira
 - Y que te avise cuando el cambio lo abarate: con la campana 🔔 de al lado
   pones lo máximo que quieres pagar (te propone un 5 % menos, en redondo) y se
   queda como un aviso de precio de los del popup: "180,00 GBP ya son 198,00

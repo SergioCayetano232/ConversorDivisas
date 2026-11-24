@@ -5,7 +5,7 @@
   if (window.__conversorAlt) return;
   window.__conversorAlt = true;
 
-  const NO_MIRAR = "script, style, noscript, textarea, input, select, option, code, pre, svg, [contenteditable], conversor-precio, conversor-divisas, conversor-aviso, conversor-alt";
+  const NO_MIRAR = "script, style, noscript, textarea, input, select, option, code, pre, svg, [contenteditable], conversor-precio, conversor-divisas, conversor-aviso, conversor-alt, conversor-visto";
   // Los precios partidos ("$" "49" ".99") se juntan en un bloque corto de arriba.
   const BLOQUE_MAX = 40;
 
@@ -252,6 +252,124 @@
     alt = false;
     ocultar();
   }
+
+  // Al volver a un producto que ya convertiste, si ha cambiado lo que te cuesta.
+  const CSS_VISTO = `
+    :host { all: initial; }
+
+    .visto {
+      --tono: #4EA96B;
+      --fondo: rgba(11, 14, 19, 0.92);
+      --texto: #E6EDF3;
+      --sheen: rgba(255, 255, 255, 0.12);
+
+      position: fixed;
+      right: 16px;
+      bottom: 16px;
+      z-index: 2147483647;
+      display: flex;
+      align-items: flex-start;
+      gap: 8px;
+      box-sizing: border-box;
+      max-width: min(340px, calc(100vw - 32px));
+      padding: 9px 8px 9px 12px;
+      font: 500 12px/1.45 system-ui, -apple-system, "Segoe UI", sans-serif;
+      font-variant-numeric: tabular-nums;
+      color: var(--texto);
+      background: var(--fondo);
+      backdrop-filter: blur(12px) saturate(180%);
+      -webkit-backdrop-filter: blur(12px) saturate(180%);
+      border: 1px solid color-mix(in srgb, var(--tono) 45%, transparent);
+      border-left: 3px solid var(--tono);
+      border-radius: 6px 12px 12px 6px;
+      box-shadow: inset 0 1px 0 var(--sheen), 0 8px 24px rgba(0, 0, 0, 0.25);
+      animation: subir 420ms cubic-bezier(0.34, 1.56, 0.64, 1) both;
+    }
+
+    .visto[data-tono="caro"] { --tono: #E5534B; }
+    .visto.is-saliendo { animation: bajar 220ms ease-in forwards; }
+    .texto { flex: 1; }
+
+    .cerrar {
+      all: unset;
+      flex-shrink: 0;
+      display: grid;
+      place-items: center;
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      font-size: 11px;
+      color: inherit;
+      opacity: 0.6;
+      cursor: pointer;
+    }
+
+    .cerrar:hover { opacity: 1; background: rgba(127, 127, 127, 0.2); }
+    .cerrar:focus-visible { outline: 2px solid var(--tono); outline-offset: 1px; }
+
+    @keyframes subir {
+      from { opacity: 0; transform: translateY(12px); }
+    }
+
+    @keyframes bajar {
+      to { opacity: 0; transform: translateY(12px); }
+    }
+
+    @media (prefers-color-scheme: light) {
+      .visto {
+        --tono: #2E8A4E;
+        --fondo: rgba(255, 252, 246, 0.96);
+        --texto: #1A1D23;
+        --sheen: rgba(255, 255, 255, 0.9);
+      }
+      .visto[data-tono="caro"] { --tono: #C7372F; }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .visto, .visto.is-saliendo { animation: none; }
+    }
+  `;
+  // Se va sola, salvo con el ratón encima, que entonces la estás leyendo.
+  const VISTO_MS = 15000;
+
+  function enseñarVisto({ visto, cerrar }) {
+    const host = document.createElement("conversor-visto");
+    const sombra = host.attachShadow({ mode: "closed" });
+    sombra.innerHTML = `<style>${CSS_VISTO}</style><div class="visto" role="status"><span class="texto"></span><button class="cerrar" type="button">✕</button></div>`;
+    const caja = sombra.querySelector(".visto");
+    caja.dataset.tono = visto.tono;
+    sombra.querySelector(".texto").textContent = visto.texto;
+    const boton = sombra.querySelector(".cerrar");
+    boton.setAttribute("aria-label", cerrar);
+    let temporizador = null;
+    const quitar = () => {
+      clearTimeout(temporizador);
+      caja.classList.add("is-saliendo");
+      setTimeout(() => host.remove(), 230);
+    };
+    const esperar = () => {
+      clearTimeout(temporizador);
+      temporizador = setTimeout(quitar, VISTO_MS);
+    };
+    boton.addEventListener("click", quitar);
+    caja.addEventListener("mouseenter", () => clearTimeout(temporizador));
+    caja.addEventListener("mouseleave", esperar);
+    document.documentElement.append(host);
+    esperar();
+  }
+
+  async function mirarVisto() {
+    try {
+      const r = await chrome.runtime.sendMessage({ tipo: "mirarVisto", url: location.href });
+      if (r?.apagado) return apagar();
+      if (r?.visto) enseñarVisto(r);
+    } catch (error) {
+      // Sin la extensión al otro lado (recargada, por ejemplo) no hay nada que decir.
+    }
+  }
+
+  // Solo la página de arriba: los iframes de anuncios no son el producto.
+  if (window.top === window) mirarVisto();
 
   addEventListener("keydown", onTecla, true);
   addEventListener("keyup", onSoltar, true);

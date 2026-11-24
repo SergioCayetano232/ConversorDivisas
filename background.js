@@ -1711,10 +1711,31 @@ async function mirarAlt({ texto, offset, bloques, url }) {
   return { rangos, inicio: precio.inicio, fin: precio.fin, bloque: precio.bloque, texto: datos.texto, to: datos.to };
 }
 
+// Con el permiso, al abrir una página que ya conociste: si el producto ha
+// cambiado de precio en tu divisa, la página saca una pastilla. Solo mira las
+// que tienes en la memoria; el resto de webs se quedan en la primera línea.
+async function mirarVisto({ url }, quien) {
+  if (!(await chrome.permissions.contains(TODAS_LAS_WEBS))) return { apagado: true };
+  const clave = paginaVista(url);
+  const { [VISTOS_KEY]: vistos } = await chrome.storage.local.get(VISTOS_KEY);
+  if (!clave || !vistos?.[clave] || !quien?.tab) return {};
+  // Una vez por página mientras no cierres Chrome: recargar no la vuelve a sacar.
+  const { vistosAvisados = [] } = await chrome.storage.session.get("vistosAvisados");
+  if (vistosAvisados.includes(clave)) return {};
+  await idiomaListo;
+  const producto = await productoDeLaPestana(quien.tab);
+  if (!producto) return {};
+  const datos = await conLoVisto(await calcular(precioComoTexto(producto), url), url, producto);
+  // Si está igual no digo nada: una pastilla en cada visita acabaría molestando.
+  if (!datos.visto || datos.visto.tono === "normal") return {};
+  await chrome.storage.session.set({ vistosAvisados: [...vistosAvisados, clave].slice(-VISTOS_MAX) });
+  return { visto: datos.visto, cerrar: tr("cerrar") };
+}
+
 chrome.runtime.onMessage.addListener((mensaje, quien, responder) => {
-  const hacer = { apuntarTarjeta: apuntarDesdeTarjeta, guardarTarjeta: guardarDesdeTarjeta, avisarTarjeta: avisarDesdeTarjeta, mirarAlt }[mensaje?.tipo];
+  const hacer = { apuntarTarjeta: apuntarDesdeTarjeta, guardarTarjeta: guardarDesdeTarjeta, avisarTarjeta: avisarDesdeTarjeta, mirarAlt, mirarVisto }[mensaje?.tipo];
   if (!hacer) return false;
-  hacer(mensaje).then(responder, (error) => {
+  hacer(mensaje, quien).then(responder, (error) => {
     console.warn("No se pudo hacer desde la tarjeta", error);
     responder({ ok: false, mensaje: errorMessageFor(error) });
   });
