@@ -455,6 +455,12 @@ La lista entera, con sus ejemplos. El resumen está en el [README](../README.md)
   queda como un aviso de precio de los del popup: "180,00 GBP ya son 198,00
   EUR". Cuenta en los cuatro avisos, y si el precio ya está en tu divisa la
   campana no sale, que ahí no hay cambio que esperar
+- Sin seleccionar ni hacer clic: con `Alt` (`⌥` en Mac) pulsado y el ratón
+  encima de un precio sale un globito con lo que vale en tu divisa ("≈ 45,71
+  EUR"), y al soltar se va. Entiende los mismos precios que las pastillas,
+  también los partidos en trozos ("$" "49" ".99"). Necesita leer todas las
+  webs, así que viene apagado: se enciende con la tecla `Alt` del pie del popup,
+  que te pide el permiso, y pulsándola otra vez lo devuelves
 - Y sin seleccionar nada: en la página de un producto, el atajo a secas coge
   el precio que la tienda deja escrito para los buscadores, con su divisa, y
   lo convierte ("El precio de esta página: Sony WH-1000XM5"). En un listado

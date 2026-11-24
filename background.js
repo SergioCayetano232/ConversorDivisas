@@ -1643,8 +1643,45 @@ chrome.commands.onCommand.addListener((comando, tab) => {
   if (comando === "convertir-seleccion" && tab) convertirConAtajo(tab);
 });
 
+// Alt + ratón sobre un precio. Necesita leer todas las webs, así que el permiso
+// es opcional: lo pide el botón del pie y, sin él, aquí no se registra nada.
+const TODAS_LAS_WEBS = { origins: ["<all_urls>"] };
+const SCRIPT_ALT = { id: "alt", matches: ["<all_urls>"], js: ["alt.js"], runAt: "document_idle", allFrames: true };
+
+async function ponerAlt({ inyectar = false } = {}) {
+  try {
+    const puesto = await chrome.permissions.contains(TODAS_LAS_WEBS);
+    const registrado = (await chrome.scripting.getRegisteredContentScripts({ ids: [SCRIPT_ALT.id] })).length > 0;
+    if (puesto && !registrado) await chrome.scripting.registerContentScripts([SCRIPT_ALT]);
+    if (!puesto && registrado) await chrome.scripting.unregisterContentScripts({ ids: [SCRIPT_ALT.id] });
+    if (!puesto || !inyectar) return;
+    // Lo registrado solo entra en lo que se cargue a partir de ahora; en las
+    // pestañas abiertas lo meto a mano para que funcione sin recargar.
+    for (const tab of await chrome.tabs.query({})) {
+      chrome.scripting.executeScript({ target: { tabId: tab.id, allFrames: true }, files: ["alt.js"] }).catch(() => {});
+    }
+  } catch (error) {
+    console.warn("No se pudo poner lo de Alt", error);
+  }
+}
+
+ponerAlt();
+chrome.permissions.onAdded.addListener(() => ponerAlt({ inyectar: true }));
+chrome.permissions.onRemoved.addListener(() => ponerAlt());
+
+async function mirarAlt({ texto, offset, bloques, url }) {
+  // Quitado el permiso, lo ya inyectado sigue vivo: así se entera y se calla.
+  if (!(await chrome.permissions.contains(TODAS_LAS_WEBS))) return { apagado: true };
+  await idiomaListo;
+  const { rangos, precio } = precioBajoElRaton(String(texto ?? "").slice(0, 2000), offset, Array.isArray(bloques) ? bloques.slice(0, 3) : [], divisaDeLaWeb(url));
+  if (!precio) return { rangos };
+  const datos = await calcular(precio.texto, url);
+  if (datos.estado !== "ok") return { rangos, inicio: precio.inicio, fin: precio.fin, nada: true };
+  return { rangos, inicio: precio.inicio, fin: precio.fin, bloque: precio.bloque, texto: datos.texto, to: datos.to };
+}
+
 chrome.runtime.onMessage.addListener((mensaje, quien, responder) => {
-  const hacer = { apuntarTarjeta: apuntarDesdeTarjeta, guardarTarjeta: guardarDesdeTarjeta, avisarTarjeta: avisarDesdeTarjeta }[mensaje?.tipo];
+  const hacer = { apuntarTarjeta: apuntarDesdeTarjeta, guardarTarjeta: guardarDesdeTarjeta, avisarTarjeta: avisarDesdeTarjeta, mirarAlt }[mensaje?.tipo];
   if (!hacer) return false;
   hacer(mensaje).then(responder, (error) => {
     console.warn("No se pudo hacer desde la tarjeta", error);

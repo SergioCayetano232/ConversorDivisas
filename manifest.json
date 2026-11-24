@@ -30,6 +30,7 @@
   },
   "permissions": ["storage", "contextMenus", "activeTab", "scripting", "alarms", "notifications", "sidePanel"],
   "host_permissions": ["https://api.frankfurter.dev/*"],
+  "optional_host_permissions": ["<all_urls>"],
   "omnibox": { "keyword": "cd" },
   "commands": {
     "_execute_action": {

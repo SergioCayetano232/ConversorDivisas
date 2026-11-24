@@ -844,6 +844,7 @@ const FUNCIONES = [
   { accion: "vista:rinde", claves: "barato destino viajar pais rinde dinero cheap destination country travel" },
   { accion: "copiaSeguridad", claves: "copia backup restaurar exportar restore" },
   { accion: "bienvenida", claves: "mi divisa casa moneda idioma atajos bienvenida home currency language welcome" },
+  { accion: "alt", claves: "alt raton pasar encima precio web tienda permiso hover mouse price page" },
   { accion: "panel", claves: "lateral fijo abierto al lado side panel dock pin" },
   { accion: "ayuda", claves: "teclado atajos ayuda keyboard shortcuts help" },
 ];

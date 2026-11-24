@@ -243,6 +243,22 @@ function precioEntero(texto, web = null) {
   return { cantidad, divisa };
 }
 
+// Con Alt y el ratón encima: el precio del trozo de texto que cae bajo el
+// puntero. Si el trozo no tiene ninguno, prueba con los bloques de alrededor,
+// de dentro afuera, que es como vienen los precios partidos ("$" "49" ".99").
+// Los rangos van siempre, para que la página no vuelva a preguntar mientras el
+// ratón siga en el mismo trozo.
+function precioBajoElRaton(texto, offset, bloques = [], web = null) {
+  const precios = buscarPrecios(texto, web);
+  const rangos = precios.map((p) => [p.inicio, p.fin]);
+  const tocado = precios.find((p) => offset >= p.inicio && offset <= p.fin);
+  if (tocado) return { rangos, precio: { texto: texto.slice(tocado.inicio, tocado.fin), inicio: tocado.inicio, fin: tocado.fin } };
+  if (precios.length > 0 || !Array.isArray(bloques)) return { rangos, precio: null };
+  const bloque = bloques.findIndex((b) => precioEntero(b, web));
+  if (bloque < 0) return { rangos, precio: null };
+  return { rangos, precio: { texto: String(bloques[bloque]).trim(), inicio: 0, fin: String(texto ?? "").length, bloque } };
+}
+
 // En la barra de direcciones nadie escribe en mayúsculas, así que aquí "usd"
 // sí vale. Las palabras de enlace ("50 eur a gbp", "to", "en") sobran.
 const ENLACES = new Set(["a", "to", "en", "in", "->", "→", "=", "de"]);

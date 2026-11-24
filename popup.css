@@ -12863,6 +12863,21 @@ body::after {
   color: var(--brass);
 }
 
+/* Alt + ratón: la tecla, dorada mientras esté puesto. "Alt" no cabe en 14 px. */
+.footer__alt .footer__tecla {
+  width: auto;
+  min-width: 14px;
+  padding: 0 2px;
+}
+
+.footer__alt[aria-pressed="true"] {
+  color: var(--brass);
+}
+
+.footer__alt[aria-pressed="true"] .footer__tecla {
+  border-color: var(--brass-dim);
+}
+
 .footer__copia svg {
   width: 13px;
   height: 13px;

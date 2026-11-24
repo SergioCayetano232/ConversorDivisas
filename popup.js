@@ -822,6 +822,29 @@ async function onSonido() {
   }
 }
 
+// Alt + ratón sobre un precio, en cualquier web. Manda el permiso: si está dado,
+// está puesto, sin nada guardado aparte que se pueda desacompasar.
+const TODAS_LAS_WEBS = { origins: ["<all_urls>"] };
+let altPuesto = false;
+
+async function pintarAlt() {
+  try {
+    altPuesto = await chrome.permissions.contains(TODAS_LAS_WEBS);
+  } catch (error) {
+    altPuesto = false;
+  }
+  const boton = document.getElementById("alt");
+  boton.setAttribute("aria-pressed", String(altPuesto));
+  boton.title = tr(altPuesto ? "alt.quitar" : "alt.poner", { tecla: esMac ? "⌥" : "Alt" });
+  boton.setAttribute("aria-label", boton.title);
+}
+
+// Nada de await antes del request: Chrome solo pregunta dentro del clic.
+function onAlt() {
+  const cambio = altPuesto ? chrome.permissions.remove(TODAS_LAS_WEBS) : chrome.permissions.request(TODAS_LAS_WEBS);
+  cambio.then(pintarAlt, (error) => console.warn("No se pudo cambiar el permiso", error));
+}
+
 // El AudioContext se crea con el primer sonido, que siempre viene de un clic
 // o una tecla: antes de eso Chrome no deja que suene.
 function sonar(nombre) {
@@ -9064,6 +9087,7 @@ function hacerFuncion(accion, funcion = null) {
   else if (accion === "copiaSeguridad") chrome.runtime.openOptionsPage();
   else if (accion === "bienvenida") abrirPestana("bienvenida.html");
   else if (accion === "panel") abrirPanel();
+  else if (accion === "alt") onAlt();
   else if (accion === "calendario") descargarCalendario();
   else hacerAtajo(accion);
 }
@@ -10287,6 +10311,9 @@ function bindEvents() {
   el.abrirAyuda.addEventListener("click", abrirAyuda);
   el.abrirCopia.addEventListener("click", () => chrome.runtime.openOptionsPage());
   document.getElementById("sonido").addEventListener("click", onSonido);
+  document.getElementById("alt").addEventListener("click", onAlt);
+  document.getElementById("alt-tecla").textContent = esMac ? "⌥" : "Alt";
+  pintarAlt();
   el.abrirPanel.hidden = !puedePanel;
   el.abrirPanel.addEventListener("click", abrirPanel);
   el.abrirFunciones.addEventListener("click", abrirFunciones);
