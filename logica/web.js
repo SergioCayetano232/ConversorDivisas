@@ -216,6 +216,77 @@ function textoGuardado(r, to) {
   return tr(r.donde === "aqui" ? "guardado.aqui" : "guardado.alli", { lugar, ahorro, pct });
 }
 
+// La memoria de lo que miras: el precio del producto de cada página que
+// conviertes, para decirte al volver qué ha cambiado y por qué. Solo el del
+// producto, que en un listado cada precio es de una cosa distinta.
+const VISTOS_DIAS = 30;
+const VISTOS_MAX = 200;
+// Por debajo de esto, lo de la tienda o lo del cambio es ruido de redondeo.
+const VISTO_MINIMO = 0.005;
+
+// La misma página aunque cambien los parámetros de la campaña. En Amazon el
+// nombre de la ruta cambia según de dónde vengas; el /dp/ASIN no.
+function paginaVista(url) {
+  let u;
+  try {
+    u = new URL(url);
+  } catch {
+    return null;
+  }
+  if (!/^https?:$/.test(u.protocol)) return null;
+  const asin = u.pathname.match(/\/(?:dp|gp\/product)\/([A-Z0-9]{10})(?:[/?]|$)/i);
+  const ruta = asin ? `/dp/${asin[1].toUpperCase()}` : u.pathname.replace(/\/+$/, "");
+  return `${webDe(u.hostname)}${ruta}`.slice(0, 300);
+}
+
+function leerVisto(crudo) {
+  if (!crudo || !(crudo.cantidad > 0) || !(crudo.valor > 0) || !isValidCode(crudo.from) || !isValidCode(crudo.to)) return null;
+  if (typeof crudo.dia !== "string" || !/^\d{4}-\d{2}-\d{2}$/.test(crudo.dia) || !Number.isFinite(crudo.cuando)) return null;
+  return { cantidad: crudo.cantidad, from: crudo.from, to: crudo.to, valor: crudo.valor, dia: crudo.dia, cuando: crudo.cuando };
+}
+
+// Con el de hoy apuntado, el de otro día se queda como "previo": si vuelves
+// dos veces hoy, la segunda te sigue comparando con la última vez de antes.
+function apuntarVisto(vistos, url, precio, hoyIso, ahora = Date.now()) {
+  const clave = paginaVista(url);
+  const nuevo = leerVisto({ ...precio, dia: hoyIso, cuando: ahora });
+  const todos = vistos && typeof vistos === "object" ? vistos : {};
+  if (!clave || !nuevo) return todos;
+  const antes = leerVisto(todos[clave]);
+  const previo = antes && antes.dia !== hoyIso ? antes : leerVisto(todos[clave]?.previo);
+  const vivos = Object.entries(todos).filter(([k, v]) => k !== clave && ahora - v?.cuando <= VISTOS_DIAS * 86400000);
+  vivos.sort((a, b) => b[1].cuando - a[1].cuando);
+  return Object.fromEntries([[clave, previo ? { ...nuevo, previo } : nuevo], ...vivos.slice(0, VISTOS_MAX - 1)]);
+}
+
+// Lo de la tienda, a la tasa de hoy; lo que queda hasta la diferencia, del cambio.
+function cambioDesdeVisto(vistos, url, precio, hoyIso, ahora = Date.now()) {
+  const clave = paginaVista(url);
+  const guardado = clave && vistos?.[clave];
+  const ultimo = leerVisto(guardado);
+  const base = ultimo && ultimo.dia !== hoyIso ? ultimo : leerVisto(guardado?.previo);
+  if (!base || ahora - base.cuando > VISTOS_DIAS * 86400000) return null;
+  if (base.from !== precio?.from || base.to !== precio?.to || !(precio.cantidad > 0) || !(precio.valor > 0)) return null;
+  const tasaHoy = precio.valor / precio.cantidad;
+  const porTienda = (precio.cantidad - base.cantidad) * tasaHoy;
+  const porCambio = precio.valor - base.valor - porTienda;
+  const cuenta = (n) => (Math.abs(n) >= base.valor * VISTO_MINIMO ? n : 0);
+  return { dia: base.dia, antes: base.valor, hoy: precio.valor, porTienda: cuenta(porTienda), porCambio: cuenta(porCambio), to: precio.to };
+}
+
+function textoVisto(r) {
+  if (!r) return null;
+  const dinero = numeros({ minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  const conSigno = (n) => `${n > 0 ? "+" : "−"}${dinero.format(Math.abs(n))}`;
+  const datos = { fecha: fechaCorta(r.dia), antes: `${dinero.format(r.antes)} ${r.to}`, hoy: dinero.format(r.hoy), tienda: conSigno(r.porTienda), cambio: conSigno(r.porCambio) };
+  const total = r.porTienda + r.porCambio;
+  const tono = total < 0 ? "bien" : total > 0 ? "caro" : "normal";
+  const clave = total === 0 ? "visto.igual"
+    : r.porTienda && r.porCambio ? "visto.ambos"
+      : r.porCambio ? "visto.cambio" : "visto.tienda";
+  return { tono, texto: tr(clave, datos) };
+}
+
 // El precio del producto sin seleccionar nada: las tiendas lo dejan escrito para
 // Google en un JSON-LD o en las metas, con su divisa. En el JSON va con punto
 // ("1299.00"), pero hay quien lo pone como en la etiqueta ("1.299,00").

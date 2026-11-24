@@ -450,6 +450,14 @@ La lista entera, con sus ejemplos. El resumen está en el [README](../README.md)
   sale mejor, los dos en tu divisa y al cambio de hoy ("📌 Este sale 21,74 EUR
   más barato que en amazon.co.uk, un 12 %"). Solo guarda uno: el siguiente lo
   sustituye, y pulsándola otra vez sobre el mismo lo suelta. Al mes se olvida
+- Y lo que ha cambiado desde la última vez: al convertir el precio del
+  producto de una página que ya miraste otro día, la tarjeta te recuerda lo
+  que era y separa lo que ha puesto la tienda de lo que ha puesto el cambio
+  ("🕘 El 12 nov eran 212,00 EUR; hoy 192,85: −9,00 por el cambio y −10,15 por
+  la tienda"). Solo con el precio del producto, el que la tienda deja escrito
+  para los buscadores, que en un listado cada precio es de una cosa. Se acuerda
+  de 200 páginas durante un mes, y en Amazon la página es la del producto
+  aunque llegues por otro enlace
 - Y que te avise cuando el cambio lo abarate: con la campana 🔔 de al lado
   pones lo máximo que quieres pagar (te propone un 5 % menos, en redondo) y se
   queda como un aviso de precio de los del popup: "180,00 GBP ya son 198,00

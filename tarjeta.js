@@ -327,8 +327,8 @@
       font-variant-numeric: tabular-nums;
       animation: latido 420ms var(--muelle) 80ms both;
     }
-    .guardado[hidden] { display: none; }
-    .guardado {
+    .guardado[hidden], .visto[hidden] { display: none; }
+    .guardado, .visto {
       --tono: var(--jade);
       --tono-fondo: var(--jade-ghost);
       margin: 8px 0 0;
@@ -343,8 +343,8 @@
       overflow-wrap: anywhere;
       animation: latido 420ms var(--muelle) 160ms both;
     }
-    .guardado[data-tono="normal"] { --tono: var(--dorado); --tono-fondo: var(--dorado-ghost); }
-    .guardado[data-tono="caro"] { --tono: var(--cinabrio); --tono-fondo: var(--cinabrio-ghost); }
+    .guardado[data-tono="normal"], .visto[data-tono="normal"] { --tono: var(--dorado); --tono-fondo: var(--dorado-ghost); }
+    .guardado[data-tono="caro"], .visto[data-tono="caro"] { --tono: var(--cinabrio); --tono-fondo: var(--cinabrio-ghost); }
     .dcc[data-tono="normal"] { --tono: var(--dorado); --tono-fondo: var(--dorado-ghost); }
     .dcc[data-tono="caro"],
     .dcc[data-tono="timo"] { --tono: var(--cinabrio); --tono-fondo: var(--cinabrio-ghost); }
@@ -681,6 +681,7 @@
       <p class="nota"></p>
       <p class="dcc" hidden></p>
       <p class="guardado" hidden></p>
+      <p class="visto" hidden></p>
       <div class="alerta" hidden>
         <label for="alerta-max"></label>
         <input class="alerta-max" id="alerta-max" type="text" inputmode="decimal" maxlength="12" autocomplete="off">
@@ -944,6 +945,7 @@
       $(".nota").textContent = d.nota ?? "";
       pintarDcc(d.dcc);
       pintarGuardado(d.guardado);
+      pintarVisto(d.visto);
       pintarAlerta(d.aviso);
       pintarFuera(d.fuera);
       pintarPresupuesto(d.presupuesto);
@@ -958,6 +960,7 @@
       $(".nota").textContent = "";
       pintarDcc(null);
       pintarGuardado(null);
+      pintarVisto(null);
       pintarAlerta(null);
       pintarFuera(null);
       pintarPresupuesto(null);
@@ -965,6 +968,7 @@
       $(".original").textContent = citar(d.original);
       pintarDcc(null);
       pintarGuardado(null);
+      pintarVisto(null);
       pintarAlerta(null);
       pintarFuera(null);
       pintarPresupuesto(null);
@@ -974,6 +978,7 @@
       $(".aviso").textContent = d.mensaje;
       pintarDcc(null);
       pintarGuardado(null);
+      pintarVisto(null);
       pintarAlerta(null);
       pintarFuera(null);
       pintarPresupuesto(null);
@@ -1124,6 +1129,14 @@
     if (!g) return;
     caja.dataset.tono = g.tono;
     caja.textContent = g.texto;
+  }
+
+  function pintarVisto(v) {
+    const caja = $(".visto");
+    caja.hidden = !v;
+    if (!v) return;
+    caja.dataset.tono = v.tono;
+    caja.textContent = v.texto;
   }
 
   function pintarDcc(d) {

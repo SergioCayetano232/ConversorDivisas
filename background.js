@@ -459,6 +459,34 @@ async function conLoGuardado(precio, valor, to) {
   }
 }
 
+// Solo si lo convertido es el precio del producto de la página: en un listado
+// cada precio es de una cosa, y compararlos entre visitas no diría nada.
+const VISTOS_KEY = "preciosVistos";
+
+async function conLoVisto(datos, url, producto) {
+  if (datos.estado !== "ok" || !producto || producto.cantidad !== datos.cantidad || producto.divisa !== datos.from) return datos;
+  try {
+    const { [VISTOS_KEY]: vistos } = await chrome.storage.local.get(VISTOS_KEY);
+    const precio = { cantidad: datos.cantidad, from: datos.from, to: datos.to, valor: datos.resultado };
+    const hoy = isoLocal(new Date());
+    const visto = textoVisto(cambioDesdeVisto(vistos, url, precio, hoy));
+    await chrome.storage.local.set({ [VISTOS_KEY]: apuntarVisto(vistos, url, precio, hoy) });
+    return visto ? { ...datos, visto } : datos;
+  } catch (error) {
+    console.warn("No se pudo mirar lo visto", error);
+    return datos;
+  }
+}
+
+async function productoDeLaPestana(tab) {
+  try {
+    const [{ result }] = await chrome.scripting.executeScript({ target: { tabId: tab.id }, func: leerPrecioDePagina });
+    return precioDeLaPagina(result, divisaDeLaWeb(result?.url));
+  } catch (error) {
+    return null;
+  }
+}
+
 // La chincheta guarda, y pulsada otra vez sobre el mismo, lo suelta.
 async function guardarDesdeTarjeta(precio) {
   await idiomaListo;
@@ -569,7 +597,10 @@ async function convertirSeleccion(info, tab) {
   girarIcono(tab.id);
   // La tarjeta sale ya, cargando; la cifra llega cuando responda la API.
   await enPagina(tab.id, paraLaTarjeta({ estado: "cargando", original: info.selectionText }));
-  await enPagina(tab.id, paraLaTarjeta(await calcular(info.selectionText, paginaDe(info, tab))));
+  const url = paginaDe(info, tab);
+  // Dentro de un iframe el producto de la pestaña no es el de lo seleccionado.
+  const producto = url && url === tab.url ? await productoDeLaPestana(tab) : null;
+  await enPagina(tab.id, paraLaTarjeta(await conLoVisto(await calcular(info.selectionText, url), url, producto)));
 }
 
 // Va en tres pasos porque las tasas las pido yo y no la página: primero busca
@@ -1607,7 +1638,7 @@ async function convertirProducto(tab) {
   const texto = precioComoTexto(precio);
   await chrome.scripting.executeScript({ target: { tabId: tab.id }, files: ["tarjeta.js"] });
   await enPagina(tab.id, paraLaTarjeta({ estado: "cargando", original: precio.nombre || texto }));
-  const datos = await calcular(texto, pagina.url);
+  const datos = await conLoVisto(await calcular(texto, pagina.url), pagina.url, precio);
   const nota = precio.nombre ? tr("tarjeta.delProducto", { nombre: precio.nombre }) : tr("tarjeta.delProductoSinNombre");
   await enPagina(tab.id, paraLaTarjeta(datos.estado === "ok" ? { ...datos, nota } : datos));
   return true;

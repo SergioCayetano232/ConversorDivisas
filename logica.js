@@ -76,7 +76,7 @@ module.exports = {
   AVISO_TARJETA_BAJA, maximoSugerido, avisoDesdeTarjeta,
   leerDivisaCasa, tocaBienvenida, parDeBienvenida, atajosDeBienvenida, DEMO_CANTIDAD, divisaDeEjemplo, demoDeBienvenida,
   NOVEDADES, compararVersiones, novedadesDesde, versionVistaAlInstalar,
-  GUARDADO_DIAS, webDe, crearGuardado, leerGuardado, esElGuardado, compararConGuardado, textoGuardado,
+  GUARDADO_DIAS, webDe, crearGuardado, leerGuardado, esElGuardado, compararConGuardado, textoGuardado, VISTOS_DIAS, VISTOS_MAX, paginaVista, apuntarVisto, cambioDesdeVisto, textoVisto,
   PPA_ANIO, PPA, PPA_EURO, NIVEL_IGUAL, paisDePrecios, PAIS_DE_ZONA, paisDeZona, cambioDePais, mensajeCambioDePais, IVA_UE, UMBRAL_ARANCEL, paisIva, compraDeFuera, textoCompraDeFuera, nivelDePrecios, nivelFrente, RINDE_MAX, dondeRindeMas, nombrePais, textoNivel,
 };
 module.exports.TROZOS = TROZOS;
