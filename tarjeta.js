@@ -64,6 +64,13 @@
       border: 1px solid transparent;
     }
 
+    /* Como en el popup: squircle donde se pueda, algo más grande para que no
+       parezca más cuadrada. El fondo y la estela tienen que llevarla también. */
+    @supports (corner-shape: squircle) {
+      .tarjeta { border-radius: 24px; corner-shape: squircle; }
+      .fondo, .estela { corner-shape: squircle; }
+    }
+
     .tarjeta.is-naciendo { animation: aparecer 300ms var(--suave) 190ms both; }
     .tarjeta.is-naciendo.is-error { animation: aparecer 300ms var(--suave) 190ms both, temblar 420ms ease 120ms; }
 
@@ -899,7 +906,7 @@
       top: "0px",
       width: `${tarjeta.offsetWidth}px`,
       height: `${tarjeta.offsetHeight}px`,
-      borderRadius: "16px",
+      borderRadius: pinta.borderTopLeftRadius,
       backgroundColor: pinta.backgroundColor,
       borderColor: pinta.borderTopColor,
       boxShadow: pinta.boxShadow,
