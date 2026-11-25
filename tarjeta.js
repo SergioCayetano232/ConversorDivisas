@@ -52,6 +52,21 @@
     .tarjeta.arriba { animation-name: entrar-arriba; }
     .tarjeta.is-saliendo { animation: salir 180ms ease-in forwards; }
 
+    /* La estela es el cristal que sale del precio y se estira hasta ser la
+       tarjeta; ella aparece encima cuando ya casi tiene su tamaño. */
+    .estela {
+      position: absolute;
+      z-index: -1;
+      box-sizing: border-box;
+      pointer-events: none;
+      backdrop-filter: blur(24px) saturate(180%);
+      -webkit-backdrop-filter: blur(24px) saturate(180%);
+      border: 1px solid transparent;
+    }
+
+    .tarjeta.is-naciendo { animation: aparecer 300ms var(--suave) 190ms both; }
+    .tarjeta.is-naciendo.is-error { animation: aparecer 300ms var(--suave) 190ms both, temblar 420ms ease 120ms; }
+
     @media (prefers-color-scheme: light) {
       .tarjeta {
         --fondo: rgba(255, 255, 255, 0.8);
@@ -607,6 +622,11 @@
       to { opacity: 1; transform: none; filter: none; }
     }
 
+    @keyframes aparecer {
+      from { opacity: 0; transform: scale(0.98); filter: blur(3px); }
+      to { opacity: 1; transform: none; filter: none; }
+    }
+
     @keyframes salir {
       to { opacity: 0; transform: translateY(-4px) scale(0.96); }
     }
@@ -665,6 +685,7 @@
 
   const HTML = `
     <style>${CSS}</style>
+    <div class="estela" hidden></div>
     <div class="tarjeta is-cargando" role="dialog" aria-label="Conversión de divisa">
       <div class="fondo"></div>
       <span class="flecha"></span>
@@ -720,6 +741,7 @@
   let subrayado = null;
   let rango = null;
   let campo = null;
+  let nace = false;
 
   const $ = (sel) => raiz.querySelector(sel);
 
@@ -831,6 +853,7 @@
       centro: r.left + r.width / 2 + scrollX,
       arriba: r.top + scrollY,
       abajo: r.bottom + scrollY,
+      ancho: r.width,
     };
   }
 
@@ -852,6 +875,74 @@
     tarjeta.classList.toggle("arriba", arriba);
     const flecha = Math.min(Math.max(ancla.centro - left, 18), ANCHO - 18);
     tarjeta.style.setProperty("--flecha", `${flecha}px`);
+  }
+
+  // El precio, en las coordenadas de la tarjeta. Sin nada seleccionado no mide
+  // nada, y le doy el tamaño de una cifra corta para que no salga de un punto.
+  function cajaDelPrecio() {
+    const ancho = Math.max(ancla.ancho ?? 0, 36);
+    const alto = Math.max(ancla.abajo - ancla.arriba, 18);
+    return {
+      left: `${ancla.centro - ancho / 2 - parseFloat(host.style.left)}px`,
+      top: `${ancla.arriba + (ancla.abajo - ancla.arriba - alto) / 2 - parseFloat(host.style.top)}px`,
+      width: `${ancho}px`,
+      height: `${alto}px`,
+      borderRadius: "6px",
+    };
+  }
+
+  function cajaDeLaTarjeta() {
+    const tarjeta = $(".tarjeta");
+    const pinta = getComputedStyle(tarjeta);
+    return {
+      left: "0px",
+      top: "0px",
+      width: `${tarjeta.offsetWidth}px`,
+      height: `${tarjeta.offsetHeight}px`,
+      borderRadius: "16px",
+      backgroundColor: pinta.backgroundColor,
+      borderColor: pinta.borderTopColor,
+      boxShadow: pinta.boxShadow,
+    };
+  }
+
+  // Sale con el dorado del subrayado y se va volviendo cristal por el camino.
+  function nacer() {
+    const tarjeta = $(".tarjeta");
+    const estela = $(".estela");
+    estela.getAnimations().forEach((a) => a.cancel());
+    tarjeta.classList.remove("is-naciendo");
+    if (sinMovimiento.matches) return;
+    const dorado = getComputedStyle(tarjeta).getPropertyValue("--dorado-glow");
+    const precio = { ...cajaDelPrecio(), backgroundColor: dorado, borderColor: "transparent", boxShadow: "none", opacity: 0 };
+    const llena = cajaDeLaTarjeta();
+    estela.hidden = false;
+    void tarjeta.offsetWidth;
+    tarjeta.classList.add("is-naciendo");
+    // La curva va en el tramo en que crece: puesta a toda la animación, con lo
+    // que frena esta, se estiraba casi de golpe.
+    estela.animate([
+      precio,
+      { ...precio, opacity: 1, offset: 0.1, easing: "cubic-bezier(0.16, 1, 0.3, 1)" },
+      { ...llena, opacity: 1, offset: 0.45 },
+      // Se va pronto: mide lo que la tarjeta cargando, y con la cifra es más alta.
+      { ...llena, opacity: 0, offset: 0.7 },
+      { ...llena, opacity: 0 },
+    ], 560).finished
+      .then(() => { estela.hidden = true; })
+      .catch(() => {});
+  }
+
+  // Al revés: la tarjeta se apaga y el cristal vuelve a meterse en el precio.
+  function morir() {
+    const estela = $(".estela");
+    const precio = { ...cajaDelPrecio(), borderColor: "transparent", boxShadow: "none", opacity: 0 };
+    estela.getAnimations().forEach((a) => a.cancel());
+    estela.hidden = false;
+    return estela.animate([
+      cajaDeLaTarjeta(),
+      { ...precio, backgroundColor: getComputedStyle($(".tarjeta")).getPropertyValue("--dorado-glow") },
+    ], { duration: 300, easing: "cubic-bezier(0.55, 0, 0.75, 0.2)" }).finished;
   }
 
   function recortar(texto, max = 42) {
@@ -926,6 +1017,7 @@
       tarjeta.style.animation = "none";
       void tarjeta.offsetWidth;
       tarjeta.style.animation = "";
+      nace = true;
     }
 
     tarjeta.classList.toggle("is-cargando", d.estado === "cargando");
@@ -989,8 +1081,11 @@
     if (!ancla) {
       ancla = medirSeleccion();
       subrayar();
+      nace = true;
     }
     colocar();
+    if (nace) nacer();
+    nace = false;
     if (escribible) $(".escribir").focus({ preventScroll: true });
     else if (d.estado === "ok" || d.estado === "medida") $(".copiar").focus({ preventScroll: true });
   }
@@ -1185,9 +1280,12 @@
       quitarSubrayado();
     };
     if (sinMovimiento.matches) return quitar();
+    const vuelta = morir();
+    tarjeta.classList.remove("is-naciendo");
     tarjeta.classList.add("is-saliendo");
     subrayado?.shadowRoot.querySelector("div").classList.add("is-saliendo");
-    tarjeta.addEventListener("animationend", quitar, { once: true });
+    // Si se cancela es que ha vuelto a abrirse a mitad, y entonces se queda.
+    vuelta.then(quitar, () => {});
   }
 
   function fuera(event) {
