@@ -831,6 +831,35 @@ function momentoDelDia(horas) {
   return "noche";
 }
 
+// Los colores de la bandera de cada divisa, para teñir las manchas del fondo.
+// Sin el blanco, que en claro no se ve y en oscuro sale gris. Del euro, la de la UE.
+const COLORES_BANDERA = {
+  EUR: ["#003399", "#FFCC00"], USD: ["#B22234", "#3C3B6E"], GBP: ["#C8102E", "#012169"],
+  JPY: ["#BC002D"], CHF: ["#DA291C"], CAD: ["#D80621"], AUD: ["#00008B", "#E4002B"],
+  CNY: ["#EE1C25", "#FFDE00"], MXN: ["#006847", "#CE1126"], BRL: ["#009C3B", "#FFDF00", "#002776"],
+  SEK: ["#006AA7", "#FECC00"], NOK: ["#BA0C2F", "#00205B"], DKK: ["#C8102E"], PLN: ["#DC143C"],
+  TRY: ["#E30A17"], CZK: ["#11457E", "#D7141A"], HKD: ["#DE2910"], HUF: ["#CE2939", "#477050"],
+  IDR: ["#CE1126"], ILS: ["#0038B8"], INR: ["#FF9933", "#138808", "#000080"],
+  ISK: ["#02529C", "#DC1E35"], KRW: ["#CD2E3A", "#0047A0"], MYR: ["#CC0001", "#010066", "#FFCC00"],
+  NZD: ["#00247D", "#CC142B"], PHP: ["#0038A8", "#CE1126", "#FCD116"], RON: ["#002B7F", "#FCD116", "#CE1126"],
+  SGD: ["#EF3340"], THB: ["#A51931", "#2D2A4A"], ZAR: ["#007749", "#FFB612", "#DE3831"],
+  VND: ["#DA251D", "#FFCD00"], ARS: ["#74ACDF", "#F6B40E"], MAD: ["#C1272D", "#006233"],
+  PEN: ["#D91023"], COP: ["#FCD116", "#003893", "#CE1126"], CLP: ["#0039A6", "#D52B1E"],
+  EGP: ["#CE1126", "#C09300"], AED: ["#00732F", "#FF0000"], TWD: ["#FE0000", "#000095"],
+  UYU: ["#0038A8", "#FCD116"], CRC: ["#002B7F", "#CE1126"], DOP: ["#002D62", "#CE1126"],
+  TND: ["#E70013"], KES: ["#BB0000", "#006600"], LKR: ["#8D153A", "#FFBE29", "#00534E"],
+  NPR: ["#DC143C", "#003893"], KHR: ["#032EA1", "#E00025"], JOD: ["#CE1126", "#007A3D"],
+  QAR: ["#8A1538"], SAR: ["#006C35"], GEL: ["#FF0000"], RSD: ["#C6363C", "#0C4076"],
+  BOB: ["#D52B1E", "#F9E300", "#007934"], GTQ: ["#4997D0"], PYG: ["#D52B1E", "#0038A8"],
+};
+
+// Uno por mancha, y la cuarta siempre del cielo. Las banderas de un solo color
+// tiñen una mancha y dejan las otras como estaban, que todo rojo era demasiado.
+function manchasBandera(code) {
+  const colores = COLORES_BANDERA[code] ?? [];
+  return [0, 1, 2].map((i) => colores[i] ?? null);
+}
+
 // A diferencia de horaAlli, aquí sí cuenta la misma hora que la tuya: el cielo
 // se pinta igual. Sin ciudad para la divisa, el tuyo.
 function cieloAlli(code, ahora = new Date(), local = -new Date(ahora).getTimezoneOffset()) {

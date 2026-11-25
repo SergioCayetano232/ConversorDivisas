@@ -2853,11 +2853,22 @@ function pintarBillete(code) {
   if (habia) restartAnimation(caja, "is-nuevo");
 }
 
+// Al quitar un color dejo el de antes y bajo solo el peso: si el color se fuera
+// a transparente a la vez, la mancha pasaría por gris al fundirse.
+function pintarBandera(code) {
+  const raiz = document.documentElement.style;
+  manchasBandera(code).forEach((color, i) => {
+    if (color) raiz.setProperty(`--bandera-${i + 1}`, color);
+    raiz.setProperty(`--peso-${i + 1}`, color ? "100%" : "0%");
+  });
+}
+
 // La hora de la divisa de origen, que es la de allí. Las agujas giran hasta su
 // sitio cuando cambias de divisa; con el paso de los minutos solo se mueven.
 function pintarHoraAlli() {
   const code = el.from.value;
   document.documentElement.dataset.cielo = cieloAlli(code) ?? "dia";
+  pintarBandera(code);
   const h = horaAlli(code);
   const nodo = el.alli;
   nodo.hidden = !h;

@@ -143,7 +143,14 @@
     --cielo-1 1600ms var(--ease),
     --cielo-2 1600ms var(--ease),
     --cielo-3 1600ms var(--ease),
-    --cielo-4 1600ms var(--ease);
+    --cielo-4 1600ms var(--ease),
+    --bandera-1 1600ms var(--ease),
+    --bandera-2 1600ms var(--ease),
+    --bandera-3 1600ms var(--ease),
+    --peso-1 1600ms var(--ease),
+    --peso-2 1600ms var(--ease),
+    --peso-3 1600ms var(--ease),
+    --sol 1600ms var(--ease);
 }
 
 /* El cielo de allí: las manchas cogen los colores de la hora que es en el
@@ -208,6 +215,34 @@
     --cielo-2: rgba(120, 90, 200, 0.24);
     --cielo-3: rgba(60, 130, 220, 0.20);
     --cielo-4: rgba(63, 184, 175, 0.12);
+  }
+}
+
+/* La bandera de allí encima del cielo. De día manda la bandera; al amanecer,
+   al atardecer y de noche se queda en menos, que el cielo también dice algo.
+   El peso a 0% es "esta mancha no tiene color de bandera". */
+@property --bandera-1 { syntax: "<color>"; inherits: true; initial-value: transparent; }
+@property --bandera-2 { syntax: "<color>"; inherits: true; initial-value: transparent; }
+@property --bandera-3 { syntax: "<color>"; inherits: true; initial-value: transparent; }
+@property --peso-1 { syntax: "<percentage>"; inherits: true; initial-value: 0%; }
+@property --peso-2 { syntax: "<percentage>"; inherits: true; initial-value: 0%; }
+@property --peso-3 { syntax: "<percentage>"; inherits: true; initial-value: 0%; }
+@property --sol { syntax: "<number>"; inherits: true; initial-value: 1; }
+
+:root {
+  --tinta: 50%;
+  --mancha-1: color-mix(in oklab, var(--cielo-1), color-mix(in srgb, var(--bandera-1) var(--tinta), transparent) calc(var(--peso-1) * var(--sol)));
+  --mancha-2: color-mix(in oklab, var(--cielo-2), color-mix(in srgb, var(--bandera-2) var(--tinta), transparent) calc(var(--peso-2) * var(--sol)));
+  --mancha-3: color-mix(in oklab, var(--cielo-3), color-mix(in srgb, var(--bandera-3) var(--tinta), transparent) calc(var(--peso-3) * var(--sol)));
+}
+
+:root:is([data-cielo="amanecer"], [data-cielo="atardecer"], [data-cielo="noche"]) {
+  --sol: 0.65;
+}
+
+@media (prefers-color-scheme: light) {
+  :root {
+    --tinta: 38%;
   }
 }
 
@@ -360,15 +395,15 @@ body::before {
 body::before {
   z-index: -2;
   background:
-    radial-gradient(460px circle at 24% 20%, var(--cielo-1), transparent 60%),
-    radial-gradient(440px circle at 70% 79%, var(--cielo-2), transparent 60%);
+    radial-gradient(460px circle at 24% 20%, var(--mancha-1), transparent 60%),
+    radial-gradient(440px circle at 70% 79%, var(--mancha-2), transparent 60%);
   animation: deriva 48s ease-in-out infinite alternate;
 }
 
 html::before {
   z-index: -1;
   background:
-    radial-gradient(400px circle at 81% 30%, var(--cielo-3), transparent 58%),
+    radial-gradient(400px circle at 81% 30%, var(--mancha-3), transparent 58%),
     radial-gradient(380px circle at 19% 67%, var(--cielo-4), transparent 58%);
   animation: deriva 36s ease-in-out -12s infinite alternate-reverse;
 }

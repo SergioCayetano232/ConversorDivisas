@@ -32,7 +32,7 @@ module.exports = {
   TAX_FREE, taxFree,
   tasaLegible, DIVISAS_BCE, DIVISAS_MERCADO, esDeMercado, parDeMercado, urlTasa, urlTasaDia, urlSerie, urlsTodas, aFormatoV1, juntarTasas, pedirTodas,
   CURRENCIES, isValidCode, nombreDe, parseAmount, isoLocal, hoy, isFresh,
-  RODILLO_MAX, rodillo,
+  RODILLO_MAX, rodillo, COLORES_BANDERA, manchasBandera,
   evaluar, completar, leerImporte, UNIDADES, quitarUnidad, nombreUnidad, porUnidadMetrica, esOperacion, pasoCantidad, pasoPorDiez, RUEDA_PASO, pasosRueda, cifraCompleta, leerCantidad,
   normalizar, filtrarDivisas, trozosCoincidencia, buildPaths, PUNTOS_TRANSFORMAR, remuestrear, curvaEnMedio, startDateFor, errorMessageFor,
   RECIENTES_MAX, FIJOS_MAX, apuntarReciente, fijarReciente, leerRecientes, recientesVisibles,
