@@ -15,6 +15,7 @@ const el = {
   swap: document.getElementById("swap"),
   result: document.getElementById("result"),
   resultCode: document.getElementById("result-code"),
+  resultRodillo: document.getElementById("result-rodillo"),
   copiar: document.getElementById("copiar"),
   copiarTexto: document.getElementById("copiar-texto"),
   resultBox: document.querySelector(".result"),
@@ -9456,35 +9457,62 @@ function ajustarAncho() {
   el.resultBox.style.setProperty("--tam-cifra", `${tam}px`);
 }
 
-// La cifra grande corre hasta la nueva, como un marcador. En el campo va
-// siempre la buena desde el principio: lo de en medio solo lo pinto en los
-// fotogramas, y cualquier tecla o clic lo deja en su sitio antes de leerla.
+// La cifra grande gira hasta la nueva, como un cuentakilómetros. En el campo va
+// siempre la buena desde el principio: el rodillo va encima y lo tapa mientras
+// gira, y cualquier tecla o clic lo quita.
 let cuentaResultado = null;
 
 function pararCuentaResultado() {
   if (!cuentaResultado) return;
-  cancelAnimationFrame(cuentaResultado.raf);
-  el.result.value = cuentaResultado.final;
   cuentaResultado = null;
+  el.resultBox.classList.remove("is-rodando");
+  el.resultRodillo.replaceChildren();
 }
 
 function contarResultado(desde, hasta) {
   pararCuentaResultado();
-  if (sinMovimiento.matches || desde === null || desde === hasta) return;
-  const final = el.result.value;
-  const yo = { final };
+  if (sinMovimiento.matches || desde === null || hasta === null || desde === hasta) return;
+  const yo = {};
   cuentaResultado = yo;
-  const paso = (ahora) => {
-    if (cuentaResultado !== yo) return;
-    // El reloj arranca en el primer fotograma: después de pintar todo lo de
-    // abajo tarda en llegar, y si no la cuenta se daba por acabada sin verse.
-    yo.empieza ??= ahora;
-    const t = (ahora - yo.empieza) / 300;
-    if (t >= 1) return pararCuentaResultado();
-    el.result.value = nf.format(cifraEnMarcha(desde, hasta, t));
-    yo.raf = requestAnimationFrame(paso);
-  };
-  yo.raf = requestAnimationFrame(paso);
+
+  const baja = hasta < desde;
+  const columnas = rodillo(desde, hasta, el.result.value).map((columna) => {
+    if (columna.signo && !columna.nuevo) return document.createTextNode(columna.signo);
+    if (columna.signo) {
+      const signo = document.createElement("span");
+      signo.className = "rodillo__signo";
+      signo.textContent = columna.signo;
+      return signo;
+    }
+    const nodo = document.createElement("span");
+    nodo.className = "rodillo__columna";
+    const { cifras } = columna;
+    const pasos = cifras.length - 1;
+    if (pasos === 0) {
+      nodo.textContent = cifras[0];
+      return nodo;
+    }
+    // Una de más al final, que el golpe se pasa un poco y no quede un hueco.
+    const tira = [...cifras.map((c) => c ?? " "), (cifras.at(-1) + (baja ? 9 : 1)) % 10];
+    const cinta = document.createElement("span");
+    cinta.className = "rodillo__cinta";
+    cinta.textContent = (baja ? tira.reverse() : tira).join("\n");
+    nodo.style.setProperty("--pasos", pasos);
+    nodo.classList.add(baja ? "is-baja" : "is-sube");
+    nodo.classList.toggle("is-rapida", pasos > 5);
+    nodo.append(cinta);
+    return nodo;
+  });
+
+  el.resultRodillo.style.left = `${el.result.offsetLeft}px`;
+  el.resultRodillo.style.top = `${el.result.offsetTop}px`;
+  el.resultRodillo.replaceChildren(...columnas);
+  el.resultBox.classList.add("is-rodando");
+
+  const giros = el.resultRodillo.getAnimations({ subtree: true });
+  Promise.all(giros.map((g) => g.finished))
+    .then(() => cuentaResultado === yo && pararCuentaResultado())
+    .catch(() => {});
 }
 
 for (const tipo of ["pointerdown", "keydown", "focusin"]) {

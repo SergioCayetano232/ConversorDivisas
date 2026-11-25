@@ -9466,6 +9466,7 @@ body::after {
 }
 
 .result__row {
+  position: relative;
   display: flex;
   align-items: baseline;
   justify-content: flex-start;
@@ -9537,6 +9538,98 @@ body::after {
   40% {
     transform: scale(1.06);
     text-shadow: 0 0 36px var(--brass), 0 0 12px var(--brass-glow);
+  }
+}
+
+/* El cuentakilómetros va encima del campo con su misma letra, y el campo se
+   queda debajo con la cifra buena pero sin pintar mientras gira. */
+.result__rodillo {
+  position: absolute;
+  display: none;
+  padding: 3px calc(var(--s-2) + 1px);
+  font-family: var(--font-mono);
+  font-size: var(--tam-cifra, 34px);
+  font-weight: 500;
+  line-height: 1.1;
+  letter-spacing: -0.02em;
+  color: var(--brass);
+  font-variant-numeric: tabular-nums;
+  white-space: pre;
+  filter: drop-shadow(0 0 12px var(--brass-glow));
+  pointer-events: none;
+}
+
+.is-rodando .result__rodillo {
+  display: flex;
+}
+
+.is-rodando .result__value {
+  color: transparent;
+}
+
+.rodillo__columna {
+  display: inline-block;
+  height: 1.1em;
+  overflow: clip;
+}
+
+/* Un poco de sombra arriba y abajo, como la ventanita de un contador. */
+.rodillo__columna:is(.is-sube, .is-baja) {
+  mask-image: linear-gradient(transparent, #000 12%, #000 88%, transparent);
+}
+
+.rodillo__cinta {
+  display: block;
+  animation: rodar 640ms both;
+}
+
+.is-sube > .rodillo__cinta {
+  --desde: 0em;
+  --hasta: calc(-1.1em * var(--pasos));
+  --pasada: -0.14em;
+}
+
+.is-baja > .rodillo__cinta {
+  --desde: calc(-1.1em * (var(--pasos) + 1));
+  --hasta: -1.1em;
+  --pasada: 0.14em;
+}
+
+.rodillo__signo {
+  animation: fade 640ms var(--ease) both;
+}
+
+/* Los que dan muchas vueltas se ven corridos, como cuando gira de verdad. */
+.is-rapida > .rodillo__cinta {
+  animation-name: rodar, corrido;
+}
+
+/* Con el muelle normal se pasaba en proporción a lo que gira, y en los
+   céntimos se veía entero el dígito de después. El golpe del final, fijo. */
+@keyframes rodar {
+  from {
+    transform: translateY(var(--desde));
+    animation-timing-function: cubic-bezier(0.2, 0.7, 0.3, 1);
+  }
+
+  82% {
+    transform: translateY(calc(var(--hasta) + var(--pasada)));
+    animation-timing-function: var(--ease);
+  }
+
+  to {
+    transform: translateY(var(--hasta));
+  }
+}
+
+@keyframes corrido {
+  15%,
+  55% {
+    filter: blur(1.2px);
+  }
+
+  to {
+    filter: none;
   }
 }
 

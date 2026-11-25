@@ -443,3 +443,30 @@ function textoHoras(min, corto = false) {
   if (min < HORAS_JORNADA * 60 * 2) return tr(`horas.h${sufijo}`, { n: n.format(min / 60) });
   return tr(`horas.dias${sufijo}`, { n: n.format(min / 60 / HORAS_JORNADA) });
 }
+
+// El cuentakilómetros del resultado. Cada dígito gira lo que giraría en uno de
+// verdad: el de los céntimos pasa por todos y el de los miles casi no se mueve.
+// Más de 19 pasos no se distinguen, así que se quedan en una vuelta y pico.
+const RODILLO_MAX = 19;
+
+function rodillo(desde, hasta, texto, decimales = 2) {
+  const escala = 10 ** decimales;
+  const a = Math.round(Math.abs(desde) * escala);
+  const b = Math.round(Math.abs(hasta) * escala);
+  // Las cifras que antes no estaban salen de vacío: un "0.109,35" no lo escribe nadie.
+  const habia = Math.max(String(a).length, decimales + 1);
+  let p = 0;
+  const columnas = [...texto].reverse().map((c) => {
+    if (!/\d/.test(c)) return { signo: c };
+    const de = Math.floor(a / 10 ** p);
+    const pasos = Math.floor(b / 10 ** p) - de;
+    const nueva = p >= habia;
+    p++;
+    const n = Math.abs(pasos) > RODILLO_MAX ? Math.sign(pasos) * (10 + (Math.abs(pasos) % 10)) : pasos;
+    const cifras = Array.from({ length: Math.abs(n) + 1 }, (_, k) => (((de + Math.sign(n) * k) % 10) + 10) % 10);
+    if (nueva) cifras[0] = null;
+    return { cifras };
+  }).reverse();
+  // El punto de los miles llega con la cifra que tiene a la izquierda.
+  return columnas.map((c, i) => (c.signo && columnas[i - 1]?.cifras?.[0] === null ? { ...c, nuevo: true } : c));
+}
