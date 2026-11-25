@@ -541,6 +541,25 @@ function largoEnPantalla(puntos, ancho, alto) {
   return total;
 }
 
+// Por dónde va la punta de la línea mientras se dibuja: puntos a la misma
+// distancia unos de otros medida en pantalla, como avanza el guion. Medido en
+// el viewBox, en un gráfico tan apaisado iría a saltos en las subidas.
+function recorridoEnPantalla(puntos, ancho, alto, pasos = 24) {
+  if (puntos.length < 2) return puntos.slice();
+  const sx = ancho / 100;
+  const sy = alto / 28;
+  const tramos = puntos.slice(1).map((p, i) => Math.hypot((p.x - puntos[i].x) * sx, (p.y - puntos[i].y) * sy));
+  const total = tramos.reduce((a, b) => a + b, 0);
+  let i = 0;
+  let hecho = 0;
+  return Array.from({ length: pasos + 1 }, (_, k) => {
+    const falta = (total * k) / pasos;
+    while (i < tramos.length - 1 && hecho + tramos[i] < falta) hecho += tramos[i++];
+    const t = tramos[i] ? Math.min((falta - hecho) / tramos[i], 1) : 0;
+    return { x: puntos[i].x + (puntos[i + 1].x - puntos[i].x) * t, y: puntos[i].y + (puntos[i + 1].y - puntos[i].y) * t };
+  });
+}
+
 // Lo contrario de coordenadas: de una x del viewBox al punto más cercano.
 function indiceCercano(x, total) {
   if (total < 2) return 0;

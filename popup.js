@@ -394,6 +394,7 @@ const el = {
   marcaMax: document.getElementById("marca-max"),
   marcaMin: document.getElementById("marca-min"),
   trendHoy: document.getElementById("trend-hoy"),
+  trendChispa: document.getElementById("trend-chispa"),
   guia: document.getElementById("trend-guia"),
   punto: document.getElementById("trend-punto"),
   tip: document.getElementById("trend-tip"),
@@ -1679,6 +1680,19 @@ function onDecir() {
 // Se mide ya visible: con el gráfico oculto el SVG tiene ancho cero. El +1 es
 // para que el redondeo no deje una rendija al final. Por eso también se llama
 // al volver a la pestaña del gráfico, y de paso la línea se vuelve a dibujar.
+// Una chispa va en la punta de la línea mientras se dibuja. Los fotogramas van
+// a pasos iguales de largo y con la curva del trazo encima, así que avanza
+// justo lo que avanza el guion.
+function encenderPunta(ancho, alto) {
+  const chispa = el.trendChispa;
+  chispa.getAnimations().forEach((a) => a.cancel());
+  if (sinMovimiento.matches || coords.length < 2) return;
+  const camino = recorridoEnPantalla(coords, ancho, alto).map(({ x, y }) => ({ left: `${x}%`, top: `${(y / 28) * 100}%` }));
+  chispa.animate(camino, { duration: 900, easing: "cubic-bezier(0.16, 1, 0.3, 1)" });
+  // Se enciende al salir y se apaga cuando llega, que ahí aparece el punto de hoy.
+  chispa.animate([{ opacity: 0 }, { opacity: 1, offset: 0.08 }, { opacity: 1, offset: 0.7 }, { opacity: 0 }], 900);
+}
+
 function dibujarLinea(seTransforma = false) {
   if (!seTransforma) {
     pararTransformar();
@@ -1686,6 +1700,7 @@ function dibujarLinea(seTransforma = false) {
     const { width, height } = el.trendLine.ownerSVGElement.getBoundingClientRect();
     el.trendLine.style.setProperty("--len", Math.ceil(largoEnPantalla(coords, width, height)) + 1);
     restartAnimation(el.trendLine);
+    encenderPunta(width, height);
   }
   colocar(el.trendHoy, coords[coords.length - 1]);
   restartAnimation(el.trendHoy);

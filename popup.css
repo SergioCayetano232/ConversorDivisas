@@ -12537,6 +12537,39 @@ body::after {
   animation-delay: 850ms;
 }
 
+/* La chispa que va en la punta mientras se dibuja: blanca por dentro, del
+   color de la tendencia alrededor, como una bengala. */
+.trend__chispa {
+  position: absolute;
+  z-index: 2;
+  width: 5px;
+  height: 5px;
+  margin: -2.5px 0 0 -2.5px;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow:
+    0 0 4px 1px var(--tendencia),
+    0 0 14px 4px color-mix(in srgb, var(--tendencia) 55%, transparent);
+  opacity: 0;
+  pointer-events: none;
+}
+
+.trend__chispa::before {
+  content: "";
+  position: absolute;
+  inset: -9px;
+  border-radius: 50%;
+  background: radial-gradient(circle, color-mix(in srgb, var(--tendencia) 35%, transparent), transparent 70%);
+}
+
+@media (prefers-color-scheme: light) {
+  .trend__chispa {
+    box-shadow:
+      0 0 3px 1px var(--tendencia),
+      0 0 12px 3px color-mix(in srgb, var(--tendencia) 45%, transparent);
+  }
+}
+
 .trend__hoy::after {
   content: "";
   position: absolute;
