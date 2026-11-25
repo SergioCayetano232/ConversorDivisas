@@ -12856,6 +12856,102 @@ body::after {
   display: none !important;
 }
 
+.enchufe {
+  display: none;
+  flex-shrink: 0;
+  width: 58px;
+  height: 26px;
+  overflow: visible;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.6;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  color: var(--cinnabar);
+}
+
+.is-sin-red .enchufe {
+  display: block;
+}
+
+.enchufe__cuerpo {
+  fill: color-mix(in srgb, currentColor 14%, transparent);
+}
+
+/* La clavija busca el enchufe sin llegar, a ratos. */
+.enchufe__clavija {
+  animation: buscar-enchufe 2.6s var(--ease) infinite;
+}
+
+@keyframes buscar-enchufe {
+  0%, 55%, 100% { transform: none; }
+  70% { transform: translateX(3px) rotate(-4deg); }
+  82% { transform: translateX(1px) rotate(2deg); }
+}
+
+.enchufe__clavija,
+.enchufe__chispa {
+  transform-box: fill-box;
+  transform-origin: center;
+}
+
+.enchufe__chispa {
+  stroke: var(--brass);
+  opacity: 0;
+}
+
+/* Al volver la red entra de golpe y saltan chispas. */
+.is-enchufado .enchufe__clavija {
+  animation: enchufar 420ms var(--ease-spring) forwards;
+}
+
+.is-enchufado .enchufe__chispa {
+  animation: chispas-enchufe 520ms var(--ease-out) 200ms;
+}
+
+.error.is-enchufado .error__message {
+  color: var(--jade);
+}
+
+.error.is-enchufado .enchufe {
+  color: var(--jade);
+  transition: color var(--mid) var(--ease) 200ms;
+}
+
+@keyframes enchufar {
+  to { transform: translateX(10px); }
+}
+
+@keyframes chispas-enchufe {
+  20% { opacity: 1; transform: scale(1.1); }
+  to { opacity: 0; transform: scale(1.6); }
+}
+
+/* Con la tasa guardada en pantalla no es una alarma: cristal y sin temblor. */
+.error.is-guardada {
+  background: var(--glass);
+  border-color: var(--hairline-strong);
+  box-shadow: inset 0 1px 0 var(--sheen);
+  animation: fade var(--slow) var(--ease-out);
+}
+
+.is-guardada .enchufe {
+  color: var(--muted);
+}
+
+.is-guardada .error__message {
+  color: var(--muted);
+}
+
+.is-guardada .error__retry {
+  border-color: var(--hairline-strong);
+  color: var(--mist);
+}
+
+.is-guardada .error__retry:hover {
+  background: var(--brass-ghost);
+}
+
 .error__message {
   flex: 1;
   font-size: 12px;

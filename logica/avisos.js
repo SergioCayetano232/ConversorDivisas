@@ -901,11 +901,19 @@ function textoAtajo(code, esMac) {
   return esMac ? `⌥${tecla}` : `Alt+${tecla}`;
 }
 
-function errorMessageFor(error) {
-  if (error.name === "AbortError") return tr("error.tiempo");
-  if (!navigator.onLine) return tr("error.sinRed");
-  if (error.message.startsWith("HTTP")) return tr("error.servicio");
-  return tr("error.otro");
+// Sin red pinto un enchufe en vez de la franja roja, así que el tipo lo
+// necesito aparte del texto.
+function tipoDeFallo(error, enLinea = navigator.onLine) {
+  if (error.name === "AbortError") return "tiempo";
+  if (!enLinea) return "sinRed";
+  if (String(error.message).startsWith("HTTP")) return "servicio";
+  return "otro";
+}
+
+// Con la tasa guardada en pantalla no es un error: sigues pudiendo convertir.
+function errorMessageFor(error, conGuardada = false, enLinea = navigator.onLine) {
+  const tipo = tipoDeFallo(error, enLinea);
+  return tr(tipo === "sinRed" && conGuardada ? "error.sinRedGuardada" : `error.${tipo}`);
 }
 
 // Lo mínimo por tique para pedir la devolución del IVA y el IVA de allí, de las

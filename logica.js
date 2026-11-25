@@ -34,7 +34,7 @@ module.exports = {
   CURRENCIES, isValidCode, nombreDe, parseAmount, isoLocal, hoy, isFresh,
   RODILLO_MAX, rodillo, COLORES_BANDERA, manchasBandera,
   evaluar, completar, leerImporte, UNIDADES, quitarUnidad, nombreUnidad, porUnidadMetrica, esOperacion, pasoCantidad, pasoPorDiez, RUEDA_PASO, pasosRueda, cifraCompleta, leerCantidad,
-  normalizar, filtrarDivisas, trozosCoincidencia, buildPaths, PUNTOS_TRANSFORMAR, remuestrear, curvaEnMedio, startDateFor, errorMessageFor,
+  normalizar, filtrarDivisas, trozosCoincidencia, buildPaths, PUNTOS_TRANSFORMAR, remuestrear, curvaEnMedio, startDateFor, tipoDeFallo, errorMessageFor,
   RECIENTES_MAX, FIJOS_MAX, apuntarReciente, fijarReciente, leerRecientes, recientesVisibles,
   RANGOS, RANGO_POR_DEFECTO, leerRango, siguienteRango, coordenadas, alturaEn, MOMENTO_UMBRAL, momento, textoMomento,
   SEMANAS_MINIMAS, mejorDiaSemana, ABANICO_MINIMO, abanicoTasa, textoAbanico, nombreDiaSemana, textoDiaSemana, indiceCercano, extremos, fechaCorta, largoEnPantalla, recorridoEnPantalla,

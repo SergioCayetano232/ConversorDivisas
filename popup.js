@@ -9481,8 +9481,13 @@ function pintarTasaVieja() {
   el.tasaVieja.setAttribute("aria-label", el.tasaVieja.title);
 }
 
-function showError(message) {
+// Sin red sale un enchufe suelto en vez de la franja roja, y si la tasa
+// guardada sigue en pantalla, en un tono tranquilo: se puede seguir convirtiendo.
+function showError(message, tipo = null, conGuardada = false) {
   el.errorMessage.textContent = message;
+  el.error.classList.toggle("is-sin-red", tipo === "sinRed");
+  el.error.classList.toggle("is-guardada", conGuardada);
+  el.error.classList.remove("is-enchufado");
   el.error.hidden = false;
 }
 
@@ -9731,7 +9736,7 @@ async function refresh() {
       const reintento = el.tasaVieja.classList.contains("is-girando");
       pintarTasaVieja();
       if (reintento) restartAnimation(el.tasaVieja, "is-mal");
-      showError(errorMessageFor(error));
+      showError(errorMessageFor(error, true), tipoDeFallo(error), true);
       refreshTrend(from, to);
       return;
     }
@@ -9757,7 +9762,7 @@ async function refresh() {
     pintarHoras();
     pintarPistas();
     hideTrend();
-    showError(errorMessageFor(error));
+    showError(errorMessageFor(error), tipoDeFallo(error));
   } finally {
     if (currentRequest === requestId) setLoading(false);
   }
@@ -10839,8 +10844,15 @@ function bindEvents() {
       cerrarCategorias();
     }
   });
+  // Con la tasa guardada antes no se pedía nada al volver la red, y el aviso
+  // de sin conexión se quedaba ahí. Ahora el enchufe se enchufa y pido la buena.
   window.addEventListener("online", () => {
-    if (rate === null) refresh();
+    const enchufar = !el.error.hidden && el.error.classList.contains("is-sin-red");
+    if (rate !== null && !enchufar) return;
+    if (!enchufar || sinMovimiento.matches) return refresh();
+    el.error.classList.add("is-enchufado");
+    el.errorMessage.textContent = tr("error.vuelve");
+    setTimeout(refresh, 700);
   });
 }
 

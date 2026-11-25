@@ -1539,6 +1539,8 @@ const TEXTOS = {
 
     "error.tiempo": "La conexión ha tardado demasiado.",
     "error.sinRed": "Sin conexión a internet.",
+    "error.sinRedGuardada": "Sin conexión. Sigo con la tasa guardada.",
+    "error.vuelve": "Vuelve la conexión…",
     "error.servicio": "El servicio de tasas no responde.",
     "error.otro": "No se han podido obtener las tasas.",
 
@@ -3082,6 +3084,8 @@ const TEXTOS = {
 
     "error.tiempo": "The connection took too long.",
     "error.sinRed": "No internet connection.",
+    "error.sinRedGuardada": "Offline. Using the saved rate.",
+    "error.vuelve": "Back online…",
     "error.servicio": "The rates service isn't responding.",
     "error.otro": "Couldn't get the rates.",
 
