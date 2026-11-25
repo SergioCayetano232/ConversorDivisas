@@ -1977,6 +1977,51 @@ body::after {
   animation-timing-function: var(--ease-out);
 }
 
+/* El botón se estira hasta ser el panel. Las dos fotos van a su tamaño de
+   verdad y pegadas arriba a la derecha, que es donde están los botones: así el
+   panel se destapa desde el botón en vez de salir aplastado. */
+::view-transition-group(bandeja) {
+  z-index: 8;
+  overflow: clip;
+  border-radius: var(--r-md);
+  animation-duration: 420ms;
+  animation-timing-function: var(--ease-out);
+}
+
+::view-transition-old(bandeja),
+::view-transition-new(bandeja) {
+  height: 100%;
+  object-fit: none;
+  object-position: top right;
+}
+
+::view-transition-old(bandeja) {
+  animation: fade 140ms var(--ease) reverse both;
+}
+
+::view-transition-new(bandeja) {
+  animation: fade 200ms var(--ease) both;
+}
+
+/* Al cerrar va al revés: el panel se apaga al final, cuando ya es pequeño. */
+.is-cerrando-bandeja::view-transition-group(bandeja) {
+  animation-duration: 320ms;
+  animation-timing-function: cubic-bezier(0.55, 0, 0.75, 0.2);
+}
+
+.is-cerrando-bandeja::view-transition-old(bandeja) {
+  animation: fade 120ms var(--ease) 200ms reverse both;
+}
+
+.is-cerrando-bandeja::view-transition-new(bandeja) {
+  animation: fade 120ms var(--ease) 200ms both;
+}
+
+/* Con el viaje, el panel no hace además su entrada de siempre. */
+.is-viajando .historial {
+  animation: none;
+}
+
 /* Una pasa por encima, un poco más grande, y la otra por debajo: si no, se
    cruzaban la una a través de la otra. */
 ::view-transition-group(divisa-uno) {

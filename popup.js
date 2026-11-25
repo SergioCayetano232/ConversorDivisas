@@ -3417,6 +3417,33 @@ function pintarHistorial() {
   el.historialCsv.hidden = !hay;
 }
 
+// El panel sale del botón que lo abre y se vuelve a meter en él al cerrarse.
+// Para la transición el nombre lo lleva el que se ve en cada momento: el botón
+// antes de abrir y el panel después, así el navegador estira uno hasta el otro.
+// Solo desde el botón, el Escape y el clic fuera: lo demás que abre o cierra
+// el panel lo hace de paso y no tiene por qué hacer el viaje.
+function viajeBandeja(boton, panel, cambio) {
+  const raiz = document.documentElement;
+  if (!document.startViewTransition || sinMovimiento.matches || raiz.classList.contains("is-viajando")) return cambio();
+  const conNombre = (abierto) => {
+    boton.style.viewTransitionName = abierto ? "" : "bandeja";
+    panel.style.viewTransitionName = abierto ? "bandeja" : "";
+  };
+  const abre = panel.hidden;
+  conNombre(!abre);
+  raiz.classList.add("is-viajando");
+  raiz.classList.toggle("is-cerrando-bandeja", !abre);
+  const viaje = document.startViewTransition(() => {
+    cambio();
+    conNombre(!panel.hidden);
+  });
+  viaje.finished.finally(() => {
+    boton.style.viewTransitionName = "";
+    panel.style.viewTransitionName = "";
+    raiz.classList.remove("is-viajando", "is-cerrando-bandeja");
+  });
+}
+
 function abrirHistorial() {
   cerrarBurbuja();
   cerrarGastos();
@@ -8893,10 +8920,10 @@ function hacerAtajo(accion) {
   else if (accion === "origen") el.from.click();
   else if (accion === "destino") el.to.click();
   else if (accion === "ayuda") abrirAyuda();
-  else if (accion === "gastos") (el.gastos.hidden ? abrirGastos() : cerrarGastos()?.focus());
+  else if (accion === "gastos") viajeBandeja(el.abrirGastos, el.gastos, () => (el.gastos.hidden ? abrirGastos() : cerrarGastos()?.focus()));
   else if (accion === "cuenta") (el.cuenta.hidden ? abrirCuenta() : cerrarCuenta()?.focus());
   else if (accion === "comparar") (el.comparar.hidden ? abrirComparar() : cerrarComparar()?.focus());
-  else if (accion === "historial") (el.historial.hidden ? abrirHistorial() : cerrarHistorial()?.focus());
+  else if (accion === "historial") viajeBandeja(el.abrirHistorial, el.historial, () => (el.historial.hidden ? abrirHistorial() : cerrarHistorial()?.focus()));
   else if (accion === "buscar") buscarDesdeAtajo();
   else if (accion === "apuntar") apuntarDesdeAtajo();
   else if (accion === "apuntarEfectivo") apuntarEnEfectivo();
@@ -10393,7 +10420,7 @@ function bindEvents() {
       el.ayudaCerrar.focus();
     }
   });
-  el.abrirHistorial.addEventListener("click", () => (el.historial.hidden ? abrirHistorial() : cerrarHistorial()));
+  el.abrirHistorial.addEventListener("click", () => viajeBandeja(el.abrirHistorial, el.historial, () => (el.historial.hidden ? abrirHistorial() : cerrarHistorial())));
   el.abrirHistorial.addEventListener("animationend", () => el.abrirHistorial.classList.remove("is-apuntado"));
   el.historialBorrar.addEventListener("click", onBorrarHistorial);
   el.historialCsv.addEventListener("click", () => descargarCsv(csvHistorial(historial), tr("csv.archivoHistorial"), el.historialCsv));
@@ -10440,7 +10467,7 @@ function bindEvents() {
     pintarIndice();
   });
   el.viajesAbrirArchivo.addEventListener("animationend", () => el.viajesAbrirArchivo.classList.remove("is-nuevo"));
-  el.abrirGastos.addEventListener("click", () => (el.gastos.hidden ? abrirGastos() : cerrarGastos()));
+  el.abrirGastos.addEventListener("click", () => viajeBandeja(el.abrirGastos, el.gastos, () => (el.gastos.hidden ? abrirGastos() : cerrarGastos())));
   el.abrirGastos.addEventListener("animationend", () => el.abrirGastos.classList.remove("is-apuntado"));
   el.gastosForm.addEventListener("submit", onApuntarGasto);
   el.gastosConcepto.addEventListener("input", onConceptoGasto);
@@ -10475,7 +10502,7 @@ function bindEvents() {
   el.gastosSuma.addEventListener("animationend", () => el.gastosSuma.classList.remove("is-tic"));
   el.gastosSuma.addEventListener("dblclick", onCopiarTotal);
   el.gastosApuntar.addEventListener("animationend", () => el.gastosApuntar.classList.remove("is-mal"));
-  el.gastosCerrar.addEventListener("click", () => cerrarGastos()?.focus());
+  el.gastosCerrar.addEventListener("click", () => viajeBandeja(el.abrirGastos, el.gastos, () => cerrarGastos()?.focus()));
   el.viaje.addEventListener("click", () => (el.viajes.hidden ? abrirViajes() : cerrarViajes()));
   el.gastosEfectivo.addEventListener("click", () => (el.cajero.hidden ? abrirCajero() : cerrarCajero()));
   el.gastosTramo.addEventListener("click", () => (el.tramos.hidden ? abrirTramos() : cerrarTramos()));
@@ -10714,7 +10741,7 @@ function bindEvents() {
     }
     if (event.key === "Escape" && !el.historial.hidden) {
       event.preventDefault();
-      cerrarHistorial()?.focus();
+      viajeBandeja(el.abrirHistorial, el.historial, () => cerrarHistorial()?.focus());
     }
     if (event.key === "Escape" && !el.cuenta.hidden) {
       event.preventDefault();
@@ -10738,7 +10765,7 @@ function bindEvents() {
       else if (cerrarGente()) el.personasCabeza.focus();
       else if (cerrarCategorias()) el.gastosCategoria.focus();
       else if (dejarDeEditarPresupuesto()) el.presupuestoVer.hidden ? el.presupuestoAnadir.focus() : el.presupuestoVer.focus();
-      else cerrarGastos()?.focus();
+      else viajeBandeja(el.abrirGastos, el.gastos, () => cerrarGastos()?.focus());
     }
   });
   document.addEventListener("mousedown", (event) => {
@@ -10751,10 +10778,10 @@ function bindEvents() {
       cerrarBurbuja();
     }
     if (!el.historial.hidden && !el.historial.contains(event.target) && !el.abrirHistorial.contains(event.target)) {
-      cerrarHistorial();
+      viajeBandeja(el.abrirHistorial, el.historial, cerrarHistorial);
     }
     if (!el.gastos.hidden && !el.gastos.contains(event.target) && !el.abrirGastos.contains(event.target)) {
-      cerrarGastos();
+      viajeBandeja(el.abrirGastos, el.gastos, cerrarGastos);
     }
     // Arriba se puede tocar la cantidad sin que se cierre: es la cuenta que reparto.
     // Como en la cuenta, arriba se puede cambiar el precio de allí sin cerrarlo.
