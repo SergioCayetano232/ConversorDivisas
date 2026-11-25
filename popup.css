@@ -13580,6 +13580,52 @@ kbd {
   70%, 100% { box-shadow: 0 0 0 5px transparent; }
 }
 
+/* La franja que baja cuando llega la tasa de hoy, con una raya fina de luz
+   en medio, y el destello de cada cifra cuando la cruza. */
+.onda-tasa {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 50;
+  height: 110px;
+  pointer-events: none;
+  background:
+    linear-gradient(transparent 49%, color-mix(in srgb, var(--brass) 85%, transparent) 50%, transparent 51%),
+    linear-gradient(transparent, color-mix(in srgb, var(--brass) 26%, transparent) 50%, transparent);
+  mask-image: linear-gradient(90deg, transparent, #000 15%, #000 85%, transparent);
+  mix-blend-mode: plus-lighter;
+}
+
+/* En claro sumar luz no se ve: ahí tiñe. */
+@media (prefers-color-scheme: light) {
+  .onda-tasa {
+    mix-blend-mode: multiply;
+  }
+}
+
+.is-al-dia {
+  animation: al-dia 640ms var(--ease-out) var(--espera, 0ms);
+}
+
+.result__row.is-al-dia {
+  animation-name: al-dia-cifra;
+}
+
+@keyframes al-dia {
+  30% {
+    color: var(--brass);
+    text-shadow: 0 0 10px var(--brass-glow), 0 0 1px var(--brass);
+  }
+}
+
+@keyframes al-dia-cifra {
+  30% {
+    filter: brightness(1.3) drop-shadow(0 0 14px var(--brass-glow));
+    scale: 1.015;
+  }
+}
+
 /* La onda al pulsar: un círculo del color del texto del botón, así sale
    clara en los oscuros y oscura en los dorados sin elegir nada. */
 .onda {

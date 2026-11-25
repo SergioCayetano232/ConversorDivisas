@@ -9723,6 +9723,7 @@ async function refresh() {
     renderUpdated();
     renderResult();
     refreshTrend(from, to);
+    if (tasaRenovada(cached, data)) ondaDeTasa();
 
     saveCache({
       [`${from}${to}`]: { rate: data.rate, date: data.date, day: hoy(), saved: Date.now() },
@@ -9765,6 +9766,42 @@ async function refresh() {
     showError(errorMessageFor(error), tipoDeFallo(error));
   } finally {
     if (currentRequest === requestId) setLoading(false);
+  }
+}
+
+// Llega la tasa de hoy encima de la guardada: una franja de luz baja por el
+// popup y cada cifra se enciende justo cuando pasa por ella. Va a velocidad
+// constante para que la espera de cada una salga de dónde está.
+const ONDA_MS = 900;
+
+function ondaDeTasa() {
+  if (sinMovimiento.matches) return;
+  const alto = document.documentElement.clientHeight;
+  const franja = document.createElement("div");
+  franja.className = "onda-tasa";
+  franja.setAttribute("aria-hidden", "true");
+  document.body.append(franja);
+  const banda = franja.offsetHeight;
+  franja.animate([{ transform: `translateY(${-banda}px)` }, { transform: `translateY(${alto}px)` }], ONDA_MS)
+    .finished.finally(() => franja.remove());
+
+  const cifras = [el.rateLine, el.cambioDia, el.updated, document.querySelector(".result__row"), el.resultMeta, el.trendChange];
+  for (const nodo of cifras) {
+    if (!nodo || nodo.hidden || !nodo.offsetParent) continue;
+    const { top, height } = nodo.getBoundingClientRect();
+    if (top > alto) continue;
+    // Cuándo le llega el centro de la franja.
+    const llega = ((top + height / 2 + banda / 2) / (alto + banda)) * ONDA_MS;
+    nodo.style.setProperty("--espera", `${Math.round(llega - 120)}ms`);
+    restartAnimation(nodo, "is-al-dia");
+    // Otras animaciones van con su clase en el mismo nodo: si se quedara esta,
+    // las taparía. animationend sube también desde dentro (el rodillo).
+    const quitar = (event) => {
+      if (event.animationName !== "al-dia" && event.animationName !== "al-dia-cifra") return;
+      nodo.classList.remove("is-al-dia");
+      nodo.removeEventListener("animationend", quitar);
+    };
+    nodo.addEventListener("animationend", quitar);
   }
 }
 

@@ -413,6 +413,13 @@ function hoy() {
 // El BCE saca las tasas una vez al día laborable, sobre las cuatro de la tarde.
 // Guardo el día en que pedí los datos y los doy por buenos mientras siga siendo
 // el mismo día: un TTL de horas me haría pedir de madrugada para nada.
+// Si en pantalla estaba la guardada y llega otra, de otro día o con otro valor,
+// lo enseño con una onda. Sin nada antes, o si es la misma, no hay nada que ver.
+function tasaRenovada(antes, nueva) {
+  if (!antes || !nueva) return false;
+  return antes.date !== nueva.date || antes.rate !== nueva.rate;
+}
+
 function isFresh(entry) {
   return Boolean(entry) && entry.day === hoy();
 }
