@@ -879,6 +879,19 @@ const COLORES_BANDERA = {
   BOB: ["#D52B1E", "#F9E300", "#007934"], GTQ: ["#4997D0"], PYG: ["#D52B1E", "#0038A8"],
 };
 
+// El contraste de la WCAG entre dos colores #rrggbb: de 1 (iguales) a 21
+// (negro y blanco). Para comprobar la paleta de alto contraste con números.
+function luminancia(hex) {
+  const [r, g, b] = [1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16) / 255)
+    .map((c) => (c <= 0.04045 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4));
+  return 0.2126 * r + 0.7152 * g + 0.0722 * b;
+}
+
+function contraste(a, b) {
+  const [claro, oscuro] = [luminancia(a), luminancia(b)].sort((x, y) => y - x);
+  return (claro + 0.05) / (oscuro + 0.05);
+}
+
 // Uno por mancha, y la cuarta siempre del cielo. Las banderas de un solo color
 // tiñen una mancha y dejan las otras como estaban, que todo rojo era demasiado.
 function manchasBandera(code) {

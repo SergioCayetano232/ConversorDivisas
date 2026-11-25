@@ -13798,3 +13798,81 @@ kbd {
     stroke-dashoffset: 0;
   }
 }
+
+/* Alto contraste. Si el sistema lo pide, una paleta propia en cada tema, el
+   cristal opaco y sin manchas ni grano detrás del texto. Los números de la
+   paleta los comprueba test/altoContraste.test.js: todo por encima de 7:1. */
+@media (prefers-contrast: more) {
+  :root {
+    --graphite: #05070A;
+    --mist: #FFFFFF;
+    --muted: #C9D1D9;
+    --brass: #F5C86E;
+    --cinnabar: #FF8A80;
+    --jade: #7EE29A;
+    --hairline: rgba(255, 255, 255, 0.34);
+    --hairline-strong: rgba(255, 255, 255, 0.6);
+    --brass-dim: rgba(245, 200, 110, 0.8);
+    --brass-ghost: rgba(245, 200, 110, 0.2);
+    --glass: rgba(12, 15, 20, 0.97);
+    --glass-light: rgba(255, 255, 255, 0.1);
+  }
+}
+
+/* Dentro del @media del claro, para que el tema a mano también lo cambie. */
+@media (prefers-color-scheme: light) {
+  @media (prefers-contrast: more) {
+    :root {
+      --graphite: #FFFFFF;
+      --mist: #000000;
+      --muted: #33383F;
+      --brass: #5C3D00;
+      --cinnabar: #A3170F;
+      --jade: #135C2B;
+      --hairline: rgba(0, 0, 0, 0.4);
+      --hairline-strong: rgba(0, 0, 0, 0.65);
+      --brass-dim: rgba(92, 61, 0, 0.8);
+      --brass-ghost: rgba(92, 61, 0, 0.14);
+      --glass: rgba(255, 255, 255, 0.98);
+      --glass-light: rgba(0, 0, 0, 0.05);
+    }
+  }
+}
+
+@media (prefers-contrast: more), (prefers-reduced-transparency: reduce) {
+  html::before,
+  body::before,
+  body::after {
+    display: none;
+  }
+}
+
+/* Con menos transparencia, el cristal casi opaco pero con los colores de siempre. */
+@media (prefers-reduced-transparency: reduce) {
+  :root {
+    --glass: color-mix(in srgb, var(--graphite) 96%, var(--mist));
+  }
+}
+
+/* Con los colores forzados de Windows los fondos desaparecen, y con ellos la
+   pastilla que dice qué pestaña y qué periodo están elegidos. */
+@media (forced-colors: active) {
+  .vistas__pildora,
+  .rangos__pildora {
+    display: none;
+  }
+
+  .vista.is-activa,
+  .rango.is-activo {
+    outline: 2px solid Highlight;
+    outline-offset: -2px;
+  }
+
+  .result__rodillo {
+    display: none !important;
+  }
+
+  .is-rodando .result__value {
+    color: CanvasText;
+  }
+}
