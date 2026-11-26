@@ -13880,6 +13880,61 @@ kbd {
   color: var(--muted);
 }
 
+/* La lluvia de billetes del código Konami. Cada billete cae a su ritmo, de
+   lado a lado, y aletea dándose la vuelta como uno de papel. */
+.lluvia {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.lluvia__billete {
+  position: absolute;
+  top: -40px;
+  left: var(--x);
+  display: grid;
+  place-items: center;
+  width: calc(44px * var(--tam));
+  height: calc(23px * var(--tam));
+  border: 1px solid var(--brass-dim);
+  border-radius: 3px;
+  background:
+    radial-gradient(circle at 50% 50%, transparent 32%, var(--brass-ghost) 33% 40%, transparent 41%),
+    color-mix(in srgb, var(--graphite) 70%, var(--brass) 30%);
+  box-shadow: var(--shadow-md), inset 0 0 0 2px color-mix(in srgb, var(--graphite) 60%, transparent);
+  color: var(--brass);
+  font-family: var(--font-mono);
+  font-size: calc(11px * var(--tam));
+  font-weight: 700;
+  animation:
+    lluvia-cae var(--dura) cubic-bezier(0.4, 0, 0.7, 1) var(--espera) both,
+    lluvia-aletea 520ms ease-in-out var(--espera) infinite alternate;
+}
+
+/* Uno de cada cuatro lleva la bandera en la esquina, como el sello de un billete. */
+.lluvia__billete[data-bandera]::after {
+  content: attr(data-bandera);
+  position: absolute;
+  top: 1px;
+  left: 3px;
+  font-size: 0.7em;
+}
+
+@keyframes lluvia-cae {
+  from { translate: 0 0; rotate: 0deg; }
+  25% { translate: var(--vaiven) 26vh; rotate: var(--giro); }
+  50% { translate: calc(var(--vaiven) * -1) 54vh; rotate: calc(var(--giro) * -1); }
+  75% { translate: var(--vaiven) 80vh; rotate: var(--giro); }
+  to { translate: 0 calc(100vh + 60px); rotate: 0deg; }
+}
+
+@keyframes lluvia-aletea {
+  from { transform: rotateX(0deg) rotateY(0deg); }
+  to { transform: rotateX(55deg) rotateY(20deg); }
+}
+
 /* La tecla que acabas de usar, flotando abajo un momento. */
 .tecla-flash {
   position: fixed;

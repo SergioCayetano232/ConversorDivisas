@@ -447,3 +447,16 @@ function vueltaMoneda(n = FOTOGRAMAS_MONEDA) {
     return { ancho: Math.max(Math.abs(giro), 0.08), dorso: giro < 0 };
   });
 }
+
+// El código Konami, por si alguien lo prueba. Si te equivocas a medias no
+// vuelves a cero sin más: con ↑↑↑ los dos últimos siguen valiendo, como en las
+// recreativas.
+const KONAMI = ["ArrowUp", "ArrowUp", "ArrowDown", "ArrowDown", "ArrowLeft", "ArrowRight", "ArrowLeft", "ArrowRight", "b", "a"];
+
+function pasoKonami(llevas, tecla) {
+  const pulsado = [...KONAMI.slice(0, llevas), String(tecla).length === 1 ? String(tecla).toLowerCase() : tecla];
+  for (let n = Math.min(pulsado.length, KONAMI.length); n > 0; n--) {
+    if (pulsado.slice(-n).every((t, i) => t === KONAMI[i])) return n;
+  }
+  return 0;
+}

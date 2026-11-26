@@ -11355,6 +11355,62 @@ document.addEventListener("animationend", (event) => {
   if (event.animationName === "rebotar") event.target.classList.remove("is-rebota");
 });
 
+// El código Konami: llueven billetes de tu divisa. Las flechas por el camino
+// han movido la cantidad, así que al acabar la dejo como estaba. La B y la A,
+// ya con las ocho flechas puestas, me las quedo: si no, abrirían la balanza y
+// el selector, o se escribirían en la cantidad.
+let konami = 0;
+let cantidadAntesKonami = null;
+
+function onKonami(event) {
+  if (event.repeat) return;
+  const antes = konami;
+  konami = pasoKonami(konami, event.key);
+  if (antes === 0 && konami > 0) cantidadAntesKonami = el.amount.value;
+  if (konami > 8) {
+    event.preventDefault();
+    event.stopImmediatePropagation();
+  }
+  if (konami < KONAMI.length) return;
+  konami = 0;
+  if (cantidadAntesKonami !== null && el.amount.value !== cantidadAntesKonami) {
+    el.amount.value = cantidadAntesKonami;
+    onAmountInput();
+  }
+  lloverBilletes(el.to.value);
+}
+
+const BILLETES_LLUVIA = 26;
+
+function lloverBilletes(code) {
+  if (sinMovimiento.matches) {
+    mostrarFlash([`💸 ${simboloDe(code)} ${simboloDe(code)} ${simboloDe(code)}`], 1600);
+    return;
+  }
+  document.querySelector(".lluvia")?.remove();
+  const lluvia = document.createElement("div");
+  lluvia.className = "lluvia";
+  lluvia.setAttribute("aria-hidden", "true");
+  const bandera = banderaDivisa(code);
+  for (let i = 0; i < BILLETES_LLUVIA; i++) {
+    const billete = document.createElement("span");
+    billete.className = "lluvia__billete";
+    billete.textContent = simboloDe(code);
+    if (bandera && i % 4 === 0) billete.dataset.bandera = bandera;
+    billete.style.setProperty("--x", `${Math.random() * 100}%`);
+    billete.style.setProperty("--espera", `${Math.random() * 1400}ms`);
+    billete.style.setProperty("--dura", `${1800 + Math.random() * 1200}ms`);
+    billete.style.setProperty("--giro", `${(Math.random() * 2 - 1) * 50}deg`);
+    billete.style.setProperty("--vaiven", `${(Math.random() * 2 - 1) * 40}px`);
+    billete.style.setProperty("--tam", (0.8 + Math.random() * 0.5).toFixed(2));
+    lluvia.append(billete);
+  }
+  document.body.append(lluvia);
+  setTimeout(() => lluvia.remove(), 4400);
+}
+
+document.addEventListener("keydown", onKonami, true);
+
 const filaResultado = document.querySelector(".result__row");
 filaResultado.addEventListener("pointermove", moverLupa);
 filaResultado.addEventListener("pointerleave", () => document.getElementById("micro").classList.remove("is-lupa"));
