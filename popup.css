@@ -10034,6 +10034,72 @@ body::after {
   50% { opacity: 0.7; }
 }
 
+/* El microtexto: de lejos, una raya bajo la cifra; con el ratón encima, una
+   lupa que lo agranda donde estés. La lupa es la misma línea a 3,4 veces,
+   recortada en un círculo con el centro en el ratón. */
+.micro {
+  position: absolute;
+  left: calc(var(--s-2) + 1px);
+  right: 0;
+  bottom: -6px;
+  height: 4px;
+  pointer-events: none;
+  font-family: var(--font-mono);
+  font-size: 3.4px;
+  line-height: 4px;
+  letter-spacing: 0.1em;
+  white-space: nowrap;
+}
+
+.micro__texto {
+  display: block;
+  overflow: hidden;
+  color: var(--muted);
+  opacity: 0.55;
+}
+
+.micro__lupa {
+  position: absolute;
+  inset: -2px 0;
+  overflow: hidden;
+  line-height: 8px;
+  color: var(--brass);
+  background: var(--graphite);
+  transform: scale(3.4);
+  transform-origin: var(--lupa-x, 50%) 50%;
+  clip-path: circle(4px at var(--lupa-x, 50%) 50%);
+  opacity: 0;
+  scale: 0.6;
+  transition: opacity var(--fast) var(--ease), scale var(--mid) var(--ease-spring);
+}
+
+.micro.is-lupa .micro__lupa {
+  opacity: 1;
+  scale: 1;
+}
+
+/* El cristal de la lupa: un aro que va con ella. */
+.micro::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: var(--lupa-x, 50%);
+  width: 28px;
+  height: 28px;
+  margin: -14px 0 0 -14px;
+  border: 1px solid var(--brass-dim);
+  border-radius: 50%;
+  box-shadow: 0 4px 12px var(--shadow-lg-color), inset 0 1px 0 var(--sheen);
+  opacity: 0;
+  scale: 0.6;
+  transition: opacity var(--fast) var(--ease), scale var(--mid) var(--ease-spring);
+}
+
+.micro.is-lupa::after {
+  opacity: 1;
+  scale: 1;
+}
+
 .result__pie {
   position: relative;
   display: flex;
@@ -14138,6 +14204,10 @@ kbd {
   }
 
   .result__hilo {
+    display: none;
+  }
+
+  .micro {
     display: none;
   }
 

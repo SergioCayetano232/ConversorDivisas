@@ -2937,6 +2937,20 @@ function pintarHoras() {
   if (habia !== corto) restartAnimation(nodo, habia ? "is-tic" : "is-entra");
 }
 
+function pintarMicrotexto(from, to) {
+  const texto = microtexto(from, to);
+  for (const nodo of document.querySelectorAll("#micro > span")) nodo.textContent = texto;
+}
+
+// La lupa va donde esté el ratón, pero solo en horizontal: el microtexto es una
+// raya y por arriba o por abajo no hay nada que leer.
+function moverLupa(event) {
+  const micro = document.getElementById("micro");
+  if (event.pointerType !== "mouse" || sinMovimiento.matches) return;
+  micro.style.setProperty("--lupa-x", `${event.clientX - micro.getBoundingClientRect().left}px`);
+  micro.classList.add("is-lupa");
+}
+
 // La marca de agua del resultado, con la roseta y el símbolo de la divisa a
 // la que conviertes. Solo se rehace al cambiar de divisa, con su entrada.
 function pintarBillete(code) {
@@ -9825,6 +9839,7 @@ async function refresh() {
   const to = el.to.value;
   pintarHoraAlli();
   pintarBillete(to);
+  pintarMicrotexto(from, to);
   // Sube también con la misma divisa en los dos lados: si no, la petición que
   // estuviera en vuelo llegaba después y me pisaba el 1 con la tasa vieja.
   const currentRequest = ++requestId;
@@ -11339,6 +11354,10 @@ document.addEventListener("pointerdown", aplastarBoton);
 document.addEventListener("animationend", (event) => {
   if (event.animationName === "rebotar") event.target.classList.remove("is-rebota");
 });
+
+const filaResultado = document.querySelector(".result__row");
+filaResultado.addEventListener("pointermove", moverLupa);
+filaResultado.addEventListener("pointerleave", () => document.getElementById("micro").classList.remove("is-lupa"));
 
 for (const caja of [el.resultBox, el.from, el.to]) {
   caja.addEventListener("pointermove", seguirLuz);

@@ -487,3 +487,14 @@ function panelSalidas(antes, despues) {
       String.fromCharCode(A + ((de.charCodeAt(0) - A + desde + k) % 26)));
   });
 }
+
+// El microtexto de los billetes: una línea que de lejos parece una raya y con
+// lupa dice el par. Lo repito hasta llenar el ancho y lo corto en seco, que en
+// los billetes tampoco acaba en una palabra entera.
+const MICROTEXTO_LARGO = 260;
+
+function microtexto(from, to, largo = MICROTEXTO_LARGO) {
+  const trozo = `${from} · ${to} · CONVERSORDIVISAS · `;
+  if (!from || !to || largo <= 0) return "";
+  return trozo.repeat(Math.ceil(largo / trozo.length)).slice(0, largo);
+}
