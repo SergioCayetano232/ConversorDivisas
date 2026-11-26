@@ -2077,6 +2077,24 @@ body::after {
   animation: none;
 }
 
+/* El nombre del viaje que eliges vuela de la lista al título. El título ya
+   no entra deslizándose, que lo hace el vuelo. */
+::view-transition-group(viaje-nombre) {
+  animation-duration: 480ms;
+  animation-timing-function: var(--ease-spring);
+}
+
+::view-transition-old(viaje-nombre),
+::view-transition-new(viaje-nombre) {
+  height: 100%;
+  object-fit: none;
+  object-position: left center;
+}
+
+.is-viajando .viaje__nombre.is-cambiado {
+  animation: none;
+}
+
 /* Una pasa por encima, un poco más grande, y la otra por debajo: si no, se
    cruzaban la una a través de la otra. */
 ::view-transition-group(divisa-uno) {

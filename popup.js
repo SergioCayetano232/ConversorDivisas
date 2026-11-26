@@ -7420,9 +7420,31 @@ function ponerViaje(nuevos) {
 }
 
 function onElegirViaje(id) {
-  cerrarViajes();
-  if (id !== viajes.activo) ponerViaje(elegirViaje(viajes, id));
-  el.gastosConcepto.focus();
+  volarNombreViaje(id, () => {
+    cerrarViajes();
+    if (id !== viajes.activo) ponerViaje(elegirViaje(viajes, id));
+    el.gastosConcepto.focus();
+  });
+}
+
+// El nombre sale de su fila en la lista y vuela hasta el título del panel. Lo
+// demás cambia en el sitio, como al dar la vuelta.
+function volarNombreViaje(id, cambio) {
+  const raiz = document.documentElement;
+  const nombre = el.viajesLista.querySelector(`[data-id="${id}"] .viajes__nombre`);
+  const otro = id !== viajes.activo;
+  if (!otro || !document.startViewTransition || sinMovimiento.matches || !nombre || raiz.classList.contains("is-viajando")) return cambio();
+  nombre.style.viewTransitionName = "viaje-nombre";
+  raiz.classList.add("is-viajando");
+  const vuelo = document.startViewTransition(() => {
+    cambio();
+    nombre.style.viewTransitionName = "";
+    el.gastosTitulo.style.viewTransitionName = "viaje-nombre";
+  });
+  vuelo.finished.finally(() => {
+    el.gastosTitulo.style.viewTransitionName = "";
+    raiz.classList.remove("is-viajando");
+  });
 }
 
 function onCrearViaje(event) {
