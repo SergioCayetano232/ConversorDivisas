@@ -614,9 +614,23 @@ body::after {
 }
 
 .soltar.is-encima {
-  border-color: var(--dorado);
-  background: var(--dorado-fantasma);
+  border-color: transparent;
+  background:
+    repeating-linear-gradient(90deg, var(--dorado) 0 8px, #0000 0 14px) top left / 100% 1.5px repeat-x,
+    repeating-linear-gradient(90deg, var(--dorado) 0 8px, #0000 0 14px) bottom left / 100% 1.5px repeat-x,
+    repeating-linear-gradient(0deg, var(--dorado) 0 8px, #0000 0 14px) top left / 1.5px 100% repeat-y,
+    repeating-linear-gradient(0deg, var(--dorado) 0 8px, #0000 0 14px) top right / 1.5px 100% repeat-y,
+    var(--dorado-fantasma);
+  background-origin: border-box;
   transform: scale(1.02);
+  animation: hormigas 600ms linear infinite;
+}
+
+/* Las rayas dan la vuelta a la caja, como una selección que espera el archivo. */
+@keyframes hormigas {
+  to {
+    background-position: 14px 0, -14px 100%, 0 -14px, 100% 14px, 0 0;
+  }
 }
 
 .soltar.is-mal {
