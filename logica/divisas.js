@@ -892,6 +892,28 @@ function contraste(a, b) {
   return (claro + 0.05) / (oscuro + 0.05);
 }
 
+// El título de la bienvenida lleva los colores de tu bandera, pero el azul
+// marino de muchas sobre el fondo oscuro no se leía. Cada color se va mezclando
+// con blanco (o con negro, en claro) hasta tener contraste de sobra para letra
+// grande: 3 es lo mínimo y con 3,5 se lee sin esfuerzo.
+const AURORA_CONTRASTE = 3.5;
+
+function mezclarHex(a, b, t) {
+  const canal = (hex, i) => parseInt(hex.slice(i, i + 2), 16);
+  return `#${[1, 3, 5].map((i) => Math.round(canal(a, i) + (canal(b, i) - canal(a, i)) * t).toString(16).padStart(2, "0")).join("")}`;
+}
+
+function legibleSobre(hex, fondo, minimo = AURORA_CONTRASTE) {
+  const hacia = luminancia(fondo) < 0.5 ? "#ffffff" : "#000000";
+  for (let paso = 0; paso <= 20; paso++) {
+    const color = mezclarHex(hex, hacia, paso / 20);
+    if (contraste(color, fondo) >= minimo) return color;
+  }
+  return hacia;
+}
+
+const auroraBandera = (code, fondo) => (COLORES_BANDERA[code] ?? []).map((c) => legibleSobre(c, fondo));
+
 // Uno por mancha, y la cuarta siempre del cielo. Las banderas de un solo color
 // tiñen una mancha y dejan las otras como estaban, que todo rojo era demasiado.
 function manchasBandera(code) {

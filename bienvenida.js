@@ -89,7 +89,25 @@ async function cargarDemo() {
 }
 
 // Solo salta cuando cambia: al cambiar el idioma se repinta todo y no toca.
+// Los fondos de copia.css en cada tema. Calculo los colores para los dos y el
+// CSS elige: así cambiar de tema no tiene que volver a pasar por aquí.
+const FONDOS = { oscuro: "#0B0E13", claro: "#F4F1EA" };
+
+function pintarAurora() {
+  const titulo = document.querySelector(".cabeza__titulo");
+  const code = el.divisa.value;
+  const hay = auroraBandera(code, FONDOS.oscuro).length > 0;
+  titulo.classList.toggle("is-aurora", hay);
+  if (!hay) return;
+  for (const [tema, fondo] of Object.entries(FONDOS)) {
+    const colores = auroraBandera(code, fondo);
+    // Con uno o dos colores repito, que el degradado tiene tres huecos.
+    [0, 1, 2].forEach((i) => titulo.style.setProperty(`--aurora-${tema}-${i + 1}`, colores[i % colores.length]));
+  }
+}
+
 function pintarBandera() {
+  pintarAurora();
   const bandera = banderaDivisa(el.divisa.value);
   if (el.bandera.textContent === bandera) return;
   el.bandera.textContent = bandera;

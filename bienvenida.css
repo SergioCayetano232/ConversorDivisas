@@ -220,3 +220,42 @@
     gap: 8px;
   }
 }
+
+/* El título con los colores de tu bandera, pasando despacio como una aurora.
+   Los colores vienen ya aclarados (u oscurecidos) para que se lean: los pone
+   bienvenida.js, uno por tema. Empieza y acaba en el color del texto, así el
+   título nunca se queda entero de un color raro. */
+.cabeza__titulo.is-aurora {
+  --aurora-1: var(--aurora-oscuro-1);
+  --aurora-2: var(--aurora-oscuro-2);
+  --aurora-3: var(--aurora-oscuro-3);
+  background: linear-gradient(100deg, var(--texto) 0%, var(--aurora-1) 22%, var(--aurora-2) 40%, var(--texto) 55%, var(--aurora-3) 72%, var(--aurora-1) 88%, var(--texto) 100%);
+  background-size: 300% 100%;
+  /* Ceñido a la palabra: a todo el ancho, casi todo el degradado caía en vacío. */
+  width: fit-content;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  animation: aurora 14s ease-in-out infinite alternate;
+}
+
+@keyframes aurora {
+  from { background-position: 0% 50%; }
+  to { background-position: 100% 50%; }
+}
+
+@media (prefers-color-scheme: light) {
+  .cabeza__titulo.is-aurora {
+    --aurora-1: var(--aurora-claro-1);
+    --aurora-2: var(--aurora-claro-2);
+    --aurora-3: var(--aurora-claro-3);
+  }
+}
+
+/* Con colores forzados el texto recortado desaparecería. */
+@media (forced-colors: active) {
+  .cabeza__titulo.is-aurora {
+    background: none;
+    color: CanvasText;
+  }
+}
