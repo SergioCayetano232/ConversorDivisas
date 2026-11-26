@@ -1008,6 +1008,18 @@ function textoDiferencia(min) {
   return m ? `${signo}${h} h ${m}` : `${signo}${h} h`;
 }
 
+// Para el anillo del pie: cuánto del camino entre la tasa que tengo y la
+// siguiente ha pasado ya, de 0 a 1. Un viernes a las 17:00 el anillo apenas ha
+// empezado: la siguiente es la del lunes.
+function avanceHastaProxima(fechaIso, ahora = Date.now()) {
+  const proxima = proximaTasa(fechaIso, ahora);
+  if (!proxima) return null;
+  const desde = horaBce(fechaIso).getTime();
+  const total = proxima.getTime() - desde;
+  if (!(total > 0)) return null;
+  return Math.min(1, Math.max(0, (ahora - desde) / total));
+}
+
 const relojDe = ({ horas, minutos }) => `${String(horas).padStart(2, "0")}:${String(minutos).padStart(2, "0")}`;
 
 function tituloHoraAlli(h) {

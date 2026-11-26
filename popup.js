@@ -9623,9 +9623,11 @@ function renderUpdated() {
     el.updated.classList.toggle("is-hoy", Boolean(rateDate) && rateDate >= hoy());
     el.updated.title = tr("mercado.titulo");
     el.tasaVieja.hidden = true;
+    pintarAnilloTasa(null);
     return;
   }
   el.updated.textContent = textoActualizado(rateDate);
+  pintarAnilloTasa(rateDate);
   // La de hoy lleva su puntito verde; la vieja ya sale en ámbar.
   el.updated.classList.toggle("is-hoy", rateDate === hoy());
   el.updated.title = rateDate
@@ -9633,6 +9635,19 @@ function renderUpdated() {
     : "";
   pintarTasaVieja();
 }
+
+// El anillo del pie se va cerrando hasta la siguiente tasa del BCE. Con el
+// popup abierto un rato, lo repaso cada minuto; más a menudo no se notaría.
+let fechaDelAnillo = null;
+
+function pintarAnilloTasa(fecha) {
+  fechaDelAnillo = fecha;
+  const avance = fecha ? avanceHastaProxima(fecha) : null;
+  el.updated.classList.toggle("con-anillo", avance !== null);
+  if (avance !== null) el.updated.style.setProperty("--avance", avance.toFixed(3));
+}
+
+setInterval(() => fechaDelAnillo && pintarAnilloTasa(fechaDelAnillo), 60000);
 
 // Mientras pido la nueva no la saco: casi siempre llega y sería un parpadeo.
 // Si ya estaba y la has pulsado, se queda dando vueltas hasta que responda.
@@ -9922,6 +9937,7 @@ async function refresh() {
     el.resultMeta.textContent = "";
     el.rateLine.textContent = "";
     el.updated.textContent = "";
+    pintarAnilloTasa(null);
     pintarFaltas();
     pintarChuleta();
     pintarFecha();

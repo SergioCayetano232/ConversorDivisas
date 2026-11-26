@@ -14056,6 +14056,32 @@ kbd {
   animation: bce-al-dia 2.4s var(--ease-out) infinite;
 }
 
+/* El anillo hasta la siguiente tasa: se va llenando de dorado y, cuando se
+   cierra, toca la nueva. Al abrir el popup se llena desde cero hasta donde
+   va, para que se vea qué es. */
+@property --anillo {
+  syntax: "<number>";
+  inherits: false;
+  initial-value: 0;
+}
+
+.footer__updated.con-anillo::after {
+  --anillo: var(--avance, 0);
+  content: "";
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: conic-gradient(var(--brass) calc(var(--anillo) * 360deg), var(--hairline-strong) 0);
+  -webkit-mask: radial-gradient(circle, transparent 2.4px, #000 2.9px);
+  mask: radial-gradient(circle, transparent 2.4px, #000 2.9px);
+  transition: --anillo 1.2s var(--ease-out);
+  animation: anillo-llena 1100ms var(--ease-out) 400ms backwards;
+}
+
+@keyframes anillo-llena {
+  from { --anillo: 0; }
+}
+
 @keyframes bce-al-dia {
   0% { box-shadow: 0 0 0 0 var(--jade-glow); }
   70%, 100% { box-shadow: 0 0 0 5px transparent; }
