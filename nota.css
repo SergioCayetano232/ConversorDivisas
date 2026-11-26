@@ -104,6 +104,45 @@
   }
 }
 
+/* En pantalla, como un tique de los de papel térmico: sale de la impresora a
+   tirones, renglón a renglón, y acaba cortado en dientes. Al imprimir no:
+   ahí es una hoja normal. Tiene que acabar antes de los 700 ms en los que se
+   abre sola la ventana de imprimir. */
+@media screen {
+  .pagina > .nota.tarjeta {
+    --diente: 20px;
+    /* Un poco más de papel que el cristal de siempre: si no, en oscuro los
+       dientes se perdían contra el fondo. */
+    background: linear-gradient(var(--losa), var(--losa)), var(--cristal);
+    padding-bottom: calc(20px + var(--diente) / 2);
+    border-bottom: 0;
+    border-radius: var(--radio) var(--radio) 0 0;
+    -webkit-mask:
+      linear-gradient(#000 0 0) top / 100% calc(100% - var(--diente) / 2) no-repeat,
+      conic-gradient(from -45deg at 50% 100%, #000 90deg, transparent 0) bottom / var(--diente) calc(var(--diente) / 2) repeat-x;
+    mask:
+      linear-gradient(#000 0 0) top / 100% calc(100% - var(--diente) / 2) no-repeat,
+      conic-gradient(from -45deg at 50% 100%, #000 90deg, transparent 0) bottom / var(--diente) calc(var(--diente) / 2) repeat-x;
+    animation: imprimirse 600ms steps(12, end) backwards;
+  }
+
+  @keyframes imprimirse {
+    from {
+      clip-path: inset(0 0 100% 0);
+      translate: 0 -24px;
+    }
+    to {
+      clip-path: inset(0);
+      translate: 0 0;
+    }
+  }
+
+  /* La raya del total, de guiones, como en los tiques. */
+  .nota__tabla tfoot tr:first-child td {
+    border-top: 2px dashed var(--borde-fuerte);
+  }
+}
+
 @media print {
   html,
   body {
