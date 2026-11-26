@@ -1806,6 +1806,62 @@ body::after {
   font-size: 12px;
 }
 
+/* El globo va dentro del campo, a la derecha, y el texto le deja sitio. */
+.buscador__campo {
+  padding-right: 40px;
+}
+
+.globo {
+  position: absolute;
+  top: 2px;
+  right: 6px;
+  width: 30px;
+  height: 30px;
+  overflow: visible;
+  pointer-events: none;
+  /* La luz de arriba a la izquierda, para que parezca una bola y no un plato. */
+  background: radial-gradient(circle at 36% 32%, var(--sheen), transparent 40%);
+  border-radius: 50%;
+  animation: globo-entra 420ms var(--ease-spring) backwards;
+}
+
+@keyframes globo-entra {
+  from { opacity: 0; scale: 0.4; rotate: -40deg; }
+}
+
+.globo__mar {
+  fill: color-mix(in srgb, var(--brass) 8%, transparent);
+  stroke: var(--hairline-strong);
+  stroke-width: 0.8;
+}
+
+.globo__reticula {
+  fill: none;
+  stroke: var(--muted);
+  stroke-width: 0.35;
+  opacity: 0.55;
+}
+
+.globo__punto {
+  fill: var(--muted);
+  opacity: 0.8;
+}
+
+.globo__marca {
+  fill: var(--brass);
+  filter: drop-shadow(0 0 1.5px var(--brass-glow));
+}
+
+.globo__marca.is-llega {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: globo-marca 420ms var(--ease-spring);
+}
+
+@keyframes globo-marca {
+  40% { scale: 1.9; }
+}
+
 .buscador__campo:focus {
   outline: none;
   border-bottom-color: var(--brass-dim);

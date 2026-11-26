@@ -996,3 +996,66 @@ function analizarCambio(numero, real, cantidad, comision = 0) {
     tarjeta: comision > 0 ? (sobrecoste > comision / 100 + HOLGURA ? "tarjeta" : "aqui") : null,
   };
 }
+
+// Dónde cae cada divisa en el globo del buscador, en [latitud, longitud]. Más o
+// menos el centro del país, que a 30 px no se distingue una capital de otra.
+// El euro, en el centro de la zona.
+const LUGAR_DIVISA = {
+  EUR: [50, 10], USD: [39, -98], GBP: [54, -2], JPY: [36, 138], CHF: [47, 8],
+  CAD: [56, -106], AUD: [-25, 134], CNY: [35, 104], MXN: [23, -102], BRL: [-10, -52],
+  SEK: [62, 15], NOK: [61, 9], DKK: [56, 10], PLN: [52, 19], TRY: [39, 35],
+  CZK: [50, 15], HKD: [22.3, 114.2], HUF: [47, 19.5], IDR: [-2, 118], ILS: [31.5, 35],
+  INR: [22, 79], ISK: [65, -18], KRW: [36, 128], MYR: [4, 102], NZD: [-41, 174],
+  PHP: [12, 122], RON: [46, 25], SGD: [1.35, 103.8], THB: [15, 101], ZAR: [-29, 24],
+  VND: [16, 107], ARS: [-34, -64], MAD: [32, -6], PEN: [-10, -76], COP: [4, -73],
+  CLP: [-33, -71], EGP: [27, 30], AED: [24, 54], TWD: [23.7, 121], UYU: [-33, -56],
+  CRC: [10, -84], DOP: [19, -70.5], TND: [34, 9], KES: [0, 38], LKR: [7.8, 80.7],
+  NPR: [28, 84], KHR: [12.5, 105], JOD: [31, 36], QAR: [25.3, 51.2], SAR: [24, 45],
+  GEL: [42, 43.5], RSD: [44, 21], BOB: [-17, -65], GTQ: [15.5, -90.3], PYG: [-23, -58],
+};
+
+const RAD = Math.PI / 180;
+
+// Proyección ortográfica, la de una foto del planeta desde lejos. Lo que queda
+// detrás no se ve: visible es false y no se pinta.
+function proyectar([lat, lon], [centroLat, centroLon], radio) {
+  const f = lat * RAD;
+  const l = (lon - centroLon) * RAD;
+  const f0 = centroLat * RAD;
+  const cosC = Math.sin(f0) * Math.sin(f) + Math.cos(f0) * Math.cos(f) * Math.cos(l);
+  return {
+    x: radio * Math.cos(f) * Math.sin(l),
+    y: -radio * (Math.cos(f0) * Math.sin(f) - Math.sin(f0) * Math.cos(f) * Math.cos(l)),
+    visible: cosC >= 0,
+  };
+}
+
+// Para girar de una a otra por el camino corto: de Japón a EE. UU. cruza el
+// Pacífico en vez de dar la vuelta por Europa.
+function giroGlobo([latA, lonA], [latB, lonB]) {
+  const dLon = ((lonB - lonA + 540) % 360) - 180;
+  return (t) => [latA + (latB - latA) * t, lonA + dLon * t];
+}
+
+// Los meridianos cada 30° y los paralelos cada 30°, cortados donde se esconden
+// por detrás. Un trozo por cada tramo que se ve.
+const GLOBO_RETICULA = 30;
+
+function reticulaGlobo(centro, radio) {
+  const r = (n) => Math.round(n * 10) / 10;
+  const linea = (puntos) => {
+    const trozos = [];
+    let trozo = [];
+    for (const p of puntos) {
+      const q = proyectar(p, centro, radio);
+      if (q.visible) trozo.push(`${r(q.x)} ${r(q.y)}`);
+      else if (trozo.length) (trozos.push(trozo), (trozo = []));
+    }
+    if (trozo.length) trozos.push(trozo);
+    return trozos.filter((t) => t.length > 1).map((t) => `M${t.join("L")}`).join("");
+  };
+  const pasos = (desde, hasta, paso) => Array.from({ length: Math.floor((hasta - desde) / paso) + 1 }, (_, i) => desde + i * paso);
+  const meridianos = pasos(-180, 150, GLOBO_RETICULA).map((lon) => linea(pasos(-90, 90, 6).map((lat) => [lat, lon])));
+  const paralelos = pasos(-60, 60, GLOBO_RETICULA).map((lat) => linea(pasos(-180, 180, 6).map((lon) => [lat, lon])));
+  return [...meridianos, ...paralelos].filter(Boolean).join("");
+}

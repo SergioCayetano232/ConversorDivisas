@@ -1040,6 +1040,8 @@ function crearBuscador(lado) {
   let abierto = false;
   let marcado = 0;
   let visibles = CURRENCIES;
+  const globo = crearGlobo();
+  filtro.after(globo.nodo);
 
   const conMarcas = (trozos) => trozos.map(({ texto, marca }) => {
     if (!marca) return texto;
@@ -1084,12 +1086,14 @@ function crearBuscador(lado) {
         e.preventDefault();
         elegir(divisa.code);
       });
+      fila.addEventListener("mouseenter", () => globo.ir(divisa.code));
       trozo.appendChild(fila);
     });
     lista.appendChild(trozo);
 
     const activa = lista.querySelector(".is-marcada");
     if (activa) activa.scrollIntoView({ block: "nearest" });
+    if (visibles[marcado]) globo.ir(visibles[marcado].code);
     cascadaOpciones();
   }
 
@@ -1113,6 +1117,7 @@ function crearBuscador(lado) {
     boton.setAttribute("aria-expanded", "true");
     filtro.value = "";
     marcado = Math.max(CURRENCIES.findIndex((c) => c.code === boton.value), 0);
+    globo.ir(boton.value, false);
     pintar();
     filtro.focus();
   }
@@ -1202,6 +1207,68 @@ function girarPanel(nodo, antes, despues) {
     return letra;
   });
   nodo.replaceChildren(...letras);
+}
+
+// El globo del buscador: gira hasta el país de la divisa que marcas. Sin costas,
+// que pesarían más que todo el popup: la retícula y un punto por cada divisa.
+const GLOBO_RADIO = 13;
+const GLOBO_GIRO = 650;
+
+function crearGlobo() {
+  const nodo = document.createElementNS(SVG_NS, "svg");
+  nodo.setAttribute("class", "globo");
+  nodo.setAttribute("viewBox", `${-GLOBO_RADIO - 2} ${-GLOBO_RADIO - 2} ${2 * GLOBO_RADIO + 4} ${2 * GLOBO_RADIO + 4}`);
+  nodo.setAttribute("aria-hidden", "true");
+  nodo.innerHTML = `<circle class="globo__mar" r="${GLOBO_RADIO}"/><path class="globo__reticula"/><g class="globo__puntos"></g><circle class="globo__marca" r="1.9"/>`;
+  const reticula = nodo.querySelector(".globo__reticula");
+  const marca = nodo.querySelector(".globo__marca");
+  const puntos = Object.keys(LUGAR_DIVISA).map((code) => {
+    const punto = document.createElementNS(SVG_NS, "circle");
+    punto.setAttribute("class", "globo__punto");
+    punto.setAttribute("r", "0.75");
+    nodo.querySelector(".globo__puntos").appendChild(punto);
+    return { code, punto };
+  });
+
+  let centro = LUGAR_DIVISA.EUR;
+  let destino = "EUR";
+  let vuelta = 0;
+
+  function pintar(c) {
+    reticula.setAttribute("d", reticulaGlobo(c, GLOBO_RADIO));
+    for (const { code, punto } of puntos) {
+      const p = proyectar(LUGAR_DIVISA[code], c, GLOBO_RADIO);
+      punto.style.display = p.visible && code !== destino ? "" : "none";
+      punto.setAttribute("cx", p.x.toFixed(1));
+      punto.setAttribute("cy", p.y.toFixed(1));
+    }
+    const m = proyectar(LUGAR_DIVISA[destino], c, GLOBO_RADIO);
+    marca.setAttribute("cx", m.x.toFixed(1));
+    marca.setAttribute("cy", m.y.toFixed(1));
+  }
+
+  function ir(code, animar = true) {
+    if (!LUGAR_DIVISA[code] || code === destino && animar) return;
+    destino = code;
+    cancelAnimationFrame(vuelta);
+    if (!animar || sinMovimiento.matches) {
+      centro = LUGAR_DIVISA[code];
+      return pintar(centro);
+    }
+    const camino = giroGlobo(centro, LUGAR_DIVISA[code]);
+    const inicio = performance.now();
+    const paso = (ahora) => {
+      const t = Math.min((ahora - inicio) / GLOBO_GIRO, 1);
+      centro = camino(1 - (1 - t) ** 3);
+      pintar(centro);
+      if (t < 1) vuelta = requestAnimationFrame(paso);
+      else restartAnimation(marca, "is-llega");
+    };
+    vuelta = requestAnimationFrame(paso);
+  }
+
+  pintar(centro);
+  return { nodo, ir };
 }
 
 function crearBandera(code) {
