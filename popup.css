@@ -13926,12 +13926,42 @@ kbd {
   background: color-mix(in srgb, var(--cinnabar) 14%, transparent);
 }
 
+/* Sale como una isla: primero una gota del alto de la píldora, que sube con
+   muelle, y luego se estira hacia los lados hasta dejar ver todo. Al irse se
+   recoge otra vez en gota y baja. El recorte es redondo, así que lo de dentro
+   se va destapando desde el centro. */
 @keyframes tecla {
-  0% { opacity: 0; transform: translate(-50%, 8px) scale(0.9); }
-  14% { opacity: 1; transform: translate(-50%, 0) scale(1.04); }
-  22% { transform: translate(-50%, 0) scale(1); }
-  80% { opacity: 1; transform: translate(-50%, 0); }
-  100% { opacity: 0; transform: translate(-50%, -4px); }
+  0% {
+    opacity: 0;
+    clip-path: inset(0 calc(50% - 13px) round 999px);
+    transform: translate(-50%, 14px) scale(0.5);
+  }
+  9% {
+    opacity: 1;
+    clip-path: inset(0 calc(50% - 13px) round 999px);
+    transform: translate(-50%, -3px) scale(1.05);
+  }
+  14% {
+    clip-path: inset(0 calc(50% - 13px) round 999px);
+    transform: translate(-50%, 0) scale(1);
+    animation-timing-function: cubic-bezier(0.3, 1.5, 0.5, 1);
+  }
+  30%,
+  80% {
+    clip-path: inset(0 0 round 999px);
+    transform: translate(-50%, 0);
+    animation-timing-function: cubic-bezier(0.5, 0, 0.75, 0);
+  }
+  92% {
+    opacity: 1;
+    clip-path: inset(0 calc(50% - 13px) round 999px);
+    transform: translate(-50%, 0) scale(1);
+  }
+  100% {
+    opacity: 0;
+    clip-path: inset(0 calc(50% - 13px) round 999px);
+    transform: translate(-50%, 10px) scale(0.5);
+  }
 }
 
 .footer__updated {
