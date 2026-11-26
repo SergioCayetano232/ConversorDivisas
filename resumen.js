@@ -75,7 +75,35 @@ function montarPiezas(t) {
     categorias: t.categorias.map((c) => ({ emoji: emojiCategoria(c.categoria), nombre: nombreCategoria(c.categoria), fraccion: c.fraccion, categoria: c.categoria })),
     presupuesto,
     pie,
+    matasellos: matasellos(t.nombre, t.hasta),
   };
+}
+
+const SVG_NS = "http://www.w3.org/2000/svg";
+// El anillo por el que va el texto: radio 41, entre los dos círculos del sello.
+const SELLO_RADIO = 41;
+const dDeOndas = () => ondasMatasellos().map((raya) =>
+  `M${raya[0].x0} ${raya[0].y0}${raya.map((t) => `Q${t.cx} ${t.cy} ${t.x1} ${t.y1}`).join("")}`).join("");
+
+function crearMatasellos(m) {
+  const sello = document.createElementNS(SVG_NS, "svg");
+  sello.setAttribute("class", "sello");
+  sello.setAttribute("viewBox", "-60 -60 120 120");
+  sello.setAttribute("aria-hidden", "true");
+  const r = SELLO_RADIO;
+  sello.innerHTML = `<defs><path id="sello-anillo" d="M${-r} 0a${r} ${r} 0 1 1 ${2 * r} 0a${r} ${r} 0 1 1 ${-2 * r} 0"/></defs>
+    <g class="sello__tinta" filter="url(#sello-borron)">
+      <circle r="54"/><circle r="34"/>
+      <text class="sello__anillo"><textPath href="#sello-anillo" textLength="${Math.floor(2 * Math.PI * r)}" lengthAdjust="spacing"></textPath></text>
+      <text class="sello__dia" y="-3"></text><text class="sello__mes" y="11"></text><text class="sello__anio" y="22"></text>
+      <path class="sello__ondas" d="${dDeOndas()}"/>
+    </g>
+    <filter id="sello-borron" x="-60%" y="-20%" width="160%" height="140%"><feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="2" seed="7"/><feDisplacementMap in="SourceGraphic" scale="2.2"/></filter>`;
+  sello.querySelector("textPath").textContent = m.anillo;
+  sello.querySelector(".sello__dia").textContent = m.dia;
+  sello.querySelector(".sello__mes").textContent = m.mes;
+  sello.querySelector(".sello__anio").textContent = m.anio;
+  return sello;
 }
 
 function pintarPostal(p) {
@@ -129,6 +157,7 @@ function pintarPostal(p) {
   }
   if (p.pie.length) partes.push(nodo("p", "postal__pie", p.pie.join(" · ")));
   if (p.banderas) partes.push(nodo("p", "postal__banderas", p.banderas));
+  if (p.matasellos) partes.push(crearMatasellos(p.matasellos));
   el.postal.replaceChildren(...partes);
 }
 
@@ -324,7 +353,65 @@ function dibujar(p) {
     ctx.font = `400 56px ${LETRA}`;
     texto(ctx, p.banderas, MARGEN, ALTO - MARGEN, util);
   }
+  if (p.matasellos) dibujarMatasellos(ctx, p.matasellos, p.color);
   return lienzo;
+}
+
+// El mismo sello que en la página, en su sitio y a su tamaño: allí mide el 30 %
+// del ancho sin el margen (el 82 %, que el padding es del 9 % por lado) y está
+// al 4 % del borde derecho y al 3,5 % del de arriba.
+function dibujarMatasellos(ctx, m, color) {
+  const lado = ANCHO * 0.82 * 0.3;
+  const k = lado / 120;
+  ctx.save();
+  ctx.translate(ANCHO * 0.96 - lado / 2, ALTO * 0.035 + lado / 2);
+  ctx.rotate(-14 * Math.PI / 180);
+  ctx.scale(k, k);
+  ctx.globalAlpha = 0.62;
+  ctx.strokeStyle = color;
+  ctx.fillStyle = color;
+  ctx.lineWidth = 2.2;
+  for (const r of [54, 34]) {
+    ctx.beginPath();
+    ctx.arc(0, 0, r, 0, Math.PI * 2);
+    ctx.stroke();
+  }
+
+  // El texto del anillo, letra a letra: canvas no sabe escribir por un camino.
+  // Empieza a la izquierda y va por arriba, como el textPath del SVG.
+  ctx.font = `700 9.5px ${MONO}`;
+  const letras = [...m.anillo];
+  const anchos = letras.map((c) => ctx.measureText(c).width);
+  const largo = Math.floor(2 * Math.PI * SELLO_RADIO);
+  const hueco = (largo - anchos.reduce((a, b) => a + b, 0)) / letras.length;
+  let s = 0;
+  letras.forEach((c, i) => {
+    const angulo = Math.PI + (s + anchos[i] / 2) / SELLO_RADIO;
+    ctx.save();
+    ctx.translate(Math.cos(angulo) * SELLO_RADIO, Math.sin(angulo) * SELLO_RADIO);
+    ctx.rotate(angulo + Math.PI / 2);
+    ctx.fillText(c, -anchos[i] / 2, 0);
+    ctx.restore();
+    s += anchos[i] + hueco;
+  });
+
+  ctx.textAlign = "center";
+  for (const [que, tam, y, espacio] of [[m.dia, 19, -3, 0], [m.mes, 10, 11, 1.2], [m.anio, 8, 22, 0.8]]) {
+    ctx.font = `700 ${tam}px ${MONO}`;
+    ctx.letterSpacing = `${espacio}px`;
+    ctx.fillText(que, 0, y);
+  }
+  ctx.letterSpacing = "0px";
+
+  ctx.lineWidth = 1.8;
+  ctx.lineCap = "round";
+  for (const raya of ondasMatasellos()) {
+    ctx.beginPath();
+    ctx.moveTo(raya[0].x0, raya[0].y0);
+    for (const t of raya) ctx.quadraticCurveTo(t.cx, t.cy, t.x1, t.y1);
+    ctx.stroke();
+  }
+  ctx.restore();
 }
 
 // Para descargar, JPG: con el grano un PNG pasaba de 2 MB. Para copiar tiene que

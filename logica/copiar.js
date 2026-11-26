@@ -409,6 +409,35 @@ function ladeoPostal(x, y, ancho, alto, maximo = LADEO_MAX) {
   };
 }
 
+// El matasellos de la postal: el sitio dando la vuelta al anillo y la fecha en
+// medio, en mayúsculas como en los de correos. La bandera del nombre no entra:
+// en tinta de un color sería un borrón.
+const MATASELLOS_LARGO = 16;
+
+function matasellos(nombre, hastaIso) {
+  const lugar = String(nombre ?? "")
+    .replace(/\p{Regional_Indicator}|\p{Extended_Pictographic}|\uFE0F/gu, "")
+    .trim()
+    .toLocaleUpperCase(localeActual());
+  if (!lugar || !/^\d{4}-\d{2}-\d{2}$/.test(hastaIso ?? "")) return null;
+  const [a, m, d] = hastaIso.split("-").map(Number);
+  const partes = fechas({ day: "numeric", month: "short" }).formatToParts(new Date(a, m - 1, d));
+  const dia = partes.find((p) => p.type === "day").value;
+  const mes = partes.find((p) => p.type === "month").value.replace(/\./g, "").toLocaleUpperCase(localeActual());
+  const corto = [...lugar].length > MATASELLOS_LARGO ? `${[...lugar].slice(0, MATASELLOS_LARGO - 1).join("").trim()}…` : lugar;
+  return { lugar: corto, dia, mes, anio: String(a), anillo: `${corto} · CONVERSORDIVISAS · ` };
+}
+
+// Las rayas onduladas que salen del matasellos hacia la izquierda, las que
+// tachan el sello. En curvas Q para poder pintarlas igual en SVG y en canvas.
+function ondasMatasellos({ desde = -62, largo = 112, alto = 5, paso = 14, rayas = [-14, 0, 14] } = {}) {
+  return rayas.map((y) => Array.from({ length: Math.round(largo / paso) }, (_, i) => ({
+    x0: desde - i * paso, y0: y,
+    cx: desde - i * paso - paso / 2, cy: y + (i % 2 ? alto : -alto),
+    x1: desde - (i + 1) * paso, y1: y,
+  })));
+}
+
 // Los sonidos, hechos con osciladores y no con archivos: dos notas cortas
 // cada uno. La moneda baja y luego sube, como cuando cae en el bote; copiar es
 // un tic más agudo y más corto. Las vibraciones solo valen en Android.
