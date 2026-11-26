@@ -194,6 +194,37 @@ function montarPiezasAnio(d) {
   };
 }
 
+// Cambiar de año sin recargar: la página nueva se pintaría primero vacía,
+// porque los datos llegan de chrome.storage, y la postal parpadearía. Así la
+// vieja se va de lado y la nueva entra del otro, y la URL cambia igual.
+let viajesDelAnio = null;
+let anioPuesto = null;
+
+function ponerAnio(anio) {
+  const datos = datosAnio(viajesDelAnio, anio);
+  if (!datos) return;
+  anioPuesto = anio;
+  piezas = montarPiezasAnio(datos);
+  pintarPostal(piezas);
+  pintarAnios(aniosConGastos(viajesDelAnio), anio);
+}
+
+function onElegirAnio(event) {
+  const enlace = event.target.closest(".anios__anio");
+  // Con Cmd o Ctrl es para abrirlo en otra pestaña: eso no lo toco.
+  if (!enlace || event.metaKey || event.ctrlKey || event.shiftKey || event.button !== 0) return;
+  event.preventDefault();
+  const anio = Number.parseInt(new URL(enlace.href).searchParams.get("anio"), 10);
+  const sentido = sentidoAnio(anioPuesto, anio);
+  if (!sentido) return;
+  history.pushState(null, "", `?anio=${anio}`);
+  const raiz = document.documentElement;
+  if (!document.startViewTransition || sinMovimiento.matches) return ponerAnio(anio);
+  raiz.style.setProperty("--sentido", sentido);
+  raiz.classList.add("is-cambiando-anio");
+  document.startViewTransition(() => ponerAnio(anio)).finished.finally(() => raiz.classList.remove("is-cambiando-anio"));
+}
+
 // Solo los años con algo; el que miras va marcado.
 function pintarAnios(anios, actual) {
   el.anios.hidden = anios.length < 2;
@@ -507,7 +538,11 @@ async function init() {
     el.titulo.textContent = tr("anio.titulo");
     el.intro.textContent = tr("anio.intro");
     document.title = `ConversorDivisas · ${tr("anio.titulo")}`;
-    pintarAnios(aniosConGastos(todosLosViajes(todos)), anio);
+    viajesDelAnio = todosLosViajes(todos);
+    anioPuesto = anio;
+    pintarAnios(aniosConGastos(viajesDelAnio), anio);
+    el.anios.addEventListener("click", onElegirAnio);
+    addEventListener("popstate", () => ponerAnio(Number.parseInt(new URLSearchParams(location.search).get("anio"), 10)));
   }
   const datos = anio !== null ? datosAnio(todosLosViajes(todos), anio) : datosTarjeta(todosLosViajes(todos).find((v) => v.id === id) ?? viajeActivo(todos));
   if (!datos) {

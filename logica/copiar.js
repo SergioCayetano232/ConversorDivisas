@@ -438,6 +438,14 @@ function ondasMatasellos({ desde = -62, largo = 112, alto = 5, paso = 14, rayas 
   })));
 }
 
+// Al pasar de un año a otro en la postal, la vieja se va hacia el pasado y la
+// nueva llega del lado contrario: a un año posterior, la vieja sale por la
+// izquierda, como al pasar página. 1 hacia delante, -1 hacia atrás.
+function sentidoAnio(desde, hasta) {
+  if (!Number.isFinite(desde) || !Number.isFinite(hasta) || desde === hasta) return 0;
+  return hasta > desde ? 1 : -1;
+}
+
 // Los sonidos, hechos con osciladores y no con archivos: dos notas cortas
 // cada uno. La moneda baja y luego sube, como cuando cae en el bote; copiar es
 // un tic más agudo y más corto. Las vibraciones solo valen en Android.

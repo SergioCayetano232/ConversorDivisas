@@ -318,6 +318,46 @@
   pointer-events: none;
 }
 
+/* Al cambiar de año, la postal vieja se va de lado girando un poco y la nueva
+   llega del otro, como al pasar una página. --sentido (1 o -1) lo pone
+   resumen.js. La pastilla del año marcado se desliza hasta la nueva. Los
+   nombres solo durante el cambio: la copia que vuela al descargar es otra
+   postal y no puede llevar el mismo. */
+.is-cambiando-anio .postal {
+  view-transition-name: postal;
+}
+
+.is-cambiando-anio .anios__anio[aria-current="page"] {
+  view-transition-name: anio-marcado;
+}
+
+::view-transition-old(postal) {
+  animation: postal-sale 360ms var(--suave) both;
+}
+
+::view-transition-new(postal) {
+  animation: postal-llega 560ms var(--muelle) 80ms both;
+}
+
+::view-transition-group(anio-marcado) {
+  animation-duration: 420ms;
+  animation-timing-function: var(--muelle);
+}
+
+@keyframes postal-sale {
+  to {
+    opacity: 0;
+    transform: translateX(calc(var(--sentido, 1) * -45%)) rotate(calc(var(--sentido, 1) * -7deg)) scale(0.9);
+  }
+}
+
+@keyframes postal-llega {
+  from {
+    opacity: 0;
+    transform: translateX(calc(var(--sentido, 1) * 45%)) rotate(calc(var(--sentido, 1) * 7deg)) scale(0.9);
+  }
+}
+
 /* Los años, como pastillas: solo sale si hay más de uno. */
 .anios {
   display: flex;
