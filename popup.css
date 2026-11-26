@@ -32,7 +32,8 @@
 
   --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.4);
   --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.45);
-  --shadow-lg: 0 12px 32px rgba(0, 0, 0, 0.55);
+  --shadow-lg-color: rgba(0, 0, 0, 0.55);
+  --shadow-lg: 0 12px 32px var(--shadow-lg-color);
 
   --font-ui: system-ui, -apple-system, "Segoe UI", Inter, sans-serif;
   --font-mono: ui-monospace, "SF Mono", "JetBrains Mono", "Cascadia Code", Menlo, monospace;
@@ -93,7 +94,8 @@
 
     --shadow-sm: 0 1px 2px rgba(60, 50, 30, 0.08);
     --shadow-md: 0 4px 16px rgba(60, 50, 30, 0.1);
-    --shadow-lg: 0 12px 32px rgba(60, 50, 30, 0.14);
+    --shadow-lg-color: rgba(60, 50, 30, 0.14);
+    --shadow-lg: 0 12px 32px var(--shadow-lg-color);
   }
 }
 
@@ -2311,6 +2313,13 @@ body::after {
   corner-shape: var(--forma);
   box-shadow: var(--shadow-lg);
   overflow: hidden;
+  transition: box-shadow var(--slow) var(--ease-out);
+}
+
+/* La sombra se aparta del ratón, como si la luz que lo sigue fuera de verdad. */
+.result.is-luz {
+  box-shadow: var(--luz-sombra-x, 0px) calc(12px + var(--luz-sombra-y, 0px)) 32px var(--shadow-lg-color);
+  transition-duration: var(--mid);
 }
 
 /* La marca de agua, como en un billete: la roseta de la divisa a la derecha,

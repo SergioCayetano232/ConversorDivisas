@@ -25,7 +25,8 @@
   --brillo-moneda: rgba(255, 244, 214, 0.55);
   --esquema: dark;
 
-  --sombra: 0 12px 40px rgba(0, 0, 0, 0.55);
+  --sombra-color: rgba(0, 0, 0, 0.55);
+  --sombra: 0 12px 40px var(--sombra-color);
   --sombra-boton: 0 4px 16px rgba(0, 0, 0, 0.45);
 
   --letra: system-ui, -apple-system, "Segoe UI", Inter, sans-serif;
@@ -65,7 +66,8 @@
     --seleccion: rgba(31, 111, 178, 0.25);
     --esquema: light;
 
-    --sombra: 0 12px 40px rgba(60, 50, 30, 0.12);
+    --sombra-color: rgba(60, 50, 30, 0.12);
+    --sombra: 0 12px 40px var(--sombra-color);
     --sombra-boton: 0 4px 16px rgba(60, 50, 30, 0.12);
   }
 }
@@ -351,6 +353,18 @@ body::after {
   border: 1px solid var(--borde-fuerte);
   border-radius: var(--radio);
   box-shadow: inset 0 1px 0 var(--brillo), var(--sombra);
+  transition: box-shadow var(--lento) var(--suave);
+}
+
+/* Y la sombra, al lado contrario: luz.js dice cuánto. Al salir vuelve a caer
+   recta, que si no se quedaba torcida hacia donde te fuiste. */
+@media (hover: hover) {
+  .tarjeta:hover {
+    box-shadow:
+      inset 0 1px 0 var(--brillo),
+      var(--luz-sombra-x, 0px) calc(12px + var(--luz-sombra-y, 0px)) 40px var(--sombra-color);
+    transition-duration: var(--medio);
+  }
 }
 
 /* El reflejo que sigue al ratón; dónde está lo dice luz.js. Va por detrás de

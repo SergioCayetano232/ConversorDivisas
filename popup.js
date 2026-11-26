@@ -11119,6 +11119,11 @@ function seguirLuz(event) {
   const r = caja.getBoundingClientRect();
   caja.style.setProperty("--luz-x", `${event.clientX - r.left}px`);
   caja.style.setProperty("--luz-y", `${event.clientY - r.top}px`);
+  const sombra = sombraDeLuz(event.clientX - r.left, event.clientY - r.top, r.width, r.height);
+  if (sombra) {
+    caja.style.setProperty("--luz-sombra-x", `${sombra.x}px`);
+    caja.style.setProperty("--luz-sombra-y", `${sombra.y}px`);
+  }
   caja.classList.add("is-luz");
 }
 
