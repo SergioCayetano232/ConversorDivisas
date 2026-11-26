@@ -446,6 +446,18 @@ function sentidoAnio(desde, hasta) {
   return hasta > desde ? 1 : -1;
 }
 
+// Lo de billete para la tarjeta de las webs: la misma roseta, el símbolo y el
+// microtexto que el resultado del popup. La tarjeta va sola en la página, sin
+// la lógica, así que se lo mando hecho. Más corto que el del popup, que la
+// tarjeta es más estrecha.
+const MICROTEXTO_TARJETA = 150;
+
+function billeteTarjeta(from, to) {
+  const roseta = rosetaBillete(to);
+  if (!roseta || !from) return null;
+  return { trazos: roseta.trazos, simbolo: simboloDe(to), micro: microtexto(from, to, MICROTEXTO_TARJETA) };
+}
+
 // Los sonidos, hechos con osciladores y no con archivos: dos notas cortas
 // cada uno. La moneda baja y luego sube, como cuando cae en el bote; copiar es
 // un tic más agudo y más corto. Las vibraciones solo valen en Android.

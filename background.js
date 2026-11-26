@@ -332,6 +332,7 @@ async function tasa(from, to) {
 function paraLaTarjeta(datos) {
   return {
     ...datos,
+    billete: datos.estado === "ok" ? billeteTarjeta(datos.from, datos.to) : null,
     locale: localeActual(),
     textos: {
       dialogo: tr("tarjeta"),

@@ -638,6 +638,92 @@
       to { opacity: 0; transform: translateY(-4px) scale(0.96); }
     }
 
+    /* De billete, como el resultado del popup: la roseta con el símbolo a la
+       derecha, el hilo holográfico a su lado y el microtexto bajo la cifra.
+       Van en el fondo, que ya recorta a la tarjeta. */
+    .billete {
+      position: absolute;
+      top: -26px;
+      right: -42px;
+      width: 132px;
+      height: 132px;
+      display: grid;
+      place-items: center;
+      color: var(--dorado);
+      opacity: 0.1;
+    }
+
+    .billete svg {
+      position: absolute;
+      inset: 0;
+      overflow: visible;
+    }
+
+    .roseta {
+      fill: none;
+      stroke: currentColor;
+      stroke-width: 0.45;
+      transform-origin: center;
+      transform-box: view-box;
+      animation: roseta-gira 140s linear infinite;
+    }
+
+    .roseta path:nth-child(2) { stroke-dasharray: 1.2 1.6; }
+
+    @keyframes roseta-gira {
+      to { rotate: 360deg; }
+    }
+
+    .simbolo {
+      position: relative;
+      font: 700 40px/1 system-ui, -apple-system, "Segoe UI", Inter, sans-serif;
+      letter-spacing: -0.02em;
+      white-space: nowrap;
+    }
+
+    .hilo {
+      position: absolute;
+      top: 0;
+      right: 98px;
+      width: 3px;
+      height: 112px;
+      background: linear-gradient(180deg in oklch longer hue, oklch(0.82 0.14 0), oklch(0.82 0.14 360));
+      background-size: 100% 300%;
+      -webkit-mask:
+        repeating-linear-gradient(180deg, #000 0 12px, transparent 12px 18px),
+        linear-gradient(#000 55%, transparent);
+      -webkit-mask-composite: source-in;
+      mask:
+        repeating-linear-gradient(180deg, #000 0 12px, transparent 12px 18px),
+        linear-gradient(#000 55%, transparent);
+      mask-composite: intersect;
+      opacity: 0.2;
+      filter: hue-rotate(var(--holo, 0deg));
+      transition: filter 420ms var(--suave), opacity 420ms ease;
+      animation: hilo-corre 12s linear infinite;
+    }
+
+    .tarjeta:hover .hilo { opacity: 0.45; }
+
+    @keyframes hilo-corre {
+      to { background-position: 0 100%; }
+    }
+
+    .micro {
+      display: block;
+      margin: -3px 0 3px;
+      overflow: hidden;
+      font-family: var(--mono);
+      font-size: 3.2px;
+      line-height: 4px;
+      letter-spacing: 0.1em;
+      white-space: nowrap;
+      color: var(--tenue);
+      opacity: 0.6;
+    }
+
+    .billete[hidden], .hilo[hidden], .micro[hidden] { display: none; }
+
     @media (prefers-reduced-motion: reduce) {
       *, *::before, *::after {
         animation-duration: 0.01ms !important;
@@ -694,7 +780,10 @@
     <style>${CSS}</style>
     <div class="estela" hidden></div>
     <div class="tarjeta is-cargando" role="dialog" aria-label="Conversión de divisa">
-      <div class="fondo"></div>
+      <div class="fondo">
+        <div class="billete" hidden><svg viewBox="-64 -64 128 128"><g class="roseta"><path></path><path></path><path></path></g></svg><span class="simbolo"></span></div>
+        <span class="hilo" hidden></span>
+      </div>
       <span class="flecha"></span>
       <div class="cabeza">
         <span class="marca"><span class="punto"></span>ConversorDivisas</span>
@@ -705,6 +794,7 @@
       <p class="original"></p>
       <div class="barra"></div>
       <div class="cifra" aria-live="polite"><span class="valor"></span><span class="codigo"></span></div>
+      <span class="micro" aria-hidden="true" hidden></span>
       <p class="meta"></p>
       <p class="nota"></p>
       <p class="dcc" hidden></p>
@@ -758,6 +848,7 @@
     raiz = host.attachShadow({ mode: "open" });
     raiz.innerHTML = HTML;
     $(".cerrar").addEventListener("click", cerrar);
+    $(".tarjeta").addEventListener("pointermove", moverHolo);
     $(".copiar").addEventListener("click", copiar);
     $(".cifra").addEventListener("dblclick", copiar);
     $(".gasto").addEventListener("click", apuntar);
@@ -1015,6 +1106,8 @@
     datos = d;
     if (d.estado === "cargando") prepararGasto();
     traducir(d);
+    // Mientras carga, con una medida o con un error no hay billete que enseñar.
+    if (d.estado !== "ok") pintarBillete(null);
 
     if (d.estado === "cargando") {
       ancla = medirSeleccion();
@@ -1048,6 +1141,7 @@
       pintarAlerta(d.aviso);
       pintarFuera(d.fuera);
       pintarPresupuesto(d.presupuesto);
+      pintarBillete(d.billete);
       contar(d.resultado);
     } else if (d.estado === "medida") {
       // Aquí no hay cifra que contar: es un texto, y a veces con dos resultados.
@@ -1156,6 +1250,25 @@
   }
 
   // Cerrado cada vez: lo que abriste para otro precio no tiene por qué seguir abierto.
+  function pintarBillete(b) {
+    for (const clase of [".billete", ".hilo", ".micro"]) $(clase).hidden = !b;
+    if (!b) return;
+    $(".billete").querySelectorAll("path").forEach((trazo, i) => trazo.setAttribute("d", b.trazos[i]));
+    $(".simbolo").textContent = b.simbolo;
+    // "CHF" o "MX$" a 40 px se salían de la roseta, como en el popup.
+    $(".simbolo").style.fontSize = `${[40, 40, 30, 22][Math.min(b.simbolo.length, 3)]}px`;
+    $(".micro").textContent = b.micro;
+  }
+
+  // El tono del hilo según dónde está el ratón, como tonoHolograma de luz.js,
+  // que aquí no está: la tarjeta va sola en la página de otro.
+  function moverHolo(event) {
+    const tarjeta = $(".tarjeta");
+    const r = tarjeta.getBoundingClientRect();
+    const x = Math.min(1, Math.max(0, (event.clientX - r.left) / r.width));
+    tarjeta.style.setProperty("--holo", `${Math.round(x * 300)}deg`);
+  }
+
   function pintarFuera(f) {
     const caja = $(".fuera");
     caja.hidden = !f;
