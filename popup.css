@@ -12961,7 +12961,10 @@ body::after {
   stroke-linecap: round;
   stroke-linejoin: round;
   vector-effect: non-scaling-stroke;
-  filter: drop-shadow(0 0 5px color-mix(in srgb, var(--tendencia) 40%, transparent));
+  filter:
+    drop-shadow(0 0 1px color-mix(in srgb, var(--tendencia) 90%, transparent))
+    drop-shadow(0 0 5px color-mix(in srgb, var(--tendencia) 55%, transparent))
+    drop-shadow(0 0 14px color-mix(in srgb, var(--tendencia) 30%, transparent));
   transition: stroke var(--slow) var(--ease), filter var(--slow) var(--ease);
   /* Dibujo la línea de izquierda a derecha con el truco del guion largo.
      El valor lo pone el JS, que es quien sabe lo que mide el path. */
@@ -12981,11 +12984,28 @@ body::after {
   animation: none;
 }
 
+/* En oscuro la línea es de neón (los tres halos de arriba) y el relleno de
+   debajo respira despacio. En claro el halo ensucia el blanco: el de antes. */
 .trend__area {
   fill: url(#trend-fill);
   stroke: none;
-  animation: fade 900ms var(--ease-out) backwards;
-  animation-delay: 200ms;
+  animation:
+    fade 900ms var(--ease-out) 200ms backwards,
+    area-respira 4s ease-in-out 1100ms infinite alternate;
+}
+
+@keyframes area-respira {
+  to { opacity: 0.55; }
+}
+
+@media (prefers-color-scheme: light) {
+  .trend__line {
+    filter: drop-shadow(0 0 5px color-mix(in srgb, var(--tendencia) 40%, transparent));
+  }
+
+  .trend__area {
+    animation: fade 900ms var(--ease-out) 200ms backwards;
+  }
 }
 
 @keyframes fade {
