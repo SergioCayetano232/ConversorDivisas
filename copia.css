@@ -263,6 +263,43 @@ body::after {
   }
 }
 
+/* Las tarjetas de más abajo suben y se encienden al llegar a la pantalla, y
+   cada una lleva un poco de retraso respecto al scroll, como si pesara. Va en
+   una variable y no en opacity porque opacity ya la lleva la entrada de
+   arriba: así la entrada anima la suya y luego se queda esta. */
+@property --revelo {
+  syntax: "<number>";
+  inherits: false;
+  initial-value: 1;
+}
+
+@supports (animation-timeline: view()) {
+  /* Solo en pantalla: al imprimir, las de abajo saldrían en blanco. */
+  @media screen and (prefers-reduced-motion: no-preference) {
+    .pagina > .tarjeta {
+      opacity: var(--revelo);
+      animation:
+        entrar var(--lento) var(--suave) backwards,
+        revelar linear both;
+      animation-timeline: auto, view();
+      animation-range: normal, entry 0% entry 100%;
+    }
+
+    @keyframes revelar {
+      from {
+        --revelo: 0;
+        translate: 0 56px;
+        scale: 0.94;
+      }
+      to {
+        --revelo: 1;
+        translate: 0 0;
+        scale: 1;
+      }
+    }
+  }
+}
+
 .cabeza {
   position: relative;
   display: flex;
