@@ -20,10 +20,14 @@ let idiomaGuardado = "auto";
 let parTuyo = false;
 let teclas = { abrir: "", seleccion: "" };
 
-function pintarTextos() {
+// Solo se descifra al cambiar tú el idioma; al abrir la pestaña ya sale escrito.
+function pintarTextos(descifrar = false) {
   ponerIdioma(idiomaElegido(idiomaGuardado, chrome.i18n.getUILanguage()));
   document.documentElement.lang = idiomaActual();
-  for (const nodo of document.querySelectorAll("[data-t]")) nodo.textContent = tr(nodo.dataset.t);
+  for (const nodo of document.querySelectorAll("[data-t]")) {
+    if (descifrar) escribirDescifrando(nodo, tr(nodo.dataset.t));
+    else nodo.textContent = tr(nodo.dataset.t);
+  }
   document.title = `ConversorDivisas · ${tr("bienvenida.titulo")}`;
 
   const casa = el.divisa.value;
@@ -119,7 +123,7 @@ async function guardarDivisa() {
 async function guardarIdioma() {
   idiomaGuardado = el.idioma.value;
   await chrome.storage.local.set({ idioma: idiomaGuardado });
-  pintarTextos();
+  pintarTextos(true);
   avisarGuardado();
 }
 

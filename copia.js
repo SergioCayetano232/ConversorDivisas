@@ -79,11 +79,14 @@ function reiniciar(nodo, clase) {
   nodo.classList.add(clase);
 }
 
-async function ponerIdiomaGuardado() {
+async function ponerIdiomaGuardado(descifrar = false) {
   const { idioma } = await chrome.storage.local.get("idioma");
   ponerIdioma(idiomaElegido(idioma, chrome.i18n.getUILanguage()));
   document.documentElement.lang = idiomaActual();
-  for (const nodo of document.querySelectorAll("[data-t]")) nodo.textContent = tr(nodo.dataset.t);
+  for (const nodo of document.querySelectorAll("[data-t]")) {
+    if (descifrar) escribirDescifrando(nodo, tr(nodo.dataset.t));
+    else nodo.textContent = tr(nodo.dataset.t);
+  }
   for (const nodo of document.querySelectorAll("[data-t-aria-label]")) nodo.setAttribute("aria-label", tr(nodo.dataset.tAriaLabel));
   document.title = `ConversorDivisas · ${tr("copia")}`;
   el.descargar.title = tr("copia.abrir");
@@ -870,7 +873,7 @@ function bindEvents() {
   window.addEventListener("drop", (event) => event.preventDefault());
   chrome.storage.onChanged.addListener((cambios, zona) => {
     if (zona !== "local") return;
-    if (cambios.idioma) ponerIdiomaGuardado().then(pintarAhora);
+    if (cambios.idioma) ponerIdiomaGuardado(true).then(pintarAhora);
     else pintarAhora();
   });
 }
