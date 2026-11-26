@@ -12,6 +12,16 @@ function sombraDeLuz(x, y, ancho, alto, maximo = SOMBRA_MAX) {
   return { x: Math.round((0.5 - px) * 2 * maximo) || 0, y: Math.round((0.5 - py) * 2 * maximo) || 0 };
 }
 
+// El hilo holográfico del resultado cambia de color según dónde esté el ratón,
+// como el de un billete al ladearlo. De punta a punta, casi una vuelta entera
+// de colores: la vuelta completa acabaría en el mismo y no se notaría.
+const HOLO_VUELTA = 300;
+
+function tonoHolograma(x, ancho) {
+  if (!Number.isFinite(x) || !Number.isFinite(ancho) || ancho <= 0) return 0;
+  return Math.round(Math.min(1, Math.max(0, x / ancho)) * HOLO_VUELTA);
+}
+
 if (typeof document !== "undefined") {
   // Con el dedo no hay nada que seguir: se quedaría encendida donde tocaste.
   document.addEventListener("pointermove", (event) => {
@@ -31,5 +41,5 @@ if (typeof document !== "undefined") {
 }
 
 if (typeof module !== "undefined") {
-  module.exports = { SOMBRA_MAX, sombraDeLuz };
+  module.exports = { SOMBRA_MAX, sombraDeLuz, HOLO_VUELTA, tonoHolograma };
 }

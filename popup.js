@@ -11208,6 +11208,7 @@ function seguirLuz(event) {
   const r = caja.getBoundingClientRect();
   caja.style.setProperty("--luz-x", `${event.clientX - r.left}px`);
   caja.style.setProperty("--luz-y", `${event.clientY - r.top}px`);
+  caja.style.setProperty("--holo", `${tonoHolograma(event.clientX - r.left, r.width)}deg`);
   const sombra = sombraDeLuz(event.clientX - r.left, event.clientY - r.top, r.width, r.height);
   if (sombra) {
     caja.style.setProperty("--luz-sombra-x", `${sombra.x}px`);

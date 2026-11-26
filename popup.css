@@ -2446,6 +2446,54 @@ body::after {
   to { rotate: 360deg; }
 }
 
+/* El hilo de seguridad, como el de los billetes: a ventanas, con todos los
+   colores, y cambia de tono según dónde tengas el ratón. Justo a la izquierda
+   de la roseta, que es donde lo llevan los de verdad. */
+.result__hilo {
+  position: absolute;
+  z-index: -1;
+  top: 0;
+  right: 128px;
+  width: 4px;
+  /* Lo que mide la roseta: el hilo es del billete, no del gráfico de debajo. */
+  height: 150px;
+  pointer-events: none;
+  background: linear-gradient(180deg in oklch longer hue, oklch(0.82 0.14 0), oklch(0.82 0.14 360));
+  background-size: 100% 300%;
+  -webkit-mask:
+    repeating-linear-gradient(180deg, #000 0 14px, transparent 14px 21px),
+    linear-gradient(#000 55%, transparent);
+  -webkit-mask-composite: source-in;
+  mask:
+    repeating-linear-gradient(180deg, #000 0 14px, transparent 14px 21px),
+    linear-gradient(#000 55%, transparent);
+  mask-composite: intersect;
+  opacity: 0.22;
+  filter: hue-rotate(var(--holo, 0deg));
+  transition: filter var(--slow) var(--ease-out), opacity var(--slow) var(--ease);
+  animation: hilo-corre 12s linear infinite;
+}
+
+@keyframes hilo-corre {
+  to { background-position: 0 100%; }
+}
+
+/* Con el ratón encima se enciende, como al ladear el billete hacia la luz. */
+.result.is-luz .result__hilo {
+  opacity: 0.45;
+  transition-duration: var(--mid);
+}
+
+@media (prefers-color-scheme: light) {
+  .result__hilo {
+    opacity: 0.3;
+  }
+
+  .result.is-luz .result__hilo {
+    opacity: 0.6;
+  }
+}
+
 /* Al cambiar de divisa entra como un billete que te dan: girando un poco y
    apareciendo. */
 .result__billete.is-nuevo {
@@ -14087,6 +14135,10 @@ kbd {
 
   .result__rodillo {
     display: none !important;
+  }
+
+  .result__hilo {
+    display: none;
   }
 
   .is-rodando .result__value {
