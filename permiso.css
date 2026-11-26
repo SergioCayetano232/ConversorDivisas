@@ -8,7 +8,29 @@
   color: var(--dorado);
   background: var(--dorado-fantasma);
   box-shadow: 0 0 0 1px var(--dorado-tenue);
-  animation: escucha 1.6s var(--suave) infinite;
+  position: relative;
+}
+
+/* Dos ondas que salen desfasadas mientras Chrome pregunta, como un sonar. */
+.microfono::before,
+.microfono::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  border: 1.5px solid var(--dorado-tenue);
+  opacity: 0;
+  animation: onda 2.2s var(--suave) infinite;
+  pointer-events: none;
+}
+
+.microfono::after {
+  animation-delay: 1.1s;
+}
+
+.microfono[data-estado]::before,
+.microfono[data-estado]::after {
+  display: none;
 }
 
 .microfono svg {
@@ -40,9 +62,14 @@
   color: var(--tenue);
 }
 
-@keyframes escucha {
-  50% {
-    box-shadow: 0 0 0 10px transparent, 0 0 0 1px var(--dorado-tenue);
+@keyframes onda {
+  from {
+    opacity: 1;
+    transform: scale(1);
+  }
+  to {
+    opacity: 0;
+    transform: scale(1.6);
   }
 }
 
@@ -55,5 +82,10 @@
 @media (prefers-reduced-motion: reduce) {
   .microfono {
     animation: none !important;
+  }
+
+  .microfono::before,
+  .microfono::after {
+    display: none;
   }
 }
