@@ -1132,8 +1132,9 @@ function crearBuscador(lado) {
     if (cambia) onCurrencyChange();
   }
 
-  function poner(code) {
+  function poner(code, { quieto = false } = {}) {
     const cambia = boton.value !== code;
+    const antes = boton.value;
     boton.value = code;
     const bandera = crearBandera(code);
     const texto = document.createElement("span");
@@ -1147,6 +1148,7 @@ function crearBuscador(lado) {
     boton.title = nombreDe(code);
     // Al abrir el popup no salta: solo cuando cambias tú la divisa.
     if (cambia && boton.dataset.puesto) bandera.classList.add("is-nueva");
+    if (cambia && boton.dataset.puesto && !quieto && !sinMovimiento.matches) girarPanel(texto, antes, code);
     boton.dataset.puesto = "1";
   }
 
@@ -1181,6 +1183,25 @@ function crearBuscador(lado) {
   });
 
   return { poner, cerrar };
+}
+
+// Cada letra va en su pieza para poder girarla sola. Si cambias otra vez a
+// medias, las piezas viejas ya no están en el botón y sus vueltas no pintan nada.
+const PANEL_PASO = 55;
+
+function girarPanel(nodo, antes, despues) {
+  const letras = panelSalidas(antes, despues).map((vuelta, i) => {
+    const letra = document.createElement("span");
+    letra.className = "panel__letra";
+    letra.textContent = vuelta[0];
+    letra.addEventListener("animationend", () => letra.classList.remove("is-girando"));
+    vuelta.slice(1).forEach((c, k) => setTimeout(() => {
+      letra.textContent = c;
+      restartAnimation(letra, "is-girando");
+    }, i * 90 + (k + 1) * PANEL_PASO));
+    return letra;
+  });
+  nodo.replaceChildren(...letras);
 }
 
 function crearBandera(code) {
@@ -9810,10 +9831,11 @@ function ondaDeTasa() {
 // cada una se ha ido al otro lado, que es lo que ha pasado.
 function onSwap() {
   if (!document.startViewTransition || sinMovimiento.matches) return darLaVuelta();
+  // Ya se cruzan volando; si además giraran las letras no se vería ninguna de las dos.
   el.from.style.viewTransitionName = "divisa-uno";
   el.to.style.viewTransitionName = "divisa-dos";
   const vuelta = document.startViewTransition(() => {
-    darLaVuelta();
+    darLaVuelta(true);
     el.from.style.viewTransitionName = "divisa-dos";
     el.to.style.viewTransitionName = "divisa-uno";
   });
@@ -9823,10 +9845,10 @@ function onSwap() {
   });
 }
 
-function darLaVuelta() {
+function darLaVuelta(quieto = false) {
   const from = el.from.value;
-  buscadores.from.poner(el.to.value);
-  buscadores.to.poner(from);
+  buscadores.from.poner(el.to.value, { quieto });
+  buscadores.to.poner(from, { quieto });
 
   restartAnimation(el.swap, "is-swapping");
 

@@ -1562,6 +1562,37 @@ body::after {
   text-overflow: ellipsis;
 }
 
+/* Las letras del código giran como las de un panel de salidas. Mismo ancho
+   para todas, que si no la I y la W hacían bailar el nombre de debajo. */
+.panel__letra {
+  position: relative;
+  display: inline-block;
+  min-width: 0.72em;
+  text-align: center;
+  transform-origin: 50% 55%;
+  perspective: 120px;
+}
+
+.panel__letra.is-girando {
+  animation: panel-gira 55ms linear;
+}
+
+/* La raya del medio, la de la pala doblada. Solo mientras gira. */
+.panel__letra.is-girando::after {
+  content: "";
+  position: absolute;
+  inset: 52% -1px auto;
+  height: 1px;
+  background: var(--hairline-strong);
+}
+
+@keyframes panel-gira {
+  from {
+    transform: rotateX(-80deg);
+    filter: brightness(0.6);
+  }
+}
+
 /* Cuando algo cambia sin que lo toques (una pastilla, el menú de la web), que
    se vea dónde ha caído. */
 .buscador__boton.is-cambiado,

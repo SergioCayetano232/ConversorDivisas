@@ -470,3 +470,20 @@ function rodillo(desde, hasta, texto, decimales = 2) {
   // El punto de los miles llega con la cifra que tiene a la izquierda.
   return columnas.map((c, i) => (c.signo && columnas[i - 1]?.cifras?.[0] === null ? { ...c, nuevo: true } : c));
 }
+
+// Las letras del par, como las de un panel de salidas: siempre giran hacia
+// delante y de la Z vuelven a la A. De USD a EUR la U daría 10 vueltas; con 8
+// ya se ve que gira y no hace esperar, así que empieza más cerca.
+const PANEL_MAX = 8;
+
+function panelSalidas(antes, despues) {
+  const A = "A".charCodeAt(0);
+  return [...despues].map((letra, i) => {
+    const de = antes[i];
+    if (!de || de === letra || !/[A-Z]/.test(de) || !/[A-Z]/.test(letra)) return [letra];
+    const pasos = (letra.charCodeAt(0) - de.charCodeAt(0) + 26) % 26;
+    const desde = pasos > PANEL_MAX ? pasos - PANEL_MAX : 0;
+    return Array.from({ length: pasos - desde + 1 }, (_, k) =>
+      String.fromCharCode(A + ((de.charCodeAt(0) - A + desde + k) % 26)));
+  });
+}
