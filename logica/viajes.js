@@ -1928,3 +1928,17 @@ function categoriasAlDia(gastos) {
   if (!media) return new Map();
   return new Map(desglose(delDiaADia(gastos)).map((t) => [t.categoria, t.total / media.dias]));
 }
+
+// La ruta que se dibuja al crear un viaje: de la bandera de casa a la de allí,
+// en arco como en los mapas de vuelos. Si las dos son la misma no hay viaje.
+function rutaViaje(casa, alli, ancho, alto) {
+  const desde = banderaDivisa(casa);
+  const hasta = banderaDivisa(alli);
+  if (!desde || !hasta || casa === alli || ancho <= 0 || alto <= 0) return null;
+  const suelo = alto - 4;
+  // Una curva Q sube hasta la mitad de lo que tira su control: así la cima
+  // queda a 4 px del techo.
+  const control = 2 * 4 - suelo;
+  const r = (n) => Math.round(n * 10) / 10;
+  return { desde, hasta, d: `M 0 ${r(suelo)} Q ${r(ancho / 2)} ${r(control)} ${r(ancho)} ${r(suelo)}` };
+}

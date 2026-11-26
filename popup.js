@@ -7437,7 +7437,53 @@ function onCrearViaje(event) {
   cerrarViajes();
   ponerViaje(nuevos);
   restartAnimation(el.viaje, "is-estreno");
+  // El nombre sale de la divisa de arriba, así que esa es la de allí.
+  if (!sinMovimiento.matches) volarRuta(el.to.value, el.from.value);
   el.gastosConcepto.focus();
+}
+
+// Se abre un hueco debajo del total, el avión cruza y se vuelve a cerrar. Lo
+// quito al acabar: no pinta nada ahí parado.
+function volarRuta(casa, alli) {
+  el.gastos.querySelector(".ruta")?.remove();
+  const total = el.gastos.querySelector(".gastos__total");
+  const alto = 34;
+  // Lo que queda entre las dos banderas, que miden 18 y tienen 8 de hueco.
+  const ruta = rutaViaje(casa, alli, total.clientWidth - 2 * (18 + 8), alto);
+  if (!ruta) return;
+
+  const caja = document.createElement("div");
+  caja.className = "ruta";
+  caja.setAttribute("aria-hidden", "true");
+  const bandera = (texto) => {
+    const b = document.createElement("span");
+    b.className = "ruta__bandera";
+    b.textContent = texto;
+    return b;
+  };
+
+  const cielo = document.createElement("div");
+  cielo.className = "ruta__cielo";
+  cielo.style.height = `${alto}px`;
+  const arco = document.createElementNS(SVG_NS, "svg");
+  arco.setAttribute("class", "ruta__arco");
+  arco.setAttribute("viewBox", `0 0 ${total.clientWidth - 52} ${alto}`);
+  // La línea es de puntos y los puntos no se pueden ir dibujando, así que va
+  // tapada por una máscara que sí se dibuja.
+  arco.innerHTML = `<mask id="ruta-mascara" maskUnits="userSpaceOnUse"><path class="ruta__trazo" pathLength="1"/></mask><path class="ruta__linea" mask="url(#ruta-mascara)"/>`;
+  arco.querySelectorAll("path").forEach((p) => p.setAttribute("d", ruta.d));
+  const avion = document.createElementNS(SVG_NS, "svg");
+  avion.setAttribute("class", "ruta__avion");
+  avion.setAttribute("viewBox", "0 0 16 16");
+  avion.innerHTML = `<path d="M15 8c0-.6-.5-1-1.1-1H10L6.5 1.5H5L6.8 7H3.6L2.4 5.4H1.2L2 8l-.8 2.6h1.2L3.6 9h3.2L5 14.5h1.5L10 9h3.9c.6 0 1.1-.4 1.1-1z"/>`;
+  avion.style.offsetPath = `path("${ruta.d}")`;
+  cielo.append(arco, avion);
+
+  caja.append(bandera(ruta.desde), cielo, bandera(ruta.hasta));
+  caja.addEventListener("animationend", (event) => {
+    if (event.target === caja) caja.remove();
+  });
+  total.after(caja);
 }
 
 // Uno como el abierto. Si has escrito un nombre, ese; si no, "Lisboa (2)".

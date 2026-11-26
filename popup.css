@@ -4871,6 +4871,89 @@ body::after {
   margin-bottom: var(--s-2);
 }
 
+/* La ruta del viaje nuevo: se abre un hueco, el avión vuela de casa a allí y
+   se cierra. Entre los dos tarda lo mismo que tarda en llegar el avión. */
+.ruta {
+  display: flex;
+  align-items: flex-end;
+  gap: 8px;
+  overflow: hidden;
+  animation: ruta-hueco 2300ms var(--ease) both;
+}
+
+@keyframes ruta-hueco {
+  0% { height: 0; margin-bottom: 0; opacity: 0; }
+  12%, 86% { height: 40px; margin-bottom: var(--s-2); opacity: 1; }
+  100% { height: 0; margin-bottom: 0; opacity: 0; }
+}
+
+.ruta__bandera {
+  flex-shrink: 0;
+  width: 18px;
+  font-size: 16px;
+  line-height: 22px;
+  text-align: center;
+}
+
+.ruta__bandera:last-child {
+  animation: ruta-llega 420ms var(--ease-spring) 1350ms both;
+}
+
+@keyframes ruta-llega {
+  from { transform: scale(0.4); opacity: 0.3; }
+}
+
+.ruta__cielo {
+  position: relative;
+  flex: 1;
+  margin-bottom: 6px;
+}
+
+.ruta__arco {
+  display: block;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+  fill: none;
+}
+
+.ruta__linea {
+  stroke: var(--brass);
+  stroke-width: 1.5;
+  stroke-linecap: round;
+  stroke-dasharray: 0.1 5;
+}
+
+.ruta__trazo {
+  stroke: #fff;
+  stroke-width: 6;
+  stroke-dasharray: 1;
+  animation: ruta-traza 1100ms var(--ease) 280ms both;
+}
+
+@keyframes ruta-traza {
+  from { stroke-dashoffset: 1; }
+  to { stroke-dashoffset: 0; }
+}
+
+.ruta__avion {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 15px;
+  height: 15px;
+  fill: var(--brass);
+  filter: drop-shadow(0 2px 3px rgba(0, 0, 0, 0.3));
+  offset-rotate: auto;
+  animation: ruta-vuela 1100ms var(--ease) 280ms both;
+}
+
+@keyframes ruta-vuela {
+  from { offset-distance: 0%; scale: 0.7; }
+  50% { scale: 1.15; }
+  to { offset-distance: 100%; scale: 0.7; }
+}
+
 .gastos__cifra {
   display: flex;
   flex-direction: column;
