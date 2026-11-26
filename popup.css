@@ -7500,9 +7500,25 @@ body::after {
   font-variant-numeric: tabular-nums;
 }
 
-/* El importe del gasto nuevo cuando le llega la cifra que vuela. */
+/* El importe del gasto nuevo cuando le llega la cifra que vuela. Y después,
+   tinta fresca: la cifra y el concepto salen brillantes y algo corridos, como
+   recién escritos, y se secan en un segundo y pico. Con filter y no con
+   text-shadow, que ese ya lo usa el salto. */
 .gastos__valor.is-recibe {
-  animation: recibe 420ms var(--ease-spring);
+  animation: secar 1500ms var(--ease-out), recibe 420ms var(--ease-spring);
+}
+
+.gastos__fila:has(.gastos__valor.is-recibe) .gastos__que {
+  animation: secar 1500ms var(--ease-out) 120ms backwards;
+}
+
+@keyframes secar {
+  from {
+    filter: blur(0.8px) brightness(1.5) saturate(1.5) drop-shadow(0 0 3px var(--brass-glow));
+  }
+  45% {
+    filter: blur(0.25px) brightness(1.18) saturate(1.2) drop-shadow(0 0 1px var(--brass-glow));
+  }
 }
 
 @keyframes recibe {
